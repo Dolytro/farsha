@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { armPasteMode, copyNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteReplace, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
+import { armPasteMode, copyNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteReplace, pasteSvg, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
 
 function setup() {
   const doc = new DesignDoc();
@@ -181,6 +181,24 @@ describe("copy and paste properties", () => {
     pasteProperties(doc, [rect]);
     doc.undo();
     expect(doc.getNode(rect)).toMatchObject({ opacity: before.opacity, fills: (before as { fills: unknown }).fills });
+  });
+});
+
+describe("paste svg", () => {
+  it("creates a frame of layers centred on the point, as one undo step", () => {
+    const { doc, page } = setup();
+    doc.clearHistory();
+    const svg = '<svg width="24" height="24" viewBox="0 0 24 24"><rect width="24" height="12" fill="#f00"/><path d="M0 12L24 24" stroke="#000"/></svg>';
+    const [id] = pasteSvg(doc, svg, page, 500, 400);
+    expect(doc.getNode(id!)).toMatchObject({ type: "FRAME", name: "SVG", x: 488, y: 388, width: 24 });
+    expect(doc.children(id!).map((n) => n.type)).toEqual(["RECTANGLE", "VECTOR"]);
+    doc.undo();
+    expect(doc.hasNode(id!)).toBe(false);
+  });
+
+  it("pastes nothing for an svg without shapes", () => {
+    const { doc, page } = setup();
+    expect(pasteSvg(doc, "<svg viewBox='0 0 1 1'></svg>", page, 0, 0)).toEqual([]);
   });
 });
 

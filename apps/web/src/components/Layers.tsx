@@ -3,7 +3,7 @@ import type { DesignNode } from "@canvylo/types";
 import { useEditor } from "../store";
 import { DriveMenu } from "./DriveMenu";
 
-const ICONS: Record<string, string> = { FRAME: "#", GROUP: "▤", RECTANGLE: "▭", ELLIPSE: "◯", TEXT: "T", IMAGE: "▨" };
+const ICONS: Record<string, string> = { FRAME: "#", GROUP: "▤", RECTANGLE: "▭", ELLIPSE: "◯", TEXT: "T", IMAGE: "▨", VECTOR: "◇" };
 
 export function Layers() {
   const { doc, pageId, selection, select, viewer } = useEditor();

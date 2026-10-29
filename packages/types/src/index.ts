@@ -6,7 +6,8 @@ export type NodeType =
   | 'RECTANGLE'
   | 'ELLIPSE'
   | 'TEXT'
-  | 'IMAGE';
+  | 'IMAGE'
+  | 'VECTOR';
 
 export interface SolidPaint {
   type: 'SOLID';
@@ -93,6 +94,14 @@ export interface ImageNode extends BaseNode {
   cornerRadius: number;
 }
 
+export interface VectorNode extends BaseNode {
+  type: 'VECTOR';
+  /** SVG viewBox ("minX minY width height") that the markup is drawn in, scaled to the layer box. */
+  viewBox: string;
+  /** One sanitised SVG shape element (path, polygon, ...). Built by the SVG importer, never raw clipboard text. */
+  markup: string;
+}
+
 export type DesignNode =
   | DocumentNode
   | PageNode
@@ -101,7 +110,8 @@ export type DesignNode =
   | RectangleNode
   | EllipseNode
   | TextNode
-  | ImageNode;
+  | ImageNode
+  | VectorNode;
 
 export type NodeOfType<T extends NodeType> = Extract<DesignNode, { type: T }>;
 

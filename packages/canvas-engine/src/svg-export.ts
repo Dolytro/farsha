@@ -41,6 +41,8 @@ function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       const clip = n.clipsContent ? ` clip-path="url(#${clipId})"` : "";
       return `<g transform="${transform}"${opacity}><clipPath id="${clipId}"><rect width="${num(n.width)}" height="${num(n.height)}"${radius}/></clipPath><rect width="${num(n.width)}" height="${num(n.height)}"${radius}${fillAttrs}${strokeAttrs}/><g${clip}>${kids}</g></g>`;
     }
+    case "VECTOR":
+      return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(n.height)}" viewBox="${esc(n.viewBox)}" overflow="visible">${n.markup}</svg></g>`;
     case "RECTANGLE":
       return `<g transform="${transform}"${opacity}><rect width="${num(n.width)}" height="${num(n.height)}"${radius}${fillAttrs}${strokeAttrs}/>${kids}</g>`;
     default:

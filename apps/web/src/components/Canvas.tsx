@@ -257,6 +257,14 @@ export function Canvas() {
         </g>
       );
     }
+    if (n.type === "VECTOR") {
+      // markup is one allow-listed shape element built by the SVG importer (see svg-import.ts)
+      return (
+        <g key={n.id} transform={transform} opacity={n.opacity}>
+          <svg width={n.width} height={n.height} viewBox={n.viewBox} overflow="visible" dangerouslySetInnerHTML={{ __html: n.markup }} />
+        </g>
+      );
+    }
     const isFrame = n.type === "FRAME";
     return (
       <g key={n.id} transform={transform} opacity={n.opacity}>

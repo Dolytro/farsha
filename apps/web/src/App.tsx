@@ -6,7 +6,8 @@ import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
-import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteReplace, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
+import { looksLikeSvg } from "./svg-import";
+import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { ShareDialog } from "./components/ShareDialog";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
@@ -89,16 +90,25 @@ export function App() {
       const mode = takePasteMode();
       if (blocked(e)) return;
       const text = e.clipboardData?.getData("text/plain") ?? "";
-      if (!text) return;
+      const svgData = e.clipboardData?.getData("image/svg+xml") ?? "";
+      if (!text && !svgData) return;
       const s = useEditor.getState();
       const parentId = pasteTarget(s.doc, s.selection, s.pageId);
       const clip = parseClip(text);
+      const svg = svgData || (looksLikeSvg(text) ? text : "");
       const at = viewportCenter(s.viewport);
       const parentBox = s.doc.absoluteBox(parentId);
-      const ids = clip
-        ? ((mode === "over" ? pasteOver(s.doc, clip, s.selection) : mode === "replace" ? pasteReplace(s.doc, clip, s.selection) : null) ??
-          pasteNodes(s.doc, clip, parentId))
-        : pasteText(s.doc, text, parentId, at.x - (parentBox && parentId !== s.pageId ? parentBox.x : 0), at.y - (parentBox && parentId !== s.pageId ? parentBox.y : 0));
+      const cx = at.x - (parentBox && parentId !== s.pageId ? parentBox.x : 0);
+      const cy = at.y - (parentBox && parentId !== s.pageId ? parentBox.y : 0);
+      let ids: string[];
+      if (clip) {
+        ids = (mode === "over" ? pasteOver(s.doc, clip, s.selection) : mode === "replace" ? pasteReplace(s.doc, clip, s.selection) : null) ?? pasteNodes(s.doc, clip, parentId);
+      } else if (svg) {
+        ids = pasteSvg(s.doc, svg, parentId, cx, cy);
+        if (!ids.length) s.showToast("Nothing to paste from that SVG");
+      } else {
+        ids = pasteText(s.doc, text, parentId, cx, cy);
+      }
       if (ids.length) s.select(ids);
       e.preventDefault();
     };

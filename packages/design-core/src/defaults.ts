@@ -5,13 +5,14 @@ const solid = (color: string): Paint => ({ type: 'SOLID', color, opacity: 1 });
 /** Node types that may be placed inside each parent type. */
 export const ALLOWED_CHILDREN: Record<NodeType, readonly NodeType[]> = {
   DOCUMENT: ['PAGE'],
-  PAGE: ['FRAME', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'IMAGE'],
-  FRAME: ['FRAME', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'IMAGE'],
-  GROUP: ['FRAME', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'IMAGE'],
+  PAGE: ['FRAME', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'IMAGE', 'VECTOR'],
+  FRAME: ['FRAME', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'IMAGE', 'VECTOR'],
+  GROUP: ['FRAME', 'GROUP', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'IMAGE', 'VECTOR'],
   RECTANGLE: [],
   ELLIPSE: [],
   TEXT: [],
   IMAGE: [],
+  VECTOR: [],
 };
 
 const NAMES: Record<NodeType, string> = {
@@ -23,6 +24,7 @@ const NAMES: Record<NodeType, string> = {
   ELLIPSE: 'Ellipse',
   TEXT: 'Text',
   IMAGE: 'Image',
+  VECTOR: 'Vector',
 };
 
 /** Type-specific default properties (everything except id/parentId/orderKey). */
@@ -84,5 +86,7 @@ function buildDefaults(type: NodeType): NodeDraft {
       };
     case 'IMAGE':
       return { ...base, type, assetId: null, cornerRadius: 0 };
+    case 'VECTOR':
+      return { ...base, type, viewBox: '0 0 100 100', markup: '' };
   }
 }
