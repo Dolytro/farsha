@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { resizeBox, type Handle, effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
 
-type Corner = "nw" | "ne" | "sw" | "se";
 
 type Drag =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }> }
-  | { kind: "resize"; id: string; corner: Corner; wx: number; wy: number; box: Box }
+  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "marquee"; wx: number; wy: number; additive: boolean; base: string[] };
 
@@ -102,7 +101,7 @@ export function Canvas() {
       select(hit ? [hit.id] : []);
       return;
     }
-    const corner = el.dataset.corner as Corner | undefined;
+    const corner = el.dataset.corner as Handle | undefined;
     if (corner && selection[0]) {
       const box = doc.getNode(selection[0])!;
       doc.stopCapturing();
@@ -176,17 +175,8 @@ export function Canvas() {
     if (d.kind === "move") {
       for (const [id, o] of Object.entries(d.origins)) doc.setPosition(id, o.x + dx, o.y + dy);
     } else if (d.kind === "resize") {
-      const b = d.box;
-      const box: Partial<Box> = {};
-      if (d.corner.includes("w")) {
-        box.width = Math.max(1, b.width - dx);
-        box.x = b.x + (b.width - box.width);
-      } else box.width = Math.max(1, b.width + dx);
-      if (d.corner.includes("n")) {
-        box.height = Math.max(1, b.height - dy);
-        box.y = b.y + (b.height - box.height);
-      } else box.height = Math.max(1, b.height + dy);
-      doc.resizeNode(d.id, box);
+      // Shift keeps the ratio, Alt resizes from the centre (Figma).
+      doc.resizeNode(d.id, resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey }));
     } else if (d.kind === "draw") {
       doc.resizeNode(d.id, {
         x: Math.min(d.wx, w.x) - d.px,
@@ -357,7 +347,8 @@ export function Canvas() {
   const editNode = editing ? doc.getNode(editing) : undefined;
   const editBox = editing ? doc.absoluteBox(editing) : undefined;
 
-  const corners: { c: Corner; x: number; y: number }[] = sel
+  const CURSORS: Record<Handle, string> = { n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize", nw: "nwse-resize", se: "nwse-resize", ne: "nesw-resize", sw: "nesw-resize" };
+  const corners: { c: Handle; x: number; y: number }[] = sel
     ? [
         { c: "nw", x: sel.x, y: sel.y },
         { c: "ne", x: sel.x + sel.width, y: sel.y },
@@ -447,6 +438,16 @@ export function Canvas() {
             <g>
               <rect x={sel.x} y={sel.y} width={sel.width} height={sel.height} fill="none" stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />
               {selection.length === 1 && !devMode &&
+                // Invisible strips along the four sides, so every edge can be dragged like in Figma.
+                ([
+                  ["n", sel.x, sel.y - hs / 2, sel.width, hs],
+                  ["s", sel.x, sel.y + sel.height - hs / 2, sel.width, hs],
+                  ["w", sel.x - hs / 2, sel.y, hs, sel.height],
+                  ["e", sel.x + sel.width - hs / 2, sel.y, hs, sel.height],
+                ] as [Handle, number, number, number, number][]).map(([h, x, y, w, ht]) => (
+                  <rect key={h} className="canvas__handle" data-corner={h} x={x} y={y} width={w} height={ht} fill="transparent" style={{ cursor: CURSORS[h] }} />
+                ))}
+              {selection.length === 1 && !devMode &&
                 corners.map(({ c, x, y }) => (
                   <rect
                     key={c}
@@ -459,7 +460,7 @@ export function Canvas() {
                     fill="#fff"
                     stroke={ACCENT}
                     strokeWidth={sw}
-                    style={{ cursor: c === "nw" || c === "se" ? "nwse-resize" : "nesw-resize" }}
+                    style={{ cursor: CURSORS[c] }}
                   />
                 ))}
               <g pointerEvents="none" transform={`translate(${sel.x + sel.width / 2} ${sel.y + sel.height + 14 / z})`}>

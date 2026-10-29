@@ -43,7 +43,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Select none / inverse / matching (Ctrl+Shift+A, Ctrl+Alt+A) (menu) | ❌ | P2 |
 | Select children (Enter), select parent (Shift+Enter), Tab to next | ❌ | P2 |
 | Double-click to enter a group; Figma selects the top-level layer first | ❌ | P1 |
-| Resize from all 8 handles, Shift = keep ratio, Alt = from center | 🟡 corners only | P1 |
+| Resize from all 8 handles, Shift = keep ratio, Alt = from center | 🟡 | All 8 handles (sides are invisible strips like Figma), Shift, Alt done. Missing: resizing several layers at once, rotated layers, flipping when dragged past the opposite side, children scaling (constraints) |
 | Rotate handle, rotate with Ctrl+Alt+arrows (menu) | 🟡 numeric only | P1 |
 | Flip horizontal / vertical | ❌ | P2 |
 | Rename (F2 / Ctrl+R / double-click), lock (Ctrl+Shift+L), hide (Ctrl+Shift+H); locked layers cannot be picked or nudged on the canvas | ✅ | |
