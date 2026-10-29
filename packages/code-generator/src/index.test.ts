@@ -66,6 +66,14 @@ describe("declarations", () => {
     expect(rad.background).toContain("radial-gradient(circle, #ff0000 0%");
   });
 
+  it("writes image fills as CSS backgrounds", () => {
+    const base = { ...defaultsFor("RECTANGLE"), id: "i", parentId: null, orderKey: "a0" };
+    const d = (scaleMode: "FILL" | "FIT" | "STRETCH") => Object.fromEntries(declarations({ ...base, fills: [{ type: "IMAGE" as const, assetId: "a", scaleMode, opacity: 1 }] })).background;
+    expect(d("FILL")).toBe("url(image) center / cover no-repeat");
+    expect(d("FIT")).toBe("url(image) center / contain no-repeat");
+    expect(d("STRETCH")).toBe("url(image) 0 0 / 100% 100% no-repeat");
+  });
+
   it("writes blend mode", () => {
     const n = { ...defaultsFor("RECTANGLE"), id: "b", parentId: null, orderKey: "a0", blendMode: "MULTIPLY" as const };
     expect(Object.fromEntries(declarations(n))["mix-blend-mode"]).toBe("multiply");

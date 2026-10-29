@@ -25,6 +25,14 @@ function paint(node: DesignNode, key: "fills"): Paint | undefined {
   return key in node ? (node as unknown as Record<string, Paint[]>)[key]?.[0] : undefined;
 }
 
+/** Data-URL source for image fills: only known raster types, so a shared file can't make an export carry anything else. */
+function imageHref(doc: DesignDoc): (assetId: string) => string | undefined {
+  return (assetId) => {
+    const asset = doc.getAsset(assetId);
+    return asset && IMAGE_TYPES.has(asset.mime) ? `data:${asset.mime};base64,${toBase64(asset.bytes)}` : undefined;
+  };
+}
+
 function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   if (!n.visible) return "";
   const fx = effectsFilter(n);
@@ -44,7 +52,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
 
   switch (n.type) {
     case "ELLIPSE":
-      return `<g transform="${transform}"${opacity}>${shapeMarkup(n)}${kids}</g>`;
+      return `<g transform="${transform}"${opacity}>${shapeMarkup(n, imageHref(doc))}${kids}</g>`;
     case "TEXT": {
       const anchor = n.textAlign === "CENTER" ? ' text-anchor="middle"' : n.textAlign === "RIGHT" ? ' text-anchor="end"' : "";
       const x = n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0;
@@ -54,7 +62,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       const clipId = `clip-${n.id}`;
       clipIds.push(clipId);
       const clip = n.clipsContent ? ` clip-path="url(#${clipId})"` : "";
-      return `<g transform="${transform}"${opacity}><clipPath id="${clipId}">${shapeGeometry(n, "")}</clipPath>${shapeMarkup(n)}<g${clip}>${kids}</g></g>`;
+      return `<g transform="${transform}"${opacity}><clipPath id="${clipId}">${shapeGeometry(n, "")}</clipPath>${shapeMarkup(n, imageHref(doc))}<g${clip}>${kids}</g></g>`;
     }
     case "IMAGE": {
       const asset = n.assetId ? doc.getAsset(n.assetId) : undefined;
@@ -66,7 +74,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     case "VECTOR":
       return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(n.height)}" viewBox="${esc(n.viewBox)}" overflow="visible">${n.markup}</svg></g>`;
     case "RECTANGLE":
-      return `<g transform="${transform}"${opacity}>${shapeMarkup(n)}${kids}</g>`;
+      return `<g transform="${transform}"${opacity}>${shapeMarkup(n, imageHref(doc))}${kids}</g>`;
     default:
       return `<g transform="${transform}"${opacity}>${kids}</g>`;
   }

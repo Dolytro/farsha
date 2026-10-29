@@ -285,7 +285,7 @@ export function Canvas() {
       return (
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
-          <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n) }} />
+          <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n, (id) => assetUrl(doc, id)) }} />
           {kids}
         </g>
       );
@@ -340,7 +340,7 @@ export function Canvas() {
     return (
       <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
-        <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n) }} />
+        <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n, (id) => assetUrl(doc, id)) }} />
         {isFrame ? (
           <>
             <clipPath id={`clip-${n.id}`} dangerouslySetInnerHTML={{ __html: shapeGeometry(n, "") }} />
