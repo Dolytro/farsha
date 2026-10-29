@@ -1,5 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { DesignNode, NodeType } from "@canvylo/types";
+import { svgToClip } from "./svg-import";
 
 /** Prefix on the clipboard text so Canvylo can tell its own payload from ordinary text. */
 export const CLIP_PREFIX = "canvylo:";
@@ -163,6 +164,16 @@ export function pasteReplace(doc: DesignDoc, payload: ClipPayload, selection: st
   doc.deleteNode(node.id);
   doc.stopCapturing();
   return ids;
+}
+
+/** SVG text becomes a frame of native shapes and vectors, centred on (cx, cy). One undo step. */
+export function pasteSvg(doc: DesignDoc, svg: string, parentId: string, cx: number, cy: number): string[] {
+  const clip = svgToClip(svg);
+  if (!clip) return [];
+  doc.stopCapturing();
+  const id = create(doc, clip, parentId, cx - Number(clip.props.width) / 2, cy - Number(clip.props.height) / 2);
+  doc.stopCapturing();
+  return id ? [id] : [];
 }
 
 /** Plain text on the clipboard becomes a text layer at (x, y). */
