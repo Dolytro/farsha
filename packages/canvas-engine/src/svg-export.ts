@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import type { Box, DesignNode } from "@canvylo/types";
+import { paintColor, type Box, type DesignNode, type Paint } from "@canvylo/types";
 import { effectsFilter, letterSpacingAttr, shapeMarkup, textBaseline } from "./appearance";
 import { unionBox } from "./measure";
 
@@ -21,9 +21,8 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-function paint(node: DesignNode, key: "fills" | "strokes"): { color: string; opacity: number } | undefined {
-  const list = key in node ? (node as unknown as Record<string, { color: string; opacity: number }[]>)[key] : undefined;
-  return list?.[0];
+function paint(node: DesignNode, key: "fills"): Paint | undefined {
+  return key in node ? (node as unknown as Record<string, Paint[]>)[key]?.[0] : undefined;
 }
 
 function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
@@ -39,7 +38,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   const transform = `translate(${num(n.x)} ${num(n.y)})${n.rotation ? ` rotate(${num(n.rotation)} ${num(n.width / 2)} ${num(n.height / 2)})` : ""}`;
   const opacity = n.opacity !== 1 ? ` opacity="${num(n.opacity)}"` : "";
   const fill = paint(n, "fills");
-  const fillAttrs = fill ? ` fill="${esc(fill.color)}"${fill.opacity !== 1 ? ` fill-opacity="${num(fill.opacity)}"` : ""}` : ' fill="none"';
+  const fillAttrs = fill ? ` fill="${esc(paintColor(fill))}"${fill.opacity !== 1 ? ` fill-opacity="${num(fill.opacity)}"` : ""}` : ' fill="none"';
   const kids = doc.children(n.id).map((c) => render(doc, c, clipIds)).join("");
   const radius = "cornerRadius" in n && n.cornerRadius > 0 ? ` rx="${num(n.cornerRadius)}"` : "";
 

@@ -54,6 +54,18 @@ describe("declarations", () => {
     expect(d.filter).toBe("blur(6px)");
   });
 
+  it("writes gradient fills as CSS gradients", () => {
+    const stops = [
+      { position: 0, color: "#ff0000", opacity: 1 },
+      { position: 1, color: "#0000ff", opacity: 0.5 },
+    ];
+    const base = { ...defaultsFor("RECTANGLE"), id: "g", parentId: null, orderKey: "a0" };
+    const lin = Object.fromEntries(declarations({ ...base, fills: [{ type: "GRADIENT_LINEAR" as const, angle: 0, opacity: 1, stops }] }));
+    expect(lin.background).toBe("linear-gradient(90deg, #ff0000 0%, rgba(0, 0, 255, 0.5) 100%)");
+    const rad = Object.fromEntries(declarations({ ...base, fills: [{ type: "GRADIENT_RADIAL" as const, angle: 0, opacity: 1, stops }] }));
+    expect(rad.background).toContain("radial-gradient(circle, #ff0000 0%");
+  });
+
   it("uses a round radius for ellipses", () => {
     expect(Object.fromEntries(declarations({ ...defaultsFor("ELLIPSE"), id: "e", parentId: null, orderKey: "a0" }))["border-radius"]).toBe("50%");
   });

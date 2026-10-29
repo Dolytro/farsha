@@ -16,7 +16,22 @@ export interface SolidPaint {
   opacity: number;
 }
 
-export type Paint = SolidPaint;
+export interface GradientStop {
+  /** 0..1 along the gradient line */
+  position: number;
+  color: string;
+  opacity: number;
+}
+
+export interface GradientPaint {
+  type: 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL';
+  stops: GradientStop[];
+  /** Degrees; 0 = left to right, 90 = top to bottom. Ignored by radial gradients. */
+  angle: number;
+  opacity: number;
+}
+
+export type Paint = SolidPaint | GradientPaint;
 
 /** Where a stroke sits relative to the shape edge (Figma: Inside, Center, Outside). */
 export type StrokeAlign = 'INSIDE' | 'CENTER' | 'OUTSIDE';
@@ -172,4 +187,14 @@ export interface Box {
   y: number;
   width: number;
   height: number;
+}
+
+/** Single representative colour of a paint: the colour itself, or a gradient's first stop. */
+export function paintColor(p: Paint): string {
+  return p.type === 'SOLID' ? p.color : (p.stops[0]?.color ?? '#000000');
+}
+
+/** Opacity of the paint as a whole (a gradient's per-stop opacities are separate). */
+export function paintOpacity(p: Paint): number {
+  return p.opacity;
 }

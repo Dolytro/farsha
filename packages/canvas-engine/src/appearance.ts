@@ -1,4 +1,4 @@
-import type { DesignNode, Effect } from "@canvylo/types";
+import { paintColor, type DesignNode, type Effect, type GradientPaint } from "@canvylo/types";
 
 /**
  * SVG markup for strokes and effects, shared by the canvas and by SVG/PNG export.
@@ -68,13 +68,18 @@ function geometry(n: DesignNode, extra: string): string {
 export function shapeMarkup(n: DesignNode): string {
   const fill = "fills" in n ? n.fills[0] : undefined;
   const stroke = "strokes" in n ? n.strokes[0] : undefined;
-  const fillAttrs = fill ? ` fill="${hex(fill.color)}" fill-opacity="${unit(fill.opacity)}"` : ' fill="none"';
-  let out = geometry(n, fillAttrs);
+  const gradientId = `gf-${safeId(n.id)}`;
+  const fillAttrs = !fill
+    ? ' fill="none"'
+    : fill.type === "SOLID"
+      ? ` fill="${hex(fill.color)}" fill-opacity="${unit(fill.opacity)}"`
+      : ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
+  let out = (fill && fill.type !== "SOLID" ? gradientDef(gradientId, fill) : "") + geometry(n, fillAttrs);
   if (!stroke || !("strokeWidth" in n)) return out;
 
   const w = Math.max(0, n.strokeWidth);
   const id = safeId(n.id);
-  const base = ` fill="none" stroke="${hex(stroke.color)}" stroke-opacity="${unit(stroke.opacity)}"`;
+  const base = ` fill="none" stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}"`;
   const align = "strokeAlign" in n && n.strokeAlign ? n.strokeAlign : "CENTER";
   if (align === "INSIDE") {
     out += `<clipPath id="sc-${id}">${geometry(n, "")}</clipPath>` + geometry(n, `${base} stroke-width="${num(w * 2)}" clip-path="url(#sc-${id})"`);
@@ -97,4 +102,18 @@ export function textBaseline(n: { fontSize: number; lineHeight: number | "AUTO" 
 /** `letter-spacing` attribute text for a TEXT layer ("" when there is none). */
 export function letterSpacingAttr(n: { letterSpacing: number }): string {
   return n.letterSpacing && Number.isFinite(n.letterSpacing) ? ` letter-spacing="${num(n.letterSpacing)}"` : "";
+}
+
+/** `<linearGradient>` / `<radialGradient>` for a gradient fill, in bounding-box units. */
+export function gradientDef(id: string, p: GradientPaint): string {
+  const stops = [...p.stops]
+    .sort((a, b) => a.position - b.position)
+    .map((s) => `<stop offset="${unit(s.position, 0)}" stop-color="${hex(s.color)}" stop-opacity="${unit(s.opacity)}"/>`)
+    .join("");
+  if (p.type === "GRADIENT_RADIAL") return `<radialGradient id="${id}" cx="0.5" cy="0.5" r="0.5">${stops}</radialGradient>`;
+  const a = ((Number.isFinite(p.angle) ? p.angle : 0) * Math.PI) / 180;
+  const dx = Math.cos(a) / 2;
+  const dy = Math.sin(a) / 2;
+  const f = (v: number) => String(Math.round(v * 1000) / 1000);
+  return `<linearGradient id="${id}" x1="${f(0.5 - dx)}" y1="${f(0.5 - dy)}" x2="${f(0.5 + dx)}" y2="${f(0.5 + dy)}">${stops}</linearGradient>`;
 }

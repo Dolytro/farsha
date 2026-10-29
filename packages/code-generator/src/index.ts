@@ -1,4 +1,4 @@
-import type { DesignNode } from "@canvylo/types";
+import { paintColor, type DesignNode, type Paint } from "@canvylo/types";
 
 export type Language = "css" | "html" | "react" | "tailwind";
 export type Decl = [prop: string, value: string];
@@ -12,6 +12,16 @@ export function toRgba(hex: string, opacity = 1): string {
   const v = parseInt(m[1]!, 16);
   const [r, g, b] = [(v >> 16) & 255, (v >> 8) & 255, v & 255];
   return opacity >= 1 ? `#${m[1]!.toLowerCase()}` : `rgba(${r}, ${g}, ${b}, ${Math.round(opacity * 100) / 100})`;
+}
+
+/** CSS background value of a paint (solid colour or a linear/radial gradient). */
+export function paintCss(p: Paint): string {
+  if (p.type === "SOLID") return toRgba(p.color, p.opacity);
+  const stops = [...p.stops]
+    .sort((a, b) => a.position - b.position)
+    .map((s) => `${toRgba(s.color, s.opacity * p.opacity)} ${Math.round(s.position * 100)}%`)
+    .join(", ");
+  return p.type === "GRADIENT_RADIAL" ? `radial-gradient(circle, ${stops})` : `linear-gradient(${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
 }
 
 /** Computed style of one node as ordered CSS declarations. Children of a parent are placed absolutely. */
@@ -34,7 +44,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
 
   if (node.type === "TEXT") {
     const fill = node.fills[0];
-    if (fill) d.push(["color", toRgba(fill.color, fill.opacity)]);
+    if (fill) d.push(["color", toRgba(paintColor(fill), fill.opacity)]);
     d.push(["font-family", node.fontFamily], ["font-size", px(node.fontSize)], ["font-weight", String(node.fontWeight)]);
     d.push(["line-height", node.lineHeight === "AUTO" ? "normal" : px(node.lineHeight)]);
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
@@ -43,11 +53,11 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     return d;
   }
 
-  if ("fills" in node && node.fills[0]) d.push(["background", toRgba(node.fills[0].color, node.fills[0].opacity)]);
+  if ("fills" in node && node.fills[0]) d.push(["background", paintCss(node.fills[0])]);
   if (node.type === "ELLIPSE") d.push(["border-radius", "50%"]);
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
   if ("strokes" in node && node.strokes[0]) {
-    d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${toRgba(node.strokes[0].color, node.strokes[0].opacity)}`]);
+    d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity)}`]);
   }
   if (node.type === "FRAME" && node.clipsContent) d.push(["overflow", "hidden"]);
   effectDecls();
