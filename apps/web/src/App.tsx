@@ -4,6 +4,7 @@ import { Canvas } from "./components/Canvas";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
+import { adjacentPage } from "./pages";
 import { toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
@@ -181,7 +182,11 @@ export function App() {
       // The browser's paste event doesn't say which modifiers were held, so note them here.
       if (mod && key === "v") armPasteMode(e.shiftKey ? (e.altKey ? "replace" : "over") : "offset");
 
-      if (mod && ["+", "=", "-", "_", "0"].includes(key)) {
+      if ((key === "pageup" || key === "pagedown") && !mod && !s.viewer) {
+        // Figma: Page Up / Page Down switch to the previous / next page.
+        e.preventDefault();
+        s.setPage(adjacentPage(doc, s.pageId, key === "pagedown" ? 1 : -1));
+      } else if (mod && ["+", "=", "-", "_", "0"].includes(key)) {
         // Ctrl +/-/0 would zoom the whole browser page; zoom the canvas instead (like Figma).
         e.preventDefault();
         s.setViewport(zoomBy(s.viewport, key === "0" ? 1 : s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));

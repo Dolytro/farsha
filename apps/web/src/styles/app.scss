@@ -911,3 +911,40 @@ body {
     font-size: 11px;
   }
 }
+
+/* ---- pages list ---- */
+.pages {
+  max-height: 140px;
+  margin: 0 0 6px;
+  padding: 0 8px;
+  overflow: auto;
+  list-style: none;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: default;
+
+    &:hover {
+      background: var(--c-hover);
+    }
+
+    &--current {
+      background: var(--c-hover);
+      font-weight: 600;
+    }
+
+    &:hover .layers__toggle {
+      opacity: 1;
+    }
+  }
+}

@@ -62,6 +62,8 @@ interface EditorState {
   setDevMode: (on: boolean) => void;
   setTool: (t: Tool) => void;
   select: (ids: string[]) => void;
+  /** Switch the open page; each page remembers its own pan and zoom. */
+  setPage: (id: string) => void;
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
   setDrive: (patch: Partial<DriveState>) => void;
@@ -70,6 +72,9 @@ interface EditorState {
   loadDoc: (doc: DesignDoc) => void;
 }
 
+const DEFAULT_VIEWPORT: Viewport = { x: 60, y: 80, zoom: 0.5 };
+/** Last pan and zoom of each page, by page id. */
+const pageViews = new Map<string, Viewport>();
 let unsubscribe: (() => void) | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -83,7 +88,7 @@ export const useEditor = create<EditorState>((set) => ({
   loadState: viewer ? "loading" : "ready",
   loadError: null,
   selection: [],
-  viewport: { x: 60, y: 80, zoom: 0.5 },
+  viewport: DEFAULT_VIEWPORT,
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   renaming: null,
@@ -99,6 +104,12 @@ export const useEditor = create<EditorState>((set) => ({
   setDevMode: (devMode) => set((s) => (s.viewer ? s : { devMode, tool: "select" })),
   setTool: (tool) => set({ tool }),
   select: (selection) => set({ selection }),
+  setPage: (id) =>
+    set((s) => {
+      if (id === s.pageId || !s.doc.hasNode(id)) return s;
+      pageViews.set(s.pageId, s.viewport);
+      return { pageId: id, selection: [], menu: null, renaming: null, viewport: pageViews.get(id) ?? DEFAULT_VIEWPORT };
+    }),
   setViewport: (viewport) => set({ viewport }),
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setDrive: (patch) => set((s) => ({ drive: { ...s.drive, ...patch } })),
@@ -106,6 +117,7 @@ export const useEditor = create<EditorState>((set) => ({
   loadDoc: (doc) => {
     unsubscribe?.();
     unsubscribe = doc.subscribe(() => useEditor.setState((s) => ({ version: s.version + 1 })));
+    pageViews.clear();
     set((s) => ({ doc, pageId: doc.pages()[0]!.id, selection: [], tool: "select", version: s.version + 1 }));
   },
 }));
