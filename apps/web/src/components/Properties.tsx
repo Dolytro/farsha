@@ -4,20 +4,33 @@ import { DevPanel } from "./DevPanel";
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
 export function Properties() {
-  const { doc, selection, viewport, setViewport, devMode, setDevMode } = useEditor();
+  const { doc, selection, viewport, setViewport, devMode, setDevMode, viewer, setShareOpen } = useEditor();
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
 
   const header = (
     <header className="props__header">
-      <div className="props__tabs">
-        <button className={`props__tab${devMode ? "" : " props__tab--active"}`} onClick={() => setDevMode(false)}>Design</button>
-        <button className={`props__tab${devMode ? " props__tab--active" : ""}`} onClick={() => setDevMode(true)} title="Dev Mode (Shift+D)">Dev</button>
-        <span className="props__tab props__tab--disabled" title="Coming in Phase 5">Prototype</span>
+      {viewer ? (
+        <div className="props__tabs">
+          <span className="props__tab props__tab--active">{viewer === "inspect" ? "Inspect" : "View only"}</span>
+        </div>
+      ) : (
+        <div className="props__tabs">
+          <button className={`props__tab${devMode ? "" : " props__tab--active"}`} onClick={() => setDevMode(false)}>Design</button>
+          <button className={`props__tab${devMode ? " props__tab--active" : ""}`} onClick={() => setDevMode(true)} title="Dev Mode (Shift+D)">Dev</button>
+          <span className="props__tab props__tab--disabled" title="Coming in Phase 5">Prototype</span>
+        </div>
+      )}
+      <div className="props__actions">
+        {!viewer && (
+          <button className="props__share" onClick={() => setShareOpen(true)}>
+            Share
+          </button>
+        )}
+        <button className="props__zoom" title="Reset zoom to 100%" onClick={() => setViewport({ ...viewport, zoom: 1 })}>
+          {Math.round(viewport.zoom * 100)}%
+        </button>
       </div>
-      <button className="props__zoom" title="Reset zoom to 100%" onClick={() => setViewport({ ...viewport, zoom: 1 })}>
-        {Math.round(viewport.zoom * 100)}%
-      </button>
     </header>
   );
 
@@ -25,7 +38,7 @@ export function Properties() {
     return (
       <aside className="props">
         {header}
-        <DevPanel />
+        {viewer === "view" ? <p className="props__empty">View only. Ask the owner for an Inspect link to see measurements and code.</p> : <DevPanel />}
       </aside>
     );
   }

@@ -25,7 +25,7 @@ const DESIGN_ICON = icon(
 const DEV_ICON = icon(<path d="M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5M9 3.5l-2 9" />);
 
 export function Toolbar() {
-  const { tool, setTool, devMode, setDevMode } = useEditor();
+  const { tool, setTool, devMode, setDevMode, viewer } = useEditor();
   return (
     <div className="toolbar" role="toolbar" aria-label="Tools">
       <div className="toolbar__group">
@@ -42,7 +42,7 @@ export function Toolbar() {
           </button>
         ))}
       </div>
-      <div className="toolbar__group toolbar__group--modes">
+      {!viewer && <div className="toolbar__group toolbar__group--modes">
         <button
           className={`toolbar__btn toolbar__btn--mode${devMode ? "" : " toolbar__btn--on"}`}
           onClick={() => setDevMode(false)}
@@ -61,7 +61,7 @@ export function Toolbar() {
         >
           {DEV_ICON}
         </button>
-      </div>
+      </div>}
     </div>
   );
 }

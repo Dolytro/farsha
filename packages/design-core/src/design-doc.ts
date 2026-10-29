@@ -50,6 +50,15 @@ export class DesignDoc {
     if (options.init !== false && !this.meta.has('rootId')) this.initialise();
   }
 
+  /** Rebuild a document from bytes produced by `encodeState()`. */
+  static fromState(update: Uint8Array): DesignDoc {
+    const ydoc = new Y.Doc();
+    Y.applyUpdate(ydoc, update, 'canvylo:remote');
+    const doc = new DesignDoc(ydoc, { init: false });
+    if (!doc.rootId) throw new Error('Not a Canvylo file');
+    return doc;
+  }
+
   private initialise(): void {
     this.ydoc.transact(() => {
       const rootId = nanoid();

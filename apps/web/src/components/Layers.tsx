@@ -1,11 +1,12 @@
 import type { ReactElement } from "react";
 import type { DesignNode } from "@canvylo/types";
 import { useEditor } from "../store";
+import { DriveMenu } from "./DriveMenu";
 
 const ICONS: Record<string, string> = { FRAME: "#", GROUP: "▤", RECTANGLE: "▭", ELLIPSE: "◯", TEXT: "T", IMAGE: "▨" };
 
 export function Layers() {
-  const { doc, pageId, selection, select } = useEditor();
+  const { doc, pageId, selection, select, viewer } = useEditor();
   useEditor((s) => s.version);
   const pageName = doc.getNode(pageId)?.name ?? "Page 1";
 
@@ -37,10 +38,13 @@ export function Layers() {
     <aside className="layers">
       <header className="layers__header">
         <strong className="layers__brand">Canvylo</strong>
-        <span className="layers__actions">
-          <button className="icon-btn" title="Undo (Ctrl+Z)" onClick={() => doc.undo()}>↶</button>
-          <button className="icon-btn" title="Redo (Ctrl+Shift+Z)" onClick={() => doc.redo()}>↷</button>
-        </span>
+        {!viewer && (
+          <span className="layers__actions">
+            <DriveMenu />
+            <button className="icon-btn" title="Undo (Ctrl+Z)" onClick={() => doc.undo()}>↶</button>
+            <button className="icon-btn" title="Redo (Ctrl+Shift+Z)" onClick={() => doc.redo()}>↷</button>
+          </span>
+        )}
       </header>
       <h2 className="panel-title">Pages</h2>
       <div className="layers__page">{pageName}</div>

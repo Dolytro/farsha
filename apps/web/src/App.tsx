@@ -4,12 +4,29 @@ import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { groupSelection, reorderSelection, ungroupSelection, zoomBy, zoomFit } from "./actions";
-import { useEditor, type Tool } from "./store";
+import { ShareDialog } from "./components/ShareDialog";
+import { loadShared, startAutosave } from "./drive/session";
+import { route, useEditor, type Tool } from "./store";
 
 const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text" };
 
 export function App() {
-  const devMode = useEditor((s) => s.devMode);
+  const loadState = useEditor((s) => s.loadState);
+  const loadError = useEditor((s) => s.loadError);
+
+  // Shared link: load the file once. Editor: autosave to Drive while signed in.
+  useEffect(() => {
+    if (route.kind === "viewer") {
+      void loadShared(route.fileId).then(() => {
+        const s = useEditor.getState();
+        const v = zoomFit(s.doc, s.pageId, []);
+        if (v) s.setViewport(v);
+      });
+      return;
+    }
+    return startAutosave();
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
@@ -86,8 +103,14 @@ export function App() {
       <div className="workspace">
         <Canvas />
         <Toolbar />
+        {loadState !== "ready" && (
+          <div className="loading" role="status">
+            {loadState === "loading" ? "Loading design…" : (loadError ?? "Couldn't open this design.")}
+          </div>
+        )}
       </div>
       <Properties />
+      <ShareDialog />
     </div>
   );
 }
