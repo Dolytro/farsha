@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { driveConfigured, getToken } from "../drive/google";
 import { listFiles, type DriveFile } from "../drive/drive";
-import { connect, disconnect, newFile, openFile, restoreSession, save } from "../drive/session";
+import { connect, disconnect, newFile, openFile, save } from "../drive/session";
 import { useEditor, type SaveStatus } from "../store";
 
 const STATUS: Record<SaveStatus, string> = {
@@ -17,10 +17,6 @@ export function DriveMenu() {
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<DriveFile[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
-
-  useEffect(() => {
-    void restoreSession();
-  }, []);
 
   useEffect(() => {
     if (!open || !drive.user) return;

@@ -3,7 +3,7 @@ import { DesignDoc } from "@canvylo/design-core";
 import type { Viewport } from "@canvylo/canvas-engine";
 import type { DriveUser } from "./drive/drive";
 import { parseRoute, type ViewerMode } from "./route";
-import { seedThemeForest } from "./seed/themeforest";
+import { seedWelcome } from "./seed/welcome";
 
 export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text";
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "needs-auth";
@@ -16,7 +16,7 @@ const viewer: ViewerMode | null = route.kind === "viewer" ? route.mode : null;
 function initialDoc(): DesignDoc {
   const doc = new DesignDoc();
   if (!viewer) {
-    seedThemeForest(doc, doc.pages()[0]!.id);
+    seedWelcome(doc, doc.pages()[0]!.id);
     doc.clearHistory();
   }
   return doc;
@@ -25,6 +25,8 @@ function initialDoc(): DesignDoc {
 const firstDoc = initialDoc();
 
 interface DriveState {
+  /** True once the stored Google session has been checked (avoids a login-screen flash). */
+  checked: boolean;
   user: DriveUser | null;
   fileId: string | null;
   fileName: string;
@@ -71,8 +73,8 @@ export const useEditor = create<EditorState>((set) => ({
   loadState: viewer ? "loading" : "ready",
   loadError: null,
   selection: [],
-  viewport: { x: 40, y: 80, zoom: 0.28 },
-  drive: { user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
+  viewport: { x: 60, y: 80, zoom: 0.5 },
+  drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   setDevMode: (devMode) => set((s) => (s.viewer ? s : { devMode, tool: "select" })),
   setTool: (tool) => set({ tool }),

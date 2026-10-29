@@ -91,8 +91,8 @@ export function ShareDialog() {
                 <div className="modal__row">
                   <span className="modal__label">Link opens in</span>
                   <select className="modal__select" value={mode} onChange={(e) => setMode(e.target.value as ViewerMode)}>
-                    <option value="view">View only</option>
-                    <option value="inspect">Inspect (Dev Mode + code)</option>
+                    <option value="view">View only (public)</option>
+                    <option value="inspect">Inspect (Google sign-in required)</option>
                   </select>
                 </div>
                 <div className="modal__row">
@@ -102,7 +102,7 @@ export function ShareDialog() {
                   </button>
                 </div>
                 <p className="modal__hint">
-                  People with the link can look at and inspect this design, but can't change your file. Your latest save is what they see. Turn the checkbox off to stop sharing.
+                  Anyone with the link can view this design without signing in. Inspect links show measurements and code only after the visitor signs in with Google. Nobody can change your file. They see your latest save. Turn the checkbox off to stop sharing.
                 </p>
               </>
             )}

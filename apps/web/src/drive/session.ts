@@ -29,12 +29,17 @@ export function disconnect(): void {
 
 /** Restore the signed-in user after a page reload while the token is still valid. */
 export async function restoreSession(): Promise<void> {
+  const { setDrive } = useEditor.getState();
   const t = getToken();
-  if (!t) return;
+  if (!t) {
+    setDrive({ checked: true });
+    return;
+  }
   try {
-    useEditor.getState().setDrive({ user: await getUser(t) });
+    setDrive({ user: await getUser(t), checked: true });
   } catch {
     signOut();
+    setDrive({ checked: true });
   }
 }
 
@@ -80,7 +85,17 @@ export function newFile(): void {
 export async function loadShared(fileId: string): Promise<void> {
   const { loadDoc, setLoad } = useEditor.getState();
   try {
-    loadDoc(DesignDoc.fromState(await downloadFile(fileId, getToken())));
+    // Link-shared files are public: read them with the API key. A drive.file token can only
+    // read files this app created, so it is just a fallback for the owner's own unshared files.
+    let bytes: Uint8Array;
+    try {
+      bytes = await downloadFile(fileId, null);
+    } catch (e) {
+      const token = getToken();
+      if (!token || !(e instanceof DriveError) || (e.status !== 403 && e.status !== 404)) throw e;
+      bytes = await downloadFile(fileId, token);
+    }
+    loadDoc(DesignDoc.fromState(bytes));
     setLoad("ready");
   } catch (e) {
     const notFound = e instanceof DriveError && (e.status === 403 || e.status === 404);

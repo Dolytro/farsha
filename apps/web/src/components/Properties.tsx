@@ -1,10 +1,12 @@
 import { useEditor } from "../store";
+import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
 
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
 export function Properties() {
   const { doc, selection, viewport, setViewport, devMode, setDevMode, viewer, setShareOpen } = useEditor();
+  const signedIn = useEditor((s) => s.drive.user !== null);
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
 
@@ -38,7 +40,18 @@ export function Properties() {
     return (
       <aside className="props">
         {header}
-        {viewer === "view" ? <p className="props__empty">View only. Ask the owner for an Inspect link to see measurements and code.</p> : <DevPanel />}
+        {viewer === "view" ? (
+          <p className="props__empty">View only. Ask the owner for an Inspect link to see measurements and code.</p>
+        ) : viewer === "inspect" && !signedIn ? (
+          <div className="props__gate">
+            <p>Inspect shows measurements, colors and code. Sign in with Google to use it.</p>
+            <button className="props__share" onClick={() => void connect()}>
+              Sign in with Google
+            </button>
+          </div>
+        ) : (
+          <DevPanel />
+        )}
       </aside>
     );
   }

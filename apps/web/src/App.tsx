@@ -1,11 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { LoginScreen } from "./components/LoginScreen";
 import { Canvas } from "./components/Canvas";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { groupSelection, reorderSelection, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { ShareDialog } from "./components/ShareDialog";
-import { loadShared, startAutosave } from "./drive/session";
+import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
 
 const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text" };
@@ -13,6 +14,23 @@ const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rec
 export function App() {
   const loadState = useEditor((s) => s.loadState);
   const loadError = useEditor((s) => s.loadError);
+  const signedIn = useEditor((s) => s.drive.user !== null);
+  const authChecked = useEditor((s) => s.drive.checked);
+  const [offline, setOffline] = useState(false);
+
+  useEffect(() => {
+    void restoreSession();
+  }, []);
+
+  // Browser zoom (Ctrl + wheel / pinch) must never scale the whole page. The canvas
+  // handles its own zoom, so swallow the browser's version everywhere else.
+  useEffect(() => {
+    const block = (e: WheelEvent) => {
+      if (e.ctrlKey) e.preventDefault();
+    };
+    window.addEventListener("wheel", block, { passive: false });
+    return () => window.removeEventListener("wheel", block);
+  }, []);
 
   // Shared link: load the file once. Editor: autosave to Drive while signed in.
   useEffect(() => {
@@ -31,12 +49,17 @@ export function App() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.tagName === "INPUT" || t.tagName === "TEXTAREA") return;
+      if (document.querySelector(".login")) return;
       const s = useEditor.getState();
       const { doc, selection } = s;
       const mod = e.ctrlKey || e.metaKey;
       const key = e.key.toLowerCase();
 
-      if (e.shiftKey && !mod && key === "d") {
+      if (mod && ["+", "=", "-", "_", "0"].includes(key)) {
+        // Ctrl +/-/0 would zoom the whole browser page; zoom the canvas instead (like Figma).
+        e.preventDefault();
+        s.setViewport(zoomBy(s.viewport, key === "0" ? 1 : s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
+      } else if (e.shiftKey && !mod && key === "d") {
         s.setDevMode(!s.devMode);
       } else if (e.shiftKey && !mod && ["Digit0", "Digit1", "Digit2"].includes(e.code)) {
         // Figma view shortcuts: Shift+0 = 100%, Shift+1 = fit all, Shift+2 = fit selection.
@@ -96,6 +119,12 @@ export function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Shared links are public and never ask for sign-in. The editor requires Google sign-in.
+  if (route.kind === "editor" && !offline) {
+    if (!authChecked) return <div className="loading" role="status">Loading…</div>;
+    if (!signedIn) return <LoginScreen onSkip={() => setOffline(true)} />;
+  }
 
   return (
     <div className="editor">

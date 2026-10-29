@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent, type ReactElement, type WheelEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import type { Box, DesignNode, NodeType } from "@canvylo/types";
 import { hitTest, measure, screenToWorld, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { useEditor, type Tool } from "../store";
@@ -31,7 +31,8 @@ const intersects = (a: Box, b: Box) =>
   a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 
 export function Canvas() {
-  const { doc, pageId, selection, select, viewport, setViewport, tool, setTool, devMode } = useEditor();
+  const { doc, pageId, selection, select, viewport, setViewport, tool, setTool, devMode, viewer } = useEditor();
+  const signedIn = useEditor((s) => s.drive.user !== null);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -209,14 +210,21 @@ export function Canvas() {
     }
   };
 
-  const onWheel = (e: WheelEvent) => {
-    const r = svgRef.current!.getBoundingClientRect();
-    if (e.ctrlKey || e.metaKey) {
-      setViewport(zoomAt(viewport, e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.01)));
-    } else {
-      setViewport({ ...viewport, x: viewport.x - e.deltaX, y: viewport.y - e.deltaY });
-    }
-  };
+  // React's onWheel is passive, so it cannot stop the browser from zooming the whole page on
+  // Ctrl + wheel / trackpad pinch. A native non-passive listener can.
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const onWheel = (e: globalThis.WheelEvent) => {
+      e.preventDefault();
+      const { viewport: v, setViewport: set } = useEditor.getState();
+      const r = el.getBoundingClientRect();
+      if (e.ctrlKey || e.metaKey) set(zoomAt(v, e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.01)));
+      else set({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   const renderNode = (n: DesignNode): ReactElement | null => {
     if (!n.visible) return null;
@@ -270,7 +278,9 @@ export function Canvas() {
   const boxes = selection.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b);
   const sel: Box | undefined = unionBox(boxes);
   const hoverBox = hoverId && !selection.includes(hoverId) ? doc.absoluteBox(hoverId) : undefined;
-  const measurements = altDown && sel && hoverBox ? measure(sel, hoverBox) : [];
+  // Measurements are an inspect feature: public view-only links don't get them.
+  const canInspect = !viewer || (viewer === "inspect" && signedIn);
+  const measurements = canInspect && altDown && sel && hoverBox ? measure(sel, hoverBox) : [];
   const RED = "#f24822";
   const hs = 8 / z;
   const sw = 1 / z;
@@ -304,7 +314,6 @@ export function Canvas() {
         onPointerUp={onPointerUp}
         onPointerLeave={() => setHoverId(null)}
         onDoubleClick={onDoubleClick}
-        onWheel={onWheel}
       >
         <g transform={`translate(${viewport.x} ${viewport.y}) scale(${z})`}>
           {doc.children(pageId).map(renderNode)}
