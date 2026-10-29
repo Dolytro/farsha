@@ -76,11 +76,23 @@ export function Canvas() {
     return screenToWorld(viewport, e.clientX - r.left, e.clientY - r.top);
   };
 
+  // Click target: the whole group, unless a layer inside that group is already selected (then its siblings are reachable).
+  const pick = (x: number, y: number) => {
+    const outer = hitTest(doc, pageId, x, y);
+    const s = selection[0] ? doc.getNode(selection[0]) : undefined;
+    if (outer?.type === "GROUP" && s?.parentId && s.id !== outer.id && doc.isAncestor(outer.id, s.id)) {
+      let cur: DesignNode | undefined = hitTest(doc, pageId, x, y, true);
+      while (cur && cur.parentId !== s.parentId) cur = cur.parentId ? doc.getNode(cur.parentId) : undefined;
+      if (cur) return cur;
+    }
+    return outer;
+  };
+
   const onContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     const w = world(e);
     const labelId = (e.target as SVGElement).dataset?.labelId;
-    const hit = labelId ? doc.getNode(labelId) : hitTest(doc, pageId, w.x, w.y);
+    const hit = labelId ? doc.getNode(labelId) : pick(w.x, w.y);
     // Like Figma: right-clicking a layer outside the selection selects it first.
     if (hit && !selection.includes(hit.id)) select([hit.id]);
     else if (!hit && !e.shiftKey) select([]);
@@ -99,7 +111,7 @@ export function Canvas() {
     if (devMode) {
       // Inspect only: selecting never modifies the design.
       const labelTarget = el.dataset.labelId;
-      const hit = labelTarget ? doc.getNode(labelTarget) : hitTest(doc, pageId, w.x, w.y);
+      const hit = labelTarget ? doc.getNode(labelTarget) : pick(w.x, w.y);
       select(hit ? [hit.id] : []);
       return;
     }
@@ -113,7 +125,7 @@ export function Canvas() {
     const labelId = el.dataset.labelId;
     if (tool === "select") {
       const labelHit = labelId ? doc.getNode(labelId) : undefined;
-      const hit = labelHit ? (labelHit.locked ? undefined : labelHit) : hitTest(doc, pageId, w.x, w.y);
+      const hit = labelHit ? (labelHit.locked ? undefined : labelHit) : pick(w.x, w.y);
       if (!hit) {
         const base = e.shiftKey ? selection : [];
         if (!e.shiftKey) select([]);
@@ -173,7 +185,7 @@ export function Canvas() {
       if (tool === "select") {
         const w = world(e);
         const labelId = (e.target as SVGElement).dataset.labelId;
-        setHoverId(labelId ?? hitTest(doc, pageId, w.x, w.y)?.id ?? null);
+        setHoverId(labelId ?? pick(w.x, w.y)?.id ?? null);
       }
       return;
     }
@@ -267,11 +279,18 @@ export function Canvas() {
   const onDoubleClick = (e: React.MouseEvent) => {
     if (devMode) return;
     const w = world(e);
-    const hit = hitTest(doc, pageId, w.x, w.y);
-    if (hit?.type === "TEXT") {
-      select([hit.id]);
-      setEditing(hit.id);
+    const deep = hitTest(doc, pageId, w.x, w.y, true);
+    if (!deep) return;
+    // Double-clicking a group (or a layer inside one) enters it one level, like Figma.
+    const s = selection[0];
+    let target: DesignNode = deep;
+    if (s && s !== deep.id && doc.isAncestor(s, deep.id)) {
+      while (target.parentId && target.parentId !== s) target = doc.getNode(target.parentId)!;
+    } else if (!s || s === deep.id) {
+      target = deep;
     }
+    select([target.id]);
+    if (target.type === "TEXT") setEditing(target.id);
   };
 
   // React's onWheel is passive, so it cannot stop the browser from zooming the whole page on

@@ -14,6 +14,20 @@ describe("hitTest", () => {
     expect(hitTest(doc, page, 5, 5)).toBeUndefined();
   });
 
+  it("picks the whole outermost group, and the inner layer with deep", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const outer = doc.createNode("GROUP", { parentId: page, props: { x: 0, y: 0, width: 200, height: 100 } });
+    const inner = doc.createNode("GROUP", { parentId: outer, props: { x: 0, y: 0, width: 100, height: 100 } });
+    const rect = doc.createNode("RECTANGLE", { parentId: inner, props: { x: 10, y: 10, width: 50, height: 50 } });
+    const other = doc.createNode("RECTANGLE", { parentId: outer, props: { x: 120, y: 10, width: 50, height: 50 } });
+    expect(hitTest(doc, page, 20, 20)?.id).toBe(outer);
+    expect(hitTest(doc, page, 130, 20)?.id).toBe(outer);
+    expect(hitTest(doc, page, 20, 20, true)?.id).toBe(rect);
+    expect(hitTest(doc, page, 130, 20, true)?.id).toBe(other);
+    expect(inner).not.toBe(outer);
+  });
+
   it("skips hidden and locked nodes", () => {
     const doc = new DesignDoc();
     const page = doc.pages()[0]!.id;
