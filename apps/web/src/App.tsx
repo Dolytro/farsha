@@ -4,7 +4,8 @@ import { Canvas } from "./components/Canvas";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
-import { groupSelection, reorderSelection, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
+import { copyNodes, parseClip, pasteNodes, pasteTarget, pasteText, selectAllIn, topLevelOf } from "./clipboard";
 import { ShareDialog } from "./components/ShareDialog";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
@@ -17,6 +18,9 @@ export function App() {
   const signedIn = useEditor((s) => s.drive.user !== null);
   const authChecked = useEditor((s) => s.drive.checked);
   const [offline, setOffline] = useState(false);
+  // Local testing only: `?nologin` skips the sign-in gate on the dev server. Production builds
+  // have import.meta.env.DEV === false, so this can never open the editor on the live site.
+  const devBypass = import.meta.env.DEV && new URLSearchParams(window.location.search).has("nologin");
 
   useEffect(() => {
     void restoreSession();
@@ -30,6 +34,56 @@ export function App() {
     };
     window.addEventListener("wheel", block, { passive: false });
     return () => window.removeEventListener("wheel", block);
+  }, []);
+
+  // Copy, cut and paste use the browser's clipboard events, so they work with the system
+  // clipboard (and across tabs) without any permission prompt.
+  useEffect(() => {
+    const blocked = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      const editing = t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable;
+      const s = useEditor.getState();
+      return Boolean(editing || s.devMode || s.viewer || document.querySelector(".login"));
+    };
+    const onCopy = (e: ClipboardEvent, cut: boolean) => {
+      if (blocked(e)) return;
+      const { doc, selection, select } = useEditor.getState();
+      const text = copyNodes(doc, selection);
+      if (!text) return;
+      e.clipboardData?.setData("text/plain", text);
+      e.preventDefault();
+      if (cut) {
+        doc.stopCapturing();
+        topLevelOf(doc, selection).forEach((id) => doc.hasNode(id) && doc.deleteNode(id));
+        doc.stopCapturing();
+        select([]);
+      }
+    };
+    const onPaste = (e: ClipboardEvent) => {
+      if (blocked(e)) return;
+      const text = e.clipboardData?.getData("text/plain") ?? "";
+      if (!text) return;
+      const s = useEditor.getState();
+      const parentId = pasteTarget(s.doc, s.selection, s.pageId);
+      const clip = parseClip(text);
+      const at = viewportCenter(s.viewport);
+      const parentBox = s.doc.absoluteBox(parentId);
+      const ids = clip
+        ? pasteNodes(s.doc, clip, parentId)
+        : pasteText(s.doc, text, parentId, at.x - (parentBox && parentId !== s.pageId ? parentBox.x : 0), at.y - (parentBox && parentId !== s.pageId ? parentBox.y : 0));
+      if (ids.length) s.select(ids);
+      e.preventDefault();
+    };
+    const copy = (e: ClipboardEvent) => onCopy(e, false);
+    const cut = (e: ClipboardEvent) => onCopy(e, true);
+    document.addEventListener("copy", copy);
+    document.addEventListener("cut", cut);
+    document.addEventListener("paste", onPaste);
+    return () => {
+      document.removeEventListener("copy", copy);
+      document.removeEventListener("cut", cut);
+      document.removeEventListener("paste", onPaste);
+    };
   }, []);
 
   // Shared link: load the file once. Editor: autosave to Drive while signed in.
@@ -59,6 +113,9 @@ export function App() {
         // Ctrl +/-/0 would zoom the whole browser page; zoom the canvas instead (like Figma).
         e.preventDefault();
         s.setViewport(zoomBy(s.viewport, key === "0" ? 1 : s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
+      } else if (mod && key === "a" && !s.viewer) {
+        e.preventDefault();
+        s.select(selectAllIn(doc, selection, s.pageId));
       } else if (e.shiftKey && !mod && key === "d") {
         s.setDevMode(!s.devMode);
       } else if (e.shiftKey && !mod && ["Digit0", "Digit1", "Digit2"].includes(e.code)) {
@@ -121,7 +178,7 @@ export function App() {
   }, []);
 
   // Shared links are public and never ask for sign-in. The editor requires Google sign-in.
-  if (route.kind === "editor" && !offline) {
+  if (route.kind === "editor" && !offline && !devBypass) {
     if (!authChecked) return <div className="loading" role="status">Loading…</div>;
     if (!signedIn) return <LoginScreen onSkip={() => setOffline(true)} />;
   }

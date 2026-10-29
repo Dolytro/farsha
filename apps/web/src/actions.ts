@@ -73,6 +73,12 @@ export function zoomFit(doc: DesignDoc, pageId: string, selection: string[]): Vi
   return fitBox(box, w, h);
 }
 
+/** Page coordinates of the middle of the visible canvas. */
+export function viewportCenter(v: Viewport): { x: number; y: number } {
+  const { w, h } = canvasSize();
+  return { x: (w / 2 - v.x) / v.zoom, y: (h / 2 - v.y) / v.zoom };
+}
+
 export function zoomBy(v: Viewport, zoom: number): Viewport {
   const { w, h } = canvasSize();
   return zoomTo(v, zoom, w, h);

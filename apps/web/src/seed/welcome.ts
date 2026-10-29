@@ -50,16 +50,17 @@ function welcomeFrame(doc: DesignDoc, page: string) {
   rect(doc, f, "Secondary action", 260, 296, 160, 48, "#ffffff", { r: 10, stroke: LINE });
   text(doc, f, 260, 311, "Open from Drive", 16, 600, INK, 160, "CENTER");
 
-  const cards: [string, string, string][] = [
-    ["Design", "Frames, shapes, text and styles on an infinite canvas.", "#e8f4ff"],
-    ["Inspect", "Dev Mode shows sizes, colors and copy-ready CSS, React and Tailwind.", "#eefbe9"],
-    ["Share", "Send a link. Anyone can view; signed-in teammates can inspect.", "#fff4e5"],
+  // Text boxes don't wrap yet, so each description is written as short lines.
+  const cards: [string, string[], string][] = [
+    ["Design", ["Frames, shapes, text", "and styles on an", "infinite canvas."], "#e8f4ff"],
+    ["Inspect", ["Dev Mode shows sizes,", "colors and copy-ready", "CSS, React, Tailwind."], "#eefbe9"],
+    ["Share", ["Send a link. Anyone", "can view; signed-in", "teammates can inspect."], "#fff4e5"],
   ];
-  cards.forEach(([title, body, tint], i) => {
+  cards.forEach(([title, lines, tint], i) => {
     const x = 64 + i * 312;
     rect(doc, f, `${title} card`, x, 400, 288, 176, tint, { r: 16 });
     text(doc, f, x + 24, 424, title, 22, 700, INK, 240);
-    text(doc, f, x + 24, 464, body, 15, 400, MUTED, 240);
+    lines.forEach((line, j) => text(doc, f, x + 24, 464 + j * 22, line, 15, 400, MUTED, 240));
   });
 }
 
