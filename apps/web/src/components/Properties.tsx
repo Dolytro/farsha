@@ -1,6 +1,7 @@
 import { useEditor } from "../store";
 import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
+import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
 
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
@@ -130,22 +131,7 @@ export function Properties() {
         </div>
       </section>
 
-      {node.type === "TEXT" && (
-        <section className="props__section">
-          <h3 className="props__heading">Typography</h3>
-          <input className="field__input field__input--wide" value={node.characters} onChange={(e) => doc.setText(node.id, { characters: e.target.value })} />
-          <div className="props__grid">
-            <label className="field">
-              <span className="field__label">Size</span>
-              <input className="field__input" type="number" min={1} value={node.fontSize} onChange={(e) => doc.setText(node.id, { fontSize: Math.max(1, Number(e.target.value)) })} />
-            </label>
-            <label className="field">
-              <span className="field__label">Wt</span>
-              <input className="field__input" type="number" step={100} min={100} max={900} value={node.fontWeight} onChange={(e) => doc.setText(node.id, { fontWeight: Number(e.target.value) })} />
-            </label>
-          </div>
-        </section>
-      )}
+      {node.type === "TEXT" && <TypographySection doc={doc} node={node} />}
 
       {paint && (
         <section className="props__section">

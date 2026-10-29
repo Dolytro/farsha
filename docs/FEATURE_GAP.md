@@ -68,7 +68,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Fill | 🟡 | One solid color only. Missing: multiple fills, gradients, image fill, opacity per fill, hex input, styles, variables |
 | Stroke | 🟡 | Color, opacity, weight, position (inside / center / outside) done. Missing: per-side weights, dash, caps, joins, arrowheads, multiple strokes. |
 | Effects | 🟡 | Drop shadow, inner shadow, layer blur (hide / remove / change type) done. Missing: shadow spread, background blur, show-behind, multiple blurs. Shadow offset rotates with a rotated layer. Dev Mode CSS shows outside strokes as an inside border. |
-| Typography | 🟡 | Content, size, weight only. Missing: font family picker, Google Fonts, line height, letter spacing, paragraph spacing, text align (H / V), decoration, case, auto width / height / fixed, truncate, lists, mixed styles inside one text box |
+| Typography | 🟡 | Content, font family (a short built-in list, system fonts only), weight names, size, line height, letter spacing, text align (left / center / right) done. Missing: Google Fonts, paragraph spacing, vertical align, decoration, case, auto width / height / fixed, wrapping and multi-line text, truncate, lists, mixed styles inside one text box |
 | Selection colors | ❌ | |
 | Export | ❌ | PNG / JPG / SVG / PDF, 1x–4x, suffix, export frames to PDF (menu) |
 | Constraints | ❌ | Left / right / top / bottom / center / scale |

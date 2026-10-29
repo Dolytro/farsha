@@ -88,3 +88,13 @@ export function shapeMarkup(n: DesignNode): string {
   }
   return out;
 }
+
+/** Baseline y of a single-line text layer. AUTO line height keeps the baseline at the font size; a fixed one centres the text in it. */
+export function textBaseline(n: { fontSize: number; lineHeight: number | "AUTO" }): number {
+  return n.lineHeight === "AUTO" ? n.fontSize : n.fontSize + (Math.max(0, n.lineHeight) - n.fontSize * 1.2) / 2;
+}
+
+/** `letter-spacing` attribute text for a TEXT layer ("" when there is none). */
+export function letterSpacingAttr(n: { letterSpacing: number }): string {
+  return n.letterSpacing && Number.isFinite(n.letterSpacing) ? ` letter-spacing="${num(n.letterSpacing)}"` : "";
+}

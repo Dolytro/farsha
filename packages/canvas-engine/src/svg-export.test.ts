@@ -74,6 +74,19 @@ describe("exportSvg", () => {
     expect(svg).toContain('font-weight="600"');
   });
 
+  it("exports letter spacing, centred baseline for a fixed line height and alignment", () => {
+    const { doc, text } = setup();
+    doc.setText(text, { letterSpacing: 2, lineHeight: 40, textAlign: "CENTER" });
+    const { svg } = exportSvg(doc, [text])!;
+    expect(svg).toContain('letter-spacing="2"');
+    expect(svg).toContain('text-anchor="middle"');
+    expect(svg).toContain('y="26.4"'); // 16 + (40 - 19.2) / 2
+    doc.setText(text, { letterSpacing: 0, lineHeight: "AUTO" });
+    const auto = exportSvg(doc, [text])!.svg;
+    expect(auto).not.toContain("letter-spacing");
+    expect(auto).toContain('y="16"');
+  });
+
   it("clips frame content and nests children once", () => {
     const { doc, frame, rect } = setup();
     const { svg } = exportSvg(doc, [frame, rect])!; // rect is inside frame: drawn once
