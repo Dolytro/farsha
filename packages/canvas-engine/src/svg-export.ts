@@ -2,6 +2,7 @@ import type { DesignDoc } from "@canvylo/design-core";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@canvylo/types";
 import { effectsFilter, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline } from "./appearance";
 import { unionBox } from "./measure";
+import { approxMeasure, layoutText, type Measure } from "./text";
 
 export interface SvgExport {
   svg: string;
@@ -33,6 +34,9 @@ function imageHref(doc: DesignDoc): (assetId: string) => string | undefined {
   };
 }
 
+/** Text measurer for the export in progress (the browser passes a real one; the default is an estimate). */
+let measure: Measure = approxMeasure;
+
 function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   if (!n.visible) return "";
   const fx = effectsFilter(n);
@@ -56,7 +60,9 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     case "TEXT": {
       const anchor = n.textAlign === "CENTER" ? ' text-anchor="middle"' : n.textAlign === "RIGHT" ? ' text-anchor="end"' : "";
       const x = n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0;
-      return `<g transform="${transform}"${opacity}><text x="${num(x)}" y="${num(textBaseline(n))}"${anchor}${letterSpacingAttr(n)} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs}>${esc(n.characters)}</text></g>`;
+      const { lines, lineHeight } = layoutText(n, measure);
+      const spans = lines.map((l, i) => `<tspan x="${num(x)}" dy="${i ? num(lineHeight) : 0}">${esc(l)}</tspan>`).join("");
+      return `<g transform="${transform}"${opacity}><text x="${num(x)}" y="${num(textBaseline(n))}"${anchor}${letterSpacingAttr(n)} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs} xml:space="preserve">${spans}</text></g>`;
     }
     case "FRAME": {
       const clipId = `clip-${n.id}`;
@@ -84,7 +90,8 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
  * Standalone SVG of the given layers, cropped to their bounding box (the same crop Figma uses for
  * "Copy as SVG" / SVG export). Layers whose ancestor is also listed are drawn once, inside that ancestor.
  */
-export function exportSvg(doc: DesignDoc, ids: string[]): SvgExport | null {
+export function exportSvg(doc: DesignDoc, ids: string[], opts: { measure?: Measure } = {}): SvgExport | null {
+  measure = opts.measure ?? approxMeasure;
   const tops = ids.filter((id) => doc.hasNode(id) && !ids.some((o) => o !== id && doc.isAncestor(o, id)));
   const nodes = tops.map((id) => doc.getNode(id)).filter((n): n is DesignNode => !!n && n.type !== "PAGE" && n.type !== "DOCUMENT" && n.visible);
   const boxes = nodes.map((n) => doc.absoluteBox(n.id)).filter((b): b is Box => !!b);

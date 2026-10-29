@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { resizeBox, snapMove, type Guide, type Handle, effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
+import { canvasMeasure, fitText } from "../text-layout";
 
 
 type Drag =
@@ -193,7 +194,15 @@ export function Canvas() {
       for (const [id, o] of Object.entries(d.origins)) doc.setPosition(id, o.x + dx, o.y + dy);
     } else if (d.kind === "resize") {
       // Shift keeps the ratio, Alt resizes from the centre (Figma).
-      doc.resizeNode(d.id, resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey }));
+      const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
+      doc.resizeNode(d.id, next);
+      const node = doc.getNode(d.id);
+      if (node?.type === "TEXT") {
+        // Figma: dragging the width gives auto height, dragging the height gives a fixed box.
+        if (next.height !== d.box.height) doc.setText(d.id, { textAutoResize: "NONE" });
+        else if (next.width !== d.box.width && (node.textAutoResize ?? "WIDTH_AND_HEIGHT") === "WIDTH_AND_HEIGHT") doc.setText(d.id, { textAutoResize: "HEIGHT" });
+        fitText(doc, d.id);
+      }
     } else if (d.kind === "draw") {
       doc.resizeNode(d.id, {
         x: Math.min(d.wx, w.x) - d.px,
@@ -224,7 +233,12 @@ export function Canvas() {
         doc.resizeNode(d.id, n.type === "TEXT" ? { width: 120, height: 24 } : { width: 100, height: 100 });
       }
       setTool("select");
-      if (n.type === "TEXT") setEditing(d.id);
+      if (n.type === "TEXT") {
+        // Figma: a click makes auto-width text, dragging a box makes auto-height text.
+        if (n.width >= 4 || n.height >= 4) doc.setText(d.id, { textAutoResize: "HEIGHT" });
+        fitText(doc, d.id);
+        setEditing(d.id);
+      }
     }
     doc.stopCapturing();
   };
@@ -296,6 +310,7 @@ export function Canvas() {
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
           <text
+            xmlSpace="preserve"
             x={n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0}
             textAnchor={n.textAlign === "CENTER" ? "middle" : n.textAlign === "RIGHT" ? "end" : "start"}
             y={textBaseline(n)}
@@ -305,7 +320,11 @@ export function Canvas() {
             fontSize={n.fontSize}
             fontWeight={n.fontWeight}
           >
-            {n.characters}
+            {layoutText(n, canvasMeasure).lines.map((line, i) => (
+              <tspan key={i} x={n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0} dy={i ? lineHeightPx(n) : 0}>
+                {line}
+              </tspan>
+            ))}
           </text>
         </g>
       );
@@ -496,23 +515,24 @@ export function Canvas() {
           {marquee && <rect x={marquee.x} y={marquee.y} width={marquee.width} height={marquee.height} fill={ACCENT} fillOpacity={0.08} stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />}
 
           {editing && editNode?.type === "TEXT" && editBox && (
-            <foreignObject x={editBox.x} y={editBox.y} width={Math.max(editBox.width, 160)} height={Math.max(editBox.height, editNode.fontSize * 1.6)}>
-              <input
+            <foreignObject x={editBox.x} y={editBox.y} width={Math.max(editBox.width + 24, 160)} height={Math.max(editBox.height, editNode.fontSize * 1.6) + 8}>
+              <textarea
                 className="canvas__text-edit"
                 autoFocus
+                rows={1}
+                spellCheck={false}
                 value={editNode.characters}
-                style={{ fontSize: editNode.fontSize, fontFamily: editNode.fontFamily, fontWeight: editNode.fontWeight, letterSpacing: editNode.letterSpacing, textAlign: editNode.textAlign.toLowerCase() as "left", color: fillOf(editNode).color }}
+                style={{ fontSize: editNode.fontSize, fontFamily: editNode.fontFamily, fontWeight: editNode.fontWeight, letterSpacing: editNode.letterSpacing, lineHeight: `${lineHeightPx(editNode)}px`, whiteSpace: (editNode.textAutoResize ?? "WIDTH_AND_HEIGHT") === "WIDTH_AND_HEIGHT" ? "pre" : "pre-wrap", textAlign: editNode.textAlign.toLowerCase() as "left", color: fillOf(editNode).color }}
                 onPointerDown={(e) => e.stopPropagation()}
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => {
                   doc.setText(editNode.id, { characters: e.target.value });
-                  // Auto-width until real text measurement lands (Phase 1 text spike).
-                  doc.resizeNode(editNode.id, { width: Math.max(8, e.target.value.length * (editNode.fontSize * 0.56 + editNode.letterSpacing)) });
+                  fitText(doc, editNode.id);
                 }}
                 onBlur={() => setEditing(null)}
                 onKeyDown={(e) => {
                   e.stopPropagation();
-                  if (e.key === "Enter" || e.key === "Escape") setEditing(null);
+                  if (e.key === "Escape") setEditing(null); // Enter adds a new line, like Figma
                 }}
               />
             </foreignObject>

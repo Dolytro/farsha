@@ -151,6 +151,9 @@ export interface EllipseNode extends BaseNode {
 
 export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT';
 
+/** Figma's text resizing: auto width, auto height (wraps at the layer width) or a fixed box. Missing means auto width. */
+export type TextAutoResize = 'WIDTH_AND_HEIGHT' | 'HEIGHT' | 'NONE';
+
 export interface TextNode extends BaseNode {
   type: 'TEXT';
   characters: string;
@@ -160,6 +163,7 @@ export interface TextNode extends BaseNode {
   lineHeight: number | 'AUTO';
   letterSpacing: number;
   textAlign: TextAlign;
+  textAutoResize?: TextAutoResize;
   fills: Paint[];
 }
 
@@ -215,6 +219,7 @@ export interface TextPatch {
   lineHeight?: number | 'AUTO';
   letterSpacing?: number;
   textAlign?: TextAlign;
+  textAutoResize?: TextAutoResize;
 }
 
 export interface Box {
