@@ -48,7 +48,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Flip horizontal / vertical | ❌ | P2 |
 | Rename (F2 / Ctrl+R / double-click), lock (Ctrl+Shift+L), hide (Ctrl+Shift+H); locked layers cannot be picked or nudged on the canvas | ✅ | |
 | Snapping, smart guides, pixel snapping | ❌ | P1 |
-| Align and distribute, Tidy up | ❌ | P1 |
+| Align and distribute, Tidy up | 🟡 | Align (6 modes, Alt+A/H/D/W/V/S, panel row) and distribute spacing (panel buttons, 3+ layers) done. Missing: Tidy up, distribute shortcuts, aligning to the selection when a single layer is on a page |
 | Boolean operations, flatten, outline stroke | ❌ | P3 |
 | Mask (Ctrl+Alt+M), frame selection (Ctrl+Alt+G) | ❌ | P2 |
 | Right-click context menu (Figma items; read-only in Dev Mode; none on view links; submenu is a flat "Copy/Paste as" group) | ✅ | |
@@ -62,7 +62,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 
 | Section | Status | Missing |
 |---|---|---|
-| Position | 🟡 | Alignment row, constraints, rotation handle |
+| Position | 🟡 | Constraints, rotation handle |
 | Layout | 🟡 | **Auto Layout** (direction, gap, padding, wrap), hug / fill / fixed sizing, min / max, layout grids, clip content toggle |
 | Appearance | 🟡 | Independent corner radius done for rectangles and frames (not images). Blend mode (16 modes, no Pass through / Plus darker / Plus lighter) done. Missing: corner smoothing |
 | Fill | 🟡 | Solid, linear and radial gradients (add / remove stops, position, opacity, angle) done. Gradient angle is in bounding-box units, so it skews on non-square layers. Gradient text and strokes show the first stop only; SVG / Figma paste still flatten gradients. Missing: multiple fills, image fill, angular / diamond gradients, handles on canvas, hex input, styles, variables |
