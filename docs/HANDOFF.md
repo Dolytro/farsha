@@ -296,16 +296,23 @@ Done: see the ✅ rows in `docs/FEATURE_GAP.md` (canvas tools, selection, resize
 Dev Mode, Alt measure, Drive save/open/autosave, share links and viewer, login gate, copy/paste family,
 Copy as PNG/CSS/SVG, SVG/Figma/image paste, context menu, rename/lock/hide, layer reorder, pages).
 
+Done since the 4 PM run (each pushed separately, details in docs/FEATURE_GAP.md): stroke position and effects
+(drop / inner shadow, layer blur), text controls, gradient fills, independent corner radius, blend modes,
+align and distribute, resize from all 8 handles (Shift / Alt), snapping and smart guides while moving.
+Shared renderer code for strokes, effects and gradients is `packages/canvas-engine/src/appearance.ts` (canvas and
+SVG export both use it).
+
 Suggested order (each is one feature = build, test, fix, push):
-1. Verify the 4 PM features in the browser and fix anything (context menu edge cases, drag reparent, pages).
-2. **Stroke UI and effects** (stroke color/weight/position, drop shadow, blur) in the Design panel.
-3. **Text controls**: font family, line height, letter spacing, alignment, text wrapping/auto-width, real
-   text measurement (needed for Auto Layout too).
-4. **Gradients and image fills**, independent corner radius, blend mode.
-5. **Auto Layout + constraints**, resizing (hug/fill), then snapping, smart guides, align/distribute, rulers/guides.
-6. Components, variants, styles, variables.
-7. Prototype mode, comments, live collaboration (y-webrtc or a small relay), version history.
-8. Performance: Canvas/WebGL renderer path for thousands of nodes.
+1. Image fills, multiple fills and strokes, hex input.
+2. Text wrapping, multi-line text, auto width / height, real text measurement (needed for Auto Layout).
+3. **Auto Layout + constraints**, resizing (hug / fill), snapping while resizing, equal-spacing guides, rulers and guides.
+4. Components, variants, styles, variables.
+5. Prototype mode, comments, live collaboration (y-webrtc or a small relay), version history.
+6. Performance: Canvas / WebGL renderer path for thousands of nodes.
+
+Browser testing tips added: the Vite watcher on Windows sometimes serves stale modules, so `touch` the changed
+files and reload with a new query string. Synthetic pointer events must go to the `<svg>` (the handlers live there,
+not on `<main>`), and `Element.prototype.setPointerCapture` must be stubbed because the fake pointer id makes it throw.
 
 Known gaps and risks to keep in mind:
 - Hover/click picks the deepest layer; Figma picks the top-level layer first (double-click to enter).
