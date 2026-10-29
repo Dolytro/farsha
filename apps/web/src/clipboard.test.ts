@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { armPasteMode, copyNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteReplace, pasteSvg, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
+import { armPasteMode, copyNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
 
 function setup() {
   const doc = new DesignDoc();
@@ -181,6 +181,25 @@ describe("copy and paste properties", () => {
     pasteProperties(doc, [rect]);
     doc.undo();
     expect(doc.getNode(rect)).toMatchObject({ opacity: before.opacity, fills: (before as { fills: unknown }).fills });
+  });
+});
+
+describe("paste converted layers (Figma)", () => {
+  it("centres a block of layers from another app's coordinates on the target point", () => {
+    const { doc, page } = setup();
+    const clips = [
+      { type: "RECTANGLE" as const, props: { name: "A", x: 15600, y: 7200, width: 100, height: 100 }, children: [] },
+      { type: "RECTANGLE" as const, props: { name: "B", x: 15800, y: 7300, width: 100, height: 100 }, children: [] },
+    ];
+    doc.clearHistory();
+    const ids = pasteClips(doc, clips, page, 500, 400);
+    expect(ids).toHaveLength(2);
+    // block spans x 15600..15900, y 7200..7400 -> centre (15750, 7300), moved to (500, 400)
+    expect(doc.getNode(ids[0]!)).toMatchObject({ x: 350, y: 300 });
+    expect(doc.getNode(ids[1]!)).toMatchObject({ x: 550, y: 400 });
+    doc.undo();
+    expect(ids.every((id) => !doc.hasNode(id))).toBe(true);
+    expect(pasteClips(doc, [], page, 0, 0)).toEqual([]);
   });
 });
 
