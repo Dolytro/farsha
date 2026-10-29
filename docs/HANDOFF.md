@@ -5,7 +5,7 @@ PC can continue exactly where this one stopped. It covers what Canvylo is, how t
 how the code is organised, how to run and test it, how it is deployed, what was decided and why, what is
 done, and what to build next.
 
-Last updated: 2026-10-29. Repo: https://github.com/Dolytro/canvylo (branch `main`).
+Last updated: 2026-10-29 (end of the long autonomous session; see section 11 for exactly where it stopped). Repo: https://github.com/Dolytro/canvylo (branch `main`).
 Live site: https://canvylo.vercel.app
 
 ---
@@ -17,8 +17,8 @@ Live site: https://canvylo.vercel.app
 - No backend: the site is static (Vercel). Designs are saved to the signed-in user's **own Google Drive**
   (`.canvylo` files, Yjs update bytes). Public view links read the Drive file with an API key.
 - The owner wants it to feel **exactly like Figma** so long-time Figma users are not confused.
-- Everything is on `main`, typecheck and all tests pass (116 tests at the time of writing).
-- Next up: see section 11 and `docs/FEATURE_GAP.md`.
+- Everything is on `main`, typecheck and all tests pass (180 tests at the time of writing: web 82, design-core 41, canvas-engine 43, code-generator 14).
+- Next up: **Components** (main component + instances), then styles / variables. See section 11 and `docs/FEATURE_GAP.md`.
 
 **To continue on a new PC:** clone, install, create `apps/web/.env.local`, run the dev server (section 5).
 Then tell Claude Code: "Read docs/HANDOFF.md and CLAUDE.md, then continue with the next feature."
@@ -128,13 +128,20 @@ apps/
       svg-import.ts   SVG text -> layers (allow-list sanitiser)
       images.ts, place-image.ts   image reading, downscaling, asset URLs, placing images
       exporting.ts    Copy as PNG / SVG / CSS
+      local-persist.ts, debounce.ts   working copy autosave to IndexedDB + restore on load
+      text-layout.ts  browser text measurer + fitText (auto width / height of text layers)
+      align.ts, auto-layout-actions.ts   align / distribute, "Add auto layout" (Shift+A)
+      components/     also AlignRow, AppearanceSections (stroke, effects), FillSection, TypographySection,
+                      AutoLayoutSection, ConstraintsSection, Rulers
       context-menu.ts, layers-tree.ts, pages.ts, actions.ts, route.ts   pure logic with tests
       styles/app.scss BEM styles, light Figma-like theme
   api/                placeholder Fastify app (unused; there is no backend by design)
 packages/
   types/              node types (DOCUMENT, PAGE, FRAME, GROUP, RECTANGLE, ELLIPSE, TEXT, IMAGE, VECTOR)
-  design-core/        DesignDoc (Yjs), defaults, tests
-  canvas-engine/      hit-test, viewport/zoom, measure (Alt distances), fit, svg-export
+  design-core/        DesignDoc (Yjs), defaults, auto-layout.ts (layout engine), constraints.ts, tests
+  canvas-engine/      hit-test (groups), viewport/zoom, measure (Alt distances), fit, svg-export,
+                      appearance.ts (stroke / fill / gradient / image / shadow markup shared by canvas and export),
+                      text.ts (wrapping), resize.ts (8 handles), snap.ts (smart guides), ruler.ts
   code-generator/     CSS / HTML / React / Tailwind from a node
   ui/                 placeholder
 docs/                 PLAN.md, FEATURE_GAP.md, DEPLOY.md, HANDOFF.md (this file)
@@ -216,6 +223,25 @@ in event handlers.
 - Login gate: the editor shows `LoginScreen` until signed in. Shared links never ask for sign-in.
 - Not possible with Drive links: passwords, expiry, live cursors.
 
+### Appearance, text, layout (added later)
+- **Fills / strokes / effects:** `Paint` is SOLID | GRADIENT_LINEAR | GRADIENT_RADIAL | IMAGE (`packages/types`).
+  `shapeMarkup()` in `canvas-engine/src/appearance.ts` builds fill, gradient / pattern defs and inside / center / outside
+  strokes (clip / mask trick) for rectangles, frames and ellipses; `effectsFilter()` builds the SVG filter for drop /
+  inner shadow and layer blur. Canvas and SVG export both call them, and everything is re-validated there because a
+  shared file is untrusted (hex regex, allow-listed mime types, safe ids).
+- **Text:** `layoutText()` (canvas-engine) splits into lines (hard breaks + wrapping) using an injected `Measure`.
+  The browser passes `canvasMeasure` (canvas 2D), exports without one use an estimate. `textAutoResize` is
+  WIDTH_AND_HEIGHT (default when missing) | HEIGHT | NONE; `fitText()` applies it after every text / size change.
+- **Auto layout:** frame props `layoutMode`, `itemSpacing`, `padding*`, `primaryAxisAlign`, `counterAxisAlign`,
+  `primarySizing` / `counterSizing`. `DesignDoc` re-lays out all auto layout frames (innermost first) in a Yjs
+  `afterTransaction` handler for LOCAL_ORIGIN transactions only, so it merges into the same undo step and undo / redo /
+  remote changes never trigger it. Manually resizing such a frame turns that direction FIXED.
+- **Constraints:** `constraintH` / `constraintV` on a layer; `DesignDoc.resizeNode` on a non-auto-layout frame moves /
+  resizes its children (recursively) via `applyConstraints`.
+- **Persistence:** see `local-persist.ts` (IndexedDB working copy, restored on load); Drive remains the sharing path.
+- **Rulers / guides:** `rulers` flag in the store (localStorage); guides are `PageNode.guides` so they save and undo.
+- **Selection:** `hitTest` returns the outermost GROUP; `deep=true` returns the innermost layer (double-click enters).
+
 ### Conventions
 - Pure logic goes in small modules with vitest tests next to them (`*.test.ts`); components stay thin.
 - Styles: SCSS with BEM (`.layers__item--selected`), design tokens as CSS variables, light Figma-like theme
@@ -262,6 +288,10 @@ Edit: `Ctrl+Z`, `Ctrl+Shift+Z`/`Ctrl+Y`, `Ctrl+D` duplicate, `Delete`, arrows (+
 View: `Shift+0` 100%, `Shift+1` fit all, `Shift+2` fit selection, `+` `-`, `Ctrl +/-/0`, `Page Up/Down`
 switch page, `Shift+D` Dev Mode, hold `Alt` + hover for distances. Space-drag / middle mouse pans.
 Right-click opens the context menu.
+Added later: `Alt+A / H / D / W / V / S` align left / h-centers / right / top / v-centers / bottom, `Shift+A` add auto
+layout, `Ctrl+Alt+Shift+A` remove it, `Shift+R` rulers, hold `Ctrl` while moving to turn snapping off, Shift / Alt
+while resizing keep ratio / resize from the centre, double-click a group to enter it, Enter in the text editor adds a
+new line (Esc leaves).
 
 ---
 
@@ -296,19 +326,28 @@ Done: see the ✅ rows in `docs/FEATURE_GAP.md` (canvas tools, selection, resize
 Dev Mode, Alt measure, Drive save/open/autosave, share links and viewer, login gate, copy/paste family,
 Copy as PNG/CSS/SVG, SVG/Figma/image paste, context menu, rename/lock/hide, layer reorder, pages).
 
-Done since the 4 PM run (each pushed separately, details in docs/FEATURE_GAP.md): stroke position and effects
-(drop / inner shadow, layer blur), text controls, gradient fills, independent corner radius, blend modes,
-align and distribute, resize from all 8 handles (Shift / Alt), snapping and smart guides while moving.
-Shared renderer code for strokes, effects and gradients is `packages/canvas-engine/src/appearance.ts` (canvas and
-SVG export both use it).
+Done since the 4 PM run (each pushed separately; details and remaining gaps per feature in docs/FEATURE_GAP.md):
+stroke position and effects (drop / inner shadow, layer blur), text controls, gradient fills, image fills,
+independent corner radius, blend modes, align and distribute, resize from all 8 handles (Shift / Alt), snapping and
+smart guides, multi-line / wrapping text (auto width / height / fixed), auto layout v1, constraints, rulers and
+guides, working copy kept in the browser, and fixes for three designer reports (group selection, context-menu paste,
+font-size not growing the text box).
+
+Where the session stopped: everything above is committed and pushed to `main`, Vercel was Ready, typecheck and all
+180 tests pass. Nothing is half-done in the working tree. `.claude/launch.json` (preview server config) is committed.
 
 Suggested order (each is one feature = build, test, fix, push):
-1. Image fills, multiple fills and strokes, hex input.
-2. Text wrapping, multi-line text, auto width / height, real text measurement (needed for Auto Layout).
-3. **Auto Layout + constraints**, resizing (hug / fill), snapping while resizing, equal-spacing guides, rulers and guides.
-4. Components, variants, styles, variables.
+1. **Components**: main component + instances (copy of the subtree that follows edits of the main), detach, then
+   variants / properties. Plan: a `COMPONENT` node type + `INSTANCE` with `componentId`, and a sync step in
+   `DesignDoc` similar to the auto layout relayout (overrides stored per instance).
+2. Styles (color / text / effect) and variables.
+3. Multiple fills and strokes, hex input, Line / Arrow / Polygon / Star, Pen tool.
+4. Auto layout round 2: wrap, fill container, absolute-position children, per-side padding, drag to reorder;
+   snapping while resizing, equal-spacing guides, layout grids (Shift+G).
 5. Prototype mode, comments, live collaboration (y-webrtc or a small relay), version history.
 6. Performance: Canvas / WebGL renderer path for thousands of nodes.
+Also still unchecked in a real browser: layers panel drag-reorder / reparent (only unit-tested), real Google sign-in
+and Drive from the new autosave path.
 
 Working copy persistence: `apps/web/src/local-persist.ts` saves the open document to IndexedDB (database `canvylo`,
 key `current`) 0.8 s after every change and on tab hide, and restores it on load, so a reload never loses work even
@@ -322,7 +361,9 @@ not on `<main>`), and `Element.prototype.setPointerCapture` must be stubbed beca
 
 Known gaps and risks to keep in mind:
 - Click selects the outermost group and double-click enters one level (like Figma). Inside frames the deepest layer is still picked directly.
-- Text boxes don't wrap; vectors from SVG cover the whole viewBox (no tight bounding box).
+- Vectors from SVG cover the whole viewBox (no tight bounding box); SVG / Figma paste still flatten gradients.
+- Text wrapping in exports without a measurer uses an estimate, so lines can differ slightly from the canvas.
+- The IndexedDB working copy is per browser; moving to another PC needs a Drive save first.
 - The `.canvylo` file grows with images (stored inline); fine for now, revisit with Drive assets.
 - Access tokens last about an hour; the user must click to re-authorise.
 - Figma paste: groups and `fillGeometry` blobs only validated by unit tests, not by a real sample.
@@ -334,8 +375,8 @@ Known gaps and risks to keep in mind:
 
 ```
 Read CLAUDE.md and docs/HANDOFF.md, then docs/FEATURE_GAP.md. Run git status and git log -8. 
-Verify the context menu, rename/lock/hide, layer reordering and pages in the browser (dev server with ?nologin),
-fix anything broken, then continue with the next feature from section 11 of HANDOFF.md.
+Check the live site (https://canvylo.vercel.app) deployment is Ready. In the dev server (?nologin) check layer
+drag-reorder in the layers panel, then start the next feature from section 11 of HANDOFF.md (Components).
 Rules: one feature at a time (build, test, fix, push), copy Figma exactly, commits without any Claude
 attribution, never put secrets in git or web forms. Reply in Banglish.
 ```
