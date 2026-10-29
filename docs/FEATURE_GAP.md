@@ -47,7 +47,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Rotate handle, rotate with Ctrl+Alt+arrows (menu) | 🟡 numeric only | P1 |
 | Flip horizontal / vertical | ❌ | P2 |
 | Rename (F2 / Ctrl+R / double-click), lock (Ctrl+Shift+L), hide (Ctrl+Shift+H); locked layers cannot be picked or nudged on the canvas | ✅ | |
-| Snapping, smart guides, pixel snapping | ❌ | P1 |
+| Snapping, smart guides, pixel snapping | 🟡 | Moving snaps to edges and centres of sibling layers and the parent frame, red guide lines, hold Ctrl to turn off. Missing: snapping while resizing, equal-spacing guides, distance labels while dragging, pixel snapping, a setting to turn it off |
 | Align and distribute, Tidy up | 🟡 | Align (6 modes, Alt+A/H/D/W/V/S, panel row) and distribute spacing (panel buttons, 3+ layers) done. Missing: Tidy up, distribute shortcuts, aligning to the selection when a single layer is on a page |
 | Boolean operations, flatten, outline stroke | ❌ | P3 |
 | Mask (Ctrl+Alt+M), frame selection (Ctrl+Alt+G) | ❌ | P2 |

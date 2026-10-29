@@ -6,3 +6,4 @@ export * from "./fit";
 export * from "./svg-export";
 export * from "./appearance";
 export * from "./resize";
+export * from "./snap";

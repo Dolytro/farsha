@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { resizeBox, type Handle, effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { resizeBox, snapMove, type Guide, type Handle, effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -8,7 +8,7 @@ import { useEditor, type Tool } from "../store";
 
 type Drag =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
-  | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }> }
+  | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
   | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "marquee"; wx: number; wy: number; additive: boolean; base: string[] };
@@ -43,6 +43,7 @@ export function Canvas() {
   const signedIn = useEditor((s) => s.drive.user !== null);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
+  const [guides, setGuides] = useState<Guide[]>([]);
   const svgRef = useRef<SVGSVGElement>(null);
   const [spaceDown, setSpaceDown] = useState(false);
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -129,7 +130,17 @@ export function Canvas() {
           const n = doc.getNode(id);
           if (n) origins[id] = { x: n.x, y: n.y };
         }
-        drag.current = { kind: "move", wx: w.x, wy: w.y, origins };
+        // Smart guides: snap to the other layers in the same parent, and to the parent frame itself.
+        const first = doc.getNode(next[0]!);
+        const parent = first?.parentId ? doc.getNode(first.parentId) : undefined;
+        const targets = (first?.parentId ? doc.children(first.parentId) : [])
+          .filter((n) => n.visible && !next.includes(n.id))
+          .map((n) => doc.absoluteBox(n.id))
+          .filter((b): b is Box => !!b);
+        const parentBox = parent && parent.type !== "PAGE" && parent.type !== "DOCUMENT" ? doc.absoluteBox(parent.id) : undefined;
+        if (parentBox) targets.push(parentBox);
+        const startBox = unionBox(next.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b));
+        drag.current = { kind: "move", wx: w.x, wy: w.y, origins, startBox, targets };
       }
       return;
     }
@@ -170,9 +181,15 @@ export function Canvas() {
       return;
     }
     const w = world(e);
-    const dx = w.x - d.wx;
-    const dy = w.y - d.wy;
+    let dx = w.x - d.wx;
+    let dy = w.y - d.wy;
     if (d.kind === "move") {
+      if (d.startBox && !e.ctrlKey && !e.metaKey) {
+        const snap = snapMove({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets, 5 / viewport.zoom);
+        dx += snap.dx;
+        dy += snap.dy;
+        setGuides(snap.guides);
+      } else setGuides([]);
       for (const [id, o] of Object.entries(d.origins)) doc.setPosition(id, o.x + dx, o.y + dy);
     } else if (d.kind === "resize") {
       // Shift keeps the ratio, Alt resizes from the centre (Figma).
@@ -199,6 +216,7 @@ export function Canvas() {
     const d = drag.current;
     drag.current = null;
     setMarquee(null);
+    setGuides([]);
     if (!d || d.kind === "pan" || d.kind === "marquee") return;
     if (d.kind === "draw") {
       const n = doc.getNode(d.id)!;
@@ -472,6 +490,9 @@ export function Canvas() {
             </g>
           )}
 
+          {guides.map((g, i) => (
+            <line key={i} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke={RED} strokeWidth={sw} pointerEvents="none" />
+          ))}
           {marquee && <rect x={marquee.x} y={marquee.y} width={marquee.width} height={marquee.height} fill={ACCENT} fillOpacity={0.08} stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />}
 
           {editing && editNode?.type === "TEXT" && editBox && (
