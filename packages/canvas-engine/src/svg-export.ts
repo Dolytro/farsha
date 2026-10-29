@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import { paintColor, type Box, type DesignNode, type Paint } from "@canvylo/types";
+import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@canvylo/types";
 import { effectsFilter, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline } from "./appearance";
 import { unionBox } from "./measure";
 
@@ -36,7 +36,8 @@ function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
 
 function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   const transform = `translate(${num(n.x)} ${num(n.y)})${n.rotation ? ` rotate(${num(n.rotation)} ${num(n.width / 2)} ${num(n.height / 2)})` : ""}`;
-  const opacity = n.opacity !== 1 ? ` opacity="${num(n.opacity)}"` : "";
+  const blend = cssBlendMode(n.blendMode);
+  const opacity = (n.opacity !== 1 ? ` opacity="${num(n.opacity)}"` : "") + (blend ? ` style="mix-blend-mode:${blend}"` : "");
   const fill = paint(n, "fills");
   const fillAttrs = fill ? ` fill="${esc(paintColor(fill))}"${fill.opacity !== 1 ? ` fill-opacity="${num(fill.opacity)}"` : ""}` : ' fill="none"';
   const kids = doc.children(n.id).map((c) => render(doc, c, clipIds)).join("");

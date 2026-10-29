@@ -66,6 +66,11 @@ describe("declarations", () => {
     expect(rad.background).toContain("radial-gradient(circle, #ff0000 0%");
   });
 
+  it("writes blend mode", () => {
+    const n = { ...defaultsFor("RECTANGLE"), id: "b", parentId: null, orderKey: "a0", blendMode: "MULTIPLY" as const };
+    expect(Object.fromEntries(declarations(n))["mix-blend-mode"]).toBe("multiply");
+  });
+
   it("writes independent corner radii", () => {
     const n = { ...defaultsFor("RECTANGLE"), id: "c", parentId: null, orderKey: "a0", cornerRadius: 4, cornerRadii: [1, 2, 3, 4] as [number, number, number, number] };
     expect(Object.fromEntries(declarations(n))["border-radius"]).toBe("1px 2px 3px 4px");

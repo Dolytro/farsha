@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
-import { paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
+import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
 import { effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
@@ -22,6 +22,10 @@ const solid = (color: string) => [{ type: "SOLID" as const, color, opacity: 1 }]
 const fillOf = (n: DesignNode) => {
   const p = "fills" in n ? n.fills[0] : undefined;
   return p ? { color: paintColor(p), opacity: p.opacity } : { color: "none", opacity: 1 };
+};
+const blendStyle = (n: DesignNode) => {
+  const m = cssBlendMode(n.blendMode);
+  return m ? { mixBlendMode: m as "multiply" } : undefined;
 };
 const fxUrl = (n: DesignNode) => {
   const fx = effectsFilter(n);
@@ -271,7 +275,7 @@ export function Canvas() {
     const kids = doc.children(n.id).map(renderNode);
     if (n.type === "ELLIPSE") {
       return (
-        <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+        <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
           <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n) }} />
           {kids}
@@ -281,7 +285,7 @@ export function Canvas() {
     if (n.type === "TEXT") {
       if (editing === n.id) return <g key={n.id} transform={transform} />;
       return (
-        <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+        <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
           <text
             x={n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0}
@@ -302,7 +306,7 @@ export function Canvas() {
       const href = assetUrl(doc, n.assetId);
       const clipId = `img-${n.id}`;
       return (
-        <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+        <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
           {href ? (
             <>
@@ -318,7 +322,7 @@ export function Canvas() {
     if (n.type === "VECTOR") {
       // markup is one allow-listed shape element built by the SVG importer (see svg-import.ts)
       return (
-        <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+        <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
           <svg width={n.width} height={n.height} viewBox={n.viewBox} overflow="visible" dangerouslySetInnerHTML={{ __html: n.markup }} />
         </g>
@@ -326,7 +330,7 @@ export function Canvas() {
     }
     const isFrame = n.type === "FRAME";
     return (
-      <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+      <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
         <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n) }} />
         {isFrame ? (

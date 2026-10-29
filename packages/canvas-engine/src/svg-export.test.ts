@@ -48,6 +48,14 @@ describe("exportSvg", () => {
     expect(svg).toContain('stroke-width="4"');
   });
 
+  it("exports blend modes and ignores unknown ones", () => {
+    const { doc, rect } = setup();
+    doc.setStyle(rect, { blendMode: "SOFT_LIGHT" });
+    expect(exportSvg(doc, [rect])!.svg).toContain('style="mix-blend-mode:soft-light"');
+    doc.setStyle(rect, { blendMode: "x;color:red" as never });
+    expect(exportSvg(doc, [rect])!.svg).not.toContain("mix-blend-mode");
+  });
+
   it("draws independent corner radii as a path and clamps them", () => {
     const { doc, rect } = setup(); // 80 x 40
     doc.setStyle(rect, { cornerRadii: [4, 0, 8, 100] });
