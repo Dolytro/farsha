@@ -47,3 +47,14 @@ pnpm dev
   with the API key and opens it read-only.
 - Turning the checkbox off removes the permission, so the link stops working.
 - Not supported by Drive links: passwords, expiry dates, live cursors.
+
+## Troubleshooting
+
+- **Vercel build fails at `pnpm install` with `ERR_PNPM_IGNORED_BUILDS`:** pnpm 12 refuses to
+  install when a dependency has an unapproved build script. `pnpm-workspace.yaml` therefore lists
+  `allowBuilds` for `esbuild` and `@parcel/watcher`. If a new dependency needs a build script, run
+  `pnpm approve-builds` and commit the change.
+- **Google sign-in says the app isn't verified / access blocked:** while the OAuth consent screen
+  is in *Testing*, only listed test users can sign in (Google Auth Platform → Audience → Test
+  users). Viewers of shared links do not sign in, so they are not affected.
+- **Changing `VITE_*` variables on Vercel** requires a new deployment (they are baked in at build time).
