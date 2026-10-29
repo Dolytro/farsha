@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -23,7 +23,6 @@ const fillOf = (n: DesignNode) => {
   const p = "fills" in n ? n.fills[0] : undefined;
   return p ? { color: paintColor(p), opacity: p.opacity } : { color: "none", opacity: 1 };
 };
-const radiusOf = (n: DesignNode) => ("cornerRadius" in n ? n.cornerRadius : 0);
 const fxUrl = (n: DesignNode) => {
   const fx = effectsFilter(n);
   return fx ? `url(#${fx.id})` : undefined;
@@ -307,13 +306,11 @@ export function Canvas() {
           {fxDefs(n)}
           {href ? (
             <>
-              <clipPath id={clipId}>
-                <rect width={n.width} height={n.height} rx={n.cornerRadius} />
-              </clipPath>
+              <clipPath id={clipId} dangerouslySetInnerHTML={{ __html: shapeGeometry(n, "") }} />
               <image href={href} width={n.width} height={n.height} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${clipId})`} />
             </>
           ) : (
-            <rect width={n.width} height={n.height} rx={n.cornerRadius} fill="#e5e5e5" />
+            <g dangerouslySetInnerHTML={{ __html: shapeGeometry(n, ' fill="#e5e5e5"') }} />
           )}
         </g>
       );
@@ -334,9 +331,7 @@ export function Canvas() {
         <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n) }} />
         {isFrame ? (
           <>
-            <clipPath id={`clip-${n.id}`}>
-              <rect width={n.width} height={n.height} rx={radiusOf(n)} />
-            </clipPath>
+            <clipPath id={`clip-${n.id}`} dangerouslySetInnerHTML={{ __html: shapeGeometry(n, "") }} />
             <g clipPath={`url(#clip-${n.id})`}>{kids}</g>
           </>
         ) : (

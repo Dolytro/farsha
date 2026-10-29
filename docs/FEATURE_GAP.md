@@ -64,7 +64,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 |---|---|---|
 | Position | 🟡 | Alignment row, constraints, rotation handle |
 | Layout | 🟡 | **Auto Layout** (direction, gap, padding, wrap), hug / fill / fixed sizing, min / max, layout grids, clip content toggle |
-| Appearance | 🟡 | Independent corner radius, corner smoothing, blend mode |
+| Appearance | 🟡 | Independent corner radius done for rectangles and frames (not images). Missing: corner smoothing, blend mode |
 | Fill | 🟡 | Solid, linear and radial gradients (add / remove stops, position, opacity, angle) done. Gradient angle is in bounding-box units, so it skews on non-square layers. Gradient text and strokes show the first stop only; SVG / Figma paste still flatten gradients. Missing: multiple fills, image fill, angular / diamond gradients, handles on canvas, hex input, styles, variables |
 | Stroke | 🟡 | Color, opacity, weight, position (inside / center / outside) done. Missing: per-side weights, dash, caps, joins, arrowheads, multiple strokes. |
 | Effects | 🟡 | Drop shadow, inner shadow, layer blur (hide / remove / change type) done. Missing: shadow spread, background blur, show-behind, multiple blurs. Shadow offset rotates with a rotated layer. Dev Mode CSS shows outside strokes as an inside border. |

@@ -80,6 +80,8 @@ export function Properties() {
     </label>
   );
 
+  const radii = "cornerRadii" in node ? node.cornerRadii : undefined;
+
   return (
     <aside className="props">
       {header}
@@ -123,12 +125,45 @@ export function Properties() {
                 className="field__input"
                 type="number"
                 min={0}
-                value={node.cornerRadius}
-                onChange={(e) => doc.setStyle(node.id, { cornerRadius: Math.max(0, Number(e.target.value)) })}
+                value={radii ? "" : node.cornerRadius}
+                placeholder={radii ? "Mixed" : undefined}
+                onChange={(e) => doc.setStyle(node.id, { cornerRadius: Math.max(0, Number(e.target.value)), cornerRadii: null })}
               />
             </label>
           )}
+          {(node.type === "RECTANGLE" || node.type === "FRAME") && (
+            <button
+              className={`seg__btn props__corner-toggle${node.cornerRadii ? " seg__btn--active" : ""}`}
+              title="Independent corners"
+              onClick={() => {
+                const r = node.cornerRadius;
+                doc.setStyle(node.id, node.cornerRadii ? { cornerRadii: null } : { cornerRadii: [r, r, r, r] });
+              }}
+            >
+              ⌜⌝
+            </button>
+          )}
         </div>
+        {(node.type === "RECTANGLE" || node.type === "FRAME") && node.cornerRadii && (
+          <div className="props__grid props__grid--gap">
+            {(["↖", "↗", "↘", "↙"] as const).map((icon, i) => (
+              <label className="field" key={icon} title={["Top left", "Top right", "Bottom right", "Bottom left"][i]}>
+                <span className="field__label">{icon}</span>
+                <input
+                  className="field__input"
+                  type="number"
+                  min={0}
+                  value={node.cornerRadii![i]}
+                  onChange={(e) => {
+                    const next = [...node.cornerRadii!] as [number, number, number, number];
+                    next[i] = Math.max(0, Number(e.target.value));
+                    doc.setStyle(node.id, { cornerRadii: next });
+                  }}
+                />
+              </label>
+            ))}
+          </div>
+        )}
       </section>
 
       {node.type === "TEXT" && <TypographySection doc={doc} node={node} />}

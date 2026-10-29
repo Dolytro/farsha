@@ -66,6 +66,11 @@ describe("declarations", () => {
     expect(rad.background).toContain("radial-gradient(circle, #ff0000 0%");
   });
 
+  it("writes independent corner radii", () => {
+    const n = { ...defaultsFor("RECTANGLE"), id: "c", parentId: null, orderKey: "a0", cornerRadius: 4, cornerRadii: [1, 2, 3, 4] as [number, number, number, number] };
+    expect(Object.fromEntries(declarations(n))["border-radius"]).toBe("1px 2px 3px 4px");
+  });
+
   it("uses a round radius for ellipses", () => {
     expect(Object.fromEntries(declarations({ ...defaultsFor("ELLIPSE"), id: "e", parentId: null, orderKey: "a0" }))["border-radius"]).toBe("50%");
   });

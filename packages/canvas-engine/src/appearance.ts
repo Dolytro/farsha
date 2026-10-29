@@ -58,11 +58,30 @@ export function effectsFilter(n: DesignNode): { id: string; markup: string } | n
   return { id, markup };
 }
 
-function geometry(n: DesignNode, extra: string): string {
-  if (n.type === "ELLIPSE") return `<ellipse cx="${num(n.width / 2)}" cy="${num(n.height / 2)}" rx="${num(n.width / 2)}" ry="${num(n.height / 2)}"${extra}/>`;
-  const r = "cornerRadius" in n && n.cornerRadius > 0 ? ` rx="${num(n.cornerRadius)}"` : "";
-  return `<rect width="${num(n.width)}" height="${num(n.height)}"${r}${extra}/>`;
+/** Corner radii [tl, tr, br, bl] of a layer, each clamped to half the shorter side; null when square. */
+export function cornerRadiiOf(n: DesignNode): [number, number, number, number] | null {
+  if (!("cornerRadius" in n)) return null;
+  const own = "cornerRadii" in n ? n.cornerRadii : undefined;
+  const raw = own && own.length === 4 ? own : [n.cornerRadius, n.cornerRadius, n.cornerRadius, n.cornerRadius];
+  const max = Math.max(0, Math.min(n.width, n.height) / 2);
+  const r = raw.map((v) => Math.min(max, Math.max(0, Number.isFinite(v) ? v : 0))) as [number, number, number, number];
+  return r.some((v) => v > 0) ? r : null;
 }
+
+/** The outline of a rectangle-like or elliptical layer as one SVG shape element carrying `extra` attributes. */
+export function shapeGeometry(n: DesignNode, extra: string): string {
+  if (n.type === "ELLIPSE") return `<ellipse cx="${num(n.width / 2)}" cy="${num(n.height / 2)}" rx="${num(n.width / 2)}" ry="${num(n.height / 2)}"${extra}/>`;
+  const r = cornerRadiiOf(n);
+  if (r && !r.every((v) => v === r[0])) {
+    const [tl, tr, br, bl] = r.map(num) as [string, string, string, string];
+    const w = n.width;
+    const h = n.height;
+    const d = `M${tl} 0H${num(w - r[1])}A${tr} ${tr} 0 0 1 ${num(w)} ${tr}V${num(h - r[2])}A${br} ${br} 0 0 1 ${num(w - r[2])} ${num(h)}H${bl}A${bl} ${bl} 0 0 1 0 ${num(h - r[3])}V${tl}A${tl} ${tl} 0 0 1 ${tl} 0Z`;
+    return `<path d="${d}"${extra}/>`;
+  }
+  return `<rect width="${num(n.width)}" height="${num(n.height)}"${r ? ` rx="${num(r[0])}"` : ""}${extra}/>`;
+}
+const geometry = shapeGeometry;
 
 /** Fill and stroke of a rectangle, frame or ellipse. Inside/outside strokes are clipped/masked double-width strokes. */
 export function shapeMarkup(n: DesignNode): string {
