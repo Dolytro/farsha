@@ -32,9 +32,38 @@ describe("exportSvg", () => {
     const out = exportSvg(doc, [rect])!;
     expect(out.svg).toContain('fill="#0d99ff"');
     expect(out.svg).toContain('stroke="#000000"');
-    expect(out.svg).toContain('stroke-width="2"');
+    expect(out.svg).toContain('stroke-width="4"'); // inside stroke: double width, clipped to the shape
+    expect(out.svg).toContain('clip-path="url(#sc-');
     expect(out.svg).toContain('rx="8"');
     expect(out.width).toBe(80);
+  });
+
+  it("draws centre and outside strokes", () => {
+    const { doc, rect } = setup();
+    doc.setStyle(rect, { strokeAlign: "CENTER" });
+    expect(exportSvg(doc, [rect])!.svg).toContain('stroke-width="2"');
+    doc.setStyle(rect, { strokeAlign: "OUTSIDE" });
+    const { svg } = exportSvg(doc, [rect])!;
+    expect(svg).toContain("<mask");
+    expect(svg).toContain('stroke-width="4"');
+  });
+
+  it("adds a filter for shadows and blur and ignores hidden or malformed effects", () => {
+    const { doc, rect } = setup();
+    doc.setStyle(rect, {
+      effects: [
+        { type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true },
+        { type: "INNER_SHADOW", x: 1, y: 2, blur: 4, color: "red\" onload=\"x", opacity: 1, visible: true },
+        { type: "LAYER_BLUR", radius: 10, visible: false },
+      ],
+    });
+    const { svg } = exportSvg(doc, [rect])!;
+    expect(svg).toContain("<filter");
+    expect(svg).toContain('filter="url(#fx-');
+    expect(svg).toContain('dy="4"');
+    expect(svg).toContain('stdDeviation="4"');
+    expect(svg).not.toContain("onload");
+    expect(svg).not.toContain('stdDeviation="5"'); // hidden blur is skipped
   });
 
   it("escapes text and keeps typography", () => {
@@ -49,7 +78,7 @@ describe("exportSvg", () => {
     const { doc, frame, rect } = setup();
     const { svg } = exportSvg(doc, [frame, rect])!; // rect is inside frame: drawn once
     expect(svg).toContain("<clipPath");
-    expect(svg.match(/rx="8"/g)).toHaveLength(1);
+    expect(svg.match(/fill="#0d99ff"/g)).toHaveLength(1);
   });
 
   it("unions several layers and skips hidden ones", () => {

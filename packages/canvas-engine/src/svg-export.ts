@@ -1,5 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { Box, DesignNode } from "@canvylo/types";
+import { effectsFilter, shapeMarkup } from "./appearance";
 import { unionBox } from "./measure";
 
 export interface SvgExport {
@@ -27,18 +28,24 @@ function paint(node: DesignNode, key: "fills" | "strokes"): { color: string; opa
 
 function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   if (!n.visible) return "";
+  const fx = effectsFilter(n);
+  const body = renderBody(doc, n, clipIds);
+  if (!fx) return body;
+  // Effects go on the layer's own group: <g transform=.. opacity=..> becomes <g filter=.. transform=..>.
+  return body.replace(/^<g /, `<g filter="url(#${fx.id})" `).replace(/^(<g [^>]*>)/, `$1<defs>${fx.markup}</defs>`);
+}
+
+function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   const transform = `translate(${num(n.x)} ${num(n.y)})${n.rotation ? ` rotate(${num(n.rotation)} ${num(n.width / 2)} ${num(n.height / 2)})` : ""}`;
   const opacity = n.opacity !== 1 ? ` opacity="${num(n.opacity)}"` : "";
   const fill = paint(n, "fills");
-  const stroke = paint(n, "strokes");
   const fillAttrs = fill ? ` fill="${esc(fill.color)}"${fill.opacity !== 1 ? ` fill-opacity="${num(fill.opacity)}"` : ""}` : ' fill="none"';
-  const strokeAttrs = stroke ? ` stroke="${esc(stroke.color)}" stroke-width="${num("strokeWidth" in n ? n.strokeWidth : 1)}"${stroke.opacity !== 1 ? ` stroke-opacity="${num(stroke.opacity)}"` : ""}` : "";
   const kids = doc.children(n.id).map((c) => render(doc, c, clipIds)).join("");
   const radius = "cornerRadius" in n && n.cornerRadius > 0 ? ` rx="${num(n.cornerRadius)}"` : "";
 
   switch (n.type) {
     case "ELLIPSE":
-      return `<g transform="${transform}"${opacity}><ellipse cx="${num(n.width / 2)}" cy="${num(n.height / 2)}" rx="${num(n.width / 2)}" ry="${num(n.height / 2)}"${fillAttrs}${strokeAttrs}/>${kids}</g>`;
+      return `<g transform="${transform}"${opacity}>${shapeMarkup(n)}${kids}</g>`;
     case "TEXT": {
       const anchor = n.textAlign === "CENTER" ? ' text-anchor="middle"' : n.textAlign === "RIGHT" ? ' text-anchor="end"' : "";
       const x = n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0;
@@ -48,7 +55,7 @@ function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       const clipId = `clip-${n.id}`;
       clipIds.push(clipId);
       const clip = n.clipsContent ? ` clip-path="url(#${clipId})"` : "";
-      return `<g transform="${transform}"${opacity}><clipPath id="${clipId}"><rect width="${num(n.width)}" height="${num(n.height)}"${radius}/></clipPath><rect width="${num(n.width)}" height="${num(n.height)}"${radius}${fillAttrs}${strokeAttrs}/><g${clip}>${kids}</g></g>`;
+      return `<g transform="${transform}"${opacity}><clipPath id="${clipId}"><rect width="${num(n.width)}" height="${num(n.height)}"${radius}/></clipPath>${shapeMarkup(n)}<g${clip}>${kids}</g></g>`;
     }
     case "IMAGE": {
       const asset = n.assetId ? doc.getAsset(n.assetId) : undefined;
@@ -60,7 +67,7 @@ function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     case "VECTOR":
       return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(n.height)}" viewBox="${esc(n.viewBox)}" overflow="visible">${n.markup}</svg></g>`;
     case "RECTANGLE":
-      return `<g transform="${transform}"${opacity}><rect width="${num(n.width)}" height="${num(n.height)}"${radius}${fillAttrs}${strokeAttrs}/>${kids}</g>`;
+      return `<g transform="${transform}"${opacity}>${shapeMarkup(n)}${kids}</g>`;
     default:
       return `<g transform="${transform}"${opacity}>${kids}</g>`;
   }

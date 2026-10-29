@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import type { Box, DesignNode, NodeType } from "@canvylo/types";
-import { hitTest, measure, screenToWorld, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { effectsFilter, hitTest, measure, screenToWorld, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -24,9 +24,13 @@ const fillOf = (n: DesignNode) => {
   return p ? { color: p.color, opacity: p.opacity } : { color: "none", opacity: 1 };
 };
 const radiusOf = (n: DesignNode) => ("cornerRadius" in n ? n.cornerRadius : 0);
-const strokeOf = (n: DesignNode) => {
-  const p = "strokes" in n ? n.strokes[0] : undefined;
-  return p ? { stroke: p.color, strokeOpacity: p.opacity, strokeWidth: "strokeWidth" in n ? n.strokeWidth : 1 } : {};
+const fxUrl = (n: DesignNode) => {
+  const fx = effectsFilter(n);
+  return fx ? `url(#${fx.id})` : undefined;
+};
+const fxDefs = (n: DesignNode) => {
+  const fx = effectsFilter(n);
+  return fx ? <defs dangerouslySetInnerHTML={{ __html: fx.markup }} /> : null;
 };
 
 const intersects = (a: Box, b: Box) =>
@@ -263,13 +267,14 @@ export function Canvas() {
 
   const renderNode = (n: DesignNode): ReactElement | null => {
     if (!n.visible) return null;
-    const { color, opacity: fillOpacity } = fillOf(n);
+    const { color } = fillOf(n);
     const transform = `translate(${n.x} ${n.y}) rotate(${n.rotation} ${n.width / 2} ${n.height / 2})`;
     const kids = doc.children(n.id).map(renderNode);
     if (n.type === "ELLIPSE") {
       return (
-        <g key={n.id} transform={transform} opacity={n.opacity}>
-          <ellipse cx={n.width / 2} cy={n.height / 2} rx={n.width / 2} ry={n.height / 2} fill={color} fillOpacity={fillOpacity} {...strokeOf(n)} />
+        <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+          {fxDefs(n)}
+          <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n) }} />
           {kids}
         </g>
       );
@@ -277,7 +282,8 @@ export function Canvas() {
     if (n.type === "TEXT") {
       if (editing === n.id) return <g key={n.id} transform={transform} />;
       return (
-        <g key={n.id} transform={transform} opacity={n.opacity}>
+        <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+          {fxDefs(n)}
           <text
             x={n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0}
             textAnchor={n.textAlign === "CENTER" ? "middle" : n.textAlign === "RIGHT" ? "end" : "start"}
@@ -296,7 +302,8 @@ export function Canvas() {
       const href = assetUrl(doc, n.assetId);
       const clipId = `img-${n.id}`;
       return (
-        <g key={n.id} transform={transform} opacity={n.opacity}>
+        <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+          {fxDefs(n)}
           {href ? (
             <>
               <clipPath id={clipId}>
@@ -313,15 +320,17 @@ export function Canvas() {
     if (n.type === "VECTOR") {
       // markup is one allow-listed shape element built by the SVG importer (see svg-import.ts)
       return (
-        <g key={n.id} transform={transform} opacity={n.opacity}>
+        <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+          {fxDefs(n)}
           <svg width={n.width} height={n.height} viewBox={n.viewBox} overflow="visible" dangerouslySetInnerHTML={{ __html: n.markup }} />
         </g>
       );
     }
     const isFrame = n.type === "FRAME";
     return (
-      <g key={n.id} transform={transform} opacity={n.opacity}>
-        <rect width={n.width} height={n.height} rx={radiusOf(n)} fill={color} fillOpacity={fillOpacity} {...strokeOf(n)} />
+      <g key={n.id} transform={transform} opacity={n.opacity} filter={fxUrl(n)}>
+          {fxDefs(n)}
+        <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n) }} />
         {isFrame ? (
           <>
             <clipPath id={`clip-${n.id}`}>

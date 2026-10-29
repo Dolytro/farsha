@@ -36,6 +36,24 @@ describe("declarations", () => {
     expect(d).toMatchObject({ position: "absolute", left: "20px", top: "30px", width: "120px", height: "44px", background: "#388bff", "border-radius": "8px" });
   });
 
+  it("writes shadows and layer blur, skipping hidden effects", () => {
+    const n = {
+      ...defaultsFor("RECTANGLE"),
+      id: "r",
+      parentId: null,
+      orderKey: "a0",
+      effects: [
+        { type: "DROP_SHADOW" as const, x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true },
+        { type: "INNER_SHADOW" as const, x: 1, y: 1, blur: 2, color: "#ff0000", opacity: 1, visible: true },
+        { type: "LAYER_BLUR" as const, radius: 6, visible: true },
+        { type: "DROP_SHADOW" as const, x: 9, y: 9, blur: 9, color: "#000000", opacity: 1, visible: false },
+      ],
+    };
+    const d = Object.fromEntries(declarations(n));
+    expect(d["box-shadow"]).toBe("0px 4px 8px rgba(0, 0, 0, 0.25), inset 1px 1px 2px #ff0000");
+    expect(d.filter).toBe("blur(6px)");
+  });
+
   it("uses a round radius for ellipses", () => {
     expect(Object.fromEntries(declarations({ ...defaultsFor("ELLIPSE"), id: "e", parentId: null, orderKey: "a0" }))["border-radius"]).toBe("50%");
   });

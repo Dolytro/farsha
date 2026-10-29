@@ -227,6 +227,8 @@ export interface PropertySnapshot {
   fills?: unknown;
   strokes?: unknown;
   strokeWidth?: number;
+  strokeAlign?: unknown;
+  effects?: unknown;
   cornerRadius?: number;
   text?: { fontFamily: string; fontSize: number; fontWeight: number; lineHeight: number | "AUTO"; letterSpacing: number; textAlign: string };
 }
@@ -242,7 +244,9 @@ export function copyProperties(doc: DesignDoc, id: string | undefined): boolean 
   if ("strokes" in n) {
     snap.strokes = JSON.parse(JSON.stringify(n.strokes));
     snap.strokeWidth = n.strokeWidth;
+    snap.strokeAlign = n.strokeAlign;
   }
+  snap.effects = JSON.parse(JSON.stringify(n.effects ?? []));
   if ("cornerRadius" in n) snap.cornerRadius = n.cornerRadius;
   if (n.type === "TEXT") {
     snap.text = { fontFamily: n.fontFamily, fontSize: n.fontSize, fontWeight: n.fontWeight, lineHeight: n.lineHeight, letterSpacing: n.letterSpacing, textAlign: n.textAlign };
@@ -269,7 +273,9 @@ export function pasteProperties(doc: DesignDoc, ids: string[]): number {
     if (snap.strokes !== undefined && "strokes" in n) {
       style.strokes = JSON.parse(JSON.stringify(snap.strokes));
       style.strokeWidth = snap.strokeWidth;
+      if (snap.strokeAlign !== undefined) style.strokeAlign = snap.strokeAlign;
     }
+    if (snap.effects !== undefined) style.effects = JSON.parse(JSON.stringify(snap.effects));
     if (snap.cornerRadius !== undefined && "cornerRadius" in n) style.cornerRadius = snap.cornerRadius;
     doc.setStyle(id, style);
     if (snap.text && n.type === "TEXT") doc.setText(id, snap.text as Parameters<DesignDoc["setText"]>[1]);

@@ -18,6 +18,28 @@ export interface SolidPaint {
 
 export type Paint = SolidPaint;
 
+/** Where a stroke sits relative to the shape edge (Figma: Inside, Center, Outside). */
+export type StrokeAlign = 'INSIDE' | 'CENTER' | 'OUTSIDE';
+
+export interface ShadowEffect {
+  type: 'DROP_SHADOW' | 'INNER_SHADOW';
+  x: number;
+  y: number;
+  blur: number;
+  /** CSS hex colour */
+  color: string;
+  opacity: number;
+  visible: boolean;
+}
+
+export interface BlurEffect {
+  type: 'LAYER_BLUR';
+  radius: number;
+  visible: boolean;
+}
+
+export type Effect = ShadowEffect | BlurEffect;
+
 export interface BaseNode {
   id: string;
   type: NodeType;
@@ -35,6 +57,8 @@ export interface BaseNode {
   opacity: number;
   visible: boolean;
   locked: boolean;
+  /** Optional so documents saved before effects existed still load. */
+  effects?: Effect[];
 }
 
 export interface DocumentNode extends BaseNode {
@@ -50,6 +74,8 @@ export interface FrameNode extends BaseNode {
   fills: Paint[];
   strokes: Paint[];
   strokeWidth: number;
+  /** Missing in older documents, which drew strokes centred. */
+  strokeAlign?: StrokeAlign;
   cornerRadius: number;
   clipsContent: boolean;
 }
@@ -63,6 +89,7 @@ export interface RectangleNode extends BaseNode {
   fills: Paint[];
   strokes: Paint[];
   strokeWidth: number;
+  strokeAlign?: StrokeAlign;
   cornerRadius: number;
 }
 
@@ -71,6 +98,7 @@ export interface EllipseNode extends BaseNode {
   fills: Paint[];
   strokes: Paint[];
   strokeWidth: number;
+  strokeAlign?: StrokeAlign;
 }
 
 export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT';
@@ -120,6 +148,8 @@ export interface StylePatch {
   fills?: Paint[];
   strokes?: Paint[];
   strokeWidth?: number;
+  strokeAlign?: StrokeAlign;
+  effects?: Effect[];
   cornerRadius?: number;
   opacity?: number;
   visible?: boolean;

@@ -291,6 +291,51 @@ button {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px 8px;
+
+    &--gap {
+      margin-top: 6px;
+    }
+  }
+
+  &__heading--row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__add {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--c-muted);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--c-input);
+      color: var(--c-text);
+    }
+  }
+}
+
+.effect {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .field__select {
+      flex: 1;
+    }
   }
 }
 
@@ -366,6 +411,31 @@ button {
 
   &__opacity {
     color: var(--c-muted);
+  }
+
+  &__pct {
+    width: 40px;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--c-muted);
+    font: inherit;
+    text-align: right;
+  }
+}
+
+.field__select {
+  height: 24px;
+  min-width: 0;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: var(--c-input);
+  color: var(--c-text);
+  font: inherit;
+
+  &:hover {
+    border-color: var(--c-border);
   }
 }
 
