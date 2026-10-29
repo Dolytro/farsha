@@ -63,7 +63,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Section | Status | Missing |
 |---|---|---|
 | Position | 🟡 | Constraints, rotation handle |
-| Layout | 🟡 | **Auto Layout** (direction, gap, padding, wrap), hug / fill / fixed sizing, min / max, layout grids, clip content toggle |
+| Layout | 🟡 | Auto layout v1 done: Shift+A adds it (wraps loose layers in a frame, keeps their order / gap / padding), horizontal / vertical, gap, padding (horizontal + vertical), alignment on both axes, space between, hug / fixed sizing, flexbox CSS in Dev Mode. Missing: wrap, fill container, absolute-position children, per-side padding, min / max, nested resizing rules, drag to reorder inside a frame, layout grids, clip content toggle |
 | Appearance | 🟡 | Independent corner radius done for rectangles and frames (not images). Blend mode (16 modes, no Pass through / Plus darker / Plus lighter) done. Missing: corner smoothing |
 Solid, linear and radial gradients, and image fills (upload, Fill / Fit / Stretch, opacity) (add / remove stops, position, opacity, angle) done. Gradient angle is in bounding-box units, so it skews on non-square layers. Gradient text and strokes show the first stop only; SVG / Figma paste still flatten gradients. Missing: multiple fills, tile / crop image modes, image filters, angular / diamond gradients, handles on canvas, hex input, styles, variables |
 | Stroke | 🟡 | Color, opacity, weight, position (inside / center / outside) done. Missing: per-side weights, dash, caps, joins, arrowheads, multiple strokes. |

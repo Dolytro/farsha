@@ -3,6 +3,7 @@ import { useEditor } from "../store";
 import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
 import { fitText } from "../text-layout";
+import { AutoLayoutSection } from "./AutoLayoutSection";
 import { AlignRow } from "./AlignRow";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
@@ -30,7 +31,7 @@ const BLEND_MODES: [BlendMode, string][] = [
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
 export function Properties() {
-  const { doc, selection, viewport, setViewport, devMode, setDevMode, viewer, setShareOpen } = useEditor();
+  const { doc, selection, select, viewport, setViewport, devMode, setDevMode, viewer, setShareOpen } = useEditor();
   const signedIn = useEditor((s) => s.drive.user !== null);
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
@@ -214,6 +215,7 @@ export function Properties() {
 
       <FillSection doc={doc} node={node} />
 
+      <AutoLayoutSection doc={doc} node={node} select={select} />
       <StrokeSection doc={doc} node={node} />
       <EffectsSection doc={doc} node={node} />
     </aside>

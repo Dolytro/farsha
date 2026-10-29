@@ -2,7 +2,7 @@ export type MenuAction =
   | "copy" | "cut" | "paste-here" | "paste-over"
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
-  | "group" | "ungroup" | "visibility" | "lock" | "delete";
+  | "group" | "ungroup" | "auto-layout" | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
   action: MenuAction;
@@ -53,6 +53,7 @@ export function buildMenu(c: MenuContext): MenuItem[] {
       { action: "group", label: "Group selection", shortcut: `${MOD}G`, divider: true },
     );
     if (c.hasGroup) items.push({ action: "ungroup", label: "Ungroup", shortcut: `${MOD}${SHIFT}G` });
+    items.push({ action: "auto-layout", label: "Add auto layout", shortcut: `${SHIFT}A` });
     items.push(
       { action: "visibility", label: c.allHidden ? "Show" : "Hide", shortcut: `${MOD}${SHIFT}H`, divider: true },
       { action: "lock", label: c.allLocked ? "Unlock" : "Lock", shortcut: `${MOD}${SHIFT}L` },

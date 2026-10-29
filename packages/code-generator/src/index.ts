@@ -65,6 +65,15 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity)}`]);
   }
   if (node.type === "FRAME" && node.clipsContent) d.push(["overflow", "hidden"]);
+  if (node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")) {
+    // Auto layout is a flex container; its children are in the flow instead of absolutely positioned.
+    const justify = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", SPACE_BETWEEN: "space-between" } as const;
+    d.push(["display", "flex"], ["flex-direction", node.layoutMode === "HORIZONTAL" ? "row" : "column"]);
+    if (node.itemSpacing) d.push(["gap", px(node.itemSpacing)]);
+    const pad = [node.paddingTop, node.paddingRight, node.paddingBottom, node.paddingLeft].map((v) => v ?? 0);
+    if (pad.some((v) => v > 0)) d.push(["padding", pad.map(px).join(" ")]);
+    d.push(["justify-content", justify[node.primaryAxisAlign ?? "MIN"]], ["align-items", justify[node.counterAxisAlign ?? "MIN"]]);
+  }
   effectDecls();
   return d;
 }
@@ -138,7 +147,7 @@ function walk(node: DesignNode, children: ChildrenOf, absolute: boolean, used: M
     node,
     cls: n === 1 ? base : `${base}-${n}`,
     decls: declarations(node, { absolute, hasChildren: kids.length > 0 }),
-    kids: kids.map((k) => walk(k, children, true, used)),
+    kids: kids.map((k) => walk(k, children, !(node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")), used)),
   };
 }
 

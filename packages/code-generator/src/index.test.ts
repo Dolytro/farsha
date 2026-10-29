@@ -81,6 +81,16 @@ describe("declarations", () => {
     expect(Object.fromEntries(declarations({ ...n, textAutoResize: "HEIGHT" as const }))["white-space"]).toBe("pre-wrap");
   });
 
+  it("writes auto layout frames as flex containers and puts their children in the flow", () => {
+    const frame = { ...defaultsFor("FRAME"), id: "f", parentId: null, orderKey: "a0", layoutMode: "HORIZONTAL" as const, itemSpacing: 12, paddingTop: 8, paddingRight: 16, paddingBottom: 8, paddingLeft: 16, primaryAxisAlign: "SPACE_BETWEEN" as const, counterAxisAlign: "CENTER" as const };
+    const d = Object.fromEntries(declarations(frame));
+    expect(d).toMatchObject({ display: "flex", "flex-direction": "row", gap: "12px", padding: "8px 16px 8px 16px", "justify-content": "space-between", "align-items": "center" });
+    const kid = { ...defaultsFor("RECTANGLE"), id: "k", parentId: "f", orderKey: "a0" };
+    const out = generateCode(frame, (id) => (id === "f" ? [kid] : []), "css");
+    expect(out).toContain("display: flex;");
+    expect(out.match(/position: absolute/g)).toBeNull();
+  });
+
   it("writes blend mode", () => {
     const n = { ...defaultsFor("RECTANGLE"), id: "b", parentId: null, orderKey: "a0", blendMode: "MULTIPLY" as const };
     expect(Object.fromEntries(declarations(n))["mix-blend-mode"]).toBe("multiply");

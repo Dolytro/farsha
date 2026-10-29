@@ -15,6 +15,10 @@ describe("buildMenu", () => {
     expect(actions({})).not.toContain("ungroup");
     expect(actions({ hasGroup: true })).toContain("ungroup");
   });
+  it("offers Add auto layout for a selection", () => {
+    expect(actions({})).toContain("auto-layout");
+    expect(actions({ selectionCount: 0 })).not.toContain("auto-layout");
+  });
   it("flips Hide/Show and Lock/Unlock", () => {
     const labels = buildMenu({ ...base, allHidden: true, allLocked: true }).map((i) => i.label);
     expect(labels).toContain("Show");

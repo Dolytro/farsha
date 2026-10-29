@@ -2,6 +2,7 @@ import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
 import type { Box, DesignNode, NodeType, StylePatch, TextPatch } from '@canvylo/types';
+import { computeAutoLayout } from './auto-layout';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
 
 /** Transaction origin for user edits; only these are undoable. */
@@ -62,7 +63,58 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
+    // Keep auto layout frames laid out after every local edit. The re-layout runs inside the same undo step
+    // (it follows the edit within the capture window); undo / redo and remote changes already carry their own layout.
+    this.ydoc.on('afterTransaction', (tr: Y.Transaction) => {
+      if (tr.origin === LOCAL_ORIGIN && !this.relayouting) this.relayout();
+    });
     if (options.init !== false && !this.meta.has('rootId')) this.initialise();
+  }
+
+  private relayouting = false;
+
+  /** Lay out every auto layout frame, innermost first so hugging parents see their children's new sizes. */
+  private relayout(): void {
+    const frames: { id: string; depth: number }[] = [];
+    for (const id of this.nodes.keys()) {
+      const n = this.getNode(id);
+      if (n?.type !== 'FRAME' || (n.layoutMode !== 'HORIZONTAL' && n.layoutMode !== 'VERTICAL')) continue;
+      let depth = 0;
+      for (let p = n.parentId ? this.getNode(n.parentId) : undefined; p; p = p.parentId ? this.getNode(p.parentId) : undefined) depth++;
+      frames.push({ id, depth });
+    }
+    if (!frames.length) return;
+    frames.sort((a, b) => b.depth - a.depth);
+    this.relayouting = true;
+    try {
+      for (const { id } of frames) {
+        const frame = this.getNode(id);
+        if (frame?.type !== 'FRAME') continue;
+        const kids = this.children(id).filter((c) => c.visible);
+        const result = computeAutoLayout(frame, kids.map((c) => ({ id: c.id, width: c.width, height: c.height })));
+        if (!result) continue;
+        const moves = kids.filter((c) => {
+          const p = result.positions[c.id]!;
+          return Math.abs(p.x - c.x) > 1e-6 || Math.abs(p.y - c.y) > 1e-6;
+        });
+        const resize = Math.abs(result.width - frame.width) > 1e-6 || Math.abs(result.height - frame.height) > 1e-6;
+        if (!moves.length && !resize) continue;
+        this.transact(() => {
+          for (const c of moves) {
+            const map = this.nodes.get(c.id)!;
+            map.set('x', result.positions[c.id]!.x);
+            map.set('y', result.positions[c.id]!.y);
+          }
+          if (resize) {
+            const map = this.nodes.get(id)!;
+            map.set('width', Math.max(0, result.width));
+            map.set('height', Math.max(0, result.height));
+          }
+        });
+      }
+    } finally {
+      this.relayouting = false;
+    }
   }
 
   /** Rebuild a document from bytes produced by `encodeState()`. */
@@ -225,6 +277,18 @@ export class DesignDoc {
       if (value === undefined) continue;
       if (!Number.isFinite(value)) throw new Error(`Invalid ${key}: ${value}`);
       patch[key] = key === 'width' || key === 'height' ? Math.max(0, value) : value;
+    }
+    // Resizing an auto layout frame by hand makes that direction fixed (Figma).
+    const node = this.getNode(id)!;
+    if (node.type === 'FRAME' && (node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL')) {
+      const horizontal = node.layoutMode === 'HORIZONTAL';
+      const widthKey = horizontal ? 'primarySizing' : 'counterSizing';
+      const heightKey = horizontal ? 'counterSizing' : 'primarySizing';
+      const extra: Record<string, unknown> = {};
+      if (patch.width !== undefined && patch.width !== node.width) extra[widthKey] = 'FIXED';
+      if (patch.height !== undefined && patch.height !== node.height) extra[heightKey] = 'FIXED';
+      this.setProps(id, { ...patch, ...extra });
+      return;
     }
     this.setProps(id, patch);
   }
