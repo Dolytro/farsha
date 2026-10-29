@@ -13,7 +13,7 @@ export interface ClipNode {
   children: ClipNode[];
 }
 
-interface ClipPayload {
+export interface ClipPayload {
   v: 1;
   /** Parent of the copied layers, used to offset a repeated paste into the same parent. */
   parentId: string | null;
@@ -81,6 +81,86 @@ export function pasteNodes(doc: DesignDoc, payload: ClipPayload, parentId: strin
   const step = sameParent ? PASTE_STEP * ++pasteCount : 0;
   doc.stopCapturing();
   const ids = payload.nodes.map((c) => create(doc, c, parentId, step, step)).filter((id): id is string => id !== null);
+  doc.stopCapturing();
+  return ids;
+}
+
+/** Which paste command the next paste event is: the event itself carries no modifier keys. */
+export type PasteMode = "offset" | "over" | "replace";
+
+let armedMode: PasteMode = "offset";
+
+/** Remember the paste variant from the keydown that precedes the browser's paste event. */
+export function armPasteMode(mode: PasteMode): void {
+  armedMode = mode;
+}
+
+/** Read and reset the armed paste variant. */
+export function takePasteMode(): PasteMode {
+  const mode = armedMode;
+  armedMode = "offset";
+  return mode;
+}
+
+function clipCenter(payload: ClipPayload): { x: number; y: number } {
+  const boxes = payload.nodes.map((n) => ({
+    x: Number(n.props.x ?? 0),
+    y: Number(n.props.y ?? 0),
+    w: Number(n.props.width ?? 0),
+    h: Number(n.props.height ?? 0),
+  }));
+  const x1 = Math.min(...boxes.map((b) => b.x));
+  const y1 = Math.min(...boxes.map((b) => b.y));
+  const x2 = Math.max(...boxes.map((b) => b.x + b.w));
+  const y2 = Math.max(...boxes.map((b) => b.y + b.h));
+  return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+}
+
+/** Parent and box (in that parent's coordinates) that a "paste over" is centred on. */
+function overTarget(doc: DesignDoc, id: string): { parentId: string; box: { x: number; y: number; width: number; height: number } } | null {
+  const n = doc.getNode(id);
+  if (!n?.parentId) return null;
+  if (n.type === "FRAME" || n.type === "GROUP") return { parentId: n.id, box: { x: 0, y: 0, width: n.width, height: n.height } };
+  return { parentId: n.parentId, box: { x: n.x, y: n.y, width: n.width, height: n.height } };
+}
+
+function pasteCentered(doc: DesignDoc, payload: ClipPayload, parentId: string, box: { x: number; y: number; width: number; height: number }): string[] {
+  const c = clipCenter(payload);
+  const dx = box.x + box.width / 2 - c.x;
+  const dy = box.y + box.height / 2 - c.y;
+  return payload.nodes.map((n) => create(doc, n, parentId, dx, dy)).filter((id): id is string => id !== null);
+}
+
+/**
+ * Paste over selection (Ctrl+Shift+V): drop the copied layers centred on the single selected layer,
+ * inside it when it is a frame or group. Returns null when there is no single selection.
+ */
+export function pasteOver(doc: DesignDoc, payload: ClipPayload, selection: string[]): string[] | null {
+  const target = selection.length === 1 ? overTarget(doc, selection[0]!) : null;
+  if (!target) return null;
+  doc.stopCapturing();
+  const ids = pasteCentered(doc, payload, target.parentId, target.box);
+  doc.stopCapturing();
+  return ids;
+}
+
+/**
+ * Paste to replace (Ctrl+Alt+Shift+V): put the copied layers where the single selected layer is, at its
+ * place in the stacking order, then delete that layer. One undo step. Null when nothing can be replaced.
+ */
+export function pasteReplace(doc: DesignDoc, payload: ClipPayload, selection: string[]): string[] | null {
+  const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
+  if (!node?.parentId) return null;
+  const parentId = node.parentId;
+  const index = doc.children(parentId).findIndex((c) => c.id === node.id);
+  doc.stopCapturing();
+  const ids = pasteCentered(doc, payload, parentId, { x: node.x, y: node.y, width: node.width, height: node.height });
+  if (!ids.length) {
+    doc.stopCapturing();
+    return null;
+  }
+  ids.forEach((id, i) => doc.reorderNode(id, index + i));
+  doc.deleteNode(node.id);
   doc.stopCapturing();
   return ids;
 }
