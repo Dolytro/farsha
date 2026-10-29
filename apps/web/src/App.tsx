@@ -4,6 +4,7 @@ import { Canvas } from "./components/Canvas";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
+import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
 import { toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
@@ -42,6 +43,7 @@ async function pasteFromFigma(html: string, parentId: string, cx: number, cy: nu
   }
 }
 
+const ALIGN_KEYS: Record<string, AlignMode> = { KeyA: "left", KeyH: "hcenter", KeyD: "right", KeyW: "top", KeyV: "vcenter", KeyS: "bottom" };
 const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text" };
 
 export function App() {
@@ -213,6 +215,10 @@ export function App() {
       } else if (s.devMode) {
         // Dev Mode is read-only: only Esc (deselect) and the toggle above are active.
         if (key === "escape") s.select([]);
+      } else if (e.altKey && !mod && !e.shiftKey && ALIGN_KEYS[e.code]) {
+        // Figma's align shortcuts: Alt+A / H / D (left, centers, right), Alt+W / V / S (top, centers, bottom).
+        e.preventDefault();
+        alignSelection(doc, selection, ALIGN_KEYS[e.code]!);
       } else if (mod && key === "z") {
         e.preventDefault();
         e.shiftKey ? doc.redo() : doc.undo();

@@ -2,6 +2,7 @@ import type { BlendMode } from "@canvylo/types";
 import { useEditor } from "../store";
 import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
+import { AlignRow } from "./AlignRow";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
@@ -83,7 +84,8 @@ export function Properties() {
     return (
       <aside className="props">
         {header}
-        <p className="props__empty">Select a layer to edit its properties</p>
+        {!viewer && <AlignRow />}
+        <p className="props__empty">{selection.length > 1 ? `${selection.length} layers selected` : "Select a layer to edit its properties"}</p>
       </aside>
     );
   }
@@ -105,6 +107,7 @@ export function Properties() {
   return (
     <aside className="props">
       {header}
+      {!viewer && <AlignRow />}
       <div className="props__name">{node.name}</div>
 
       <section className="props__section">
