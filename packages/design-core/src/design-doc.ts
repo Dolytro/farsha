@@ -3,6 +3,7 @@ import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
 import type { Box, DesignNode, NodeType, StylePatch, TextPatch } from '@canvylo/types';
 import { computeAutoLayout } from './auto-layout';
+import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
 
 /** Transaction origin for user edits; only these are undoable. */
@@ -69,6 +70,17 @@ export class DesignDoc {
       if (tr.origin === LOCAL_ORIGIN && !this.relayouting) this.relayout();
     });
     if (options.init !== false && !this.meta.has('rootId')) this.initialise();
+  }
+
+  /** Move / resize the children of a resized frame by their constraints, and carry on into child frames. */
+  private followParent(frameId: string, from: { width: number; height: number }, to: { width: number; height: number }): void {
+    for (const c of this.children(frameId)) {
+      const box = applyConstraints(c, from, to);
+      this.setProps(c.id, { x: box.x, y: box.y, width: box.width, height: box.height });
+      if (c.type === 'FRAME' && !c.layoutMode && (box.width !== c.width || box.height !== c.height)) {
+        this.followParent(c.id, { width: c.width, height: c.height }, { width: box.width, height: box.height });
+      }
+    }
   }
 
   private relayouting = false;
@@ -280,6 +292,15 @@ export class DesignDoc {
     }
     // Resizing an auto layout frame by hand makes that direction fixed (Figma).
     const node = this.getNode(id)!;
+    const resizes = (patch.width !== undefined && patch.width !== node.width) || (patch.height !== undefined && patch.height !== node.height);
+    if (node.type === 'FRAME' && !node.layoutMode && resizes) {
+      // Children follow the frame according to their constraints.
+      this.transact(() => {
+        this.setProps(id, patch);
+        this.followParent(id, { width: node.width, height: node.height }, { width: patch.width ?? node.width, height: patch.height ?? node.height });
+      });
+      return;
+    }
     if (node.type === 'FRAME' && (node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL')) {
       const horizontal = node.layoutMode === 'HORIZONTAL';
       const widthKey = horizontal ? 'primarySizing' : 'counterSizing';
