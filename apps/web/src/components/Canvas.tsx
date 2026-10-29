@@ -104,7 +104,8 @@ export function Canvas() {
     }
     const labelId = el.dataset.labelId;
     if (tool === "select") {
-      const hit = labelId ? doc.getNode(labelId) : hitTest(doc, pageId, w.x, w.y);
+      const labelHit = labelId ? doc.getNode(labelId) : undefined;
+      const hit = labelHit ? (labelHit.locked ? undefined : labelHit) : hitTest(doc, pageId, w.x, w.y);
       if (!hit) {
         const base = e.shiftKey ? selection : [];
         if (!e.shiftKey) select([]);

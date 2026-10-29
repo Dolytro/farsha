@@ -46,7 +46,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Resize from all 8 handles, Shift = keep ratio, Alt = from center | 🟡 corners only | P1 |
 | Rotate handle, rotate with Ctrl+Alt+arrows (menu) | 🟡 numeric only | P1 |
 | Flip horizontal / vertical | ❌ | P2 |
-| Rename (F2 / double-click), lock, hide shortcuts | 🟡 hide only | P1 |
+| Rename (F2 / Ctrl+R / double-click), lock (Ctrl+Shift+L), hide (Ctrl+Shift+H); locked layers cannot be picked or nudged on the canvas | ✅ | |
 | Snapping, smart guides, pixel snapping | ❌ | P1 |
 | Align and distribute, Tidy up | ❌ | P1 |
 | Boolean operations, flatten, outline stroke | ❌ | P3 |
@@ -55,7 +55,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Command palette "Actions" (Ctrl+K) (menu) | ❌ | P2 |
 | Find (Ctrl+F), find next / previous (menu) | ❌ | P3 |
 | Draggable layer reorder, drag to reparent | ❌ | P1 |
-| Layers panel: expand / collapse, search, lock icon, rename | ❌ | P1 |
+| Layers panel: expand / collapse, search (lock icon and rename done) | 🟡 | P1 |
 | Pages: add, rename, delete, switch (Page Up / Down) | ❌ | P1 |
 
 ## 3. Design panel (right sidebar)
