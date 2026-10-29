@@ -11,6 +11,15 @@ export interface SvgExport {
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const num = (n: number) => String(Math.round(n * 100) / 100);
 
+/** Image types an exported SVG may embed (a shared file can't make the export carry anything else). */
+const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
 function paint(node: DesignNode, key: "fills" | "strokes"): { color: string; opacity: number } | undefined {
   const list = key in node ? (node as unknown as Record<string, { color: string; opacity: number }[]>)[key] : undefined;
   return list?.[0];
@@ -40,6 +49,13 @@ function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       clipIds.push(clipId);
       const clip = n.clipsContent ? ` clip-path="url(#${clipId})"` : "";
       return `<g transform="${transform}"${opacity}><clipPath id="${clipId}"><rect width="${num(n.width)}" height="${num(n.height)}"${radius}/></clipPath><rect width="${num(n.width)}" height="${num(n.height)}"${radius}${fillAttrs}${strokeAttrs}/><g${clip}>${kids}</g></g>`;
+    }
+    case "IMAGE": {
+      const asset = n.assetId ? doc.getAsset(n.assetId) : undefined;
+      if (!asset || !IMAGE_TYPES.has(asset.mime)) return `<g transform="${transform}"${opacity}><rect width="${num(n.width)}" height="${num(n.height)}"${radius} fill="#e5e5e5"/></g>`;
+      const clipId = `clip-${n.id}`;
+      clipIds.push(clipId);
+      return `<g transform="${transform}"${opacity}><clipPath id="${clipId}"><rect width="${num(n.width)}" height="${num(n.height)}"${radius}/></clipPath><image href="data:${asset.mime};base64,${toBase64(asset.bytes)}" width="${num(n.width)}" height="${num(n.height)}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"/></g>`;
     }
     case "VECTOR":
       return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(n.height)}" viewBox="${esc(n.viewBox)}" overflow="visible">${n.markup}</svg></g>`;

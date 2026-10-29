@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import type { Box, DesignNode, NodeType } from "@canvylo/types";
 import { hitTest, measure, screenToWorld, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { assetUrl, isImageFile } from "../images";
+import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
 
 type Corner = "nw" | "ne" | "sw" | "se";
@@ -200,6 +202,27 @@ export function Canvas() {
     doc.stopCapturing();
   };
 
+  // Drop image files from the desktop or another tab onto the canvas.
+  const dropFiles = (e: React.DragEvent) => [...e.dataTransfer.files].filter(isImageFile);
+  const onDragOver = (e: React.DragEvent) => {
+    if (viewer || devMode) return;
+    if ([...e.dataTransfer.items].some((i) => i.kind === "file" && i.type.startsWith("image/"))) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+  const onDrop = (e: React.DragEvent) => {
+    if (viewer || devMode) return;
+    const files = dropFiles(e);
+    if (!files.length) return;
+    e.preventDefault();
+    const w = world(e);
+    const under = hitTest(doc, pageId, w.x, w.y);
+    const frame = under?.type === "FRAME" ? under : undefined;
+    const origin = frame ? (doc.absoluteBox(frame.id) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
+    files.forEach((file, i) => void placeImageFile(file, frame?.id ?? pageId, w.x - origin.x + i * 24, w.y - origin.y + i * 24));
+  };
+
   const onDoubleClick = (e: React.MouseEvent) => {
     if (devMode) return;
     const w = world(e);
@@ -254,6 +277,24 @@ export function Canvas() {
           >
             {n.characters}
           </text>
+        </g>
+      );
+    }
+    if (n.type === "IMAGE") {
+      const href = assetUrl(doc, n.assetId);
+      const clipId = `img-${n.id}`;
+      return (
+        <g key={n.id} transform={transform} opacity={n.opacity}>
+          {href ? (
+            <>
+              <clipPath id={clipId}>
+                <rect width={n.width} height={n.height} rx={n.cornerRadius} />
+              </clipPath>
+              <image href={href} width={n.width} height={n.height} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${clipId})`} />
+            </>
+          ) : (
+            <rect width={n.width} height={n.height} rx={n.cornerRadius} fill="#e5e5e5" />
+          )}
         </g>
       );
     }
@@ -322,6 +363,8 @@ export function Canvas() {
         onPointerUp={onPointerUp}
         onPointerLeave={() => setHoverId(null)}
         onDoubleClick={onDoubleClick}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
       >
         <g transform={`translate(${viewport.x} ${viewport.y}) scale(${z})`}>
           {doc.children(pageId).map(renderNode)}

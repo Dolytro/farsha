@@ -37,7 +37,8 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Copy as SVG / CSS from a menu or context menu | 🟡 engine done, no menu yet | P1 |
 | Paste SVG (shapes, text and paths become layers; no gradients or transforms beyond translate) | ✅ | |
 | Paste layers copied in Figma (frames, text, shapes, vectors; no auto layout, components, images, effects) | 🟡 | |
-| Paste images from the clipboard / drag and drop | ❌ | P1 |
+| Paste images from the clipboard, drag and drop image files (PNG / JPEG / WebP / GIF; stored inside the .canvylo file) | ✅ | |
+| Image fills on shapes, crop, replace image | ❌ | P1 |
 | Select all (Ctrl+A) | ✅ | |
 | Select none / inverse / matching (Ctrl+Shift+A, Ctrl+Alt+A) (menu) | ❌ | P2 |
 | Select children (Enter), select parent (Shift+Enter), Tab to next | ❌ | P2 |
