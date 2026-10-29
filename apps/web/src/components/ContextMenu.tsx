@@ -27,7 +27,13 @@ async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
       }
       case "paste-here":
       case "paste-over": {
-        const text = await navigator.clipboard.readText();
+        let text: string;
+        try {
+          text = await navigator.clipboard.readText();
+        } catch {
+          showToast("Allow clipboard access in the browser, or press Ctrl+V to paste");
+          return;
+        }
         const clip = parseClip(text);
         const parentId = pasteTarget(doc, selection, s.pageId);
         let ids: string[];
@@ -109,7 +115,11 @@ export function ContextMenu() {
 
   useEffect(() => {
     if (!menu) return;
-    const close = () => setMenu(null);
+    // A press inside the menu must not close it first, or the item is gone before its click arrives.
+    const close = (e?: Event) => {
+      if (e?.target instanceof Node && ref.current?.contains(e.target)) return;
+      setMenu(null);
+    };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("pointerdown", close, true);
     window.addEventListener("keydown", onKey);

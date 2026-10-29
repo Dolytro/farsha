@@ -9,8 +9,20 @@ export const contains = (b: Bounds, px: number, py: number) =>
 /**
  * Topmost visible, unlocked node under a world point. Coordinates are
  * relative to the page (no nested transforms yet), children before parents.
+ * Like Figma, a click on something inside a group picks the whole (outermost) group; pass `deep`
+ * to get the innermost layer instead (used to enter a group with a double click).
  */
-export function hitTest(doc: DesignDoc, pageId: string, wx: number, wy: number): DesignNode | undefined {
+export function hitTest(doc: DesignDoc, pageId: string, wx: number, wy: number, deep = false): DesignNode | undefined {
+  const hit = deepestHit(doc, pageId, wx, wy);
+  if (!hit || deep) return hit;
+  let group: DesignNode | undefined;
+  for (let cur: DesignNode | undefined = hit; cur && cur.type !== "PAGE"; cur = cur.parentId ? doc.getNode(cur.parentId) : undefined) {
+    if (cur.type === "GROUP") group = cur;
+  }
+  return group ?? hit;
+}
+
+function deepestHit(doc: DesignDoc, pageId: string, wx: number, wy: number): DesignNode | undefined {
   const walk = (parentId: string, ox: number, oy: number): DesignNode | undefined => {
     const kids = doc.children(parentId);
     for (let i = kids.length - 1; i >= 0; i--) {
