@@ -4,7 +4,7 @@ import { Canvas } from "./components/Canvas";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
-import { groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
+import { toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
@@ -222,6 +222,18 @@ export function App() {
         // Figma's "Paste properties"
         e.preventDefault();
         if (pasteProperties(doc, selection)) s.showToast("Properties pasted");
+      } else if (mod && e.shiftKey && !e.altKey && key === "h") {
+        // Figma's "Show/Hide selection"
+        e.preventDefault();
+        toggleHidden(doc, selection);
+      } else if (mod && e.shiftKey && !e.altKey && key === "l") {
+        // Figma's "Lock/Unlock selection"
+        e.preventDefault();
+        toggleLocked(doc, selection);
+      } else if ((key === "f2" || (mod && !e.shiftKey && !e.altKey && key === "r")) && selection.length) {
+        // Figma's "Rename" (F2, or Ctrl+R)
+        e.preventDefault();
+        s.setRenaming(selection[0]!);
       } else if (mod && key === "g") {
         e.preventDefault();
         s.select(e.shiftKey ? ungroupSelection(doc, selection) : groupSelection(doc, selection));
@@ -252,7 +264,7 @@ export function App() {
         const step = e.shiftKey ? 10 : 1;
         const dx = key === "arrowleft" ? -step : key === "arrowright" ? step : 0;
         const dy = key === "arrowup" ? -step : key === "arrowdown" ? step : 0;
-        selection.forEach((id) => doc.moveNode(id, dx, dy));
+        selection.filter((id) => !doc.getNode(id)?.locked).forEach((id) => doc.moveNode(id, dx, dy));
       } else if (!mod && KEYS[key]) {
         s.setTool(KEYS[key]!);
       }

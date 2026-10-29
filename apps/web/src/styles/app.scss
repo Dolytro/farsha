@@ -158,9 +158,22 @@ button {
     cursor: pointer;
     opacity: 0;
 
-    .layers__item:hover & {
+    .layers__item:hover &,
+    &--on {
       opacity: 1;
     }
+  }
+
+  &__rename {
+    flex: 1;
+    min-width: 0;
+    padding: 0 4px;
+    border: 1px solid var(--c-accent);
+    border-radius: 2px;
+    background: var(--c-panel);
+    color: inherit;
+    font: inherit;
+    outline: none;
   }
 }
 

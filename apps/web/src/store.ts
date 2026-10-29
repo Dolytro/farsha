@@ -50,6 +50,9 @@ interface EditorState {
   viewport: Viewport;
   drive: DriveState;
   shareOpen: boolean;
+  /** Layer being renamed in the layers panel (F2 / Ctrl+R / double-click). */
+  renaming: string | null;
+  setRenaming: (id: string | null) => void;
   /** Right-click menu: screen position and the canvas point it was opened on. */
   menu: { x: number; y: number; wx: number; wy: number } | null;
   setMenu: (m: EditorState["menu"]) => void;
@@ -83,6 +86,8 @@ export const useEditor = create<EditorState>((set) => ({
   viewport: { x: 60, y: 80, zoom: 0.5 },
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
+  renaming: null,
+  setRenaming: (renaming) => set({ renaming }),
   menu: null,
   setMenu: (menu) => set({ menu }),
   toast: null,
