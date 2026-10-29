@@ -54,9 +54,12 @@ pnpm dev
   install when a dependency has an unapproved build script. `pnpm-workspace.yaml` therefore lists
   `allowBuilds` for `esbuild` and `@parcel/watcher`. If a new dependency needs a build script, run
   `pnpm approve-builds` and commit the change.
-- **Google sign-in says the app isn't verified / access blocked:** while the OAuth consent screen
-  is in *Testing*, only listed test users can sign in (Google Auth Platform → Audience → Test
-  users). Viewers of shared links do not sign in, so they are not affected.
+- **Google sign-in says "Access blocked / has not completed the Google verification process":**
+  the OAuth consent screen is in *Testing*, where only listed test users can sign in. Publish it
+  (Google Auth Platform → Audience → Publish app). Publishing needs the home page, privacy policy
+  and terms links on the Branding page; this app serves them at `/privacy.html` and `/terms.html`.
+  With only the non-sensitive `drive.file` scope and no logo, no Google verification is required and
+  any Google account can sign in. Viewers of shared links never need to sign in to view.
 - **Changing `VITE_*` variables on Vercel** requires a new deployment (they are baked in at build time).
 
 ## Live site
