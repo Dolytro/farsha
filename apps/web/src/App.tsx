@@ -11,6 +11,7 @@ import { isImageFile } from "./images";
 import { placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
 import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
+import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
@@ -285,6 +286,7 @@ export function App() {
       </div>
       <Properties />
       <ShareDialog />
+      <ContextMenu />
     </div>
   );
 }

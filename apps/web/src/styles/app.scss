@@ -812,3 +812,52 @@ body {
   transform: translateX(-50%);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
+
+/* ---- right-click menu ---- */
+.ctxmenu {
+  position: fixed;
+  z-index: 60;
+  min-width: 220px;
+  padding: 4px 0;
+  border-radius: 8px;
+  background: #1e1e1e;
+  color: #fff;
+  font-size: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    width: 100%;
+    padding: 6px 12px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: default;
+
+    &:hover {
+      background: var(--c-accent);
+    }
+
+    kbd {
+      color: #aaa;
+      font: inherit;
+    }
+  }
+
+  &__sep {
+    height: 1px;
+    margin: 4px 0;
+    background: #3a3a3a;
+  }
+
+  &__group {
+    padding: 4px 12px;
+    color: #999;
+    font-size: 11px;
+  }
+}

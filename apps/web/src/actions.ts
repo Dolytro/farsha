@@ -83,3 +83,21 @@ export function zoomBy(v: Viewport, zoom: number): Viewport {
   const { w, h } = canvasSize();
   return zoomTo(v, zoom, w, h);
 }
+
+/** Hide or show the layers; if any is visible they all get hidden (Figma's Ctrl+Shift+H). */
+export function toggleHidden(doc: DesignDoc, ids: string[]): void {
+  const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n);
+  const hide = nodes.some((n) => n.visible);
+  doc.stopCapturing();
+  nodes.forEach((n) => doc.setStyle(n.id, { visible: !hide }));
+  doc.stopCapturing();
+}
+
+/** Lock or unlock the layers; if any is unlocked they all get locked (Figma's Ctrl+Shift+L). */
+export function toggleLocked(doc: DesignDoc, ids: string[]): void {
+  const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n);
+  const lock = nodes.some((n) => !n.locked);
+  doc.stopCapturing();
+  nodes.forEach((n) => doc.setStyle(n.id, { locked: lock }));
+  doc.stopCapturing();
+}

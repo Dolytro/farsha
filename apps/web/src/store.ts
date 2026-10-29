@@ -50,6 +50,9 @@ interface EditorState {
   viewport: Viewport;
   drive: DriveState;
   shareOpen: boolean;
+  /** Right-click menu: screen position and the canvas point it was opened on. */
+  menu: { x: number; y: number; wx: number; wy: number } | null;
+  setMenu: (m: EditorState["menu"]) => void;
   /** Short message shown at the bottom of the canvas, like Figma's "Copied" toasts. */
   toast: string | null;
   showToast: (message: string) => void;
@@ -80,6 +83,8 @@ export const useEditor = create<EditorState>((set) => ({
   viewport: { x: 60, y: 80, zoom: 0.5 },
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
+  menu: null,
+  setMenu: (menu) => set({ menu }),
   toast: null,
   showToast: (message) => {
     clearTimeout(toastTimer);
