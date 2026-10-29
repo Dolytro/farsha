@@ -54,8 +54,8 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Right-click context menu (Figma items; read-only in Dev Mode; none on view links; submenu is a flat "Copy/Paste as" group) | ✅ | |
 | Command palette "Actions" (Ctrl+K) (menu) | ❌ | P2 |
 | Find (Ctrl+F), find next / previous (menu) | ❌ | P3 |
-| Draggable layer reorder, drag to reparent | ❌ | P1 |
-| Layers panel: expand / collapse, search (lock icon and rename done) | 🟡 | P1 |
+| Draggable layer reorder, drag to reparent (drop on a frame or group) | ✅ | |
+| Layers panel: expand / collapse, search, lock icon, rename (selecting on canvas does not auto-expand parents yet) | ✅ | |
 | Pages: add, rename, delete, switch (Page Up / Down) | ❌ | P1 |
 
 ## 3. Design panel (right sidebar)
