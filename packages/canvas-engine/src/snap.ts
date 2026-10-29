@@ -33,11 +33,11 @@ function best(mine: number[], theirs: number[], threshold: number): number {
 
 /**
  * Snap a moving box to the left / centre / right and top / middle / bottom lines of other boxes (Figma's smart guides).
- * `threshold` is in the same units as the boxes. Guides join the snapped line from the moving box to every box it lines up with.
+ * `threshold` is in the same units as the boxes. `extra` adds bare lines (ruler guides) to snap to. Guides join the snapped line from the moving box to every box it lines up with.
  */
-export function snapMove(moving: Box, targets: Box[], threshold: number): SnapResult {
-  const xs = targets.flatMap((t) => lines(t.x, t.width));
-  const ys = targets.flatMap((t) => lines(t.y, t.height));
+export function snapMove(moving: Box, targets: Box[], threshold: number, extra: { xs?: number[]; ys?: number[] } = {}): SnapResult {
+  const xs = [...targets.flatMap((t) => lines(t.x, t.width)), ...(extra.xs ?? [])];
+  const ys = [...targets.flatMap((t) => lines(t.y, t.height)), ...(extra.ys ?? [])];
   const dx = best(lines(moving.x, moving.width), xs, threshold);
   const dy = best(lines(moving.y, moving.height), ys, threshold);
   const m: Box = { ...moving, x: moving.x + dx, y: moving.y + dy };

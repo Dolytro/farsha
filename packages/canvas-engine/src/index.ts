@@ -8,3 +8,4 @@ export * from "./appearance";
 export * from "./resize";
 export * from "./snap";
 export * from "./text";
+export * from "./ruler";

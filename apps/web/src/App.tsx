@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LoginScreen } from "./components/LoginScreen";
 import { Canvas } from "./components/Canvas";
+import { Rulers } from "./components/Rulers";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
@@ -54,6 +55,8 @@ export function App() {
   const toast = useEditor((s) => s.toast);
   const signedIn = useEditor((s) => s.drive.user !== null);
   const authChecked = useEditor((s) => s.drive.checked);
+  const rulers = useEditor((s) => s.rulers);
+  const viewer = useEditor((s) => s.viewer);
   const [offline, setOffline] = useState(false);
   // Local testing only: `?nologin` skips the sign-in gate on the dev server. Production builds
   // have import.meta.env.DEV === false, so this can never open the editor on the live site.
@@ -234,6 +237,10 @@ export function App() {
       } else if (s.devMode) {
         // Dev Mode is read-only: only Esc (deselect) and the toggle above are active.
         if (key === "escape") s.select([]);
+      } else if (e.shiftKey && !e.altKey && !mod && key === "r" && !s.viewer) {
+        // Figma's "Show / Hide rulers"
+        e.preventDefault();
+        s.setRulers(!s.rulers);
       } else if (e.shiftKey && !e.altKey && !mod && key === "a" && selection.length) {
         // Figma's "Add auto layout"
         e.preventDefault();
@@ -321,6 +328,7 @@ export function App() {
       <Layers />
       <div className="workspace">
         <Canvas />
+        {rulers && !viewer && <Rulers />}
         <Toolbar />
         {toast && (
           <div className="toast" role="status">
