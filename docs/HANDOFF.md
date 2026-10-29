@@ -310,6 +310,12 @@ Suggested order (each is one feature = build, test, fix, push):
 5. Prototype mode, comments, live collaboration (y-webrtc or a small relay), version history.
 6. Performance: Canvas / WebGL renderer path for thousands of nodes.
 
+Working copy persistence: `apps/web/src/local-persist.ts` saves the open document to IndexedDB (database `canvylo`,
+key `current`) 0.8 s after every change and on tab hide, and restores it on load, so a reload never loses work even
+when it was never saved to Drive (Drive file id and name are restored too, so Drive autosave resumes). While testing
+in the browser the editor therefore starts from your last session, not from the welcome canvas: run
+`indexedDB.deleteDatabase("canvylo")` and reload to reset it.
+
 Browser testing tips added: the Vite watcher on Windows sometimes serves stale modules, so `touch` the changed
 files and reload with a new query string. Synthetic pointer events must go to the `<svg>` (the handlers live there,
 not on `<main>`), and `Element.prototype.setPointerCapture` must be stubbed because the fake pointer id makes it throw.

@@ -16,6 +16,7 @@ import { looksLikeSvg } from "./svg-import";
 import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
+import { restoreLocal, startLocalAutosave } from "./local-persist";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
 
@@ -169,7 +170,24 @@ export function App() {
       });
       return;
     }
-    return startAutosave();
+    // Bring back the working copy saved in this browser first, then keep saving it (and Drive) as the design changes.
+    let stopLocal: (() => void) | undefined;
+    let cancelled = false;
+    void restoreLocal().then((restored) => {
+      if (cancelled) return;
+      if (restored) {
+        const s = useEditor.getState();
+        const v = zoomFit(s.doc, s.pageId, []);
+        if (v) s.setViewport(v);
+      }
+      stopLocal = startLocalAutosave();
+    });
+    const stopDrive = startAutosave();
+    return () => {
+      cancelled = true;
+      stopLocal?.();
+      stopDrive();
+    };
   }, []);
 
   useEffect(() => {
