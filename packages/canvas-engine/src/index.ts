@@ -4,3 +4,4 @@ export * from "./renderer";
 export * from "./measure";
 export * from "./fit";
 export * from "./svg-export";
+export * from "./appearance";

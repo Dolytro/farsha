@@ -62,13 +62,14 @@ function buildDefaults(type: NodeType): NodeDraft {
         fills: [solid('#ffffff')],
         strokes: [],
         strokeWidth: 1,
+        strokeAlign: 'INSIDE',
         cornerRadius: 0,
         clipsContent: true,
       };
     case 'RECTANGLE':
-      return { ...base, type, fills: [solid('#d9d9d9')], strokes: [], strokeWidth: 1, cornerRadius: 0 };
+      return { ...base, type, fills: [solid('#d9d9d9')], strokes: [], strokeWidth: 1, strokeAlign: 'INSIDE', cornerRadius: 0 };
     case 'ELLIPSE':
-      return { ...base, type, fills: [solid('#d9d9d9')], strokes: [], strokeWidth: 1 };
+      return { ...base, type, fills: [solid('#d9d9d9')], strokes: [], strokeWidth: 1, strokeAlign: 'INSIDE' };
     case 'TEXT':
       return {
         ...base,

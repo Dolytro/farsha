@@ -1,6 +1,7 @@
 import { useEditor } from "../store";
 import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
+import { EffectsSection, StrokeSection } from "./AppearanceSections";
 
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
@@ -161,6 +162,9 @@ export function Properties() {
           </div>
         </section>
       )}
+
+      <StrokeSection doc={doc} node={node} />
+      <EffectsSection doc={doc} node={node} />
     </aside>
   );
 }

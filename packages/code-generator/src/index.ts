@@ -24,6 +24,14 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   if (node.rotation) d.push(["transform", `rotate(${node.rotation}deg)`]);
   if (node.opacity !== 1) d.push(["opacity", String(Math.round(node.opacity * 100) / 100)]);
 
+  const fx = (node.effects ?? []).filter((e) => e.visible);
+  const shadows = fx.flatMap((e) => (e.type === "LAYER_BLUR" ? [] : [`${e.type === "INNER_SHADOW" ? "inset " : ""}${px(e.x)} ${px(e.y)} ${px(e.blur)} ${toRgba(e.color, e.opacity)}`]));
+  const blur = fx.find((e) => e.type === "LAYER_BLUR");
+  const effectDecls = (): void => {
+    if (shadows.length) d.push(["box-shadow", shadows.join(", ")]);
+    if (blur && blur.type === "LAYER_BLUR") d.push(["filter", `blur(${px(blur.radius)})`]);
+  };
+
   if (node.type === "TEXT") {
     const fill = node.fills[0];
     if (fill) d.push(["color", toRgba(fill.color, fill.opacity)]);
@@ -31,6 +39,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     d.push(["line-height", node.lineHeight === "AUTO" ? "normal" : px(node.lineHeight)]);
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
     d.push(["text-align", node.textAlign.toLowerCase()]);
+    effectDecls();
     return d;
   }
 
@@ -41,6 +50,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${toRgba(node.strokes[0].color, node.strokes[0].opacity)}`]);
   }
   if (node.type === "FRAME" && node.clipsContent) d.push(["overflow", "hidden"]);
+  effectDecls();
   return d;
 }
 
