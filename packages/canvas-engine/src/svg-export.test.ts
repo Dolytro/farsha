@@ -137,6 +137,17 @@ describe("exportSvg", () => {
     expect(auto).toContain('y="16"');
   });
 
+  it("exports multi-line and wrapped text as one tspan per line", () => {
+    const { doc, text } = setup();
+    doc.setText(text, { characters: "one\ntwo", lineHeight: 20 });
+    const hard = exportSvg(doc, [text])!.svg;
+    expect(hard.match(/<tspan/g)).toHaveLength(2);
+    expect(hard).toContain('dy="20"');
+    doc.setText(text, { characters: "aaaa bbbb cccc dddd", textAutoResize: "HEIGHT", fontSize: 10, lineHeight: "AUTO" });
+    doc.resizeNode(text, { width: 60 }); // ~10 chars per line with the estimate
+    expect(exportSvg(doc, [text], { measure: (s) => s.length * 5.6 })!.svg.match(/<tspan/g)).toHaveLength(2);
+  });
+
   it("clips frame content and nests children once", () => {
     const { doc, frame, rect } = setup();
     const { svg } = exportSvg(doc, [frame, rect])!; // rect is inside frame: drawn once

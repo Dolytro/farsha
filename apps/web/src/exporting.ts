@@ -1,4 +1,5 @@
 import { exportSvg } from "@canvylo/canvas-engine";
+import { canvasMeasure } from "./text-layout";
 import { generateCode } from "@canvylo/code-generator";
 import type { DesignDoc } from "@canvylo/design-core";
 
@@ -12,7 +13,7 @@ export function cssFor(doc: DesignDoc, ids: string[]): string | null {
 }
 
 export function svgFor(doc: DesignDoc, ids: string[]): string | null {
-  return exportSvg(doc, ids)?.svg ?? null;
+  return exportSvg(doc, ids, { measure: canvasMeasure })?.svg ?? null;
 }
 
 /** Rasterise an SVG string to a PNG at `scale`x, capped so the canvas stays within browser limits. */
@@ -39,7 +40,7 @@ export async function svgToPngBlob(svg: string, width: number, height: number, s
 }
 
 export async function copyAsPng(doc: DesignDoc, ids: string[]): Promise<boolean> {
-  const out = exportSvg(doc, ids);
+  const out = exportSvg(doc, ids, { measure: canvasMeasure });
   if (!out) return false;
   const blob = await svgToPngBlob(out.svg, out.width, out.height);
   await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);

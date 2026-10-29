@@ -2,6 +2,7 @@ import type { BlendMode } from "@canvylo/types";
 import { useEditor } from "../store";
 import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
+import { fitText } from "../text-layout";
 import { AlignRow } from "./AlignRow";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
@@ -93,7 +94,15 @@ export function Properties() {
   const setNum = (k: NumKey, value: number) => {
     if (!Number.isFinite(value)) return;
     if (k === "rotation") doc.rotateNode(node.id, value);
-    else doc.resizeNode(node.id, { [k]: value });
+    else {
+      doc.resizeNode(node.id, { [k]: value });
+      if (node.type === "TEXT" && (k === "width" || k === "height")) {
+        // Same rule as dragging a handle: height gives a fixed box, width gives auto height.
+        if (k === "height") doc.setText(node.id, { textAutoResize: "NONE" });
+        else if ((node.textAutoResize ?? "WIDTH_AND_HEIGHT") === "WIDTH_AND_HEIGHT") doc.setText(node.id, { textAutoResize: "HEIGHT" });
+        fitText(doc, node.id);
+      }
+    }
   };
   const num = (k: NumKey, label: string) => (
     <label className="field">

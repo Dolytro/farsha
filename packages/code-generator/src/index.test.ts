@@ -74,6 +74,13 @@ describe("declarations", () => {
     expect(d("STRETCH")).toBe("url(image) 0 0 / 100% 100% no-repeat");
   });
 
+  it("keeps line breaks in text with pre-wrap", () => {
+    const n = { ...defaultsFor("TEXT"), id: "t", parentId: null, orderKey: "a0" };
+    expect(Object.fromEntries(declarations(n))["white-space"]).toBeUndefined();
+    expect(Object.fromEntries(declarations({ ...n, characters: "a\nb" }))["white-space"]).toBe("pre-wrap");
+    expect(Object.fromEntries(declarations({ ...n, textAutoResize: "HEIGHT" as const }))["white-space"]).toBe("pre-wrap");
+  });
+
   it("writes blend mode", () => {
     const n = { ...defaultsFor("RECTANGLE"), id: "b", parentId: null, orderKey: "a0", blendMode: "MULTIPLY" as const };
     expect(Object.fromEntries(declarations(n))["mix-blend-mode"]).toBe("multiply");

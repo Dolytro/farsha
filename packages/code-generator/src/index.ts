@@ -52,6 +52,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     d.push(["line-height", node.lineHeight === "AUTO" ? "normal" : px(node.lineHeight)]);
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
     d.push(["text-align", node.textAlign.toLowerCase()]);
+    if (node.characters.includes("\n") || (node.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT") d.push(["white-space", "pre-wrap"]);
     effectDecls();
     return d;
   }

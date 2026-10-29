@@ -1,5 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import type { TextAlign, TextNode } from "@canvylo/types";
+import type { TextAlign, TextAutoResize, TextNode } from "@canvylo/types";
+import { fitText } from "../text-layout";
 
 export const FONTS: { label: string; stack: string }[] = [
   { label: "Inter", stack: "Inter, system-ui, sans-serif" },
@@ -30,17 +31,26 @@ const ALIGNS: [TextAlign, string, string][] = [
   ["RIGHT", "⇥", "Align right"],
 ];
 
+const RESIZE: [TextAutoResize, string, string][] = [
+  ["WIDTH_AND_HEIGHT", "Auto width", "Auto width"],
+  ["HEIGHT", "Auto height", "Auto height (wraps at the layer width)"],
+  ["NONE", "Fixed", "Fixed size"],
+];
+
 const firstFamily = (stack: string) => stack.split(",")[0]!.trim().replace(/['"]/g, "");
 
 export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNode }) {
-  const set = (patch: Parameters<DesignDoc["setText"]>[1]) => doc.setText(node.id, patch);
+  const set = (patch: Parameters<DesignDoc["setText"]>[1]) => {
+    doc.setText(node.id, patch);
+    fitText(doc, node.id);
+  };
   const known = FONTS.find((f) => firstFamily(f.stack) === firstFamily(node.fontFamily));
   const weightKnown = WEIGHTS.some(([w]) => w === node.fontWeight);
 
   return (
     <section className="props__section">
       <h3 className="props__heading">Typography</h3>
-      <input className="field__input field__input--wide" value={node.characters} onChange={(e) => set({ characters: e.target.value })} />
+      <textarea className="field__input field__input--wide field__input--area" rows={2} value={node.characters} onChange={(e) => set({ characters: e.target.value })} />
       <select className="field__select field__select--wide" value={known?.stack ?? node.fontFamily} onChange={(e) => set({ fontFamily: e.target.value })}>
         {!known && <option value={node.fontFamily}>{firstFamily(node.fontFamily)}</option>}
         {FONTS.map((f) => (
@@ -74,7 +84,6 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
               const v = e.target.value === "" ? 0 : Number(e.target.value);
               if (!Number.isFinite(v)) return;
               set({ lineHeight: v > 0 ? v : "AUTO" });
-              if (v > 0) doc.resizeNode(node.id, { height: v });
             }}
           />
         </label>
@@ -82,6 +91,13 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           <span className="field__label">↔</span>
           <input className="field__input" type="number" step={0.1} value={node.letterSpacing} onChange={(e) => Number.isFinite(Number(e.target.value)) && set({ letterSpacing: Number(e.target.value) })} />
         </label>
+      </div>
+      <div className="seg">
+        {RESIZE.map(([mode, label, title]) => (
+          <button key={mode} className={`seg__btn${(node.textAutoResize ?? "WIDTH_AND_HEIGHT") === mode ? " seg__btn--active" : ""}`} title={title} onClick={() => set({ textAutoResize: mode })}>
+            {label}
+          </button>
+        ))}
       </div>
       <div className="seg">
         {ALIGNS.map(([a, icon, title]) => (
