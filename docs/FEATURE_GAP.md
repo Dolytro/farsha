@@ -56,7 +56,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Find (Ctrl+F), find next / previous (menu) | ❌ | P3 |
 | Draggable layer reorder, drag to reparent (drop on a frame or group) | ✅ | |
 | Layers panel: expand / collapse, search, lock icon, rename (selecting on canvas does not auto-expand parents yet) | ✅ | |
-| Pages: add, rename, delete, switch (Page Up / Down) | ❌ | P1 |
+| Pages: add, rename (double-click), delete, switch (click, Page Up / Down); each page remembers its pan and zoom | ✅ | |
 
 ## 3. Design panel (right sidebar)
 

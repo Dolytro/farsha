@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
 import type { DesignNode } from "@canvylo/types";
 import { useEditor } from "../store";
+import { addPage, deletePage } from "../pages";
 import { isContainer, layerRows, moveLayers, type DropWhere, type LayerRow } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 
@@ -41,7 +42,13 @@ export function Layers() {
   const { doc, pageId, selection, select, viewer, renaming, setRenaming } = useEditor();
   const canEdit = !viewer && !useEditor.getState().devMode;
   useEditor((s) => s.version);
-  const pageName = doc.getNode(pageId)?.name ?? "Page 1";
+  const pages = doc.pages();
+  const setPage = useEditor((s) => s.setPage);
+  const [renamingPage, setRenamingPage] = useState<string | null>(null);
+  // The open page can disappear (undo, delete, a collaborator): fall back to the first one.
+  useEffect(() => {
+    if (!doc.hasNode(pageId)) setPage(doc.pages()[0]!.id);
+  });
 
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [query, setQuery] = useState("");
@@ -158,8 +165,49 @@ export function Layers() {
           </span>
         )}
       </header>
-      <h2 className="panel-title">Pages</h2>
-      <div className="layers__page">{pageName}</div>
+      <h2 className="panel-title pages__title">
+        Pages
+        {canEdit && (
+          <button className="icon-btn" title="Add page" onClick={() => setPage(addPage(doc))}>
+            +
+          </button>
+        )}
+      </h2>
+      <ul className="pages">
+        {pages.map((p) => (
+          <li
+            key={p.id}
+            className={`pages__item${p.id === pageId ? " pages__item--current" : ""}`}
+            onClick={() => setPage(p.id)}
+            onDoubleClick={() => canEdit && setRenamingPage(p.id)}
+          >
+            {renamingPage === p.id ? (
+              <RenameInput
+                initial={p.name}
+                onDone={(name) => {
+                  setRenamingPage(null);
+                  if (name && name !== p.name) doc.rename(p.id, name);
+                }}
+              />
+            ) : (
+              <span className="layers__name">{p.name}</span>
+            )}
+            {canEdit && pages.length > 1 && (
+              <button
+                className="layers__toggle"
+                title="Delete page"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const next = deletePage(doc, p.id);
+                  if (next && p.id === pageId) setPage(next);
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
       <h2 className="panel-title">Layers</h2>
       <input className="layers__search" type="search" placeholder="Search layers" value={query} onChange={(e) => setQuery(e.target.value)} />
       <ul className="layers__list">{rows.map(renderRow)}</ul>
