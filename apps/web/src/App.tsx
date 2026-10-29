@@ -5,7 +5,7 @@ import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
-import { copyNodes, parseClip, pasteNodes, pasteTarget, pasteText, selectAllIn, topLevelOf } from "./clipboard";
+import { armPasteMode, copyNodes, parseClip, pasteNodes, pasteOver, pasteReplace, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { ShareDialog } from "./components/ShareDialog";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
@@ -60,6 +60,7 @@ export function App() {
       }
     };
     const onPaste = (e: ClipboardEvent) => {
+      const mode = takePasteMode();
       if (blocked(e)) return;
       const text = e.clipboardData?.getData("text/plain") ?? "";
       if (!text) return;
@@ -69,7 +70,8 @@ export function App() {
       const at = viewportCenter(s.viewport);
       const parentBox = s.doc.absoluteBox(parentId);
       const ids = clip
-        ? pasteNodes(s.doc, clip, parentId)
+        ? ((mode === "over" ? pasteOver(s.doc, clip, s.selection) : mode === "replace" ? pasteReplace(s.doc, clip, s.selection) : null) ??
+          pasteNodes(s.doc, clip, parentId))
         : pasteText(s.doc, text, parentId, at.x - (parentBox && parentId !== s.pageId ? parentBox.x : 0), at.y - (parentBox && parentId !== s.pageId ? parentBox.y : 0));
       if (ids.length) s.select(ids);
       e.preventDefault();
@@ -108,6 +110,9 @@ export function App() {
       const { doc, selection } = s;
       const mod = e.ctrlKey || e.metaKey;
       const key = e.key.toLowerCase();
+
+      // The browser's paste event doesn't say which modifiers were held, so note them here.
+      if (mod && key === "v") armPasteMode(e.shiftKey ? (e.altKey ? "replace" : "over") : "offset");
 
       if (mod && ["+", "=", "-", "_", "0"].includes(key)) {
         // Ctrl +/-/0 would zoom the whole browser page; zoom the canvas instead (like Figma).

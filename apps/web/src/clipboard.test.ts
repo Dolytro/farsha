@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { copyNodes, parseClip, pasteNodes, pasteTarget, pasteText, resetClipboardState, selectAllIn } from "./clipboard";
+import { armPasteMode, copyNodes, parseClip, pasteNodes, pasteOver, pasteReplace, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
 
 function setup() {
   const doc = new DesignDoc();
@@ -79,6 +79,59 @@ describe("copy and paste", () => {
     const { doc, frame, rect } = setup();
     const clip = parseClip(copyNodes(doc, [frame])!)!;
     expect(pasteNodes(doc, clip, rect)).toEqual([]);
+  });
+});
+
+describe("paste over selection and paste to replace", () => {
+  it("centres pasted layers on a selected plain layer", () => {
+    const { doc, frame, rect, text } = setup();
+    const clip = parseClip(copyNodes(doc, [text])!)!;
+    const [id] = pasteOver(doc, clip, [rect])!;
+    const pasted = doc.getNode(id!)!;
+    const copied = doc.getNode(text)!;
+    // rect: x10 y20 50x40 -> centre (35, 40); pasted box is centred on it
+    expect(pasted.x + pasted.width / 2).toBeCloseTo(35);
+    expect(pasted.y + pasted.height / 2).toBeCloseTo(40);
+    expect(pasted.parentId).toBe(frame);
+    expect(copied.x).toBe(5); // original untouched
+  });
+
+  it("pastes inside a selected frame, centred", () => {
+    const { doc, page, frame, rect } = setup();
+    const clip = parseClip(copyNodes(doc, [rect])!)!;
+    const [id] = pasteOver(doc, clip, [frame])!;
+    const pasted = doc.getNode(id!)!;
+    expect(pasted.parentId).toBe(frame);
+    expect(pasted.x + pasted.width / 2).toBeCloseTo(150); // frame is 300 wide
+    expect(pasted.y + pasted.height / 2).toBeCloseTo(100); // and 200 tall
+    expect(doc.getNode(frame)!.parentId).toBe(page);
+  });
+
+  it("returns null without a single selection", () => {
+    const { doc, rect, text } = setup();
+    const clip = parseClip(copyNodes(doc, [rect])!)!;
+    expect(pasteOver(doc, clip, [])).toBeNull();
+    expect(pasteOver(doc, clip, [rect, text])).toBeNull();
+    expect(pasteReplace(doc, clip, [])).toBeNull();
+  });
+
+  it("replaces the selected layer, keeping its stacking position, in one undo step", () => {
+    const { doc, frame, rect, text } = setup();
+    const extra = doc.createNode("ELLIPSE", { parentId: frame, props: { name: "Dot", x: 0, y: 0, width: 10, height: 10 } });
+    const clip = parseClip(copyNodes(doc, [extra])!)!;
+    doc.clearHistory();
+    const [id] = pasteReplace(doc, clip, [rect])!;
+    expect(doc.hasNode(rect)).toBe(false);
+    expect(doc.children(frame).map((n) => n.id)).toEqual([id, text, extra]);
+    doc.undo();
+    expect(doc.hasNode(rect)).toBe(true);
+    expect(doc.children(frame).map((n) => n.id)).toEqual([rect, text, extra]);
+  });
+
+  it("arms and resets the paste mode", () => {
+    armPasteMode("over");
+    expect(takePasteMode()).toBe("over");
+    expect(takePasteMode()).toBe("offset");
   });
 });
 
