@@ -5,16 +5,28 @@ import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
+import { copyAsPng, cssFor } from "./exporting";
 import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteReplace, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { ShareDialog } from "./components/ShareDialog";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
+
+/** Run a "Copy as ..." action and report the result in a toast. */
+async function copyWithToast(label: string, task: () => Promise<boolean>): Promise<void> {
+  const { showToast } = useEditor.getState();
+  try {
+    showToast((await task()) ? `Copied as ${label}` : "Select a layer first");
+  } catch (err) {
+    showToast(err instanceof Error ? `Couldn't copy: ${err.message}` : "Couldn't copy");
+  }
+}
 
 const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text" };
 
 export function App() {
   const loadState = useEditor((s) => s.loadState);
   const loadError = useEditor((s) => s.loadError);
+  const toast = useEditor((s) => s.toast);
   const signedIn = useEditor((s) => s.drive.user !== null);
   const authChecked = useEditor((s) => s.drive.checked);
   const [offline, setOffline] = useState(false);
@@ -46,6 +58,20 @@ export function App() {
       return Boolean(editing || s.devMode || s.viewer || document.querySelector(".login"));
     };
     const onCopy = (e: ClipboardEvent, cut: boolean) => {
+      const st = useEditor.getState();
+      const t = e.target as HTMLElement | null;
+      const typing = t?.tagName === "INPUT" || t?.tagName === "TEXTAREA" || t?.isContentEditable;
+      const canInspect = st.devMode && (!st.viewer || (st.viewer === "inspect" && st.drive.user !== null));
+      if (canInspect && !cut && !typing) {
+        // In Dev Mode, Ctrl+C copies the selected layer's CSS.
+        const css = cssFor(st.doc, st.selection);
+        if (css) {
+          e.clipboardData?.setData("text/plain", css);
+          e.preventDefault();
+          st.showToast("Copied CSS");
+        }
+        return;
+      }
       if (blocked(e)) return;
       const { doc, selection, select } = useEditor.getState();
       const text = copyNodes(doc, selection);
@@ -121,6 +147,10 @@ export function App() {
       } else if (mod && key === "a" && !s.viewer) {
         e.preventDefault();
         s.select(selectAllIn(doc, selection, s.pageId));
+      } else if (mod && e.shiftKey && !e.altKey && key === "c" && !s.viewer) {
+        // Figma's "Copy as PNG"
+        e.preventDefault();
+        void copyWithToast("PNG", () => copyAsPng(doc, selection));
       } else if (e.shiftKey && !mod && key === "d") {
         s.setDevMode(!s.devMode);
       } else if (e.shiftKey && !mod && ["Digit0", "Digit1", "Digit2"].includes(e.code)) {
@@ -146,11 +176,11 @@ export function App() {
       } else if (mod && e.altKey && !e.shiftKey && key === "c") {
         // Figma's "Copy properties"
         e.preventDefault();
-        copyProperties(doc, selection[0]);
+        if (copyProperties(doc, selection[0])) s.showToast("Properties copied");
       } else if (mod && e.altKey && !e.shiftKey && key === "v") {
         // Figma's "Paste properties"
         e.preventDefault();
-        pasteProperties(doc, selection);
+        if (pasteProperties(doc, selection)) s.showToast("Properties pasted");
       } else if (mod && key === "g") {
         e.preventDefault();
         s.select(e.shiftKey ? ungroupSelection(doc, selection) : groupSelection(doc, selection));
@@ -202,6 +232,11 @@ export function App() {
       <div className="workspace">
         <Canvas />
         <Toolbar />
+        {toast && (
+          <div className="toast" role="status">
+            {toast}
+          </div>
+        )}
         {loadState !== "ready" && (
           <div className="loading" role="status">
             {loadState === "loading" ? "Loading design…" : (loadError ?? "Couldn't open this design.")}

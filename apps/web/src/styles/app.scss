@@ -796,3 +796,19 @@ body {
   overflow: hidden;
   overscroll-behavior: none;
 }
+
+/* ---- toast ---- */
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 72px;
+  z-index: 30;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #1e1e1e;
+  color: #fff;
+  font-size: 12px;
+  pointer-events: none;
+  transform: translateX(-50%);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
