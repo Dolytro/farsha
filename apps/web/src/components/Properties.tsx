@@ -1,9 +1,29 @@
+import type { BlendMode } from "@canvylo/types";
 import { useEditor } from "../store";
 import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
+
+const BLEND_MODES: [BlendMode, string][] = [
+  ["NORMAL", "Normal"],
+  ["DARKEN", "Darken"],
+  ["MULTIPLY", "Multiply"],
+  ["COLOR_BURN", "Color burn"],
+  ["LIGHTEN", "Lighten"],
+  ["SCREEN", "Screen"],
+  ["COLOR_DODGE", "Color dodge"],
+  ["OVERLAY", "Overlay"],
+  ["SOFT_LIGHT", "Soft light"],
+  ["HARD_LIGHT", "Hard light"],
+  ["DIFFERENCE", "Difference"],
+  ["EXCLUSION", "Exclusion"],
+  ["HUE", "Hue"],
+  ["SATURATION", "Saturation"],
+  ["COLOR", "Color"],
+  ["LUMINOSITY", "Luminosity"],
+];
 
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
@@ -106,6 +126,18 @@ export function Properties() {
 
       <section className="props__section">
         <h3 className="props__heading">Appearance</h3>
+        <select
+          className="field__select field__select--wide"
+          title="Blend mode"
+          value={node.blendMode ?? "NORMAL"}
+          onChange={(e) => doc.setStyle(node.id, { blendMode: e.target.value as BlendMode })}
+        >
+          {BLEND_MODES.map(([mode, label]) => (
+            <option key={mode} value={mode}>
+              {label}
+            </option>
+          ))}
+        </select>
         <div className="props__grid">
           <label className="field">
             <span className="field__label">%</span>

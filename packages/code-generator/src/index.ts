@@ -1,4 +1,4 @@
-import { paintColor, type DesignNode, type Paint } from "@canvylo/types";
+import { cssBlendMode, paintColor, type DesignNode, type Paint } from "@canvylo/types";
 
 export type Language = "css" | "html" | "react" | "tailwind";
 export type Decl = [prop: string, value: string];
@@ -33,6 +33,8 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   d.push(["width", px(node.width)], ["height", px(node.height)]);
   if (node.rotation) d.push(["transform", `rotate(${node.rotation}deg)`]);
   if (node.opacity !== 1) d.push(["opacity", String(Math.round(node.opacity * 100) / 100)]);
+  const blendMode = cssBlendMode(node.blendMode);
+  if (blendMode) d.push(["mix-blend-mode", blendMode]);
 
   const fx = (node.effects ?? []).filter((e) => e.visible);
   const shadows = fx.flatMap((e) => (e.type === "LAYER_BLUR" ? [] : [`${e.type === "INNER_SHADOW" ? "inset " : ""}${px(e.x)} ${px(e.y)} ${px(e.blur)} ${toRgba(e.color, e.opacity)}`]));

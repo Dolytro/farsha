@@ -224,6 +224,7 @@ export function selectAllIn(doc: DesignDoc, selection: string[], pageId: string)
 export interface PropertySnapshot {
   type: NodeType;
   opacity: number;
+  blendMode?: string;
   fills?: unknown;
   strokes?: unknown;
   strokeWidth?: number;
@@ -239,7 +240,7 @@ let copiedProperties: PropertySnapshot | null = null;
 export function copyProperties(doc: DesignDoc, id: string | undefined): boolean {
   const n = id ? doc.getNode(id) : undefined;
   if (!n || n.type === "PAGE" || n.type === "DOCUMENT") return false;
-  const snap: PropertySnapshot = { type: n.type, opacity: n.opacity };
+  const snap: PropertySnapshot = { type: n.type, opacity: n.opacity, blendMode: n.blendMode };
   if ("fills" in n) snap.fills = JSON.parse(JSON.stringify(n.fills));
   if ("strokes" in n) {
     snap.strokes = JSON.parse(JSON.stringify(n.strokes));
@@ -268,7 +269,7 @@ export function pasteProperties(doc: DesignDoc, ids: string[]): number {
   for (const id of ids) {
     const n = doc.getNode(id);
     if (!n || n.type === "PAGE" || n.type === "DOCUMENT") continue;
-    const style: Record<string, unknown> = { opacity: snap.opacity };
+    const style: Record<string, unknown> = { opacity: snap.opacity, blendMode: snap.blendMode ?? "NORMAL" };
     if (snap.fills !== undefined && "fills" in n) style.fills = JSON.parse(JSON.stringify(snap.fills));
     if (snap.strokes !== undefined && "strokes" in n) {
       style.strokes = JSON.parse(JSON.stringify(snap.strokes));

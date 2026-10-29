@@ -1,3 +1,21 @@
+export type BlendMode =
+  | 'NORMAL'
+  | 'DARKEN'
+  | 'MULTIPLY'
+  | 'COLOR_BURN'
+  | 'LIGHTEN'
+  | 'SCREEN'
+  | 'COLOR_DODGE'
+  | 'OVERLAY'
+  | 'SOFT_LIGHT'
+  | 'HARD_LIGHT'
+  | 'DIFFERENCE'
+  | 'EXCLUSION'
+  | 'HUE'
+  | 'SATURATION'
+  | 'COLOR'
+  | 'LUMINOSITY';
+
 export type NodeType =
   | 'DOCUMENT'
   | 'PAGE'
@@ -74,6 +92,8 @@ export interface BaseNode {
   locked: boolean;
   /** Optional so documents saved before effects existed still load. */
   effects?: Effect[];
+  /** Missing means NORMAL. */
+  blendMode?: BlendMode;
 }
 
 export interface DocumentNode extends BaseNode {
@@ -168,6 +188,7 @@ export interface StylePatch {
   strokeWidth?: number;
   strokeAlign?: StrokeAlign;
   effects?: Effect[];
+  blendMode?: BlendMode;
   cornerRadius?: number;
   cornerRadii?: [number, number, number, number] | null;
   opacity?: number;
@@ -201,4 +222,10 @@ export function paintColor(p: Paint): string {
 /** Opacity of the paint as a whole (a gradient's per-stop opacities are separate). */
 export function paintOpacity(p: Paint): number {
   return p.opacity;
+}
+
+/** CSS `mix-blend-mode` value for a blend mode (HARD_LIGHT -> hard-light). Anything unknown is normal. */
+export function cssBlendMode(mode: string | undefined): string | undefined {
+  const known = ['DARKEN','MULTIPLY','COLOR_BURN','LIGHTEN','SCREEN','COLOR_DODGE','OVERLAY','SOFT_LIGHT','HARD_LIGHT','DIFFERENCE','EXCLUSION','HUE','SATURATION','COLOR','LUMINOSITY'];
+  return mode && known.includes(mode) ? mode.toLowerCase().replace(/_/g, '-') : undefined;
 }
