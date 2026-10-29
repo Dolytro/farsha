@@ -16,6 +16,9 @@ export type BlendMode =
   | 'COLOR'
   | 'LUMINOSITY';
 
+/** Figma's constraints: how a layer follows its parent frame when the frame is resized. Missing means MIN (left / top). */
+export type Constraint = 'MIN' | 'MAX' | 'STRETCH' | 'CENTER' | 'SCALE';
+
 export type NodeType =
   | 'DOCUMENT'
   | 'PAGE'
@@ -104,6 +107,8 @@ export interface BaseNode {
   effects?: Effect[];
   /** Missing means NORMAL. */
   blendMode?: BlendMode;
+  constraintH?: Constraint;
+  constraintV?: Constraint;
 }
 
 export interface DocumentNode extends BaseNode {
@@ -224,6 +229,8 @@ export interface StylePatch extends AutoLayoutProps {
   strokeAlign?: StrokeAlign;
   effects?: Effect[];
   blendMode?: BlendMode;
+  constraintH?: Constraint;
+  constraintV?: Constraint;
   cornerRadius?: number;
   cornerRadii?: [number, number, number, number] | null;
   opacity?: number;

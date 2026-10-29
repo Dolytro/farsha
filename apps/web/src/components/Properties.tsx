@@ -3,6 +3,7 @@ import { useEditor } from "../store";
 import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
 import { fitText } from "../text-layout";
+import { ConstraintsSection } from "./ConstraintsSection";
 import { AutoLayoutSection } from "./AutoLayoutSection";
 import { AlignRow } from "./AlignRow";
 import { FillSection } from "./FillSection";
@@ -128,6 +129,8 @@ export function Properties() {
           {num("rotation", "°")}
         </div>
       </section>
+
+      <ConstraintsSection doc={doc} node={node} />
 
       <section className="props__section">
         <h3 className="props__heading">Layout</h3>
