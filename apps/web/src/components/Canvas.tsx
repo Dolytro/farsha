@@ -33,7 +33,7 @@ const intersects = (a: Box, b: Box) =>
   a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 
 export function Canvas() {
-  const { doc, pageId, selection, select, viewport, setViewport, tool, setTool, devMode, viewer } = useEditor();
+  const { doc, pageId, selection, select, viewport, setViewport, tool, setTool, devMode, viewer, setMenu } = useEditor();
   const signedIn = useEditor((s) => s.drive.user !== null);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
@@ -66,6 +66,17 @@ export function Canvas() {
   const world = (e: { clientX: number; clientY: number }) => {
     const r = svgRef.current!.getBoundingClientRect();
     return screenToWorld(viewport, e.clientX - r.left, e.clientY - r.top);
+  };
+
+  const onContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const w = world(e);
+    const labelId = (e.target as SVGElement).dataset?.labelId;
+    const hit = labelId ? doc.getNode(labelId) : hitTest(doc, pageId, w.x, w.y);
+    // Like Figma: right-clicking a layer outside the selection selects it first.
+    if (hit && !selection.includes(hit.id)) select([hit.id]);
+    else if (!hit && !e.shiftKey) select([]);
+    setMenu({ x: e.clientX, y: e.clientY, wx: w.x, wy: w.y });
   };
 
   const onPointerDown = (e: PointerEvent) => {
@@ -359,6 +370,7 @@ export function Canvas() {
         ref={svgRef}
         className="canvas__svg"
         onPointerDown={onPointerDown}
+        onContextMenu={onContextMenu}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={() => setHoverId(null)}

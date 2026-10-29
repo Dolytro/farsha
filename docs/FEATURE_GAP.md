@@ -34,7 +34,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Paste over selection (Ctrl+Shift+V), paste to replace (Ctrl+Alt+Shift+V) | ✅ | |
 | Copy / paste properties (Ctrl+Alt+C / V) (menu) | ✅ | |
 | Copy as PNG (Ctrl+Shift+C); Dev Mode Ctrl+C copies CSS | ✅ | |
-| Copy as SVG / CSS from a menu or context menu | 🟡 engine done, no menu yet | P1 |
+| Copy as SVG / CSS / PNG from the right-click menu | ✅ | |
 | Paste SVG (shapes, text and paths become layers; no gradients or transforms beyond translate) | ✅ | |
 | Paste layers copied in Figma (frames, text, shapes, vectors; no auto layout, components, images, effects) | 🟡 | |
 | Paste images from the clipboard, drag and drop image files (PNG / JPEG / WebP / GIF; stored inside the .canvylo file) | ✅ | |
@@ -51,7 +51,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Align and distribute, Tidy up | ❌ | P1 |
 | Boolean operations, flatten, outline stroke | ❌ | P3 |
 | Mask (Ctrl+Alt+M), frame selection (Ctrl+Alt+G) | ❌ | P2 |
-| Right-click context menu | ❌ | P1 |
+| Right-click context menu (Figma items; read-only in Dev Mode; none on view links; submenu is a flat "Copy/Paste as" group) | ✅ | |
 | Command palette "Actions" (Ctrl+K) (menu) | ❌ | P2 |
 | Find (Ctrl+F), find next / previous (menu) | ❌ | P3 |
 | Draggable layer reorder, drag to reparent | ❌ | P1 |
