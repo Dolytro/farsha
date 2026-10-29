@@ -315,7 +315,7 @@ files and reload with a new query string. Synthetic pointer events must go to th
 not on `<main>`), and `Element.prototype.setPointerCapture` must be stubbed because the fake pointer id makes it throw.
 
 Known gaps and risks to keep in mind:
-- Hover/click picks the deepest layer; Figma picks the top-level layer first (double-click to enter).
+- Click selects the outermost group and double-click enters one level (like Figma). Inside frames the deepest layer is still picked directly.
 - Text boxes don't wrap; vectors from SVG cover the whole viewBox (no tight bounding box).
 - The `.canvylo` file grows with images (stored inline); fine for now, revisit with Drive assets.
 - Access tokens last about an hour; the user must click to re-authorise.
