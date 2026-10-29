@@ -1,6 +1,6 @@
-import { useRef, useState, type PointerEvent, type ReactElement, type WheelEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent, type ReactElement, type WheelEvent } from "react";
 import type { Box, DesignNode, NodeType } from "@canvylo/types";
-import { hitTest, screenToWorld, zoomAt } from "@canvylo/canvas-engine";
+import { hitTest, measure, screenToWorld, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { useEditor, type Tool } from "../store";
 
 type Corner = "nw" | "ne" | "sw" | "se";
@@ -39,7 +39,26 @@ export function Canvas() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Box | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  const [altDown, setAltDown] = useState(false);
   const z = viewport.zoom;
+
+  // Holding Alt shows distances between the selection and the hovered layer (Figma redlines).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Alt") return;
+      e.preventDefault(); // keep the browser menu bar from stealing focus on Alt release
+      setAltDown(e.type === "keydown");
+    };
+    const clear = () => setAltDown(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKey);
+    window.addEventListener("blur", clear);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKey);
+      window.removeEventListener("blur", clear);
+    };
+  }, []);
 
   const world = (e: { clientX: number; clientY: number }) => {
     const r = svgRef.current!.getBoundingClientRect();
@@ -249,16 +268,10 @@ export function Canvas() {
   };
 
   const boxes = selection.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b);
-  const sel: Box | undefined = boxes.length
-    ? (() => {
-        const x1 = Math.min(...boxes.map((b) => b.x));
-        const y1 = Math.min(...boxes.map((b) => b.y));
-        const x2 = Math.max(...boxes.map((b) => b.x + b.width));
-        const y2 = Math.max(...boxes.map((b) => b.y + b.height));
-        return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
-      })()
-    : undefined;
+  const sel: Box | undefined = unionBox(boxes);
   const hoverBox = hoverId && !selection.includes(hoverId) ? doc.absoluteBox(hoverId) : undefined;
+  const measurements = altDown && sel && hoverBox ? measure(sel, hoverBox) : [];
+  const RED = "#f24822";
   const hs = 8 / z;
   const sw = 1 / z;
   const editNode = editing ? doc.getNode(editing) : undefined;
@@ -313,7 +326,40 @@ export function Canvas() {
               </text>
             ))}
 
-          {hoverBox && <rect x={hoverBox.x} y={hoverBox.y} width={hoverBox.width} height={hoverBox.height} fill="none" stroke={ACCENT} strokeWidth={sw * 1.5} pointerEvents="none" />}
+          {hoverBox && <rect x={hoverBox.x} y={hoverBox.y} width={hoverBox.width} height={hoverBox.height} fill="none" stroke={altDown ? RED : ACCENT} strokeWidth={sw * 1.5} pointerEvents="none" />}
+
+          {measurements.length > 0 && (
+            <g pointerEvents="none">
+              {measurements.map((m, i) => {
+                const horizontal = m.y1 === m.y2;
+                const tick = 4 / z;
+                const label = String(m.value);
+                const w = (label.length * 6.5 + 10) / z;
+                const cx = (m.x1 + m.x2) / 2;
+                const cy = (m.y1 + m.y2) / 2;
+                return (
+                  <g key={i}>
+                    <line x1={m.x1} y1={m.y1} x2={m.x2} y2={m.y2} stroke={RED} strokeWidth={sw} />
+                    {horizontal ? (
+                      <>
+                        <line x1={m.x1} y1={m.y1 - tick} x2={m.x1} y2={m.y1 + tick} stroke={RED} strokeWidth={sw} />
+                        <line x1={m.x2} y1={m.y2 - tick} x2={m.x2} y2={m.y2 + tick} stroke={RED} strokeWidth={sw} />
+                      </>
+                    ) : (
+                      <>
+                        <line x1={m.x1 - tick} y1={m.y1} x2={m.x1 + tick} y2={m.y1} stroke={RED} strokeWidth={sw} />
+                        <line x1={m.x2 - tick} y1={m.y2} x2={m.x2 + tick} y2={m.y2} stroke={RED} strokeWidth={sw} />
+                      </>
+                    )}
+                    <rect x={cx - w / 2} y={cy - 9 / z} width={w} height={18 / z} rx={3 / z} fill={RED} />
+                    <text x={cx} y={cy + 4 / z} textAnchor="middle" fontSize={11 / z} fill="#fff">
+                      {label}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          )}
 
           {sel && (
             <g>

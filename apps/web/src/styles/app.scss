@@ -355,31 +355,58 @@ button {
   left: 50%;
   bottom: 16px;
   display: flex;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
   padding: 4px;
-  border-radius: 8px;
-  background: #1e1e1e;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 4px 14px rgba(0, 0, 0, 0.18);
   transform: translateX(-50%);
+
+  &__group {
+    display: flex;
+    gap: 2px;
+
+    &--modes {
+      gap: 2px;
+      margin-left: 4px;
+      padding: 2px 2px 2px 6px;
+      border-left: 1px solid var(--c-border);
+    }
+  }
 
   &__btn {
     display: grid;
     place-items: center;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border: 0;
-    border-radius: 5px;
+    border-radius: 8px;
     background: transparent;
-    color: #fff;
+    color: var(--c-text);
     cursor: pointer;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.12);
+      background: var(--c-hover);
     }
 
     &--active,
     &--active:hover {
       background: var(--c-accent);
+      color: #fff;
+    }
+
+    &--mode {
+      width: 32px;
+      height: 32px;
+      color: var(--c-muted);
+    }
+
+    &--on,
+    &--on:hover {
+      background: #ffffff;
+      color: var(--c-accent);
+      box-shadow: 0 0 0 1px var(--c-border), 0 1px 3px rgba(0, 0, 0, 0.12);
     }
   }
 }

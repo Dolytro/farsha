@@ -1,0 +1,79 @@
+import type { DesignDoc } from "@canvylo/design-core";
+import { fitBox, unionBox, zoomTo, type Viewport } from "@canvylo/canvas-engine";
+import type { Box } from "@canvylo/types";
+
+/** Group selected siblings under a new GROUP (Ctrl+G). Returns the new selection. */
+export function groupSelection(doc: DesignDoc, ids: string[]): string[] {
+  const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n?.parentId);
+  const parentId = nodes[0]?.parentId;
+  if (!parentId || nodes.some((n) => n.parentId !== parentId)) return ids;
+  const box = unionBox(nodes.map((n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })))!;
+  doc.stopCapturing();
+  const group = doc.createNode("GROUP", { parentId, props: { x: box.x, y: box.y, width: box.width, height: box.height } });
+  for (const n of nodes) {
+    doc.reparentNode(n.id, group);
+    doc.setPosition(n.id, n.x - box.x, n.y - box.y);
+  }
+  doc.stopCapturing();
+  return [group];
+}
+
+/** Move a group's children up to its parent and remove the group (Ctrl+Shift+G). */
+export function ungroupSelection(doc: DesignDoc, ids: string[]): string[] {
+  const out: string[] = [];
+  doc.stopCapturing();
+  for (const id of ids) {
+    const g = doc.getNode(id);
+    if (g?.type !== "GROUP" || !g.parentId) {
+      out.push(id);
+      continue;
+    }
+    const at = doc.children(g.parentId).findIndex((n) => n.id === id);
+    doc.children(id).forEach((c, i) => {
+      doc.reparentNode(c.id, g.parentId!, at + i);
+      doc.setPosition(c.id, c.x + g.x, c.y + g.y);
+      out.push(c.id);
+    });
+    doc.deleteNode(id);
+  }
+  doc.stopCapturing();
+  return out;
+}
+
+/** Change z-order: step is +1 / -1, or +Infinity / -Infinity for front / back. */
+export function reorderSelection(doc: DesignDoc, ids: string[], step: number): void {
+  doc.stopCapturing();
+  const ordered = [...ids].sort((a, b) => {
+    const ka = doc.getNode(a)?.orderKey ?? "";
+    const kb = doc.getNode(b)?.orderKey ?? "";
+    return step > 0 ? (ka < kb ? 1 : -1) : ka < kb ? -1 : 1;
+  });
+  for (const id of ordered) {
+    const n = doc.getNode(id);
+    if (!n?.parentId) continue;
+    const index = doc.children(n.parentId).findIndex((c) => c.id === id);
+    const target = Number.isFinite(step) ? index + step : step > 0 ? Number.MAX_SAFE_INTEGER : 0;
+    doc.reorderNode(id, Math.max(0, target));
+  }
+  doc.stopCapturing();
+}
+
+function canvasSize(): { w: number; h: number } {
+  const r = document.querySelector(".canvas")?.getBoundingClientRect();
+  return { w: r?.width ?? 800, h: r?.height ?? 600 };
+}
+
+export function zoomFit(doc: DesignDoc, pageId: string, selection: string[]): Viewport | undefined {
+  const boxes = (selection.length ? selection : doc.children(pageId).map((n) => n.id))
+    .map((id) => doc.absoluteBox(id))
+    .filter((b): b is Box => !!b);
+  const box = unionBox(boxes);
+  if (!box) return undefined;
+  const { w, h } = canvasSize();
+  return fitBox(box, w, h);
+}
+
+export function zoomBy(v: Viewport, zoom: number): Viewport {
+  const { w, h } = canvasSize();
+  return zoomTo(v, zoom, w, h);
+}

@@ -3,6 +3,7 @@ import { Canvas } from "./components/Canvas";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
+import { groupSelection, reorderSelection, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { useEditor, type Tool } from "./store";
 
 const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text" };
@@ -20,6 +21,17 @@ export function App() {
 
       if (e.shiftKey && !mod && key === "d") {
         s.setDevMode(!s.devMode);
+      } else if (e.shiftKey && !mod && ["Digit0", "Digit1", "Digit2"].includes(e.code)) {
+        // Figma view shortcuts: Shift+0 = 100%, Shift+1 = fit all, Shift+2 = fit selection.
+        e.preventDefault();
+        if (e.code === "Digit0") s.setViewport(zoomBy(s.viewport, 1));
+        else {
+          const v = zoomFit(doc, s.pageId, e.code === "Digit2" ? selection : []);
+          if (v) s.setViewport(v);
+        }
+      } else if (!mod && (key === "+" || key === "=" || key === "-" || key === "_")) {
+        e.preventDefault();
+        s.setViewport(zoomBy(s.viewport, s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
       } else if (s.devMode) {
         // Dev Mode is read-only: only Esc (deselect) and the toggle above are active.
         if (key === "escape") s.select([]);
@@ -29,6 +41,13 @@ export function App() {
       } else if (mod && key === "y") {
         e.preventDefault();
         doc.redo();
+      } else if (mod && key === "g") {
+        e.preventDefault();
+        s.select(e.shiftKey ? ungroupSelection(doc, selection) : groupSelection(doc, selection));
+      } else if (key === "]" || key === "[") {
+        e.preventDefault();
+        const up = key === "]";
+        reorderSelection(doc, selection, mod ? (up ? Infinity : -Infinity) : up ? 1 : -1);
       } else if (mod && key === "d") {
         e.preventDefault();
         doc.stopCapturing();
@@ -66,7 +85,7 @@ export function App() {
       <Layers />
       <div className="workspace">
         <Canvas />
-        {!devMode && <Toolbar />}
+        <Toolbar />
       </div>
       <Properties />
     </div>
