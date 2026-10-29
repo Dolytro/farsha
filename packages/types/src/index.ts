@@ -114,7 +114,28 @@ export interface PageNode extends BaseNode {
   type: 'PAGE';
 }
 
-export interface FrameNode extends BaseNode {
+export type LayoutMode = 'HORIZONTAL' | 'VERTICAL';
+export type LayoutAlign = 'MIN' | 'CENTER' | 'MAX' | 'SPACE_BETWEEN';
+export type LayoutSizing = 'HUG' | 'FIXED';
+
+/** Auto layout settings of a frame. All optional: a frame without `layoutMode` is not auto layout. */
+export interface AutoLayoutProps {
+  layoutMode?: LayoutMode | null;
+  itemSpacing?: number;
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+  /** Alignment along the layout direction. */
+  primaryAxisAlign?: LayoutAlign;
+  /** Alignment across the layout direction (SPACE_BETWEEN is not valid here). */
+  counterAxisAlign?: Exclude<LayoutAlign, 'SPACE_BETWEEN'>;
+  /** Hug = the frame grows / shrinks with its content along the layout direction. Missing means HUG. */
+  primarySizing?: LayoutSizing;
+  counterSizing?: LayoutSizing;
+}
+
+export interface FrameNode extends BaseNode, AutoLayoutProps {
   type: 'FRAME';
   fills: Paint[];
   strokes: Paint[];
@@ -196,7 +217,7 @@ export type DesignNode =
 export type NodeOfType<T extends NodeType> = Extract<DesignNode, { type: T }>;
 
 /** Properties that can be set generically via the style operation. */
-export interface StylePatch {
+export interface StylePatch extends AutoLayoutProps {
   fills?: Paint[];
   strokes?: Paint[];
   strokeWidth?: number;

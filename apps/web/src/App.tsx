@@ -4,6 +4,7 @@ import { Canvas } from "./components/Canvas";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
+import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
 import { toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
@@ -215,6 +216,13 @@ export function App() {
       } else if (s.devMode) {
         // Dev Mode is read-only: only Esc (deselect) and the toggle above are active.
         if (key === "escape") s.select([]);
+      } else if (e.shiftKey && !e.altKey && !mod && key === "a" && selection.length) {
+        // Figma's "Add auto layout"
+        e.preventDefault();
+        s.select(addAutoLayout(doc, selection));
+      } else if (e.shiftKey && e.altKey && mod && key === "a") {
+        e.preventDefault();
+        removeAutoLayout(doc, selection);
       } else if (e.altKey && !mod && !e.shiftKey && ALIGN_KEYS[e.code]) {
         // Figma's align shortcuts: Alt+A / H / D (left, centers, right), Alt+W / V / S (top, centers, bottom).
         e.preventDefault();

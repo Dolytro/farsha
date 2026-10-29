@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { buildMenu, type MenuAction } from "../context-menu";
 import { toggleHidden, toggleLocked, groupSelection, ungroupSelection, reorderSelection } from "../actions";
+import { addAutoLayout } from "../auto-layout-actions";
 import { copyAsCss, copyAsPng, copyAsSvg } from "../exporting";
 import { copyNodes, copyProperties, parseClip, pasteNodes, pasteOver, pasteProperties, pasteTarget, pasteText, topLevelOf } from "../clipboard";
 import { useEditor } from "../store";
@@ -81,6 +82,7 @@ async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
       case "back": return reorderSelection(doc, selection, -Infinity);
       case "group": return select(groupSelection(doc, selection));
       case "ungroup": return select(ungroupSelection(doc, selection));
+      case "auto-layout": return select(addAutoLayout(doc, selection));
       case "visibility": return toggleHidden(doc, selection);
       case "lock": return toggleLocked(doc, selection);
       case "delete":
