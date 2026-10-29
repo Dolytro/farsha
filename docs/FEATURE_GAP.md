@@ -161,16 +161,16 @@ Interactions (click / hover / drag), navigate / overlay / back, transitions, sma
 ## 11. Quality
 
 - Performance: SVG renderer slows with thousands of nodes; no Canvas / WebGL path yet.
-- Text: no real measurement or line breaking; auto-width is approximate; limited fonts.
-- Images are not supported yet, so there is no asset pipeline.
+- Text: wrapping uses canvas measureText in the browser (an estimate in exports); limited fonts, no Google Fonts yet.
+- Images are stored inline in the document (no separate asset pipeline).
 - Accessibility: keyboard navigation and screen-reader support are minimal.
 - Touch / trackpad gestures beyond pinch zoom, mobile layout of the editor.
 
 ## Suggested build order
 
-1. **Copy / cut / paste, select all, right-click menu, rename / lock, layer drag-reorder, pages.**
-2. **Stroke, effects (shadow / blur), text controls, gradients, export (PNG / SVG).**
-3. **Auto Layout + constraints, snapping and smart guides, align / distribute, rulers and guides.**
-4. **Images (paste / drop / fill), Line / Arrow / Polygon / Star, Pen.**
-5. **Components, variants, styles, variables.**
+1. ~~Copy / cut / paste, select all, right-click menu, rename / lock, layer drag-reorder, pages.~~ done
+2. ~~Stroke, effects (shadow / blur), text controls, gradients, image fills, export (PNG / SVG).~~ done
+3. ~~Auto Layout v1, constraints, snapping and smart guides, align / distribute, rulers and guides.~~ done (round 2 items are in the tables above)
+4. **Components, variants, styles, variables.** (next)
+5. **Line / Arrow / Polygon / Star, Pen, multiple fills and strokes.**
 6. **Prototype, comments, live collaboration.**
