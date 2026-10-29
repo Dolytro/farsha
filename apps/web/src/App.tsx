@@ -5,7 +5,7 @@ import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
-import { armPasteMode, copyNodes, parseClip, pasteNodes, pasteOver, pasteReplace, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
+import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteReplace, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { ShareDialog } from "./components/ShareDialog";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
@@ -143,6 +143,14 @@ export function App() {
       } else if (mod && key === "y") {
         e.preventDefault();
         doc.redo();
+      } else if (mod && e.altKey && !e.shiftKey && key === "c") {
+        // Figma's "Copy properties"
+        e.preventDefault();
+        copyProperties(doc, selection[0]);
+      } else if (mod && e.altKey && !e.shiftKey && key === "v") {
+        // Figma's "Paste properties"
+        e.preventDefault();
+        pasteProperties(doc, selection);
       } else if (mod && key === "g") {
         e.preventDefault();
         s.select(e.shiftKey ? ungroupSelection(doc, selection) : groupSelection(doc, selection));

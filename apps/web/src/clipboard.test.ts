@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { armPasteMode, copyNodes, parseClip, pasteNodes, pasteOver, pasteReplace, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
+import { armPasteMode, copyNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteReplace, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
 
 function setup() {
   const doc = new DesignDoc();
@@ -132,6 +132,55 @@ describe("paste over selection and paste to replace", () => {
     armPasteMode("over");
     expect(takePasteMode()).toBe("over");
     expect(takePasteMode()).toBe("offset");
+  });
+});
+
+describe("copy and paste properties", () => {
+  const blue = [{ type: "SOLID" as const, color: "#0d99ff", opacity: 1 }];
+
+  it("applies fill, stroke, radius and opacity to other layers", () => {
+    const { doc, frame, rect } = setup();
+    const source = doc.createNode("RECTANGLE", {
+      parentId: frame,
+      props: { name: "Source", fills: blue, strokes: [{ type: "SOLID", color: "#ff0000", opacity: 1 }], strokeWidth: 3, cornerRadius: 12, opacity: 0.5 },
+    });
+    expect(copyProperties(doc, source)).toBe(true);
+    expect(pasteProperties(doc, [rect])).toBe(1);
+    expect(doc.getNode(rect)).toMatchObject({ fills: blue, strokeWidth: 3, cornerRadius: 12, opacity: 0.5 });
+    expect(doc.getNode(rect)).toMatchObject({ x: 10, y: 20, width: 50, height: 40 }); // geometry untouched
+  });
+
+  it("skips properties the target does not have", () => {
+    const { doc, frame, rect } = setup();
+    const dot = doc.createNode("ELLIPSE", { parentId: frame, props: { name: "Dot" } });
+    copyProperties(doc, rect);
+    doc.setStyle(rect, { cornerRadius: 9 });
+    copyProperties(doc, rect);
+    pasteProperties(doc, [dot]);
+    expect(doc.getNode(dot)).not.toHaveProperty("cornerRadius"); // ellipses have no radius
+  });
+
+  it("copies text style between text layers and the fill onto shapes", () => {
+    const { doc, frame, rect, text } = setup();
+    const big = doc.createNode("TEXT", { parentId: frame, props: { name: "Big", characters: "Big", fontSize: 40, fontWeight: 800, fills: blue } });
+    copyProperties(doc, big);
+    pasteProperties(doc, [text, rect]);
+    expect(doc.getNode(text)).toMatchObject({ fontSize: 40, fontWeight: 800, fills: blue, characters: "Hello" });
+    expect(doc.getNode(rect)).toMatchObject({ fills: blue });
+    expect(doc.getNode(rect)).not.toHaveProperty("fontSize");
+  });
+
+  it("is one undo step and does nothing without a copy", () => {
+    const { doc, frame, rect } = setup();
+    expect(hasCopiedProperties()).toBe(false);
+    expect(pasteProperties(doc, [rect])).toBe(0);
+    const source = doc.createNode("RECTANGLE", { parentId: frame, props: { name: "S", fills: blue, opacity: 0.4 } });
+    const before = doc.getNode(rect)!;
+    copyProperties(doc, source);
+    doc.clearHistory();
+    pasteProperties(doc, [rect]);
+    doc.undo();
+    expect(doc.getNode(rect)).toMatchObject({ opacity: before.opacity, fills: (before as { fills: unknown }).fills });
   });
 });
 

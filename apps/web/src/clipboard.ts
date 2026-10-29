@@ -185,7 +185,67 @@ export function selectAllIn(doc: DesignDoc, selection: string[], pageId: string)
   return doc.children(parentId).filter((n) => n.visible && !n.locked).map((n) => n.id);
 }
 
+/** Appearance copied by Ctrl+Alt+C (Figma's "Copy properties"). */
+export interface PropertySnapshot {
+  type: NodeType;
+  opacity: number;
+  fills?: unknown;
+  strokes?: unknown;
+  strokeWidth?: number;
+  cornerRadius?: number;
+  text?: { fontFamily: string; fontSize: number; fontWeight: number; lineHeight: number | "AUTO"; letterSpacing: number; textAlign: string };
+}
+
+let copiedProperties: PropertySnapshot | null = null;
+
+/** Remember a layer's appearance (fills, strokes, radius, opacity, text style). Returns false if the layer is gone. */
+export function copyProperties(doc: DesignDoc, id: string | undefined): boolean {
+  const n = id ? doc.getNode(id) : undefined;
+  if (!n || n.type === "PAGE" || n.type === "DOCUMENT") return false;
+  const snap: PropertySnapshot = { type: n.type, opacity: n.opacity };
+  if ("fills" in n) snap.fills = JSON.parse(JSON.stringify(n.fills));
+  if ("strokes" in n) {
+    snap.strokes = JSON.parse(JSON.stringify(n.strokes));
+    snap.strokeWidth = n.strokeWidth;
+  }
+  if ("cornerRadius" in n) snap.cornerRadius = n.cornerRadius;
+  if (n.type === "TEXT") {
+    snap.text = { fontFamily: n.fontFamily, fontSize: n.fontSize, fontWeight: n.fontWeight, lineHeight: n.lineHeight, letterSpacing: n.letterSpacing, textAlign: n.textAlign };
+  }
+  copiedProperties = snap;
+  return true;
+}
+
+export function hasCopiedProperties(): boolean {
+  return copiedProperties !== null;
+}
+
+/** Apply the remembered appearance to each layer that can take it, as one undo step. Returns how many changed. */
+export function pasteProperties(doc: DesignDoc, ids: string[]): number {
+  const snap = copiedProperties;
+  if (!snap) return 0;
+  doc.stopCapturing();
+  let changed = 0;
+  for (const id of ids) {
+    const n = doc.getNode(id);
+    if (!n || n.type === "PAGE" || n.type === "DOCUMENT") continue;
+    const style: Record<string, unknown> = { opacity: snap.opacity };
+    if (snap.fills !== undefined && "fills" in n) style.fills = JSON.parse(JSON.stringify(snap.fills));
+    if (snap.strokes !== undefined && "strokes" in n) {
+      style.strokes = JSON.parse(JSON.stringify(snap.strokes));
+      style.strokeWidth = snap.strokeWidth;
+    }
+    if (snap.cornerRadius !== undefined && "cornerRadius" in n) style.cornerRadius = snap.cornerRadius;
+    doc.setStyle(id, style);
+    if (snap.text && n.type === "TEXT") doc.setText(id, snap.text as Parameters<DesignDoc["setText"]>[1]);
+    changed++;
+  }
+  doc.stopCapturing();
+  return changed;
+}
+
 /** Test hook: forget remembered paste state. */
 export function resetClipboardState(): void {
   pasteCount = 0;
+  copiedProperties = null;
 }
