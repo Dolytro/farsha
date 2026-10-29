@@ -62,6 +62,20 @@ describe("exportSvg", () => {
     expect(onlyRect.svg).not.toContain("Jerry");
   });
 
+  it("embeds image layers as data urls and refuses other asset types", () => {
+    const { doc, frame } = setup();
+    const png = doc.addAsset("image/png", Uint8Array.from([137, 80, 78, 71]));
+    const img = doc.createNode("IMAGE", { parentId: frame, props: { name: "Pic", x: 0, y: 0, width: 40, height: 30, cornerRadius: 4, assetId: png } });
+    const { svg } = exportSvg(doc, [img])!;
+    expect(svg).toContain(`href="data:image/png;base64,${btoa(String.fromCharCode(137, 80, 78, 71))}"`);
+    expect(svg).toContain('rx="4"');
+
+    const evil = doc.addAsset("text/html", Uint8Array.from([60, 98, 62]));
+    const bad = doc.createNode("IMAGE", { parentId: frame, props: { name: "Bad", width: 10, height: 10, assetId: evil } });
+    expect(exportSvg(doc, [bad])!.svg).not.toContain("data:text/html");
+    expect(exportSvg(doc, [bad])!.svg).toContain("#e5e5e5");
+  });
+
   it("returns null when nothing can be exported", () => {
     const { doc, page } = setup();
     expect(exportSvg(doc, [])).toBeNull();

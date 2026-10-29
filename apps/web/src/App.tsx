@@ -7,6 +7,8 @@ import { Toolbar } from "./components/Toolbar";
 import { groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
+import { isImageFile } from "./images";
+import { placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
 import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { ShareDialog } from "./components/ShareDialog";
@@ -108,7 +110,8 @@ export function App() {
       const text = e.clipboardData?.getData("text/plain") ?? "";
       const svgData = e.clipboardData?.getData("image/svg+xml") ?? "";
       const html = e.clipboardData?.getData("text/html") ?? "";
-      if (!text && !svgData && !html) return;
+      const imageFile = [...(e.clipboardData?.files ?? [])].find(isImageFile);
+      if (!text && !svgData && !html && !imageFile) return;
       const s = useEditor.getState();
       const parentId = pasteTarget(s.doc, s.selection, s.pageId);
       const clip = parseClip(text);
@@ -127,8 +130,12 @@ export function App() {
       } else if (svg) {
         ids = pasteSvg(s.doc, svg, parentId, cx, cy);
         if (!ids.length) s.showToast("Nothing to paste from that SVG");
+      } else if (imageFile) {
+        e.preventDefault();
+        void placeImageFile(imageFile, parentId, cx, cy);
+        return;
       } else if (!text) {
-        return; // other html / images: not supported yet, leave the default behaviour alone
+        return; // other html: not supported, leave the default behaviour alone
       } else {
         ids = pasteText(s.doc, text, parentId, cx, cy);
       }

@@ -1,5 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { DesignNode, NodeType } from "@canvylo/types";
+import { fitSize } from "./images";
 import { svgToClip } from "./svg-import";
 
 /** Prefix on the clipboard text so Canvylo can tell its own payload from ordinary text. */
@@ -187,6 +188,16 @@ export function pasteSvg(doc: DesignDoc, svg: string, parentId: string, cx: numb
   const id = create(doc, clip, parentId, cx - Number(clip.props.width) / 2, cy - Number(clip.props.height) / 2);
   doc.stopCapturing();
   return id ? [id] : [];
+}
+
+/** An image becomes an IMAGE layer centred on (cx, cy); its bytes go into the document. One undo step. */
+export function pasteImage(doc: DesignDoc, image: { mime: string; bytes: Uint8Array; width: number; height: number }, parentId: string, cx: number, cy: number): string[] {
+  const { width, height } = fitSize(image.width, image.height);
+  const assetId = doc.addAsset(image.mime, image.bytes);
+  doc.stopCapturing();
+  const id = doc.createNode("IMAGE", { parentId, props: { name: "Image", x: Math.round(cx - width / 2), y: Math.round(cy - height / 2), width, height, assetId } });
+  doc.stopCapturing();
+  return [id];
 }
 
 /** Plain text on the clipboard becomes a text layer at (x, y). */

@@ -7,6 +7,13 @@ import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
 /** Transaction origin for user edits; only these are undoable. */
 export const LOCAL_ORIGIN = 'canvylo:local';
 const INIT_ORIGIN = 'canvylo:init';
+/** Asset writes are not part of undo history: undoing a paste removes the layer, not the stored bytes. */
+const ASSET_ORIGIN = 'canvylo:asset';
+
+export interface StoredAsset {
+  mime: string;
+  bytes: Uint8Array;
+}
 
 type NodeMap = Y.Map<unknown>;
 type CreateProps = Partial<Omit<DesignNode, 'id' | 'type' | 'parentId' | 'orderKey'>>;
@@ -27,6 +34,8 @@ export class DesignDoc {
   readonly ydoc: Y.Doc;
   private readonly nodes: Y.Map<NodeMap>;
   private readonly meta: Y.Map<string>;
+  /** Image bytes, keyed by asset id. Kept out of the node map so layers stay small. */
+  private readonly assets: Y.Map<StoredAsset>;
   private readonly undoManager: Y.UndoManager;
   private readonly listeners = new Set<() => void>();
   private nodeCache = new Map<string, DesignNode>();
@@ -37,6 +46,12 @@ export class DesignDoc {
     this.ydoc = ydoc;
     this.nodes = ydoc.getMap('nodes') as Y.Map<NodeMap>;
     this.meta = ydoc.getMap('meta') as Y.Map<string>;
+    this.assets = ydoc.getMap('assets') as Y.Map<StoredAsset>;
+    // An image arriving from a collaborator (or Drive) should redraw layers that reference it.
+    this.assets.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
     this.undoManager = new Y.UndoManager(this.nodes, {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
@@ -290,6 +305,19 @@ export class DesignDoc {
   }
 
   // ---------- sync ----------
+
+  // ---------- assets ----------
+
+  /** Store image bytes in the document and return the asset id an IMAGE layer refers to. */
+  addAsset(mime: string, bytes: Uint8Array): string {
+    const id = nanoid();
+    this.ydoc.transact(() => this.assets.set(id, { mime, bytes }), ASSET_ORIGIN);
+    return id;
+  }
+
+  getAsset(id: string): StoredAsset | undefined {
+    return this.assets.get(id);
+  }
 
   encodeState(): Uint8Array {
     return Y.encodeStateAsUpdate(this.ydoc);
