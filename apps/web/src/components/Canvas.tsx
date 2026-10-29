@@ -198,7 +198,12 @@ export function Canvas() {
     let dy = w.y - d.wy;
     if (d.kind === "move") {
       if (d.startBox && !e.ctrlKey && !e.metaKey) {
-        const snap = snapMove({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets, 5 / viewport.zoom);
+        const page = doc.getNode(pageId);
+        const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const snap = snapMove({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets, 5 / viewport.zoom, {
+          xs: guideList.filter((g) => g.axis === "x").map((g) => g.position),
+          ys: guideList.filter((g) => g.axis === "y").map((g) => g.position),
+        });
         dx += snap.dx;
         dy += snap.dy;
         setGuides(snap.guides);

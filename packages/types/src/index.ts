@@ -115,8 +115,15 @@ export interface DocumentNode extends BaseNode {
   type: 'DOCUMENT';
 }
 
+/** A ruler guide: a vertical line at x or a horizontal line at y, in page coordinates. */
+export interface RulerGuide {
+  axis: 'x' | 'y';
+  position: number;
+}
+
 export interface PageNode extends BaseNode {
   type: 'PAGE';
+  guides?: RulerGuide[];
 }
 
 export type LayoutMode = 'HORIZONTAL' | 'VERTICAL';
@@ -223,6 +230,8 @@ export type NodeOfType<T extends NodeType> = Extract<DesignNode, { type: T }>;
 
 /** Properties that can be set generically via the style operation. */
 export interface StylePatch extends AutoLayoutProps {
+  /** Only meaningful on pages. */
+  guides?: RulerGuide[];
   fills?: Paint[];
   strokes?: Paint[];
   strokeWidth?: number;

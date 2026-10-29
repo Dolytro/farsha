@@ -48,6 +48,9 @@ interface EditorState {
   loadError: string | null;
   selection: string[];
   viewport: Viewport;
+  /** Rulers (and the guides dragged out of them) are shown. Toggled with Shift+R, remembered in this browser. */
+  rulers: boolean;
+  setRulers: (on: boolean) => void;
   drive: DriveState;
   shareOpen: boolean;
   /** Layer being renamed in the layers panel (F2 / Ctrl+R / double-click). */
@@ -70,6 +73,14 @@ interface EditorState {
   setLoad: (state: LoadState, error?: string | null) => void;
   /** Replace the open document (Open from Drive, shared link, New). */
   loadDoc: (doc: DesignDoc) => void;
+}
+
+function readRulers(): boolean {
+  try {
+    return localStorage.getItem("canvylo.rulers") === "1";
+  } catch {
+    return false;
+  }
 }
 
 const DEFAULT_VIEWPORT: Viewport = { x: 60, y: 80, zoom: 0.5 };
@@ -111,6 +122,15 @@ export const useEditor = create<EditorState>((set) => ({
       return { pageId: id, selection: [], menu: null, renaming: null, viewport: pageViews.get(id) ?? DEFAULT_VIEWPORT };
     }),
   setViewport: (viewport) => set({ viewport }),
+  rulers: readRulers(),
+  setRulers: (rulers) => {
+    try {
+      localStorage.setItem("canvylo.rulers", rulers ? "1" : "0");
+    } catch {
+      /* private window: the setting just won't be remembered */
+    }
+    set({ rulers });
+  },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setDrive: (patch) => set((s) => ({ drive: { ...s.drive, ...patch } })),
   setLoad: (loadState, loadError = null) => set({ loadState, loadError }),

@@ -1106,3 +1106,62 @@ body {
 .props__file {
   display: inline-block;
 }
+
+/* ---- rulers and guides ---- */
+.rulers {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+
+  &__guides {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  &__bar {
+    position: absolute;
+    background: var(--c-panel, #fff);
+    pointer-events: auto;
+    user-select: none;
+
+    &--x {
+      top: 0;
+      left: 0;
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    &--y {
+      top: 0;
+      left: 0;
+      border-right: 1px solid var(--c-border);
+    }
+
+    line {
+      stroke: var(--c-muted);
+      stroke-width: 1;
+    }
+
+    text {
+      fill: var(--c-muted);
+      font-size: 9px;
+    }
+  }
+
+  &__corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    background: var(--c-panel, #fff);
+    border-right: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
+    pointer-events: auto;
+  }
+
+  &__tag {
+    font-size: 10px;
+  }
+}
