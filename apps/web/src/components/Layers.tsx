@@ -1,6 +1,7 @@
-import { useEffect, useRef, type ReactElement } from "react";
+import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
 import type { DesignNode } from "@canvylo/types";
 import { useEditor } from "../store";
+import { isContainer, layerRows, moveLayers, type DropWhere, type LayerRow } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 
 const ICONS: Record<string, string> = { FRAME: "#", GROUP: "▤", RECTANGLE: "▭", ELLIPSE: "◯", TEXT: "T", IMAGE: "▨", VECTOR: "◇" };
@@ -42,15 +43,71 @@ export function Layers() {
   useEditor((s) => s.version);
   const pageName = doc.getNode(pageId)?.name ?? "Page 1";
 
-  const render = (parentId: string, depth: number): ReactElement[] =>
-    [...doc.children(parentId)].reverse().flatMap((n: DesignNode) => [
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const [query, setQuery] = useState("");
+  const [drop, setDrop] = useState<{ id: string; where: DropWhere } | null>(null);
+  const dragging = useRef<string[]>([]);
+  const rows = layerRows(doc, pageId, collapsed, query);
+
+  const toggleCollapsed = (id: string) =>
+    setCollapsed((c) => {
+      const next = new Set(c);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+
+  const zone = (e: DragEvent<HTMLElement>, id: string): DropWhere => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const f = (e.clientY - r.top) / r.height;
+    if (isContainer(doc, id)) return f < 0.25 ? "before" : f > 0.75 ? "after" : "inside";
+    return f < 0.5 ? "before" : "after";
+  };
+
+  const renderRow = ({ id, depth, hasChildren }: LayerRow): ReactElement | null => {
+    const n = doc.getNode(id);
+    if (!n) return null;
+    return (
       <li
         key={n.id}
-        className={`layers__item${selection.includes(n.id) ? " layers__item--selected" : ""}${n.visible ? "" : " layers__item--hidden"}`}
-        style={{ paddingLeft: 12 + depth * 16 }}
+        className={`layers__item${selection.includes(n.id) ? " layers__item--selected" : ""}${n.visible ? "" : " layers__item--hidden"}${drop?.id === n.id ? ` layers__item--drop-${drop.where}` : ""}`}
+        style={{ paddingLeft: 4 + depth * 16 }}
+        draggable={canEdit && renaming !== n.id}
+        onDragStart={(e) => {
+          dragging.current = selection.includes(n.id) ? selection : [n.id];
+          if (!selection.includes(n.id)) select([n.id]);
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", n.name);
+        }}
+        onDragOver={(e) => {
+          if (!dragging.current.length) return;
+          e.preventDefault();
+          setDrop({ id: n.id, where: zone(e, n.id) });
+        }}
+        onDragLeave={() => setDrop((d) => (d?.id === n.id ? null : d))}
+        onDrop={(e) => {
+          e.preventDefault();
+          const moved = moveLayers(doc, dragging.current, n.id, zone(e, n.id));
+          dragging.current = [];
+          setDrop(null);
+          if (moved.length) select(moved);
+        }}
+        onDragEnd={() => {
+          dragging.current = [];
+          setDrop(null);
+        }}
         onDoubleClick={() => canEdit && setRenaming(n.id)}
         onClick={(e) => select(e.shiftKey ? (selection.includes(n.id) ? selection.filter((i) => i !== n.id) : [...selection, n.id]) : [n.id])}
       >
+        <button
+          className={`layers__chevron${hasChildren ? "" : " layers__chevron--none"}`}
+          title={collapsed.has(n.id) ? "Expand" : "Collapse"}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleCollapsed(n.id);
+          }}
+        >
+          {collapsed.has(n.id) ? "▸" : "▾"}
+        </button>
         <span className="layers__type">{ICONS[n.type] ?? "·"}</span>
         {renaming === n.id ? (
           <RenameInput
@@ -85,9 +142,9 @@ export function Layers() {
         >
           {n.visible ? "◉" : "○"}
         </button>
-      </li>,
-      ...render(n.id, depth + 1),
-    ]);
+      </li>
+    );
+  };
 
   return (
     <aside className="layers">
@@ -104,7 +161,8 @@ export function Layers() {
       <h2 className="panel-title">Pages</h2>
       <div className="layers__page">{pageName}</div>
       <h2 className="panel-title">Layers</h2>
-      <ul className="layers__list">{render(pageId, 0)}</ul>
+      <input className="layers__search" type="search" placeholder="Search layers" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <ul className="layers__list">{rows.map(renderRow)}</ul>
     </aside>
   );
 }
