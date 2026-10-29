@@ -50,6 +50,9 @@ interface EditorState {
   viewport: Viewport;
   drive: DriveState;
   shareOpen: boolean;
+  /** Short message shown at the bottom of the canvas, like Figma's "Copied" toasts. */
+  toast: string | null;
+  showToast: (message: string) => void;
   setDevMode: (on: boolean) => void;
   setTool: (t: Tool) => void;
   select: (ids: string[]) => void;
@@ -62,6 +65,7 @@ interface EditorState {
 }
 
 let unsubscribe: (() => void) | null = null;
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
 export const useEditor = create<EditorState>((set) => ({
   doc: firstDoc,
@@ -76,6 +80,12 @@ export const useEditor = create<EditorState>((set) => ({
   viewport: { x: 60, y: 80, zoom: 0.5 },
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
+  toast: null,
+  showToast: (message) => {
+    clearTimeout(toastTimer);
+    set({ toast: message });
+    toastTimer = setTimeout(() => set({ toast: null }), 2200);
+  },
   setDevMode: (devMode) => set((s) => (s.viewer ? s : { devMode, tool: "select" })),
   setTool: (tool) => set({ tool }),
   select: (selection) => set({ selection }),
