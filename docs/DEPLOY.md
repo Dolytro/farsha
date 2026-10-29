@@ -58,3 +58,7 @@ pnpm dev
   is in *Testing*, only listed test users can sign in (Google Auth Platform → Audience → Test
   users). Viewers of shared links do not sign in, so they are not affected.
 - **Changing `VITE_*` variables on Vercel** requires a new deployment (they are baked in at build time).
+
+## Live site
+
+Production: https://canvylo.vercel.app (Vercel project `canvylo`, root directory `apps/web`).
