@@ -92,6 +92,8 @@ export interface FrameNode extends BaseNode {
   /** Missing in older documents, which drew strokes centred. */
   strokeAlign?: StrokeAlign;
   cornerRadius: number;
+  /** Per-corner radii [top-left, top-right, bottom-right, bottom-left]; overrides cornerRadius when set. */
+  cornerRadii?: [number, number, number, number];
   clipsContent: boolean;
 }
 
@@ -106,6 +108,7 @@ export interface RectangleNode extends BaseNode {
   strokeWidth: number;
   strokeAlign?: StrokeAlign;
   cornerRadius: number;
+  cornerRadii?: [number, number, number, number];
 }
 
 export interface EllipseNode extends BaseNode {
@@ -166,6 +169,7 @@ export interface StylePatch {
   strokeAlign?: StrokeAlign;
   effects?: Effect[];
   cornerRadius?: number;
+  cornerRadii?: [number, number, number, number] | null;
   opacity?: number;
   visible?: boolean;
   locked?: boolean;

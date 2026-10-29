@@ -1,6 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import { paintColor, type Box, type DesignNode, type Paint } from "@canvylo/types";
-import { effectsFilter, letterSpacingAttr, shapeMarkup, textBaseline } from "./appearance";
+import { effectsFilter, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline } from "./appearance";
 import { unionBox } from "./measure";
 
 export interface SvgExport {
@@ -40,7 +40,6 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   const fill = paint(n, "fills");
   const fillAttrs = fill ? ` fill="${esc(paintColor(fill))}"${fill.opacity !== 1 ? ` fill-opacity="${num(fill.opacity)}"` : ""}` : ' fill="none"';
   const kids = doc.children(n.id).map((c) => render(doc, c, clipIds)).join("");
-  const radius = "cornerRadius" in n && n.cornerRadius > 0 ? ` rx="${num(n.cornerRadius)}"` : "";
 
   switch (n.type) {
     case "ELLIPSE":
@@ -54,14 +53,14 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       const clipId = `clip-${n.id}`;
       clipIds.push(clipId);
       const clip = n.clipsContent ? ` clip-path="url(#${clipId})"` : "";
-      return `<g transform="${transform}"${opacity}><clipPath id="${clipId}"><rect width="${num(n.width)}" height="${num(n.height)}"${radius}/></clipPath>${shapeMarkup(n)}<g${clip}>${kids}</g></g>`;
+      return `<g transform="${transform}"${opacity}><clipPath id="${clipId}">${shapeGeometry(n, "")}</clipPath>${shapeMarkup(n)}<g${clip}>${kids}</g></g>`;
     }
     case "IMAGE": {
       const asset = n.assetId ? doc.getAsset(n.assetId) : undefined;
-      if (!asset || !IMAGE_TYPES.has(asset.mime)) return `<g transform="${transform}"${opacity}><rect width="${num(n.width)}" height="${num(n.height)}"${radius} fill="#e5e5e5"/></g>`;
+      if (!asset || !IMAGE_TYPES.has(asset.mime)) return `<g transform="${transform}"${opacity}>${shapeGeometry(n, ' fill="#e5e5e5"')}</g>`;
       const clipId = `clip-${n.id}`;
       clipIds.push(clipId);
-      return `<g transform="${transform}"${opacity}><clipPath id="${clipId}"><rect width="${num(n.width)}" height="${num(n.height)}"${radius}/></clipPath><image href="data:${asset.mime};base64,${toBase64(asset.bytes)}" width="${num(n.width)}" height="${num(n.height)}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"/></g>`;
+      return `<g transform="${transform}"${opacity}><clipPath id="${clipId}">${shapeGeometry(n, "")}</clipPath><image href="data:${asset.mime};base64,${toBase64(asset.bytes)}" width="${num(n.width)}" height="${num(n.height)}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"/></g>`;
     }
     case "VECTOR":
       return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(n.height)}" viewBox="${esc(n.viewBox)}" overflow="visible">${n.markup}</svg></g>`;

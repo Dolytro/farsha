@@ -48,6 +48,15 @@ describe("exportSvg", () => {
     expect(svg).toContain('stroke-width="4"');
   });
 
+  it("draws independent corner radii as a path and clamps them", () => {
+    const { doc, rect } = setup(); // 80 x 40
+    doc.setStyle(rect, { cornerRadii: [4, 0, 8, 100] });
+    const { svg } = exportSvg(doc, [rect])!;
+    expect(svg).toContain("<path d=\"M4 0H80A0 0 0 0 1 80 0V32A8 8 0 0 1 72 40H20A20 20 0 0 1 0 20V4A4 4 0 0 1 4 0Z\"");
+    doc.setStyle(rect, { cornerRadii: [6, 6, 6, 6] });
+    expect(exportSvg(doc, [rect])!.svg).toContain('rx="6"');
+  });
+
   it("draws linear and radial gradient fills", () => {
     const { doc, rect } = setup();
     const stops = [
