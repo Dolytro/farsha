@@ -1,0 +1,75 @@
+import { describe, expect, it } from "vitest";
+import { DesignDoc, defaultsFor } from "@canvylo/design-core";
+import { declarations, generateCode, tailwindClass, toRgba } from "./index";
+
+function setup() {
+  const doc = new DesignDoc();
+  const page = doc.pages()[0]!.id;
+  const frame = doc.createNode("FRAME", { parentId: page, props: { name: "Card", width: 300, height: 200 } });
+  const rect = doc.createNode("RECTANGLE", {
+    parentId: frame,
+    props: {
+      name: "Button",
+      x: 20,
+      y: 30,
+      width: 120,
+      height: 44,
+      cornerRadius: 8,
+      fills: [{ type: "SOLID", color: "#388BFF", opacity: 1 }],
+    },
+  });
+  const label = doc.createNode("TEXT", { parentId: frame, props: { name: "Label", characters: "Buy <now>", x: 10, y: 100, fontSize: 16, fontWeight: 600 } });
+  return { doc, frame, rect, label };
+}
+
+describe("toRgba", () => {
+  it("keeps opaque hex and converts translucent to rgba", () => {
+    expect(toRgba("#388BFF")).toBe("#388bff");
+    expect(toRgba("#000000", 0.5)).toBe("rgba(0, 0, 0, 0.5)");
+  });
+});
+
+describe("declarations", () => {
+  it("describes size, fill and radius", () => {
+    const { doc, rect } = setup();
+    const d = Object.fromEntries(declarations(doc.getNode(rect)!, { absolute: true }));
+    expect(d).toMatchObject({ position: "absolute", left: "20px", top: "30px", width: "120px", height: "44px", background: "#388bff", "border-radius": "8px" });
+  });
+
+  it("uses a round radius for ellipses", () => {
+    expect(Object.fromEntries(declarations({ ...defaultsFor("ELLIPSE"), id: "e", parentId: null, orderKey: "a0" }))["border-radius"]).toBe("50%");
+  });
+});
+
+describe("tailwindClass", () => {
+  it("maps known and unknown properties", () => {
+    expect(tailwindClass(["width", "120px"])).toBe("w-[120px]");
+    expect(tailwindClass(["border-radius", "50%"])).toBe("rounded-full");
+    expect(tailwindClass(["background", "rgba(0, 0, 0, 0.5)"])).toBe("bg-[rgba(0,_0,_0,_0.5)]");
+    expect(tailwindClass(["z-index", "3"])).toBe("[z-index:3]");
+  });
+});
+
+describe("generateCode", () => {
+  it("generates css with a rule per node", () => {
+    const { doc, frame } = setup();
+    const out = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "css");
+    expect(out).toContain(".card {");
+    expect(out).toContain(".button {");
+    expect(out).toContain("border-radius: 8px;");
+  });
+
+  it("escapes text in html and jsx", () => {
+    const { doc, frame } = setup();
+    const children = (id: string) => doc.children(id);
+    expect(generateCode(doc.getNode(frame)!, children, "html")).toContain("Buy &lt;now&gt;");
+    expect(generateCode(doc.getNode(frame)!, children, "react")).toContain("Buy &lt;now&gt;");
+  });
+
+  it("generates a React component and tailwind markup", () => {
+    const { doc, frame } = setup();
+    const children = (id: string) => doc.children(id);
+    expect(generateCode(doc.getNode(frame)!, children, "react")).toMatch(/^export function Card\(\)/);
+    expect(generateCode(doc.getNode(frame)!, children, "tailwind")).toContain("absolute left-[20px] top-[30px] w-[120px] h-[44px]");
+  });
+});

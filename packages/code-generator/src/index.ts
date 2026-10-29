@@ -1,0 +1,157 @@
+import type { DesignNode } from "@canvylo/types";
+
+export type Language = "css" | "html" | "react" | "tailwind";
+export type Decl = [prop: string, value: string];
+export type ChildrenOf = (id: string) => DesignNode[];
+
+const px = (n: number) => `${Math.round(n * 100) / 100}px`;
+
+export function toRgba(hex: string, opacity = 1): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const v = parseInt(m[1]!, 16);
+  const [r, g, b] = [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+  return opacity >= 1 ? `#${m[1]!.toLowerCase()}` : `rgba(${r}, ${g}, ${b}, ${Math.round(opacity * 100) / 100})`;
+}
+
+/** Computed style of one node as ordered CSS declarations. Children of a parent are placed absolutely. */
+export function declarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean } = {}): Decl[] {
+  const d: Decl[] = [];
+  if (opts.absolute) d.push(["position", "absolute"], ["left", px(node.x)], ["top", px(node.y)]);
+  else if (opts.hasChildren) d.push(["position", "relative"]);
+
+  d.push(["width", px(node.width)], ["height", px(node.height)]);
+  if (node.rotation) d.push(["transform", `rotate(${node.rotation}deg)`]);
+  if (node.opacity !== 1) d.push(["opacity", String(Math.round(node.opacity * 100) / 100)]);
+
+  if (node.type === "TEXT") {
+    const fill = node.fills[0];
+    if (fill) d.push(["color", toRgba(fill.color, fill.opacity)]);
+    d.push(["font-family", node.fontFamily], ["font-size", px(node.fontSize)], ["font-weight", String(node.fontWeight)]);
+    d.push(["line-height", node.lineHeight === "AUTO" ? "normal" : px(node.lineHeight)]);
+    if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
+    d.push(["text-align", node.textAlign.toLowerCase()]);
+    return d;
+  }
+
+  if ("fills" in node && node.fills[0]) d.push(["background", toRgba(node.fills[0].color, node.fills[0].opacity)]);
+  if (node.type === "ELLIPSE") d.push(["border-radius", "50%"]);
+  else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
+  if ("strokes" in node && node.strokes[0]) {
+    d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${toRgba(node.strokes[0].color, node.strokes[0].opacity)}`]);
+  }
+  if (node.type === "FRAME" && node.clipsContent) d.push(["overflow", "hidden"]);
+  return d;
+}
+
+const tw = (s: string) => s.replace(/\s+/g, "_");
+
+/** Map one declaration to a Tailwind utility (arbitrary values where there is no preset). */
+export function tailwindClass([prop, value]: Decl): string {
+  switch (prop) {
+    case "position":
+      return value;
+    case "left":
+    case "top":
+    case "width":
+    case "height":
+      return `${{ left: "left", top: "top", width: "w", height: "h" }[prop]}-[${value}]`;
+    case "transform":
+      return `rotate-[${value.slice(7, -1)}]`;
+    case "opacity":
+      return `opacity-[${value}]`;
+    case "background":
+      return `bg-[${tw(value)}]`;
+    case "border-radius":
+      return value === "50%" ? "rounded-full" : `rounded-[${value}]`;
+    case "box-sizing":
+      return "box-border";
+    case "border": {
+      const [w, , ...color] = value.split(" ");
+      return `border-[${w}] border-solid border-[${tw(color.join(" "))}]`;
+    }
+    case "overflow":
+      return "overflow-hidden";
+    case "color":
+      return `text-[${tw(value)}]`;
+    case "font-family":
+      return `font-['${value.split(",")[0]!.trim().replace(/['"]/g, "").replace(/\s+/g, "_")}']`;
+    case "font-size":
+      return `text-[${value}]`;
+    case "font-weight":
+      return `font-[${value}]`;
+    case "line-height":
+      return value === "normal" ? "leading-normal" : `leading-[${value}]`;
+    case "letter-spacing":
+      return `tracking-[${value}]`;
+    case "text-align":
+      return `text-${value}`;
+    default:
+      return `[${prop}:${tw(value)}]`;
+  }
+}
+
+const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "node";
+const pascal = (name: string) => name.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(" ").map((w) => w[0]!.toUpperCase() + w.slice(1)).join("") || "Component";
+const camel = (prop: string) => prop.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const escJsx = (s: string) => escHtml(s).replace(/[{}]/g, (c) => (c === "{" ? "&#123;" : "&#125;"));
+
+interface Walked {
+  node: DesignNode;
+  cls: string;
+  decls: Decl[];
+  kids: Walked[];
+}
+
+function walk(node: DesignNode, children: ChildrenOf, absolute: boolean, used: Map<string, number>): Walked {
+  const kids = children(node.id).filter((c) => c.visible);
+  const base = slug(node.type === "TEXT" ? node.characters : node.name);
+  const n = (used.get(base) ?? 0) + 1;
+  used.set(base, n);
+  return {
+    node,
+    cls: n === 1 ? base : `${base}-${n}`,
+    decls: declarations(node, { absolute, hasChildren: kids.length > 0 }),
+    kids: kids.map((k) => walk(k, children, true, used)),
+  };
+}
+
+function css(w: Walked): string {
+  const rule = `.${w.cls} {\n${w.decls.map(([p, v]) => `  ${p}: ${v};`).join("\n")}\n}`;
+  return [rule, ...w.kids.map(css)].join("\n\n");
+}
+
+function html(w: Walked, depth: number, classOf: (w: Walked) => string): string {
+  const pad = "  ".repeat(depth);
+  const tag = w.node.type === "TEXT" ? "p" : "div";
+  const open = `${pad}<${tag} class="${classOf(w)}">`;
+  if (w.node.type === "TEXT") return `${open}${escHtml(w.node.characters)}</${tag}>`;
+  if (!w.kids.length) return `${open}</${tag}>`;
+  return `${open}\n${w.kids.map((k) => html(k, depth + 1, classOf)).join("\n")}\n${pad}</${tag}>`;
+}
+
+function jsx(w: Walked, depth: number): string {
+  const pad = "  ".repeat(depth);
+  const tag = w.node.type === "TEXT" ? "p" : "div";
+  const style = w.decls.map(([p, v]) => `${camel(p)}: ${JSON.stringify(v)}`).join(", ");
+  const open = `${pad}<${tag} style={{ ${style} }}>`;
+  if (w.node.type === "TEXT") return `${open}${escJsx(w.node.characters)}</${tag}>`;
+  if (!w.kids.length) return `${pad}<${tag} style={{ ${style} }} />`;
+  return `${open}\n${w.kids.map((k) => jsx(k, depth + 1)).join("\n")}\n${pad}</${tag}>`;
+}
+
+/** Generate code for a node and its visible descendants in the requested language. */
+export function generateCode(node: DesignNode, children: ChildrenOf, language: Language): string {
+  const root = walk(node, children, false, new Map());
+  switch (language) {
+    case "css":
+      return css(root);
+    case "html":
+      return `${html(root, 0, (w) => w.cls)}\n\n<style>\n${css(root)}\n</style>`;
+    case "tailwind":
+      return html(root, 0, (w) => w.decls.map(tailwindClass).join(" "));
+    case "react":
+      return `export function ${pascal(node.name)}() {\n  return (\n${jsx(root, 2)}\n  );\n}`;
+  }
+}
