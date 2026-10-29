@@ -1,24 +1,29 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import { paintCss } from "@canvylo/code-generator";
-import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type Paint } from "@canvylo/types";
+import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@canvylo/types";
+import { readImage } from "../images";
+import { useEditor } from "../store";
 
 type Kind = Paint["type"];
-const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial" };
+const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial", IMAGE: "Image" };
+const SCALE_LABEL: Record<ImageScaleMode, string> = { FILL: "Fill", FIT: "Fit", STRETCH: "Stretch" };
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
 /** Convert a paint to another kind, keeping its colour. */
 export function convertPaint(p: Paint, kind: Kind): Paint {
   if (p.type === kind) return p;
-  if (kind === "SOLID") return { type: "SOLID", color: paintColor(p), opacity: p.opacity };
-  if (p.type !== "SOLID") return { ...p, type: kind };
+  if (kind === "SOLID") return { type: "SOLID", color: p.type === "IMAGE" ? "#d9d9d9" : paintColor(p), opacity: p.opacity };
+  if (kind === "IMAGE") return { type: "IMAGE", assetId: null, scaleMode: "FILL", opacity: p.opacity };
+  if (p.type === "GRADIENT_LINEAR" || p.type === "GRADIENT_RADIAL") return { ...p, type: kind };
+  const color = p.type === "SOLID" ? p.color : "#d9d9d9";
   return {
     type: kind,
     angle: 90,
     opacity: p.opacity,
     stops: [
-      { position: 0, color: p.color, opacity: 1 },
-      { position: 1, color: p.color, opacity: 0 },
+      { position: 0, color, opacity: 1 },
+      { position: 1, color, opacity: 0 },
     ],
   };
 }
@@ -58,7 +63,9 @@ export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
         ))}
       </select>
 
-      {paint.type === "SOLID" ? (
+      {paint.type === "IMAGE" ? (
+        <ImageFill doc={doc} nodeId={node.id} paint={paint} setPaint={setPaint} />
+      ) : paint.type === "SOLID" ? (
         <div className="fill-row fill-row--gap">
           <input className="fill-row__swatch" type="color" value={paint.color} onChange={(e) => setPaint({ ...paint, color: e.target.value })} />
           <span className="fill-row__hex">{paint.color.replace("#", "").toUpperCase()}</span>
@@ -119,5 +126,40 @@ export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
         </>
       )}
     </section>
+  );
+}
+
+function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; paint: Extract<Paint, { type: "IMAGE" }>; setPaint: (p: Paint) => void }) {
+  const choose = async (file: File | undefined) => {
+    if (!file) return;
+    const { showToast } = useEditor.getState();
+    try {
+      const image = await readImage(file);
+      const assetId = doc.addAsset(image.mime, image.bytes);
+      doc.stopCapturing();
+      setPaint({ ...paint, assetId });
+      doc.stopCapturing();
+    } catch (err) {
+      showToast(err instanceof Error ? `Couldn't add the image: ${err.message}` : "Couldn't add the image");
+    }
+  };
+  return (
+    <>
+      <select className="field__select field__select--wide field--gap" title="Scale mode" value={paint.scaleMode} onChange={(e) => setPaint({ ...paint, scaleMode: e.target.value as ImageScaleMode })}>
+        {(Object.keys(SCALE_LABEL) as ImageScaleMode[]).map((m) => (
+          <option key={m} value={m}>
+            {SCALE_LABEL[m]}
+          </option>
+        ))}
+      </select>
+      <label className="props__link props__file">
+        {paint.assetId ? "Change image" : "Choose image"}
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void choose(e.target.files?.[0])} />
+      </label>
+      <label className="field field--gap" title="Image opacity (%)">
+        <span className="field__label">%</span>
+        <input className="field__input" type="number" min={0} max={100} value={Math.round(paint.opacity * 100)} onChange={(e) => setPaint({ ...paint, opacity: clamp01(Number(e.target.value) / 100) })} />
+      </label>
+    </>
   );
 }

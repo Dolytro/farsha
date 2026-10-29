@@ -56,6 +56,21 @@ describe("exportSvg", () => {
     expect(exportSvg(doc, [rect])!.svg).not.toContain("mix-blend-mode");
   });
 
+  it("draws image fills as patterns with data urls and refuses other asset types", () => {
+    const { doc, rect } = setup();
+    const png = doc.addAsset("image/png", Uint8Array.from([137, 80, 78, 71]));
+    doc.setStyle(rect, { fills: [{ type: "IMAGE", assetId: png, scaleMode: "FIT", opacity: 1 }] });
+    const { svg } = exportSvg(doc, [rect])!;
+    expect(svg).toContain("<pattern");
+    expect(svg).toContain('href="data:image/png;base64,');
+    expect(svg).toContain('preserveAspectRatio="xMidYMid meet"');
+    const evil = doc.addAsset("text/html", Uint8Array.from([60, 98, 62]));
+    doc.setStyle(rect, { fills: [{ type: "IMAGE", assetId: evil, scaleMode: "FILL", opacity: 1 }] });
+    const bad = exportSvg(doc, [rect])!.svg;
+    expect(bad).not.toContain("data:text/html");
+    expect(bad).toContain('fill="#e5e5e5"');
+  });
+
   it("draws independent corner radii as a path and clamps them", () => {
     const { doc, rect } = setup(); // 80 x 40
     doc.setStyle(rect, { cornerRadii: [4, 0, 8, 100] });

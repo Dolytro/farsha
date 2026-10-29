@@ -49,7 +49,17 @@ export interface GradientPaint {
   opacity: number;
 }
 
-export type Paint = SolidPaint | GradientPaint;
+export type ImageScaleMode = 'FILL' | 'FIT' | 'STRETCH';
+
+export interface ImagePaint {
+  type: 'IMAGE';
+  /** Reference to an asset stored in the document; null until an image is chosen. */
+  assetId: string | null;
+  scaleMode: ImageScaleMode;
+  opacity: number;
+}
+
+export type Paint = SolidPaint | GradientPaint | ImagePaint;
 
 /** Where a stroke sits relative to the shape edge (Figma: Inside, Center, Outside). */
 export type StrokeAlign = 'INSIDE' | 'CENTER' | 'OUTSIDE';
@@ -216,6 +226,7 @@ export interface Box {
 
 /** Single representative colour of a paint: the colour itself, or a gradient's first stop. */
 export function paintColor(p: Paint): string {
+  if (p.type === 'IMAGE') return '#cccccc';
   return p.type === 'SOLID' ? p.color : (p.stops[0]?.color ?? '#000000');
 }
 

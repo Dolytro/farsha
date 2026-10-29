@@ -84,16 +84,25 @@ export function shapeGeometry(n: DesignNode, extra: string): string {
 const geometry = shapeGeometry;
 
 /** Fill and stroke of a rectangle, frame or ellipse. Inside/outside strokes are clipped/masked double-width strokes. */
-export function shapeMarkup(n: DesignNode): string {
+export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => string | undefined): string {
   const fill = "fills" in n ? n.fills[0] : undefined;
   const stroke = "strokes" in n ? n.strokes[0] : undefined;
   const gradientId = `gf-${safeId(n.id)}`;
-  const fillAttrs = !fill
-    ? ' fill="none"'
-    : fill.type === "SOLID"
-      ? ` fill="${hex(fill.color)}" fill-opacity="${unit(fill.opacity)}"`
-      : ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
-  let out = (fill && fill.type !== "SOLID" ? gradientDef(gradientId, fill) : "") + geometry(n, fillAttrs);
+  let fillDef = "";
+  let fillAttrs = ' fill="none"';
+  if (fill?.type === "SOLID") fillAttrs = ` fill="${hex(fill.color)}" fill-opacity="${unit(fill.opacity)}"`;
+  else if (fill?.type === "IMAGE") {
+    const href = fill.assetId ? imageHref?.(fill.assetId) : undefined;
+    if (href) {
+      const par = fill.scaleMode === "FIT" ? "xMidYMid meet" : fill.scaleMode === "STRETCH" ? "none" : "xMidYMid slice";
+      fillDef = `<pattern id="${gradientId}" patternUnits="userSpaceOnUse" width="${num(n.width)}" height="${num(n.height)}"><image href="${href.replace(/"/g, "&quot;")}" width="${num(n.width)}" height="${num(n.height)}" preserveAspectRatio="${par}"/></pattern>`;
+      fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
+    } else fillAttrs = ' fill="#e5e5e5"';
+  } else if (fill) {
+    fillDef = gradientDef(gradientId, fill);
+    fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
+  }
+  let out = fillDef + geometry(n, fillAttrs);
   if (!stroke || !("strokeWidth" in n)) return out;
 
   const w = Math.max(0, n.strokeWidth);

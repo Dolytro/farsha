@@ -17,6 +17,7 @@ export function toRgba(hex: string, opacity = 1): string {
 /** CSS background value of a paint (solid colour or a linear/radial gradient). */
 export function paintCss(p: Paint): string {
   if (p.type === "SOLID") return toRgba(p.color, p.opacity);
+  if (p.type === "IMAGE") return `url(image) ${p.scaleMode === "STRETCH" ? "0 0 / 100% 100%" : `center / ${p.scaleMode === "FIT" ? "contain" : "cover"}`} no-repeat`;
   const stops = [...p.stops]
     .sort((a, b) => a.position - b.position)
     .map((s) => `${toRgba(s.color, s.opacity * p.opacity)} ${Math.round(s.position * 100)}%`)
