@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import type { Box, DesignNode, NodeType } from "@canvylo/types";
-import { effectsFilter, hitTest, measure, screenToWorld, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -287,7 +287,8 @@ export function Canvas() {
           <text
             x={n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0}
             textAnchor={n.textAlign === "CENTER" ? "middle" : n.textAlign === "RIGHT" ? "end" : "start"}
-            y={n.fontSize}
+            y={textBaseline(n)}
+            letterSpacing={n.letterSpacing || undefined}
             fill={color}
             fontFamily={n.fontFamily}
             fontSize={n.fontSize}
@@ -479,13 +480,13 @@ export function Canvas() {
                 className="canvas__text-edit"
                 autoFocus
                 value={editNode.characters}
-                style={{ fontSize: editNode.fontSize, fontFamily: editNode.fontFamily, fontWeight: editNode.fontWeight, color: fillOf(editNode).color }}
+                style={{ fontSize: editNode.fontSize, fontFamily: editNode.fontFamily, fontWeight: editNode.fontWeight, letterSpacing: editNode.letterSpacing, textAlign: editNode.textAlign.toLowerCase() as "left", color: fillOf(editNode).color }}
                 onPointerDown={(e) => e.stopPropagation()}
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => {
                   doc.setText(editNode.id, { characters: e.target.value });
                   // Auto-width until real text measurement lands (Phase 1 text spike).
-                  doc.resizeNode(editNode.id, { width: Math.max(8, e.target.value.length * editNode.fontSize * 0.56) });
+                  doc.resizeNode(editNode.id, { width: Math.max(8, e.target.value.length * (editNode.fontSize * 0.56 + editNode.letterSpacing)) });
                 }}
                 onBlur={() => setEditing(null)}
                 onKeyDown={(e) => {

@@ -1018,3 +1018,34 @@ body {
     }
   }
 }
+
+.field__select--wide {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.seg {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+  padding: 2px;
+  border-radius: 4px;
+  background: var(--c-input);
+
+  &__btn {
+    flex: 1;
+    height: 20px;
+    border: 0;
+    border-radius: 3px;
+    background: none;
+    color: var(--c-muted);
+    font: inherit;
+    cursor: pointer;
+
+    &--active {
+      background: #fff;
+      color: var(--c-text);
+      box-shadow: 0 0 0 1px var(--c-border);
+    }
+  }
+}

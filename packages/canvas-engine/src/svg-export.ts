@@ -1,6 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { Box, DesignNode } from "@canvylo/types";
-import { effectsFilter, shapeMarkup } from "./appearance";
+import { effectsFilter, letterSpacingAttr, shapeMarkup, textBaseline } from "./appearance";
 import { unionBox } from "./measure";
 
 export interface SvgExport {
@@ -49,7 +49,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     case "TEXT": {
       const anchor = n.textAlign === "CENTER" ? ' text-anchor="middle"' : n.textAlign === "RIGHT" ? ' text-anchor="end"' : "";
       const x = n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0;
-      return `<g transform="${transform}"${opacity}><text x="${num(x)}" y="${num(n.fontSize)}"${anchor} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs}>${esc(n.characters)}</text></g>`;
+      return `<g transform="${transform}"${opacity}><text x="${num(x)}" y="${num(textBaseline(n))}"${anchor}${letterSpacingAttr(n)} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs}>${esc(n.characters)}</text></g>`;
     }
     case "FRAME": {
       const clipId = `clip-${n.id}`;
