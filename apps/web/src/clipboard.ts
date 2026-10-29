@@ -103,8 +103,8 @@ export function takePasteMode(): PasteMode {
   return mode;
 }
 
-function clipCenter(payload: ClipPayload): { x: number; y: number } {
-  const boxes = payload.nodes.map((n) => ({
+function clipCenter(nodes: ClipNode[]): { x: number; y: number } {
+  const boxes = nodes.map((n) => ({
     x: Number(n.props.x ?? 0),
     y: Number(n.props.y ?? 0),
     w: Number(n.props.width ?? 0),
@@ -126,7 +126,7 @@ function overTarget(doc: DesignDoc, id: string): { parentId: string; box: { x: n
 }
 
 function pasteCentered(doc: DesignDoc, payload: ClipPayload, parentId: string, box: { x: number; y: number; width: number; height: number }): string[] {
-  const c = clipCenter(payload);
+  const c = clipCenter(payload.nodes);
   const dx = box.x + box.width / 2 - c.x;
   const dy = box.y + box.height / 2 - c.y;
   return payload.nodes.map((n) => create(doc, n, parentId, dx, dy)).filter((id): id is string => id !== null);
@@ -162,6 +162,19 @@ export function pasteReplace(doc: DesignDoc, payload: ClipPayload, selection: st
   }
   ids.forEach((id, i) => doc.reorderNode(id, index + i));
   doc.deleteNode(node.id);
+  doc.stopCapturing();
+  return ids;
+}
+
+/**
+ * Layers converted from another app (Figma). Their x/y are in the source's canvas coordinates, so the
+ * set is moved as one block to be centred on (cx, cy). One undo step.
+ */
+export function pasteClips(doc: DesignDoc, clips: ClipNode[], parentId: string, cx: number, cy: number): string[] {
+  if (!clips.length) return [];
+  const c = clipCenter(clips);
+  doc.stopCapturing();
+  const ids = clips.map((n) => create(doc, n, parentId, cx - c.x, cy - c.y)).filter((id): id is string => id !== null);
   doc.stopCapturing();
   return ids;
 }

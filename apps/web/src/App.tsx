@@ -6,8 +6,9 @@ import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
+import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { looksLikeSvg } from "./svg-import";
-import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
+import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { ShareDialog } from "./components/ShareDialog";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
@@ -19,6 +20,21 @@ async function copyWithToast(label: string, task: () => Promise<boolean>): Promi
     showToast((await task()) ? `Copied as ${label}` : "Select a layer first");
   } catch (err) {
     showToast(err instanceof Error ? `Couldn't copy: ${err.message}` : "Couldn't copy");
+  }
+}
+
+/** Figma layers arrive as compressed binary, so decoding is async; the paste event already finished. */
+async function pasteFromFigma(html: string, parentId: string, cx: number, cy: number): Promise<void> {
+  const { showToast } = useEditor.getState();
+  try {
+    const clips = await figmaToClips(html);
+    const s = useEditor.getState();
+    const target = s.doc.hasNode(parentId) ? parentId : s.pageId;
+    const ids = pasteClips(s.doc, clips, target, cx, cy);
+    if (ids.length) s.select(ids);
+    else showToast("Nothing to paste from Figma");
+  } catch (err) {
+    showToast(err instanceof Error ? `Couldn't paste from Figma: ${err.message}` : "Couldn't paste from Figma");
   }
 }
 
@@ -91,7 +107,8 @@ export function App() {
       if (blocked(e)) return;
       const text = e.clipboardData?.getData("text/plain") ?? "";
       const svgData = e.clipboardData?.getData("image/svg+xml") ?? "";
-      if (!text && !svgData) return;
+      const html = e.clipboardData?.getData("text/html") ?? "";
+      if (!text && !svgData && !html) return;
       const s = useEditor.getState();
       const parentId = pasteTarget(s.doc, s.selection, s.pageId);
       const clip = parseClip(text);
@@ -103,9 +120,15 @@ export function App() {
       let ids: string[];
       if (clip) {
         ids = (mode === "over" ? pasteOver(s.doc, clip, s.selection) : mode === "replace" ? pasteReplace(s.doc, clip, s.selection) : null) ?? pasteNodes(s.doc, clip, parentId);
+      } else if (looksLikeFigma(html)) {
+        e.preventDefault();
+        void pasteFromFigma(html, parentId, cx, cy);
+        return;
       } else if (svg) {
         ids = pasteSvg(s.doc, svg, parentId, cx, cy);
         if (!ids.length) s.showToast("Nothing to paste from that SVG");
+      } else if (!text) {
+        return; // other html / images: not supported yet, leave the default behaviour alone
       } else {
         ids = pasteText(s.doc, text, parentId, cx, cy);
       }

@@ -30,11 +30,16 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Duplicate (Ctrl+D), delete, group / ungroup | ✅ | |
 | Bring forward / backward / to front / to back | ✅ | |
 | Undo / redo | ✅ | |
-| **Copy, cut, paste (Ctrl+C / X / V)** | ❌ | **P1** |
-| Paste in place, paste over selection, paste to replace | ❌ | P2 |
-| Copy / paste properties (Ctrl+Alt+C / V) (menu) | ❌ | P2 |
-| Copy as PNG, SVG, CSS; paste text or images from the clipboard | ❌ | P1 |
-| Select all / none / inverse / matching (Ctrl+A etc.) (menu) | ❌ | P1 |
+| Copy, cut, paste (Ctrl+C / X / V), paste text | ✅ | |
+| Paste over selection (Ctrl+Shift+V), paste to replace (Ctrl+Alt+Shift+V) | ✅ | |
+| Copy / paste properties (Ctrl+Alt+C / V) (menu) | ✅ | |
+| Copy as PNG (Ctrl+Shift+C); Dev Mode Ctrl+C copies CSS | ✅ | |
+| Copy as SVG / CSS from a menu or context menu | 🟡 engine done, no menu yet | P1 |
+| Paste SVG (shapes, text and paths become layers; no gradients or transforms beyond translate) | ✅ | |
+| Paste layers copied in Figma (frames, text, shapes, vectors; no auto layout, components, images, effects) | 🟡 | |
+| Paste images from the clipboard / drag and drop | ❌ | P1 |
+| Select all (Ctrl+A) | ✅ | |
+| Select none / inverse / matching (Ctrl+Shift+A, Ctrl+Alt+A) (menu) | ❌ | P2 |
 | Select children (Enter), select parent (Shift+Enter), Tab to next | ❌ | P2 |
 | Double-click to enter a group; Figma selects the top-level layer first | ❌ | P1 |
 | Resize from all 8 handles, Shift = keep ratio, Alt = from center | 🟡 corners only | P1 |

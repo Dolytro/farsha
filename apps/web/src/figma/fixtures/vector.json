@@ -1,0 +1,27 @@
+{
+  "type": "NODE_CHANGES",
+  "pasteFileKey": "REDACTED",
+  "nodeChanges": [
+    { "guid": { "sessionID": 0, "localID": 0 }, "phase": "CREATED", "type": "DOCUMENT", "name": "Document", "visible": true, "opacity": 1, "transform": { "m00": 1, "m01": 0, "m02": 0, "m10": 0, "m11": 1, "m12": 0 } },
+    { "guid": { "sessionID": 0, "localID": 1 }, "phase": "CREATED", "parentIndex": { "guid": { "sessionID": 0, "localID": 0 }, "position": "!" }, "type": "CANVAS", "name": "Page 1", "visible": true, "opacity": 1, "transform": { "m00": 1, "m01": 0, "m02": 0, "m10": 0, "m11": 1, "m12": 0 } },
+    {
+      "guid": { "sessionID": 29, "localID": 5394 },
+      "phase": "CREATED",
+      "parentIndex": { "guid": { "sessionID": 0, "localID": 1 }, "position": "!" },
+      "type": "VECTOR",
+      "name": "Vector",
+      "visible": true,
+      "opacity": 1,
+      "size": { "x": 1440, "y": 900 },
+      "transform": { "m00": 1, "m01": 0, "m02": 15600, "m10": 0, "m11": 1, "m12": 7200 },
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "fillPaints": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 }, "opacity": 1, "visible": true, "blendMode": "NORMAL" }],
+      "vectorData": { "vectorNetworkBlob": 0, "normalizedSize": { "x": 1440, "y": 900 } }
+    },
+    { "guid": { "sessionID": 20000050, "localID": 2 }, "phase": "CREATED", "parentIndex": { "guid": { "sessionID": 0, "localID": 0 }, "position": "\"" }, "type": "CANVAS", "name": "Internal Only Canvas", "visible": false, "opacity": 1, "internalOnly": true }
+  ],
+  "blobs": [
+    { "bytes": "BAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAtEQAAAAAAAAAAAAAtEQAAGFEAAAAAAAAAAAAAGFEAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==" }
+  ]
+}
