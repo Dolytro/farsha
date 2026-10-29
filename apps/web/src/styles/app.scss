@@ -1049,3 +1049,33 @@ body {
     }
   }
 }
+
+.fill-row--gap {
+  margin-top: 6px;
+}
+
+.field--gap {
+  margin-top: 6px;
+}
+
+.gradient-bar {
+  height: 12px;
+  margin-top: 8px;
+  border: 1px solid var(--c-border);
+  border-radius: 3px;
+}
+
+.props__link {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.props__add:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

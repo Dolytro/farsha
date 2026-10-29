@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { generateCode, toRgba, type Language } from "@canvylo/code-generator";
+import { generateCode, paintCss, type Language } from "@canvylo/code-generator";
 import { useEditor } from "../store";
 
 const LANGS: { id: Language; label: string }[] = [
@@ -62,8 +62,8 @@ export function DevPanel() {
           <h3 className="props__heading">Colors</h3>
           {[...fills.map((p) => ["Fill", p] as const), ...strokes.map((p) => ["Stroke", p] as const)].map(([label, p], i) => (
             <div key={`${label}-${i}`} className="fill-row dev__color">
-              <span className="fill-row__swatch dev__swatch" style={{ background: toRgba(p.color, p.opacity) }} />
-              <span className="fill-row__hex">{p.color.toUpperCase()}</span>
+              <span className="fill-row__swatch dev__swatch" style={{ background: paintCss(p) }} />
+              <span className="fill-row__hex">{p.type === "SOLID" ? p.color.toUpperCase() : p.type === "GRADIENT_RADIAL" ? "Radial" : "Linear"}</span>
               <span className="fill-row__opacity">{label}</span>
             </div>
           ))}

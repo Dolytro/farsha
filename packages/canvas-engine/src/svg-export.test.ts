@@ -48,6 +48,24 @@ describe("exportSvg", () => {
     expect(svg).toContain('stroke-width="4"');
   });
 
+  it("draws linear and radial gradient fills", () => {
+    const { doc, rect } = setup();
+    const stops = [
+      { position: 1, color: "#0000ff", opacity: 1 },
+      { position: 0, color: "#ff0000", opacity: 0.5 },
+    ];
+    doc.setStyle(rect, { fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops }] });
+    const { svg } = exportSvg(doc, [rect])!;
+    expect(svg).toContain("<linearGradient");
+    expect(svg).toContain('x1="0.5" y1="0" x2="0.5" y2="1"');
+    expect(svg).toMatch(/fill="url\(#gf-/);
+    expect(svg.indexOf('stop-color="#ff0000"')).toBeLessThan(svg.indexOf('stop-color="#0000ff"')); // sorted by position
+    doc.setStyle(rect, { fills: [{ type: "GRADIENT_RADIAL", angle: 0, opacity: 1, stops: [{ position: 0, color: "x\" onload=\"y", opacity: 1 }, stops[0]!] }] });
+    const radial = exportSvg(doc, [rect])!.svg;
+    expect(radial).toContain("<radialGradient");
+    expect(radial).not.toContain("onload");
+  });
+
   it("adds a filter for shadows and blur and ignores hidden or malformed effects", () => {
     const { doc, rect } = setup();
     doc.setStyle(rect, {

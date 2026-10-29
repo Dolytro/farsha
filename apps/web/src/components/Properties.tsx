@@ -1,6 +1,7 @@
 import { useEditor } from "../store";
 import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
+import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
 
@@ -78,7 +79,6 @@ export function Properties() {
       <input className="field__input" type="number" value={Math.round(node[k] * 100) / 100} onChange={(e) => setNum(k, Number(e.target.value))} />
     </label>
   );
-  const paint = "fills" in node ? node.fills[0] : undefined;
 
   return (
     <aside className="props">
@@ -133,21 +133,7 @@ export function Properties() {
 
       {node.type === "TEXT" && <TypographySection doc={doc} node={node} />}
 
-      {paint && (
-        <section className="props__section">
-          <h3 className="props__heading">Fill</h3>
-          <div className="fill-row">
-            <input
-              className="fill-row__swatch"
-              type="color"
-              value={paint.color}
-              onChange={(e) => doc.setStyle(node.id, { fills: [{ type: "SOLID", color: e.target.value, opacity: paint.opacity }] })}
-            />
-            <span className="fill-row__hex">{paint.color.replace("#", "").toUpperCase()}</span>
-            <span className="fill-row__opacity">{Math.round(paint.opacity * 100)}%</span>
-          </div>
-        </section>
-      )}
+      <FillSection doc={doc} node={node} />
 
       <StrokeSection doc={doc} node={node} />
       <EffectsSection doc={doc} node={node} />

@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import type { DesignNode, Effect, StrokeAlign } from "@canvylo/types";
+import { paintColor, type DesignNode, type Effect, type StrokeAlign } from "@canvylo/types";
 
 const ALIGN_LABEL: Record<StrokeAlign, string> = { INSIDE: "Inside", CENTER: "Center", OUTSIDE: "Outside" };
 const EFFECT_LABEL: Record<Effect["type"], string> = { DROP_SHADOW: "Drop shadow", INNER_SHADOW: "Inner shadow", LAYER_BLUR: "Layer blur" };
@@ -29,10 +29,10 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
             <input
               className="fill-row__swatch"
               type="color"
-              value={stroke.color}
-              onChange={(e) => doc.setStyle(node.id, { strokes: [{ ...stroke, color: e.target.value }] })}
+              value={paintColor(stroke)}
+              onChange={(e) => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color: e.target.value, opacity: stroke.opacity }] })}
             />
-            <span className="fill-row__hex">{stroke.color.replace("#", "").toUpperCase()}</span>
+            <span className="fill-row__hex">{paintColor(stroke).replace("#", "").toUpperCase()}</span>
             <input
               className="fill-row__pct"
               type="number"

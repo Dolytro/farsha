@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
-import type { Box, DesignNode, NodeType } from "@canvylo/types";
+import { paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
 import { effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
@@ -21,7 +21,7 @@ const ACCENT = "#0d99ff";
 const solid = (color: string) => [{ type: "SOLID" as const, color, opacity: 1 }];
 const fillOf = (n: DesignNode) => {
   const p = "fills" in n ? n.fills[0] : undefined;
-  return p ? { color: p.color, opacity: p.opacity } : { color: "none", opacity: 1 };
+  return p ? { color: paintColor(p), opacity: p.opacity } : { color: "none", opacity: 1 };
 };
 const radiusOf = (n: DesignNode) => ("cornerRadius" in n ? n.cornerRadius : 0);
 const fxUrl = (n: DesignNode) => {
