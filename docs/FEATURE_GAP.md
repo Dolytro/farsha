@@ -69,7 +69,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Stroke | 🟡 | Color, opacity, weight, position (inside / center / outside) and multiple strokes (stacked, one weight and position for all; frames, rectangles and ellipses; a drawn vector keeps one) done. Dev Mode CSS shows the first stroke only. Missing: per-side weights, dash, caps, joins, arrowheads. |
 | Effects | 🟡 | Drop shadow, inner shadow, layer blur (hide / remove / change type) done. Missing: shadow spread, background blur, show-behind, multiple blurs. Shadow offset rotates with a rotated layer. Dev Mode CSS shows outside strokes as an inside border. |
 | Typography | 🟡 | Content, font family (a short built-in list, system fonts only), weight names, size, line height, letter spacing, text align (left / center / right) done. Multi-line text (Enter = new line), wrapping, auto width / auto height / fixed (also set by dragging handles like Figma) done; wrapping uses the browser's canvas measureText, so very different fonts may wrap slightly differently in exports. Missing: Google Fonts, paragraph spacing, vertical align, decoration, case, truncate, lists, mixed styles inside one text box, text selection inside the editor styling |
-| Selection colors | ❌ | |
+| Selection colors | ✅ | Design panel lists every solid colour in the selection; edit one to change it everywhere |
 | Export | 🟡 | Export section in the Design panel: PNG / JPG / SVG at 0.5x–4x, one file per layer, "@2x" file names. Also in the Dev panel. Missing: PDF, saved export settings per layer, suffix, multi-selection export, export frames to PDF |
 | Constraints | 🟡 | Left / Right / Left & Right / Center / Scale (and Top / Bottom) for layers inside frames, applied when the frame is resized (also in nested frames). Missing: groups scaling their children, the clickable constraint diagram, children of auto layout frames |
 
@@ -206,7 +206,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Toolbar | Comment tool (C): click to drop a pin, thread with replies, resolve, delete, Comments tab, Shift+C shows / hides pins | ✅ local-first: comments are saved inside the document (Drive file, local copy, version history), not synced live |
 | Toolbar | Slice (S), Pencil (Shift+P), Text on path | ❌ |
 | Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | ✅ (opacity keys, Alt+drag copies the selection in one undo step) |
-| Design panel | Page background colour, Styles on a page, Selection colors, Export on a page | ❌ |
+| Design panel | Page background colour, Selection colors ✅; Styles on a page, Export on a page ❌ | ◐ |
 | Design panel | Stroke dash and gap, caps, joins; arrowheads (line arrow, triangle, circle, square, diamond) on the start and end of a vector / line | ✅ |
 | Design panel | Per-side stroke weights, background blur, corner smoothing | ❌ |
 | Prototype | Hover / drag / key triggers, overlays, scroll, transitions, flow starting points, device frames | ❌ |

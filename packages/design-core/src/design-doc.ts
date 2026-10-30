@@ -1008,6 +1008,19 @@ export class DesignDoc {
     return id && modes.some((m) => m.id === id) ? id : modes[0]!.id;
   }
 
+  /** Canvas colour of a page (Figma's page Background); undefined means the default. */
+  pageBackground(pageId: string): string | undefined {
+    return this.meta.get(`bg:${pageId}`);
+  }
+
+  setPageBackground(pageId: string, color: string | undefined): void {
+    if (color !== undefined && !/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error('Background must be a six-digit hex colour');
+    this.transact(() => {
+      if (color === undefined) this.meta.delete(`bg:${pageId}`);
+      else this.meta.set(`bg:${pageId}`, color.toLowerCase());
+    });
+  }
+
   setActiveMode(id: string): void {
     if (!this.modes().some((m) => m.id === id)) throw new Error('Mode not found');
     this.transact(() => this.meta.set('activeMode', id));
