@@ -5,6 +5,7 @@ import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
 import { openLocalFilePicker, saveLocalCopy } from "./local-file";
+import { hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, swapFillAndStroke } from "./object-actions";
 import { newFile } from "./drive/session";
 import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
@@ -86,6 +87,15 @@ export function buildCommands(): Command[] {
         },
       }),
     ),
+    { id: "rotate-180", label: "Rotate 180°", needsSelection: true, keywords: "turn", run: () => void rotateSelectionBy(doc(), sel(), 180) },
+    { id: "rotate-left", label: "Rotate 90° left", needsSelection: true, keywords: "turn counterclockwise", run: () => void rotateSelectionBy(doc(), sel(), -90) },
+    { id: "rotate-right", label: "Rotate 90° right", needsSelection: true, keywords: "turn clockwise", run: () => void rotateSelectionBy(doc(), sel(), 90) },
+    { id: "remove-fill", label: "Remove fill", shortcut: `${ALT}/`, needsSelection: true, keywords: "clear paint", run: () => void removePaint(doc(), sel(), "fills") },
+    { id: "remove-stroke", label: "Remove stroke", shortcut: `${SHIFT}/`, needsSelection: true, keywords: "clear border", run: () => void removePaint(doc(), sel(), "strokes") },
+    { id: "swap-fill-stroke", label: "Swap fill and stroke", shortcut: `${SHIFT}X`, needsSelection: true, run: () => void swapFillAndStroke(doc(), sel()) },
+    { id: "hide-others", label: "Hide other layers", needsSelection: true, keywords: "isolate focus", run: () => void hideOtherLayers(doc(), sel(), state().pageId) },
+    { id: "collapse-layers", label: "Collapse layers", shortcut: `${ALT}L`, keywords: "fold layers panel", run: () => state().collapseLayers() },
+    { id: "remove-interactions", label: "Remove interactions", needsSelection: true, keywords: "prototype links", run: () => void removeInteractions(doc(), sel()) },
     { id: "ungroup", label: "Ungroup", shortcut: `${MOD}${SHIFT}G`, needsSelection: true, run: () => state().select(ungroupSelection(doc(), sel())) },
     { id: "front", label: "Bring to front", shortcut: `${MOD}]`, needsSelection: true, keywords: "order z", run: () => reorderSelection(doc(), sel(), Infinity) },
     { id: "back", label: "Send to back", shortcut: `${MOD}[`, needsSelection: true, keywords: "order z", run: () => reorderSelection(doc(), sel(), -Infinity) },

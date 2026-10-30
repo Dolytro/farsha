@@ -190,7 +190,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | View | Zoom in / out / 100% / fit / selection, previous / next page, zoom to previous / next frame | ✅ |
 | View | Outlines, Panels (show / hide each panel), Find previous / next frame (Home / End), Switch to Draw | ❌ |
 | Object | Frame selection, Group, Ungroup, Use as mask, Add auto layout, Create component, Reset / Detach instance, Main component, order, Flip, Show / Hide, Lock / Unlock | ✅ |
-| Object | Ungroup with Ctrl+Backspace, Rotate 180° / 90° left / 90° right, Hide other layers, Collapse layers (Alt+L), Remove fill (Alt+/), Remove stroke (Shift+/), Swap fill and stroke (Shift+X), Remove interactions, Delete contents | ❌ |
+| Object | Ungroup with Ctrl+Backspace, Rotate 180° / 90° left / 90° right, Hide other layers, Collapse layers (Alt+L), Remove fill (Alt+/), Remove stroke (Shift+/), Swap fill and stroke (Shift+X), Remove interactions | ✅ (Delete contents ❌) |
 | Object | Wrap in new section (Ctrl+S), Convert to section / frame (Section tool Shift+S, Slice tool S), Flatten (Alt+Shift+F), Outline stroke (Ctrl+Alt+O), Boolean groups (live), Slots | ❌ |
 | Text | Bold / Italic (Ctrl+B / I), Underline (Ctrl+U), Strikethrough, Create link, Bulleted / Numbered list, Alignment, Case, Text direction, Spell check, Text on path | ❌ |
 | Arrange | Align left / centers / right / top / middle / bottom (Alt+A H D W V S) | ✅ |
@@ -199,7 +199,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Preferences | Theme, Nudge amount, keep tool, snapping, zoom options | ✅ (Color profile, Keyboard layout, Accessibility, Permissions: ❌ / browser-bound) |
 | Toolbar | Move, Hand, Frame, Rectangle, Line, Arrow, Ellipse, Polygon, Star, Pen, Text | ✅ |
 | Toolbar | Scale tool (K), Section (Shift+S), Slice (S), Image / video… (Ctrl+Shift+K), Pencil (Shift+P), Text on path, Comment tool (C) | ❌ |
-| Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | partly ✅ (Alt+drag, opacity keys ❌) |
+| Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | partly ✅ (opacity keys ✅, Alt+drag ❌) |
 | Design panel | Page background colour, Styles on a page, Selection colors, Export on a page | ❌ |
 | Design panel | Stroke dash / caps / joins / arrowheads, per-side stroke weights, background blur, corner smoothing | ❌ |
 | Prototype | Hover / drag / key triggers, overlays, scroll, transitions, flow starting points, device frames | ❌ |

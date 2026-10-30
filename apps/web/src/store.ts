@@ -72,6 +72,8 @@ interface EditorState {
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
+  /** Bumped by "Collapse layers"; the Layers panel collapses every container when it changes. */
+  collapseTick: number;
   pixelGrid: boolean;
   prefs: Prefs;
   prefsOpen: boolean;
@@ -103,6 +105,7 @@ interface EditorState {
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  collapseLayers: () => void;
   setPixelGrid: (on: boolean) => void;
   setPrefs: (patch: Partial<Prefs>) => void;
   setPrefsOpen: (open: boolean) => void;
@@ -147,6 +150,7 @@ export const useEditor = create<EditorState>((set) => ({
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   paletteOpen: false,
+  collapseTick: 0,
   pixelGrid: false,
   prefs: readPrefs(),
   prefsOpen: false,
@@ -190,6 +194,7 @@ export const useEditor = create<EditorState>((set) => ({
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  collapseLayers: () => set((s) => ({ collapseTick: s.collapseTick + 1 })),
   setPixelGrid: (pixelGrid) => set({ pixelGrid }),
   setPrefs: (patch) =>
     set((s) => {

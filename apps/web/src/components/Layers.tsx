@@ -56,6 +56,14 @@ export function Layers() {
   });
 
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const collapseTick = useEditor((s) => s.collapseTick);
+  // "Collapse layers" (Alt+L) folds every layer that has children.
+  useEffect(() => {
+    if (!collapseTick) return;
+    const all = doc.descendants(pageId).filter((n) => doc.children(n.id).length > 0).map((n) => n.id);
+    setCollapsed(new Set(all));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collapseTick]);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"layers" | "assets">("layers");
   const [drop, setDrop] = useState<{ id: string; where: DropWhere } | null>(null);

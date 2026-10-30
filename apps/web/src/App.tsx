@@ -30,6 +30,7 @@ import { restoreLocal, startLocalAutosave } from "./local-persist";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
 import { resolveTheme } from "./theme";
+import { removePaint, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
 import { pickColorFromScreen } from "./eyedropper";
 
 /** Run a "Copy as ..." action and report the result in a toast. */
@@ -409,6 +410,26 @@ export function App() {
           const v = zoomFit(doc, s.pageId, [frame]);
           if (v) s.setViewport(v);
         }
+      } else if (mod && !e.shiftKey && !e.altKey && key === "backspace" && selection.length && !s.viewer) {
+        // Figma's "Ungroup selection"
+        e.preventDefault();
+        s.select(ungroupSelection(doc, selection));
+      } else if (e.altKey && !mod && !e.shiftKey && e.code === "Slash" && selection.length && !s.viewer) {
+        e.preventDefault();
+        removePaint(doc, selection, "fills");
+      } else if (e.shiftKey && !mod && !e.altKey && e.code === "Slash" && selection.length && !s.viewer) {
+        e.preventDefault();
+        removePaint(doc, selection, "strokes");
+      } else if (e.shiftKey && !mod && !e.altKey && key === "x" && selection.length && !s.viewer) {
+        e.preventDefault();
+        swapFillAndStroke(doc, selection);
+      } else if (e.altKey && !mod && !e.shiftKey && key === "l" && !s.viewer) {
+        e.preventDefault();
+        s.collapseLayers();
+      } else if (!mod && !e.altKey && !e.shiftKey && /^[0-9]$/.test(key) && selection.length && !s.viewer) {
+        // Figma's number keys set the opacity
+        e.preventDefault();
+        setOpacityFromKey(doc, selection, key);
       } else if (!e.shiftKey && !mod && !e.altKey && key === "i" && !s.viewer) {
         // Figma's eyedropper
         e.preventDefault();
