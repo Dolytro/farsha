@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { groupSelection, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
+import { toggleLayoutGrids, groupSelection, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
 
 function setup() {
   const doc = new DesignDoc();
@@ -125,5 +125,23 @@ describe("groupSelection order", () => {
     const top = doc.createNode("RECTANGLE", { parentId: page });
     const [group] = groupSelection(doc, [top, bottom]);
     expect(doc.children(group!).map((n) => n.id)).toEqual([bottom, top]);
+  });
+});
+
+describe("toggleLayoutGrids", () => {
+  const grid = { type: "COLUMNS" as const, count: 4, gutter: 20, margin: 0, color: "#ff0000", opacity: 0.1, visible: true };
+  it("hides grids that are showing, then shows them again", () => {
+    const doc = new DesignDoc();
+    const f = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id });
+    doc.setStyle(f, { layoutGrids: [grid, { ...grid, type: "ROWS" }] });
+    expect(toggleLayoutGrids(doc, [f])).toBe(1);
+    expect((doc.getNode(f) as { layoutGrids: { visible: boolean }[] }).layoutGrids.map((g) => g.visible)).toEqual([false, false]);
+    toggleLayoutGrids(doc, [f]);
+    expect((doc.getNode(f) as { layoutGrids: { visible: boolean }[] }).layoutGrids.map((g) => g.visible)).toEqual([true, true]);
+  });
+  it("does nothing for frames without grids", () => {
+    const doc = new DesignDoc();
+    const f = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id });
+    expect(toggleLayoutGrids(doc, [f])).toBe(0);
   });
 });

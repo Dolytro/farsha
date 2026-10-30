@@ -10,7 +10,7 @@ import { selectChildren, selectInverse, selectParent, selectSibling } from "./se
 import { createComponentFromSelection, detachSelection } from "./component-actions";
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
-import { adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
+import { toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
@@ -270,6 +270,10 @@ export function App() {
       } else if (s.devMode) {
         // Dev Mode is read-only: only Esc (deselect) and the toggle above are active.
         if (key === "escape") s.select([]);
+      } else if (e.shiftKey && !e.altKey && !mod && key === "g" && !s.viewer) {
+        // Figma's "Layout grids"
+        e.preventDefault();
+        if (!toggleLayoutGrids(doc, selection)) s.showToast("Select a frame with a layout grid");
       } else if (e.shiftKey && !e.altKey && !mod && key === "r" && !s.viewer) {
         // Figma's "Show / Hide rulers"
         e.preventDefault();

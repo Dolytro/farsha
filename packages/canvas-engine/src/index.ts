@@ -13,3 +13,4 @@ export * from "./shapes";
 export * from "./transform";
 export * from "./pen";
 export * from "./mask";
+export * from "./layout-grid";

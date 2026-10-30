@@ -8,6 +8,7 @@ import { AutoLayoutSection, ChildSizingSection } from "./AutoLayoutSection";
 import { AlignRow } from "./AlignRow";
 import { PrototypePanel } from "./PrototypePanel";
 import { VariantsSection } from "./VariantsSection";
+import { LayoutGridSection } from "./LayoutGridSection";
 import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
@@ -233,6 +234,7 @@ export function Properties() {
       <VariantsSection doc={doc} node={node} />
       <ChildSizingSection doc={doc} node={node} />
       <AutoLayoutSection doc={doc} node={node} select={select} />
+      <LayoutGridSection doc={doc} node={node} />
       <StrokeSection doc={doc} node={node} />
       <EffectsSection doc={doc} node={node} />
       {node.type !== "PAGE" && <ExportSection doc={doc} ids={[node.id]} />}
