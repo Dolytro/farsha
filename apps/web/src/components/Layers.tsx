@@ -5,6 +5,7 @@ import { addPage, deletePage } from "../pages";
 import { isContainer, layerRows, moveLayers, type DropWhere, type LayerRow } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
+import { renameCurrentFile } from "../drive/session";
 
 const ICONS: Record<string, string> = { FRAME: "#", GROUP: "▤", RECTANGLE: "▭", ELLIPSE: "◯", TEXT: "T", IMAGE: "▨", VECTOR: "◇" };
 
@@ -46,6 +47,8 @@ export function Layers() {
   const pages = doc.pages();
   const setPage = useEditor((s) => s.setPage);
   const [renamingPage, setRenamingPage] = useState<string | null>(null);
+  const [renamingFile, setRenamingFile] = useState(false);
+  const drive = useEditor((s) => s.drive);
   // The open page can disappear (undo, delete, a collaborator): fall back to the first one.
   useEffect(() => {
     if (!doc.hasNode(pageId)) setPage(doc.pages()[0]!.id);
@@ -160,7 +163,21 @@ export function Layers() {
   return (
     <aside className="layers">
       <header className="layers__header">
-        <strong className="layers__brand">Canvylo</strong>
+        {viewer ? (
+          <strong className="layers__brand">Canvylo</strong>
+        ) : renamingFile ? (
+          <RenameInput
+            initial={drive.fileName}
+            onDone={(name) => {
+              setRenamingFile(false);
+              if (name) void renameCurrentFile(name);
+            }}
+          />
+        ) : (
+          <button className="layers__file" title="Rename file" onClick={() => setRenamingFile(true)}>
+            {drive.fileName}
+          </button>
+        )}
         {!viewer && (
           <span className="layers__actions">
             <DriveMenu />

@@ -119,7 +119,7 @@ Interactions (click / hover / drag), navigate / overlay / back, transitions, sma
 | Feature | Status | Pri |
 |---|---|---|
 | Save / open / autosave (Google Drive), new file | ✅ | |
-| Rename the file (title in the top bar) | ❌ | P1 |
+| Rename the file (click the name at the top of the left panel) | 🟡 | Local name and the Drive file name (Drive rename not tested with a real account). Missing: rename from the Home screen |
 | Home / recent files / folders / trash | ❌ | P2 |
 | Save local copy (.canvylo download), open local file | ✅ | In the cloud menu, works without signing in. Missing: Duplicate file, drag a .canvylo onto the canvas |
 | Export all (File → Export, Ctrl+Shift+E), export frames to PDF (menu) | ❌ | P2 |
