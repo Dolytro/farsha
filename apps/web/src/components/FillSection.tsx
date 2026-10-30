@@ -2,6 +2,7 @@ import type { DesignDoc } from "@canvylo/design-core";
 import { paintCss } from "@canvylo/code-generator";
 import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@canvylo/types";
 import { readImage } from "../images";
+import { HexInput } from "./HexInput";
 import { useEditor } from "../store";
 
 type Kind = Paint["type"];
@@ -81,7 +82,7 @@ function FillRow({ doc, nodeId, paint, setPaint, remove }: { doc: DesignDoc; nod
       ) : paint.type === "SOLID" ? (
         <div className="fill-row fill-row--gap">
           <input className="fill-row__swatch" type="color" value={paint.color} onChange={(e) => setPaint({ ...paint, color: e.target.value })} />
-          <span className="fill-row__hex">{paint.color.replace("#", "").toUpperCase()}</span>
+          <HexInput value={paint.color} onChange={(color) => setPaint({ ...paint, color })} />
           <input
             className="fill-row__pct"
             type="number"
@@ -114,7 +115,7 @@ function FillRow({ doc, nodeId, paint, setPaint, remove }: { doc: DesignDoc; nod
                   onChange={(e) => patch({ position: clamp01(Number(e.target.value) / 100) })}
                 />
                 <input className="fill-row__swatch" type="color" value={s.color} onChange={(e) => patch({ color: e.target.value })} />
-                <span className="fill-row__hex">{s.color.replace("#", "").toUpperCase()}</span>
+                <HexInput value={s.color} onChange={(color) => patch({ color })} />
                 <input className="fill-row__pct" type="number" min={0} max={100} title="Stop opacity (%)" value={Math.round(s.opacity * 100)} onChange={(e) => patch({ opacity: clamp01(Number(e.target.value) / 100) })} />
                 <button
                   className="props__add"

@@ -1,5 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import { paintColor, type DesignNode, type Effect, type StrokeAlign } from "@canvylo/types";
+import { HexInput } from "./HexInput";
 
 const ALIGN_LABEL: Record<StrokeAlign, string> = { INSIDE: "Inside", CENTER: "Center", OUTSIDE: "Outside" };
 const EFFECT_LABEL: Record<Effect["type"], string> = { DROP_SHADOW: "Drop shadow", INNER_SHADOW: "Inner shadow", LAYER_BLUR: "Layer blur" };
@@ -32,7 +33,7 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
               value={paintColor(stroke)}
               onChange={(e) => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color: e.target.value, opacity: stroke.opacity }] })}
             />
-            <span className="fill-row__hex">{paintColor(stroke).replace("#", "").toUpperCase()}</span>
+            <HexInput value={paintColor(stroke)} onChange={(color) => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color, opacity: stroke.opacity }] })} />
             <input
               className="fill-row__pct"
               type="number"
@@ -122,7 +123,7 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
               </div>
               <div className="fill-row">
                 <input className="fill-row__swatch" type="color" value={e.color} onChange={(ev) => patch(i, { color: ev.target.value })} />
-                <span className="fill-row__hex">{e.color.replace("#", "").toUpperCase()}</span>
+                <HexInput value={e.color} onChange={(color) => patch(i, { color })} />
                 <input
                   className="fill-row__pct"
                   type="number"

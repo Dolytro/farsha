@@ -1210,3 +1210,13 @@ body {
     gap: 6px;
   }
 }
+
+.fill-row__hex--input {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
