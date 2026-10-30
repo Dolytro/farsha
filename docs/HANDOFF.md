@@ -17,7 +17,7 @@ Live site: https://canvylo.vercel.app
 - No backend: the site is static (Vercel). Designs are saved to the signed-in user's **own Google Drive**
   (`.canvylo` files, Yjs update bytes). Public view links read the Drive file with an API key.
 - The owner wants it to feel **exactly like Figma** so long-time Figma users are not confused.
-- Everything is on `main`, typecheck and all tests pass (about 274 tests at the time of writing: web 118, design-core 75, canvas-engine 65, code-generator 16).
+- Everything is on `main`, typecheck and all tests pass (about 356 tests at the time of writing: web 128, design-core 107, canvas-engine 93, code-generator 21).
 - Next up: **Components** (main component + instances), then styles / variables. See section 11 and `docs/FEATURE_GAP.md`.
 
 **To continue on a new PC:** clone, install, create `apps/web/.env.local`, run the dev server (section 5).
@@ -350,7 +350,10 @@ v1 + Assets tab, duplicate fix (Ctrl+D copies the subtree), Line / Arrow / Polyg
 Export (PNG / JPG / SVG), selection navigation (Enter, Shift+Enter, Tab, inverse), flip, save / open local .canvylo files,
 file rename, colour styles and text styles, command palette (Ctrl+/), frame selection, fill container for auto layout
 children, zoom to next / previous frame, prototype v1 (click -> navigate, Present), version history (browser only),
-Pen tool.
+Pen tool. Later in the same run: mask (Ctrl+Alt+M), colour variables with modes, variants, multiple strokes, layout grids
+(Shift+G), vector point editing, boolean operations (polygon-clipping dependency), component properties (boolean / text),
+light / dark / system theme, rotate handles, Dev Mode export, Dev CSS for fill container, per-side padding, auto layout
+wrap and absolute position.
 
 Where the session stopped: everything above is committed and pushed to `main`, typecheck and all tests pass. Nothing is
 half-done in the working tree. Each feature was tested in the real browser with Playwright (dev server on 5173, `?nologin`);
