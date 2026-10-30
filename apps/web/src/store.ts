@@ -72,6 +72,7 @@ interface EditorState {
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
+  pixelGrid: boolean;
   prefs: Prefs;
   prefsOpen: boolean;
   /** Figma's "Minimize UI": the side panels and toolbar are hidden so the canvas fills the window. */
@@ -102,6 +103,7 @@ interface EditorState {
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  setPixelGrid: (on: boolean) => void;
   setPrefs: (patch: Partial<Prefs>) => void;
   setPrefsOpen: (open: boolean) => void;
   setUiHidden: (hidden: boolean) => void;
@@ -145,6 +147,7 @@ export const useEditor = create<EditorState>((set) => ({
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   paletteOpen: false,
+  pixelGrid: false,
   prefs: readPrefs(),
   prefsOpen: false,
   uiHidden: false,
@@ -187,6 +190,7 @@ export const useEditor = create<EditorState>((set) => ({
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setPixelGrid: (pixelGrid) => set({ pixelGrid }),
   setPrefs: (patch) =>
     set((s) => {
       const prefs = { ...s.prefs, ...patch };
