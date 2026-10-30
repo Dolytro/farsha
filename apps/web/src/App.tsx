@@ -17,6 +17,7 @@ import { isImageFile } from "./images";
 import { placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
 import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
+import { CommandPalette } from "./components/CommandPalette";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
 import { restoreLocal, startLocalAutosave } from "./local-persist";
@@ -216,6 +217,10 @@ export function App() {
         // Ctrl +/-/0 would zoom the whole browser page; zoom the canvas instead (like Figma).
         e.preventDefault();
         s.setViewport(zoomBy(s.viewport, key === "0" ? 1 : s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
+      } else if (mod && !e.shiftKey && !e.altKey && (key === "/" || key === "k") && !s.viewer) {
+        // Figma's "Actions" search
+        e.preventDefault();
+        s.setPaletteOpen(!s.paletteOpen);
       } else if (mod && e.shiftKey && !e.altKey && key === "a" && !s.viewer) {
         // Figma's "Select inverse"
         e.preventDefault();
@@ -364,6 +369,7 @@ export function App() {
       <Properties />
       <ShareDialog />
       <ContextMenu />
+      <CommandPalette />
     </div>
   );
 }
