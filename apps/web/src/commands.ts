@@ -4,7 +4,8 @@ import { booleanSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSele
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
-import { saveLocalCopy } from "./local-file";
+import { openLocalFilePicker, saveLocalCopy } from "./local-file";
+import { newFile } from "./drive/session";
 import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
 import { startFrame } from "./prototype";
@@ -39,6 +40,9 @@ export function buildCommands(): Command[] {
   return [
     { id: "undo", label: "Undo", shortcut: `${MOD}Z`, run: () => doc().undo() },
     { id: "redo", label: "Redo", shortcut: `${MOD}${SHIFT}Z`, run: () => doc().redo() },
+    { id: "new-file", label: "New file", keywords: "blank document", run: () => newFile() },
+    { id: "open-local", label: "Open local file…", keywords: "open canvylo", run: () => openLocalFilePicker() },
+    { id: "select-none", label: "Select none", shortcut: "Esc", run: () => state().select([]) },
     { id: "select-all", label: "Select all", shortcut: `${MOD}A`, run: () => state().select(selectAllIn(doc(), sel(), state().pageId)) },
     { id: "select-inverse", label: "Select inverse", shortcut: `${MOD}${SHIFT}A`, needsSelection: true, run: () => state().select(selectInverse(doc(), sel(), state().pageId)) },
     { id: "select-matching", label: "Select all matching properties", shortcut: `${MOD}${ALT}A`, needsSelection: true, keywords: "same fill color font", run: () => state().select(selectMatching(doc(), sel(), state().pageId)) },
@@ -148,6 +152,8 @@ export function buildCommands(): Command[] {
         },
       }),
     ),
+    { id: "zoom-in", label: "Zoom in", shortcut: `${MOD}+`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, state().viewport.zoom * 1.25)) },
+    { id: "zoom-out", label: "Zoom out", shortcut: `${MOD}-`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, state().viewport.zoom * 0.8)) },
     { id: "zoom-100", label: "Zoom to 100%", shortcut: `${SHIFT}0`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, 1)) },
     {
       id: "present",

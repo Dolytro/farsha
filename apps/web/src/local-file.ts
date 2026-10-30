@@ -18,6 +18,18 @@ export function saveLocalCopy(): void {
   useEditor.getState().showToast("Saved a local copy");
 }
 
+/** Ask for a .canvylo file with a file picker, then open it. */
+export function openLocalFilePicker(): void {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".canvylo";
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (file) void openLocalFile(file);
+  };
+  input.click();
+}
+
 /** Open a .canvylo file chosen from disk. The result is a separate working copy that is not linked to Drive. */
 export async function openLocalFile(file: File): Promise<boolean> {
   const { loadDoc, setDrive, showToast } = useEditor.getState();

@@ -5,6 +5,7 @@ import { addPage, deletePage } from "../pages";
 import { isContainer, layerRows, moveLayers, type DropWhere, type LayerRow } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
+import { MainMenu } from "./MainMenu";
 import { renameCurrentFile } from "../drive/session";
 
 const ICONS: Record<string, string> = { FRAME: "#", GROUP: "▤", RECTANGLE: "▭", ELLIPSE: "◯", TEXT: "T", IMAGE: "▨", VECTOR: "◇" };
@@ -163,6 +164,7 @@ export function Layers() {
   return (
     <aside className="layers">
       <header className="layers__header">
+        {!viewer && <MainMenu />}
         {viewer ? (
           <strong className="layers__brand">Canvylo</strong>
         ) : renamingFile ? (
