@@ -88,6 +88,29 @@ export interface BlurEffect {
 
 export type Effect = ShadowEffect | BlurEffect;
 
+/** One message of a comment thread. */
+export interface CommentReply {
+  id: string;
+  author: string;
+  text: string;
+  /** Milliseconds since the epoch. */
+  at: number;
+}
+
+/** A comment pinned to a point of a page. It lives in the document, so it travels with the file. */
+export interface Comment {
+  id: string;
+  pageId: string;
+  /** Position on the page. */
+  x: number;
+  y: number;
+  author: string;
+  text: string;
+  at: number;
+  resolved: boolean;
+  replies: CommentReply[];
+}
+
 /** A column of variable values (for example Light and Dark). */
 export interface VariableMode {
   id: string;

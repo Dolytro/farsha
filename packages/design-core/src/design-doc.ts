@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { TEXT_STYLE_KEYS, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
+import { TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -48,6 +48,7 @@ export class DesignDoc {
   /** Colour styles, keyed by style id. */
   private readonly styles: Y.Map<FillStyle>;
   private readonly textStyleMap: Y.Map<TextStyle>;
+  private readonly commentMap: Y.Map<Comment>;
   private readonly variableMap: Y.Map<ColorVariable>;
   private readonly modeMap: Y.Map<VariableMode & { order: number }>;
   private readonly undoManager: Y.UndoManager;
@@ -62,6 +63,11 @@ export class DesignDoc {
     this.meta = ydoc.getMap('meta') as Y.Map<string>;
     this.assets = ydoc.getMap('assets') as Y.Map<StoredAsset>;
     this.styles = ydoc.getMap('styles') as Y.Map<FillStyle>;
+    this.commentMap = ydoc.getMap('comments') as Y.Map<Comment>;
+    this.commentMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
     this.variableMap = ydoc.getMap('variables') as Y.Map<ColorVariable>;
     this.modeMap = ydoc.getMap('variableModes') as Y.Map<VariableMode & { order: number }>;
     for (const map of [this.variableMap, this.modeMap, this.meta]) {
@@ -943,6 +949,49 @@ export class DesignDoc {
     const style = this.styles.get(styleId);
     if (!style) throw new Error('Style not found');
     this.setProps(nodeId, { fills: style.paints, fillStyleId: styleId });
+  }
+
+  // ---------- comments ----------
+
+  /** Comments of a page (all pages when none is given), oldest first. */
+  comments(pageId?: string): Comment[] {
+    return [...this.commentMap.values()].filter((c) => !pageId || c.pageId === pageId).sort((a, b) => a.at - b.at);
+  }
+
+  getComment(id: string): Comment | undefined {
+    return this.commentMap.get(id);
+  }
+
+  /** Pin a new comment. Comments are not part of undo history: they are conversation, not design. */
+  addComment(input: { pageId: string; x: number; y: number; author: string; text: string; now?: number }): string {
+    const text = input.text.trim();
+    if (!text) throw new Error('A comment needs some text');
+    const id = nanoid();
+    const at = input.now ?? Date.now();
+    this.ydoc.transact(() => this.commentMap.set(id, { id, pageId: input.pageId, x: input.x, y: input.y, author: input.author, text, at, resolved: false, replies: [] }), ASSET_ORIGIN);
+    return id;
+  }
+
+  replyToComment(id: string, author: string, text: string, now?: number): void {
+    const c = this.commentMap.get(id);
+    if (!c) throw new Error('Comment not found');
+    const clean = text.trim();
+    if (!clean) throw new Error('A reply needs some text');
+    this.ydoc.transact(() => this.commentMap.set(id, { ...c, replies: [...c.replies, { id: nanoid(), author, text: clean, at: now ?? Date.now() }] }), ASSET_ORIGIN);
+  }
+
+  resolveComment(id: string, resolved = true): void {
+    const c = this.commentMap.get(id);
+    if (c) this.ydoc.transact(() => this.commentMap.set(id, { ...c, resolved }), ASSET_ORIGIN);
+  }
+
+  moveComment(id: string, x: number, y: number): void {
+    const c = this.commentMap.get(id);
+    if (c) this.ydoc.transact(() => this.commentMap.set(id, { ...c, x, y }), ASSET_ORIGIN);
+  }
+
+  deleteComment(id: string): void {
+    this.ydoc.transact(() => this.commentMap.delete(id), ASSET_ORIGIN);
   }
 
   // ---------- colour variables ----------

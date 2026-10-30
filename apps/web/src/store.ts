@@ -23,7 +23,7 @@ function readTheme(): ThemePreference {
   }
 }
 
-export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star" | "pen" | "section" | "scale";
+export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star" | "pen" | "section" | "scale" | "comment";
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "needs-auth";
 export type LoadState = "ready" | "loading" | "error";
 
@@ -72,6 +72,9 @@ interface EditorState {
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
+  commentsVisible: boolean;
+  /** The comment thread that is open, or the spot of a comment that is being written. */
+  activeComment: { id: string } | { draft: { x: number; y: number } } | null;
   findOpen: boolean;
   findReplace: boolean;
   exportOpen: boolean;
@@ -108,6 +111,8 @@ interface EditorState {
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  setCommentsVisible: (on: boolean) => void;
+  setActiveComment: (c: { id: string } | { draft: { x: number; y: number } } | null) => void;
   setFindOpen: (open: boolean, replace?: boolean) => void;
   setFindReplace: (on: boolean) => void;
   setExportOpen: (open: boolean) => void;
@@ -156,6 +161,8 @@ export const useEditor = create<EditorState>((set) => ({
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   paletteOpen: false,
+  commentsVisible: true,
+  activeComment: null,
   findOpen: false,
   findReplace: false,
   exportOpen: false,
@@ -203,6 +210,8 @@ export const useEditor = create<EditorState>((set) => ({
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setCommentsVisible: (commentsVisible) => set({ commentsVisible, ...(commentsVisible ? {} : { activeComment: null }) }),
+  setActiveComment: (activeComment) => set({ activeComment }),
   setFindOpen: (findOpen, replace) => set((s) => ({ findOpen, findReplace: replace ?? s.findReplace })),
   setFindReplace: (findReplace) => set({ findReplace }),
   setExportOpen: (exportOpen) => set({ exportOpen }),

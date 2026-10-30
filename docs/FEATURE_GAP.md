@@ -203,10 +203,11 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Toolbar | Move, Hand, Frame, Rectangle, Line, Arrow, Ellipse, Polygon, Star, Pen, Text | ✅ |
 | Toolbar | Section (Shift+S), Scale tool (K: drag a corner, the layer and its text, strokes, radii, shadows and auto layout spacing scale together) | ✅ |
 | Toolbar | Image… (Ctrl+Shift+K) | ✅ (video ❌) |
-| Toolbar | Slice (S), Pencil (Shift+P), Text on path, Comment tool (C) | ❌ |
+| Toolbar | Comment tool (C): click to drop a pin, thread with replies, resolve, delete, Comments tab, Shift+C shows / hides pins | ✅ local-first: comments are saved inside the document (Drive file, local copy, version history), not synced live |
+| Toolbar | Slice (S), Pencil (Shift+P), Text on path | ❌ |
 | Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | ✅ (opacity keys, Alt+drag copies the selection in one undo step) |
 | Design panel | Page background colour, Styles on a page, Selection colors, Export on a page | ❌ |
 | Design panel | Stroke dash / caps / joins / arrowheads, per-side stroke weights, background blur, corner smoothing | ❌ |
 | Prototype | Hover / drag / key triggers, overlays, scroll, transitions, flow starting points, device frames | ❌ |
 | Dev Mode | Ready-for-dev status, annotations, compare changes, variables in code | ❌ |
-| Collaboration | Comments, live cursors, branching, libraries | ❌ needs a backend; a local-first version of comments is planned |
+| Collaboration | Live cursors, comment notifications and @mentions, branching, team libraries | ❌ needs a backend |

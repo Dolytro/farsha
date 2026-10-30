@@ -3,6 +3,7 @@ import { buildScaleUpdates } from "../scale";
 import { textFontStyle, verticalTextOffset } from "@canvylo/canvas-engine";
 import { PINCH_STRENGTH, WHEEL_STRENGTH, wheelZoomFactor } from "../prefs";
 import { showPixelGrid, visibleWorld } from "../pixel-grid";
+import { CommentsLayer } from "./CommentsLayer";
 import { PenLayer } from "./PenLayer";
 import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
@@ -132,6 +133,11 @@ export function Canvas() {
     const w = world(e);
     if (e.button === 1 || spaceDown || tool === "hand") {
       drag.current = { kind: "pan", sx: e.clientX, sy: e.clientY, vx: viewport.x, vy: viewport.y };
+      return;
+    }
+    if (tool === "comment" && !viewer) {
+      // the Comment tool drops a pin where you click and opens the box for the text
+      useEditor.getState().setActiveComment({ draft: { x: w.x, y: w.y } });
       return;
     }
     const el = e.target as SVGElement;
@@ -676,6 +682,7 @@ export function Canvas() {
             <line key={i} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke={RED} strokeWidth={sw} pointerEvents="none" />
           ))}
           {editingPath && !viewer && !devMode && tool === "select" && <VectorEditLayer nodeId={editingPath} svgRef={svgRef} viewport={viewport} />}
+          <CommentsLayer zoom={z} />
           {tool === "pen" && !viewer && !devMode && <PenLayer svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
           {marquee && <rect x={marquee.x} y={marquee.y} width={marquee.width} height={marquee.height} fill={ACCENT} fillOpacity={0.08} stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />}
 
