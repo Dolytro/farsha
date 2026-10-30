@@ -17,7 +17,7 @@ Live site: https://canvylo.vercel.app
 - No backend: the site is static (Vercel). Designs are saved to the signed-in user's **own Google Drive**
   (`.canvylo` files, Yjs update bytes). Public view links read the Drive file with an API key.
 - The owner wants it to feel **exactly like Figma** so long-time Figma users are not confused.
-- Everything is on `main`, typecheck and all tests pass (180 tests at the time of writing: web 82, design-core 41, canvas-engine 43, code-generator 14).
+- Everything is on `main`, typecheck and all tests pass (about 274 tests at the time of writing: web 118, design-core 75, canvas-engine 65, code-generator 16).
 - Next up: **Components** (main component + instances), then styles / variables. See section 11 and `docs/FEATURE_GAP.md`.
 
 **To continue on a new PC:** clone, install, create `apps/web/.env.local`, run the dev server (section 5).
@@ -345,17 +345,27 @@ smart guides, multi-line / wrapping text (auto width / height / fixed), auto lay
 guides, working copy kept in the browser, and fixes for three designer reports (group selection, context-menu paste,
 font-size not growing the text box).
 
-Where the session stopped: everything above is committed and pushed to `main`, Vercel was Ready, typecheck and all
-180 tests pass. Nothing is half-done in the working tree. `.claude/launch.json` (preview server config) is committed.
+Done in the autonomous run after that (2026-10-30, each pushed separately and listed in docs/FEATURE_GAP.md): components
+v1 + Assets tab, duplicate fix (Ctrl+D copies the subtree), Line / Arrow / Polygon / Star, multiple fills, editable hex,
+Export (PNG / JPG / SVG), selection navigation (Enter, Shift+Enter, Tab, inverse), flip, save / open local .canvylo files,
+file rename, colour styles and text styles, command palette (Ctrl+/), frame selection, fill container for auto layout
+children, zoom to next / previous frame, prototype v1 (click -> navigate, Present), version history (browser only),
+Pen tool.
+
+Where the session stopped: everything above is committed and pushed to `main`, typecheck and all tests pass. Nothing is
+half-done in the working tree. Each feature was tested in the real browser with Playwright (dev server on 5173, `?nologin`);
+real Google sign-in, Drive rename and the Vercel look of the newest commits were not re-checked. Tip: the working copy is
+restored from IndexedDB, so wait about 1.5 s after loading before driving the page, and reset it with
+`indexedDB.deleteDatabase("canvylo")` for a clean test.
 
 Suggested order (each is one feature = build, test, fix, push):
-1. **Components round 2**: variants / component properties. (Round 1, main +
+1. **Components round 2**: variants / component properties, nested instances, instance swap, overrides kept when copying an instance. (Round 1, main +
    instances + overrides + detach, is done, see "Components" in section 7.)
-2. Effect / grid styles and variables (color and text styles done, `textStyleId`, `TEXT_STYLE_KEYS`; color: `DesignDoc.createFillStyle` etc., `fillStyleId` on layers, synced in `syncStyles`).
-3. Multiple strokes (Pen, Line / Arrow / Polygon / Star done).
-4. Auto layout round 2: wrap, fill container, absolute-position children, per-side padding, drag to reorder;
+2. Effect / grid / stroke styles and variables (colour, number, string, boolean + modes) (color and text styles done, `textStyleId`, `TEXT_STYLE_KEYS`; color: `DesignDoc.createFillStyle` etc., `fillStyleId` on layers, synced in `syncStyles`).
+3. Multiple strokes, vector edit mode for pen paths (move points), mask (Ctrl+Alt+M), boolean operations.
+4. Auto layout round 2: wrap, absolute-position children, per-side padding fields, drag to reorder, fill container in the Dev Mode CSS;
    snapping while resizing, equal-spacing guides, layout grids (Shift+G).
-5. Prototype mode, comments, live collaboration (y-webrtc or a small relay), version history.
+5. Prototype round 2 (hover / key triggers, overlays, transitions, connectors), comments and live collaboration (need a backend or a relay such as y-webrtc), Drive-backed version history.
 6. Performance: Canvas / WebGL renderer path for thousands of nodes.
 Also still unchecked in a real browser: layers panel drag-reorder / reparent (only unit-tested), real Google sign-in
 and Drive from the new autosave path.
