@@ -60,6 +60,7 @@ const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rec
 
 export function App() {
   const theme = useEditor((s) => s.theme);
+  const uiHidden = useEditor((s) => s.uiHidden);
   // Light, dark or follow the system; the page reads the result from data-theme on <html>.
   useEffect(() => {
     const query = window.matchMedia("(prefers-color-scheme: dark)");
@@ -301,6 +302,10 @@ export function App() {
       } else if (e.shiftKey && e.altKey && mod && key === "a") {
         e.preventDefault();
         removeAutoLayout(doc, selection);
+      } else if (mod && !e.shiftKey && !e.altKey && key === "\\") {
+        // Figma's "Show / hide UI"
+        e.preventDefault();
+        s.setUiHidden(!s.uiHidden);
       } else if (mod && e.altKey && !e.shiftKey && key === "u" && selection.length > 1 && !s.viewer) {
         // Figma's "Union selection"
         e.preventDefault();
@@ -407,7 +412,7 @@ export function App() {
   }
 
   return (
-    <div className="editor">
+    <div className={`editor${uiHidden ? " editor--minimal" : ""}`}>
       <Layers />
       <div className="workspace">
         <Canvas />

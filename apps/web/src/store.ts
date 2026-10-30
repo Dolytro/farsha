@@ -63,6 +63,8 @@ interface EditorState {
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
+  /** Figma's "Minimize UI": the side panels and toolbar are hidden so the canvas fills the window. */
+  uiHidden: boolean;
   theme: ThemePreference;
   versionsOpen: boolean;
   /** Id of the pen path whose points are being edited. */
@@ -89,6 +91,7 @@ interface EditorState {
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  setUiHidden: (hidden: boolean) => void;
   setTheme: (theme: ThemePreference) => void;
   setVersionsOpen: (open: boolean) => void;
   setEditingPath: (id: string | null) => void;
@@ -129,6 +132,7 @@ export const useEditor = create<EditorState>((set) => ({
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   paletteOpen: false,
+  uiHidden: false,
   theme: readTheme(),
   versionsOpen: false,
   editingPath: null,
@@ -168,6 +172,7 @@ export const useEditor = create<EditorState>((set) => ({
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setUiHidden: (uiHidden) => set({ uiHidden }),
   setTheme: (theme) => {
     try {
       localStorage.setItem(THEME_KEY, theme);
