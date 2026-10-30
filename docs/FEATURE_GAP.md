@@ -105,7 +105,7 @@ Interactions (click / hover / drag), navigate / overlay / back, transitions, sma
 | Feature | Status | Pri |
 |---|---|---|
 | Zoom in / out / 100% / fit / selection, pan, canvas-only zoom | ✅ | |
-| Zoom to next / previous frame (N / Shift+N), Home / End (menu) | ❌ | P2 |
+| Zoom to next / previous frame (N / Shift+N) | ✅ | Home / End missing |
 | Pixel grid (Shift+') and pixel preview (menu) | ❌ | P2 |
 | Rulers (Shift+R) and guides, layout guides (Shift+G) (menu) | 🟡 | Rulers with selection range, drag out guides, move them, drop on a ruler to delete, layers snap to guides, guides are saved per page and undoable. Missing: layout guides (Shift+G grids), frame-level rulers, guide value editing, hiding guides without hiding rulers, a guide readout while dragging layers |
 | Outlines, mask outlines, frame outlines (menu) | ❌ | P3 |
