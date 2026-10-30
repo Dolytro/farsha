@@ -175,6 +175,7 @@ export function buildCommands(): Command[] {
     },
     { id: "eyedropper", label: "Pick color from the screen", shortcut: "I", keywords: "eyedropper sample color", run: () => pickColorFromScreen(doc(), sel(), state().showToast) },
     { id: "preferences", label: "Preferences", keywords: "settings keep tool snapping zoom nudge", run: () => state().setPrefsOpen(true) },
+    { id: "pixel-grid", label: "Show / hide pixel grid", shortcut: `${SHIFT}'`, keywords: "view pixels zoom", run: () => state().setPixelGrid(!state().pixelGrid) },
     { id: "hide-ui", label: "Show / hide UI", shortcut: `${MOD}\\`, keywords: "minimize panels fullscreen focus", run: () => state().setUiHidden(!state().uiHidden) },
     { id: "rulers", label: "Show / hide rulers", shortcut: `${SHIFT}R`, keywords: "view guides", run: () => state().setRulers(!state().rulers) },
     { id: "dev-mode", label: "Toggle Dev Mode", shortcut: `${SHIFT}D`, keywords: "inspect code", run: () => state().setDevMode(!state().devMode) },

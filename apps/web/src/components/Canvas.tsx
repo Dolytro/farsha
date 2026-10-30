@@ -1,4 +1,5 @@
 import { PINCH_STRENGTH, WHEEL_STRENGTH, wheelZoomFactor } from "../prefs";
+import { showPixelGrid, visibleWorld } from "../pixel-grid";
 import { PenLayer } from "./PenLayer";
 import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
@@ -58,6 +59,7 @@ export function Canvas() {
   const { doc, pageId, selection, select, viewport, setViewport, tool, setTool, devMode, viewer, setMenu } = useEditor();
   const signedIn = useEditor((s) => s.drive.user !== null);
   const editingPath = useEditor((s) => s.editingPath);
+  const pixelGrid = useEditor((s) => s.pixelGrid);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
@@ -524,6 +526,20 @@ export function Canvas() {
       >
         <g transform={`translate(${viewport.x} ${viewport.y}) scale(${z})`}>
           {renderChildren(doc.children(pageId))}
+          {showPixelGrid(pixelGrid, z) && (() => {
+            const r = svgRef.current?.getBoundingClientRect();
+            const v = visibleWorld(viewport, r?.width ?? 1200, r?.height ?? 800);
+            return (
+              <g pointerEvents="none">
+                <defs>
+                  <pattern id="pixel-grid" width={1} height={1} patternUnits="userSpaceOnUse">
+                    <path d="M1 0H0V1" fill="none" stroke="#0d99ff" strokeOpacity={0.25} strokeWidth={1 / z} />
+                  </pattern>
+                </defs>
+                <rect x={v.x} y={v.y} width={v.width} height={v.height} fill="url(#pixel-grid)" />
+              </g>
+            );
+          })()}
 
           {doc
             .children(pageId)

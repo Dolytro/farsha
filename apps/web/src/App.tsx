@@ -293,6 +293,10 @@ export function App() {
       } else if (s.devMode) {
         // Dev Mode is read-only: only Esc (deselect) and the toggle above are active.
         if (key === "escape") s.select([]);
+      } else if (e.shiftKey && !e.altKey && !mod && e.code === "Quote") {
+        // Figma's "Pixel grid"
+        e.preventDefault();
+        s.setPixelGrid(!s.pixelGrid);
       } else if (e.shiftKey && !e.altKey && !mod && key === "g" && !s.viewer) {
         // Figma's "Layout grids"
         e.preventDefault();
