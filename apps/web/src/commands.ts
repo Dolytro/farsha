@@ -218,6 +218,9 @@ export function buildCommands(): Command[] {
         state().showToast(`Mode: ${next.name}`);
       },
     },
+    ...(["light", "dark", "system"] as const).map(
+      (t): Command => ({ id: `theme-${t}`, label: `Theme: ${t[0]!.toUpperCase()}${t.slice(1)}`, keywords: "appearance dark mode light preferences", run: () => state().setTheme(t) }),
+    ),
     { id: "save-version", label: "Save to version history", shortcut: `${MOD}${ALT}S`, keywords: "snapshot checkpoint", run: async () => void (await saveVersion("")) },
     { id: "show-versions", label: "Show version history", keywords: "restore snapshot", run: () => state().setVersionsOpen(true) },
     { id: "save-local", label: "Save local copy", keywords: "download file .canvylo", run: saveLocalCopy },

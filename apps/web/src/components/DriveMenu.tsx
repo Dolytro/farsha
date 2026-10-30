@@ -19,6 +19,7 @@ export function DriveMenu() {
   const [files, setFiles] = useState<DriveFile[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+  const drive_theme = useEditor((s) => s.theme);
 
   useEffect(() => {
     if (!open || !drive.user) return;
@@ -70,6 +71,13 @@ export function DriveMenu() {
           >
             Version history…
           </button>
+          <div className="drive__theme" role="group" aria-label="Theme">
+            {(["light", "dark", "system"] as const).map((t) => (
+              <button key={t} className={`seg__btn${drive_theme === t ? " seg__btn--active" : ""}`} onClick={() => useEditor.getState().setTheme(t)}>
+                {t[0]!.toUpperCase() + t.slice(1)}
+              </button>
+            ))}
+          </div>
           <div className="drive__divider" />
           {!driveConfigured ? (
             <p className="drive__note">Google Drive isn't configured. Set VITE_GOOGLE_CLIENT_ID and VITE_GOOGLE_API_KEY.</p>

@@ -4,6 +4,15 @@ import type { Viewport } from "@canvylo/canvas-engine";
 import type { DriveUser } from "./drive/drive";
 import { parseRoute, type ViewerMode } from "./route";
 import { seedWelcome } from "./seed/welcome";
+import { parseTheme, THEME_KEY, type ThemePreference } from "./theme";
+
+function readTheme(): ThemePreference {
+  try {
+    return parseTheme(localStorage.getItem(THEME_KEY));
+  } catch {
+    return "system";
+  }
+}
 
 export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star" | "pen";
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "needs-auth";
@@ -54,6 +63,7 @@ interface EditorState {
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
+  theme: ThemePreference;
   versionsOpen: boolean;
   /** Id of the pen path whose points are being edited. */
   editingPath: string | null;
@@ -79,6 +89,7 @@ interface EditorState {
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  setTheme: (theme: ThemePreference) => void;
   setVersionsOpen: (open: boolean) => void;
   setEditingPath: (id: string | null) => void;
   setVariablesOpen: (open: boolean) => void;
@@ -118,6 +129,7 @@ export const useEditor = create<EditorState>((set) => ({
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   paletteOpen: false,
+  theme: readTheme(),
   versionsOpen: false,
   editingPath: null,
   variablesOpen: false,
@@ -156,6 +168,14 @@ export const useEditor = create<EditorState>((set) => ({
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setTheme: (theme) => {
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      /* private mode: the choice just lasts for this session */
+    }
+    set({ theme });
+  },
   setVersionsOpen: (versionsOpen) => set({ versionsOpen }),
   setEditingPath: (editingPath) => set({ editingPath }),
   setVariablesOpen: (variablesOpen) => set({ variablesOpen }),

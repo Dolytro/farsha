@@ -28,6 +28,7 @@ import { ShareDialog } from "./components/ShareDialog";
 import { restoreLocal, startLocalAutosave } from "./local-persist";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
+import { resolveTheme } from "./theme";
 
 /** Run a "Copy as ..." action and report the result in a toast. */
 async function copyWithToast(label: string, task: () => Promise<boolean>): Promise<void> {
@@ -58,6 +59,17 @@ const ALIGN_KEYS: Record<string, AlignMode> = { KeyA: "left", KeyH: "hcenter", K
 const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text", l: "line", p: "pen" };
 
 export function App() {
+  const theme = useEditor((s) => s.theme);
+  // Light, dark or follow the system; the page reads the result from data-theme on <html>.
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      document.documentElement.dataset.theme = resolveTheme(theme, query.matches);
+    };
+    apply();
+    query.addEventListener("change", apply);
+    return () => query.removeEventListener("change", apply);
+  }, [theme]);
   const loadState = useEditor((s) => s.loadState);
   const loadError = useEditor((s) => s.loadError);
   const toast = useEditor((s) => s.toast);

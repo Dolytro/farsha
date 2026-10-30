@@ -516,7 +516,7 @@ button {
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--c-panel);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 4px 14px rgba(0, 0, 0, 0.18);
   transform: translateX(-50%);
 
@@ -561,7 +561,7 @@ button {
 
     &--on,
     &--on:hover {
-      background: #ffffff;
+      background: var(--c-panel);
       color: var(--c-accent);
       box-shadow: 0 0 0 1px var(--c-border), 0 1px 3px rgba(0, 0, 0, 0.12);
     }
@@ -678,7 +678,7 @@ button {
     width: 232px;
     padding: 6px;
     border-radius: 8px;
-    background: #fff;
+    background: var(--c-panel);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.18);
   }
 
@@ -785,7 +785,7 @@ button {
   &__card {
     width: min(440px, calc(100vw - 32px));
     border-radius: 12px;
-    background: #fff;
+    background: var(--c-panel);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
   }
 
@@ -1093,7 +1093,7 @@ body {
     cursor: pointer;
 
     &--active {
-      background: #fff;
+      background: var(--c-panel);
       color: var(--c-text);
       box-shadow: 0 0 0 1px var(--c-border);
     }
@@ -1714,4 +1714,22 @@ body {
   gap: 8px;
   margin-top: 6px;
   cursor: pointer;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-panel: #2c2c2c;
+  --c-border: #444444;
+  --c-text: #e6e6e6;
+  --c-muted: #a0a0a0;
+  --c-hover: #3a3a3a;
+  --c-input: #383838;
+  --c-selected: #0d4f80;
+  --c-canvas: #1e1e1e;
+}
+
+.drive__theme {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
 }
