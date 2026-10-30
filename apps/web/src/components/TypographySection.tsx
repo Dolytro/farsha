@@ -1,6 +1,8 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { TextAlign, TextAutoResize, TextNode } from "@canvylo/types";
+import { useState } from "react";
 import { fitText } from "../text-layout";
+import { TextStyleMenu, TextStylePill } from "./TextStyleMenu";
 
 export const FONTS: { label: string; stack: string }[] = [
   { label: "Inter", stack: "Inter, system-ui, sans-serif" },
@@ -39,18 +41,14 @@ const RESIZE: [TextAutoResize, string, string][] = [
 
 const firstFamily = (stack: string) => stack.split(",")[0]!.trim().replace(/['"]/g, "");
 
-export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNode }) {
-  const set = (patch: Parameters<DesignDoc["setText"]>[1]) => {
-    doc.setText(node.id, patch);
-    fitText(doc, node.id);
-  };
+type FontValue = Pick<TextNode, "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "letterSpacing">;
+
+/** Family, weight, size, line height and letter spacing: used for a text layer and for editing a text style. */
+function FontControls({ value: node, onChange: set }: { value: FontValue; onChange: (patch: Partial<FontValue>) => void }) {
   const known = FONTS.find((f) => firstFamily(f.stack) === firstFamily(node.fontFamily));
   const weightKnown = WEIGHTS.some(([w]) => w === node.fontWeight);
-
   return (
-    <section className="props__section">
-      <h3 className="props__heading">Typography</h3>
-      <textarea className="field__input field__input--wide field__input--area" rows={2} value={node.characters} onChange={(e) => set({ characters: e.target.value })} />
+    <>
       <select className="field__select field__select--wide" value={known?.stack ?? node.fontFamily} onChange={(e) => set({ fontFamily: e.target.value })}>
         {!known && <option value={node.fontFamily}>{firstFamily(node.fontFamily)}</option>}
         {FONTS.map((f) => (
@@ -92,6 +90,35 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           <input className="field__input" type="number" step={0.1} value={node.letterSpacing} onChange={(e) => Number.isFinite(Number(e.target.value)) && set({ letterSpacing: Number(e.target.value) })} />
         </label>
       </div>
+    </>
+  );
+}
+
+export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNode }) {
+  const [editingStyle, setEditingStyle] = useState(false);
+  const style = node.textStyleId ? doc.getTextStyle(node.textStyleId) : undefined;
+  const set = (patch: Parameters<DesignDoc["setText"]>[1]) => {
+    doc.setText(node.id, patch);
+    fitText(doc, node.id);
+  };
+  // Editing the style changes every text layer that uses it, so each one is re-measured.
+  const setStyleProps = (patch: Partial<FontValue>) => {
+    if (!style) return;
+    doc.updateTextStyle(style.id, patch);
+    for (const page of doc.pages()) for (const n of doc.descendants(page.id)) if (n.type === "TEXT" && n.textStyleId === style.id) fitText(doc, n.id);
+  };
+
+  return (
+    <section className="props__section">
+      <h3 className="props__heading props__heading--row">
+        Typography
+        <span className="props__tools">
+          <TextStyleMenu doc={doc} node={node} />
+        </span>
+      </h3>
+      {style && <TextStylePill doc={doc} node={node} style={style} editing={editingStyle} setEditing={setEditingStyle} />}
+      <textarea className="field__input field__input--wide field__input--area" rows={2} value={node.characters} onChange={(e) => set({ characters: e.target.value })} />
+      {(!style || editingStyle) && <FontControls value={style && editingStyle ? style : node} onChange={style ? setStyleProps : set} />}
       <div className="seg">
         {RESIZE.map(([mode, label, title]) => (
           <button key={mode} className={`seg__btn${(node.textAutoResize ?? "WIDTH_AND_HEIGHT") === mode ? " seg__btn--active" : ""}`} title={title} onClick={() => set({ textAutoResize: mode })}>
