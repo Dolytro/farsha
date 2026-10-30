@@ -152,7 +152,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Ctrl+click opens right-click menus | ❌ |
 | Use scroll wheel zoom (instead of pan) | ❌ |
 | Right-click and drag to pan | ❌ |
-| Theme (light / dark / system) | ❌ (light only) |
+| Theme (light / dark / system) | ✅ (cloud menu or Actions; the canvas and panels follow, design layers are never recoloured) |
 | Snapping, nudge amount, color profile | ❌ |
 | Keyboard layout, accessibility settings | ❌ |
 | Keyboard shortcuts cheat sheet (Ctrl+Shift+?) | ❌ |
