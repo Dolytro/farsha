@@ -86,7 +86,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 
 ## 5. Prototype
 
-Interactions (click / hover / drag), navigate / overlay / back, transitions, smart animate, flows, present mode, device frames: all ❌ (P2).
+Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, and a full-screen Present (button, Ctrl+Alt+Enter, Actions) where clicking linked layers navigates, Backspace / ← goes back, Esc exits. Missing (P2): hover / drag / key triggers, overlays, scroll, transitions and smart animate, flows and a start point, connector arrows on the canvas, device frames, sharing a prototype link.
 
 ## 6. Dev Mode
 

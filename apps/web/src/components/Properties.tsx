@@ -6,6 +6,7 @@ import { fitText } from "../text-layout";
 import { ConstraintsSection } from "./ConstraintsSection";
 import { AutoLayoutSection, ChildSizingSection } from "./AutoLayoutSection";
 import { AlignRow } from "./AlignRow";
+import { PrototypePanel } from "./PrototypePanel";
 import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
@@ -33,7 +34,7 @@ const BLEND_MODES: [BlendMode, string][] = [
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
 export function Properties() {
-  const { doc, selection, select, viewport, setViewport, devMode, setDevMode, viewer, setShareOpen } = useEditor();
+  const { doc, selection, select, viewport, setViewport, devMode, setDevMode, prototypeMode, setPrototypeMode, viewer, setShareOpen } = useEditor();
   const signedIn = useEditor((s) => s.drive.user !== null);
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
@@ -47,8 +48,8 @@ export function Properties() {
       ) : (
         <div className="props__tabs">
           <button className={`props__tab${devMode ? "" : " props__tab--active"}`} onClick={() => setDevMode(false)}>Design</button>
-          <button className={`props__tab${devMode ? " props__tab--active" : ""}`} onClick={() => setDevMode(true)} title="Dev Mode (Shift+D)">Dev</button>
-          <span className="props__tab props__tab--disabled" title="Coming in Phase 5">Prototype</span>
+          <button className={`props__tab${devMode && !prototypeMode ? " props__tab--active" : ""}`} onClick={() => setDevMode(true)} title="Dev Mode (Shift+D)">Dev</button>
+          <button className={`props__tab${prototypeMode ? " props__tab--active" : ""}`} onClick={() => setPrototypeMode(true)} title="Prototype">Prototype</button>
         </div>
       )}
       <div className="props__actions">
@@ -63,6 +64,15 @@ export function Properties() {
       </div>
     </header>
   );
+
+  if (prototypeMode && !viewer) {
+    return (
+      <aside className="props">
+        {header}
+        <PrototypePanel />
+      </aside>
+    );
+  }
 
   if (devMode) {
     return (

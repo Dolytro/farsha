@@ -5,6 +5,7 @@ import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
 import { saveLocalCopy } from "./local-file";
+import { startFrame } from "./prototype";
 import { selectChildren, selectInverse, selectParent } from "./selection-nav";
 import { useEditor, type Tool } from "./store";
 
@@ -121,6 +122,18 @@ export function buildCommands(): Command[] {
       }),
     ),
     { id: "zoom-100", label: "Zoom to 100%", shortcut: `${SHIFT}0`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, 1)) },
+    {
+      id: "present",
+      label: "Present prototype",
+      shortcut: `${MOD}${ALT}Enter`,
+      keywords: "prototype play preview",
+      run: () => {
+        const frame = startFrame(doc(), sel());
+        if (frame) state().setPresenting(frame);
+        else state().showToast("Add a frame to present");
+      },
+    },
+    { id: "prototype-tab", label: "Open Prototype tab", keywords: "interactions links", run: () => state().setPrototypeMode(true) },
     { id: "rulers", label: "Show / hide rulers", shortcut: `${SHIFT}R`, keywords: "view guides", run: () => state().setRulers(!state().rulers) },
     { id: "dev-mode", label: "Toggle Dev Mode", shortcut: `${SHIFT}D`, keywords: "inspect code", run: () => state().setDevMode(!state().devMode) },
     {
