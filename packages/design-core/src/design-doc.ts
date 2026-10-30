@@ -575,6 +575,12 @@ export class DesignDoc {
     this.setProps(id, clean);
   }
 
+  /** Replace the geometry of a VECTOR layer (used while a Line / Arrow is being drawn). */
+  setVector(id: string, patch: { viewBox: string; markup: string }): void {
+    if (this.requireNode(id).type !== 'VECTOR') throw new Error('setVector requires a VECTOR node');
+    this.setProps(id, patch);
+  }
+
   rename(id: string, name: string): void {
     this.requireNode(id);
     this.setProps(id, { name });

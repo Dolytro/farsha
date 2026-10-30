@@ -221,6 +221,10 @@ export interface VectorNode extends BaseNode {
   viewBox: string;
   /** One sanitised SVG shape element (path, polygon, ...). Built by the SVG importer, never raw clipboard text. */
   markup: string;
+  /** Only on vectors drawn with the Line / Arrow / Polygon / Star tools: their fill and stroke are editable like a shape's. */
+  fills?: Paint[];
+  strokes?: Paint[];
+  strokeWidth?: number;
 }
 
 export type DesignNode =

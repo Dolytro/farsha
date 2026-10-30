@@ -9,3 +9,4 @@ export * from "./resize";
 export * from "./snap";
 export * from "./text";
 export * from "./ruler";
+export * from "./shapes";

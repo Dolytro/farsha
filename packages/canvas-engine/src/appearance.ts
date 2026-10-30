@@ -85,8 +85,8 @@ const geometry = shapeGeometry;
 
 /** Fill and stroke of a rectangle, frame or ellipse. Inside/outside strokes are clipped/masked double-width strokes. */
 export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => string | undefined): string {
-  const fill = "fills" in n ? n.fills[0] : undefined;
-  const stroke = "strokes" in n ? n.strokes[0] : undefined;
+  const fill = "fills" in n ? n.fills?.[0] : undefined;
+  const stroke = "strokes" in n ? n.strokes?.[0] : undefined;
   const gradientId = `gf-${safeId(n.id)}`;
   let fillDef = "";
   let fillAttrs = ' fill="none"';
@@ -105,7 +105,7 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
   let out = fillDef + geometry(n, fillAttrs);
   if (!stroke || !("strokeWidth" in n)) return out;
 
-  const w = Math.max(0, n.strokeWidth);
+  const w = Math.max(0, (n.strokeWidth ?? 1));
   const id = safeId(n.id);
   const base = ` fill="none" stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}"`;
   const align = "strokeAlign" in n && n.strokeAlign ? n.strokeAlign : "CENTER";
@@ -144,4 +144,19 @@ export function gradientDef(id: string, p: GradientPaint): string {
   const dy = Math.sin(a) / 2;
   const f = (v: number) => String(Math.round(v * 1000) / 1000);
   return `<linearGradient id="${id}" x1="${f(0.5 - dx)}" y1="${f(0.5 - dy)}" x2="${f(0.5 + dx)}" y2="${f(0.5 + dy)}">${stops}</linearGradient>`;
+}
+
+/** True for a VECTOR drawn with the Line / Arrow / Polygon / Star tools: it has its own fill and stroke instead of baked-in markup attributes. */
+export function isDrawnVector(n: DesignNode): boolean {
+  return n.type === "VECTOR" && Array.isArray(n.fills);
+}
+
+/** Presentation attributes for the group around a drawn vector's markup (fill and stroke come from the layer). */
+export function vectorPaintAttrs(n: DesignNode): string {
+  if (n.type !== "VECTOR") return "";
+  const fill = n.fills?.[0];
+  const stroke = n.strokes?.[0];
+  const parts = [fill ? `fill="${hex(paintColor(fill))}" fill-opacity="${unit(fill.opacity)}"` : 'fill="none"'];
+  if (stroke) parts.push(`stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}" stroke-width="${num(Math.max(0, n.strokeWidth ?? 1))}" stroke-linecap="round" stroke-linejoin="round"`);
+  return parts.join(" ");
 }

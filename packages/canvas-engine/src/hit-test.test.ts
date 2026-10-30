@@ -48,3 +48,21 @@ describe("viewport", () => {
     expect(after.y).toBeCloseTo(before.y);
   });
 });
+
+describe("hit test: thin and rotated layers", () => {
+  it("can pick a zero-height line", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("VECTOR", { parentId: page, props: { x: 0, y: 50, width: 100, height: 0 } });
+    expect(hitTest(doc, page, 50, 51)?.id).toBe(id);
+    expect(hitTest(doc, page, 50, 60)).toBeUndefined();
+  });
+  it("follows rotation around the centre", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("RECTANGLE", { parentId: page, props: { x: 0, y: 0, width: 100, height: 10, rotation: 90 } });
+    // rotated 90 degrees about (50, 5): it now covers x 45..55, y -45..55
+    expect(hitTest(doc, page, 50, 50)?.id).toBe(id);
+    expect(hitTest(doc, page, 90, 5)).toBeUndefined();
+  });
+});

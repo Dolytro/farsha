@@ -32,8 +32,8 @@ export function DevPanel() {
     }
   };
 
-  const fills = "fills" in node ? node.fills : [];
-  const strokes = "strokes" in node ? node.strokes : [];
+  const fills = "fills" in node ? (node.fills ?? []) : [];
+  const strokes = "strokes" in node ? (node.strokes ?? []) : [];
 
   return (
     <div className="dev">

@@ -13,6 +13,10 @@ const TOOLS: { id: Tool; label: string; key: string; icon: ReactElement; design?
   { id: "frame", label: "Frame", key: "F", design: true, icon: icon(<path d="M5 1.5v13M11 1.5v13M1.5 5h13M1.5 11h13" />) },
   { id: "rect", label: "Rectangle", key: "R", design: true, icon: icon(<rect x="2.5" y="3.5" width="11" height="9" rx="1" />) },
   { id: "ellipse", label: "Ellipse", key: "O", design: true, icon: icon(<circle cx="8" cy="8" r="5.5" />) },
+  { id: "line", label: "Line", key: "L", design: true, icon: icon(<path d="M3 13L13 3" />) },
+  { id: "arrow", label: "Arrow", key: "Shift+L", design: true, icon: icon(<path d="M3 13L13 3M7 3h6v6" />) },
+  { id: "polygon", label: "Polygon", key: "", design: true, icon: icon(<path d="M8 2.5l5.5 10h-11z" />) },
+  { id: "star", label: "Star", key: "", design: true, icon: icon(<path d="M8 2l1.8 4 4.2.4-3.2 2.8 1 4.2L8 11.2 4.2 13.4l1-4.2L2 6.4 6.2 6z" />) },
   { id: "text", label: "Text", key: "T", design: true, icon: icon(<path d="M3 4V3h10v1M8 3v10M6 13h4" />) },
 ];
 
@@ -34,7 +38,7 @@ export function Toolbar() {
             key={t.id}
             className={`toolbar__btn${tool === t.id ? " toolbar__btn--active" : ""}`}
             onClick={() => setTool(t.id)}
-            title={`${t.label} — ${t.key}`}
+            title={t.key ? `${t.label} — ${t.key}` : t.label}
             aria-label={t.label}
             aria-pressed={tool === t.id}
           >

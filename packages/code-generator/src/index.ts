@@ -57,11 +57,11 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     return d;
   }
 
-  if ("fills" in node && node.fills[0]) d.push(["background", paintCss(node.fills[0])]);
+  if ("fills" in node && node.fills?.[0]) d.push(["background", paintCss(node.fills[0])]);
   if (node.type === "ELLIPSE") d.push(["border-radius", "50%"]);
   else if ("cornerRadii" in node && node.cornerRadii?.length === 4 && node.cornerRadii.some((r) => r > 0)) d.push(["border-radius", node.cornerRadii.map(px).join(" ")]);
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
-  if ("strokes" in node && node.strokes[0]) {
+  if ("strokes" in node && node.strokes?.[0] && node.strokeWidth !== undefined) {
     d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity)}`]);
   }
   if (node.type === "FRAME" && node.clipsContent) d.push(["overflow", "hidden"]);

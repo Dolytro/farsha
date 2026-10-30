@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, hitTest, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -12,15 +12,25 @@ type Drag =
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
   | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
+  | { kind: "line"; id: string; wx: number; wy: number; px: number; py: number; arrow: boolean }
   | { kind: "marquee"; wx: number; wy: number; additive: boolean; base: string[] };
 
-const CREATE: Partial<Record<Tool, NodeType>> = { frame: "FRAME", rect: "RECTANGLE", ellipse: "ELLIPSE", text: "TEXT" };
-const NAMES: Partial<Record<Tool, string>> = { frame: "Frame", rect: "Rectangle", ellipse: "Ellipse", text: "Text" };
+const CREATE: Partial<Record<Tool, NodeType>> = { frame: "FRAME", rect: "RECTANGLE", ellipse: "ELLIPSE", text: "TEXT", line: "VECTOR", arrow: "VECTOR", polygon: "VECTOR", star: "VECTOR" };
+const NAMES: Partial<Record<Tool, string>> = { frame: "Frame", rect: "Rectangle", ellipse: "Ellipse", text: "Text", line: "Line", arrow: "Arrow", polygon: "Polygon", star: "Star" };
+
+/** Starting geometry and paint of the vector tools: lines are stroked, polygons and stars are filled grey. */
+function vectorStart(tool: Tool): Record<string, unknown> {
+  const black = [{ type: "SOLID", color: "#000000", opacity: 1 }];
+  const grey = [{ type: "SOLID", color: "#d9d9d9", opacity: 1 }];
+  if (tool === "line") return { ...lineShape(1), fills: [], strokes: black, strokeWidth: 1 };
+  if (tool === "arrow") return { ...arrowShape(1), fills: [], strokes: black, strokeWidth: 1 };
+  return { ...(tool === "star" ? starShape() : polygonShape()), fills: grey, strokes: [], strokeWidth: 1 };
+}
 const ACCENT = "#0d99ff";
 
 const solid = (color: string) => [{ type: "SOLID" as const, color, opacity: 1 }];
 const fillOf = (n: DesignNode) => {
-  const p = "fills" in n ? n.fills[0] : undefined;
+  const p = "fills" in n ? n.fills?.[0] : undefined;
   return p ? { color: paintColor(p), opacity: p.opacity } : { color: "none", opacity: 1 };
 };
 const blendStyle = (n: DesignNode) => {
@@ -173,9 +183,11 @@ export function Canvas() {
         width: 1,
         height: 1,
         ...(tool === "text" ? { fills: solid("#111111") } : {}),
+        ...(type === "VECTOR" ? vectorStart(tool) : {}),
+        ...(tool === "line" || tool === "arrow" ? { height: 0 } : {}),
       },
     });
-    drag.current = { kind: "draw", id, wx: w.x, wy: w.y, px: pb.x, py: pb.y };
+    drag.current = tool === "line" || tool === "arrow" ? { kind: "line", id, wx: w.x, wy: w.y, px: pb.x, py: pb.y, arrow: tool === "arrow" } : { kind: "draw", id, wx: w.x, wy: w.y, px: pb.x, py: pb.y };
     select([id]);
   };
 
@@ -220,6 +232,8 @@ export function Canvas() {
         else if (next.width !== d.box.width && (node.textAutoResize ?? "WIDTH_AND_HEIGHT") === "WIDTH_AND_HEIGHT") doc.setText(d.id, { textAutoResize: "HEIGHT" });
         fitText(doc, d.id);
       }
+    } else if (d.kind === "line") {
+      placeLine(d, w.x, w.y, e.shiftKey);
     } else if (d.kind === "draw") {
       doc.resizeNode(d.id, {
         x: Math.min(d.wx, w.x) - d.px,
@@ -238,12 +252,25 @@ export function Canvas() {
     }
   };
 
+  /** Stretch a Line / Arrow from its start point to (x, y); Shift snaps the angle to 15 degrees. */
+  const placeLine = (d: Extract<Drag, { kind: "line" }>, x: number, y: number, snap: boolean) => {
+    const l = lineBetween(d.wx, d.wy, x, y, snap);
+    doc.resizeNode(d.id, { x: l.x - d.px, y: l.y - d.py, width: l.length, height: 0 });
+    doc.rotateNode(d.id, l.rotation);
+    doc.setVector(d.id, d.arrow ? arrowShape(l.length) : lineShape(l.length));
+  };
+
   const onPointerUp = () => {
     const d = drag.current;
     drag.current = null;
     setMarquee(null);
     setGuides([]);
     if (!d || d.kind === "pan" || d.kind === "marquee") return;
+    if (d.kind === "line") {
+      // A plain click makes a 100 px line.
+      if (doc.getNode(d.id)!.width < 4) placeLine(d, d.wx + 100, d.wy, false);
+      setTool("select");
+    }
     if (d.kind === "draw") {
       const n = doc.getNode(d.id)!;
       if (n.width < 4 && n.height < 4) {
@@ -375,7 +402,11 @@ export function Canvas() {
       return (
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
-          <svg width={n.width} height={n.height} viewBox={n.viewBox} overflow="visible" dangerouslySetInnerHTML={{ __html: n.markup }} />
+          {isDrawnVector(n) ? (
+            <svg width={n.width} height={Math.max(n.height, 0.001)} viewBox={n.viewBox} preserveAspectRatio="none" overflow="visible" dangerouslySetInnerHTML={{ __html: `<g ${vectorPaintAttrs(n)}>${n.markup}</g>` }} />
+          ) : (
+            <svg width={n.width} height={n.height} viewBox={n.viewBox} overflow="visible" dangerouslySetInnerHTML={{ __html: n.markup }} />
+          )}
         </g>
       );
     }
