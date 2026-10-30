@@ -2,6 +2,7 @@ import type { DesignDoc } from "@canvylo/design-core";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@canvylo/types";
 import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorPaintAttrs } from "./appearance";
 import { unionBox } from "./measure";
+import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
 import { approxMeasure, layoutText, type Measure } from "./text";
 
@@ -38,7 +39,16 @@ function imageHref(doc: DesignDoc): (assetId: string) => string | undefined {
 /** Text measurer for the export in progress (the browser passes a real one; the default is an estimate). */
 let measure: Measure = approxMeasure;
 
+/** Sibling layers bottom to top; a mask layer is not drawn and clips everything above it. */
+function renderList(doc: DesignDoc, list: DesignNode[], clipIds: string[]): string {
+  const at = list.findIndex((c) => c.isMask && c.visible);
+  if (at < 0) return list.map((c) => render(doc, c, clipIds)).join("");
+  const mask = maskMarkup(list[at]!);
+  return `${list.slice(0, at).map((c) => render(doc, c, clipIds)).join("")}${mask.defs}<g mask="url(#${mask.id})">${renderList(doc, list.slice(at + 1), clipIds)}</g>`;
+}
+
 function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
+  if (n.isMask) return "";
   if (!n.visible) return "";
   const fx = effectsFilter(n);
   const body = renderBody(doc, n, clipIds);
@@ -53,7 +63,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   const opacity = (n.opacity !== 1 ? ` opacity="${num(n.opacity)}"` : "") + (blend ? ` style="mix-blend-mode:${blend}"` : "");
   const fill = paint(n, "fills");
   const fillAttrs = fill ? ` fill="${esc(paintColor(fill))}"${fill.opacity !== 1 ? ` fill-opacity="${num(fill.opacity)}"` : ""}` : ' fill="none"';
-  const kids = doc.children(n.id).map((c) => render(doc, c, clipIds)).join("");
+  const kids = renderList(doc, doc.children(n.id), clipIds);
 
   switch (n.type) {
     case "ELLIPSE":

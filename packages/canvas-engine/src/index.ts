@@ -12,3 +12,4 @@ export * from "./ruler";
 export * from "./shapes";
 export * from "./transform";
 export * from "./pen";
+export * from "./mask";

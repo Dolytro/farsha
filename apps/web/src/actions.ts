@@ -4,9 +4,12 @@ import type { Box } from "@canvylo/types";
 
 /** Group selected siblings under a new GROUP (Ctrl+G). Returns the new selection. */
 export function groupSelection(doc: DesignDoc, ids: string[]): string[] {
-  const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n?.parentId);
-  const parentId = nodes[0]?.parentId;
-  if (!parentId || nodes.some((n) => n.parentId !== parentId)) return ids;
+  const picked = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n?.parentId);
+  const parentId = picked[0]?.parentId;
+  if (!parentId || picked.some((n) => n.parentId !== parentId)) return ids;
+  // keep the layers in their current stacking order, whatever order they were selected in
+  const order = doc.children(parentId).map((n) => n.id);
+  const nodes = [...picked].sort((x, y) => order.indexOf(x.id) - order.indexOf(y.id));
   const box = unionBox(nodes.map((n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })))!;
   doc.stopCapturing();
   const group = doc.createNode("GROUP", { parentId, props: { x: box.x, y: box.y, width: box.width, height: box.height } });
@@ -144,4 +147,24 @@ export function adjacentFrame(doc: DesignDoc, pageId: string, current: string | 
   const at = top ? frames.findIndex((f) => f.id === top!.id) : -1;
   const next = at < 0 ? (direction === 1 ? 0 : frames.length - 1) : (at + direction + frames.length) % frames.length;
   return frames[next]!.id;
+}
+
+/**
+ * Figma's "Use as mask" (Ctrl+Alt+M). One layer: it masks the layers above it in the same parent (or stops doing so when it
+ * already is a mask). Several layers: they are grouped and the bottom-most one becomes the mask.
+ */
+export function useAsMask(doc: DesignDoc, ids: string[]): string[] {
+  const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n?.parentId);
+  if (!nodes.length) return ids;
+  doc.stopCapturing();
+  if (nodes.length === 1) {
+    doc.setStyle(nodes[0]!.id, { isMask: !nodes[0]!.isMask });
+    doc.stopCapturing();
+    return ids;
+  }
+  const [group] = groupSelection(doc, ids);
+  const bottom = group ? doc.children(group)[0] : undefined;
+  if (group && doc.getNode(group)?.type === "GROUP" && bottom) doc.setStyle(bottom.id, { isMask: true });
+  doc.stopCapturing();
+  return group ? [group] : ids;
 }
