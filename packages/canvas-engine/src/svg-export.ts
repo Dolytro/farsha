@@ -1,6 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@canvylo/types";
-import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorPaintAttrs } from "./appearance";
+import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
@@ -92,7 +92,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     }
     case "VECTOR":
       if (isDrawnVector(n)) {
-        return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(Math.max(n.height, 0.001))}" viewBox="${esc(n.viewBox)}" preserveAspectRatio="none" overflow="visible"><g ${vectorPaintAttrs(n)}>${n.markup}</g></svg></g>`;
+        return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(Math.max(n.height, 0.001))}" viewBox="${esc(n.viewBox)}" preserveAspectRatio="none" overflow="visible"><defs>${vectorMarkerDefs(n)}</defs><g ${vectorPaintAttrs(n)}>${n.markup}</g></svg></g>`;
       }
       return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(n.height)}" viewBox="${esc(n.viewBox)}" overflow="visible">${n.markup}</svg></g>`;
     case "RECTANGLE":

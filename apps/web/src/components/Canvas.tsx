@@ -9,7 +9,7 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -476,7 +476,7 @@ export function Canvas() {
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
           {isDrawnVector(n) ? (
-            <svg width={n.width} height={Math.max(n.height, 0.001)} viewBox={n.viewBox} preserveAspectRatio="none" overflow="visible" dangerouslySetInnerHTML={{ __html: `<g ${vectorPaintAttrs(n)}>${n.markup}</g>` }} />
+            <svg width={n.width} height={Math.max(n.height, 0.001)} viewBox={n.viewBox} preserveAspectRatio="none" overflow="visible" dangerouslySetInnerHTML={{ __html: `<defs>${vectorMarkerDefs(n)}</defs><g ${vectorPaintAttrs(n)}>${n.markup}</g>` }} />
           ) : (
             <svg width={n.width} height={n.height} viewBox={n.viewBox} overflow="visible" dangerouslySetInnerHTML={{ __html: n.markup }} />
           )}

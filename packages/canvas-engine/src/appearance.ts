@@ -1,4 +1,4 @@
-import { paintColor, type DesignNode, type Effect, type GradientPaint } from "@canvylo/types";
+import { paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd } from "@canvylo/types";
 
 /**
  * SVG markup for strokes and effects, shared by the canvas and by SVG/PNG export.
@@ -120,7 +120,7 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
       `<rect x="${num(-w)}" y="${num(-w)}" width="${num(n.width + w * 2)}" height="${num(n.height + w * 2)}" fill="#fff"/>${geometry(n, ' fill="#000"')}</mask>`;
   }
   for (const stroke of strokes) {
-    const base = ` fill="none" stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}"`;
+    const base = ` fill="none" stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}"${strokeExtras(n)}`;
     if (align === "INSIDE") out += geometry(n, `${base} stroke-width="${num(w * 2)}" clip-path="url(#sc-${id})"`);
     else if (align === "OUTSIDE") out += geometry(n, `${base} stroke-width="${num(w * 2)}" mask="url(#sm-${id})"`);
     else out += geometry(n, `${base} stroke-width="${num(w)}"`);
@@ -163,6 +163,47 @@ export function vectorPaintAttrs(n: DesignNode): string {
   const fill = n.fills?.[0];
   const stroke = n.strokes?.[0];
   const parts = [fill ? `fill="${hex(paintColor(fill))}" fill-opacity="${unit(fill.opacity)}"` : 'fill="none"'];
-  if (stroke) parts.push(`stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}" stroke-width="${num(Math.max(0, n.strokeWidth ?? 1))}" stroke-linecap="round" stroke-linejoin="round"`);
+  if (stroke) {
+    parts.push(`stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}" stroke-width="${num(Math.max(0, n.strokeWidth ?? 1))}"${strokeExtras(n, "ROUND", "ROUND")}`);
+    if (n.strokeStartCap && n.strokeStartCap !== "NONE") parts.push(`marker-start="url(#${markerId(n, "s")})"`);
+    if (n.strokeEndCap && n.strokeEndCap !== "NONE") parts.push(`marker-end="url(#${markerId(n, "e")})"`);
+  }
   return parts.join(" ");
+}
+
+const markerId = (n: DesignNode, side: "s" | "e") => `mk-${side}-${safeId(n.id)}`;
+
+const CAP_ATTR = { NONE: "butt", ROUND: "round", SQUARE: "square" } as const;
+const JOIN_ATTR = { MITER: "miter", BEVEL: "bevel", ROUND: "round" } as const;
+
+/** `stroke-dasharray`, `stroke-linecap` and `stroke-linejoin` of a layer (validated: a shared file is untrusted). Leading space included, "" when plain. */
+export function strokeExtras(n: DesignNode, defaultCap: "NONE" | "ROUND" | "SQUARE" = "NONE", defaultJoin: "MITER" | "BEVEL" | "ROUND" = "MITER"): string {
+  const dash = Array.isArray(n.strokeDash) ? n.strokeDash.filter((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1000).slice(0, 8) : [];
+  const cap = n.strokeCap && n.strokeCap in CAP_ATTR ? n.strokeCap : defaultCap;
+  const join = n.strokeJoin && n.strokeJoin in JOIN_ATTR ? n.strokeJoin : defaultJoin;
+  const dashAttr = dash.length && dash.some((v) => v > 0) ? ` stroke-dasharray="${dash.map(num).join(" ")}"` : "";
+  const capAttr = cap !== "NONE" || defaultCap !== "NONE" ? ` stroke-linecap="${CAP_ATTR[cap]}"` : "";
+  const joinAttr = join !== "MITER" || defaultJoin !== "MITER" ? ` stroke-linejoin="${JOIN_ATTR[join]}"` : "";
+  return dashAttr + capAttr + joinAttr;
+}
+
+const MARKER_SHAPES: Record<Exclude<LineEnd, "NONE">, (c: string) => string> = {
+  ARROW_LINES: (c) => `<path d="M1 1.5L7 5L1 8.5" fill="none" stroke="${c}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+  ARROW_FILLED: (c) => `<path d="M0 0L10 5L0 10Z" fill="${c}"/>`,
+  CIRCLE: (c) => `<circle cx="5" cy="5" r="4.5" fill="${c}"/>`,
+  SQUARE: (c) => `<rect x="1" y="1" width="8" height="8" fill="${c}"/>`,
+  DIAMOND: (c) => `<path d="M5 0L10 5L5 10L0 5Z" fill="${c}"/>`,
+};
+
+/** The `<marker>` definitions for the arrowheads of a drawn vector ("" when it has none). */
+export function vectorMarkerDefs(n: DesignNode): string {
+  if (n.type !== "VECTOR" || !n.strokes?.[0]) return "";
+  const color = hex(paintColor(n.strokes[0]));
+  // arrowheads grow with the stroke but are never smaller than 8 px
+  const size = num(Math.max(8, 4 * Math.max(0, n.strokeWidth ?? 1)));
+  const one = (side: "s" | "e", end: LineEnd | undefined) =>
+    end && end !== "NONE" && end in MARKER_SHAPES
+      ? `<marker id="${markerId(n, side)}" viewBox="0 0 10 10" refX="${end === "ARROW_LINES" ? 6 : 5}" refY="5" markerUnits="userSpaceOnUse" markerWidth="${size}" markerHeight="${size}" orient="auto-start-reverse" overflow="visible">${MARKER_SHAPES[end](color)}</marker>`
+      : "";
+  return one("s", n.strokeStartCap) + one("e", n.strokeEndCap);
 }
