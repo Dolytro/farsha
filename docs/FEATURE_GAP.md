@@ -182,7 +182,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 
 | Area | Figma item | Status |
 |---|---|---|
-| Menu bar | Main menu with File / Edit / View / Object / Text / Arrange / Vector / Preferences and shortcut hints | ❌ → building first |
+| Menu bar | Main menu with File / Edit / View / Object / Text / Arrange / Vector / Preferences and shortcut hints | ✅ (hamburger in the left header; every entry is a command of the Actions palette, entries for commands that do not exist yet are hidden) |
 | File | New Design, Place image… (Ctrl+Shift+K), Duplicate, Save local copy, Save to version history (Ctrl+Alt+S), Show version history, Export… (Ctrl+Shift+E) | partly ✅ (Place image, Duplicate, Export… ❌) |
 | File | Export frames to PDF, Create branch | ❌ (PDF later; branching needs a backend) |
 | Edit | Undo / Redo, Copy as, Paste over selection, Duplicate, Delete, Copy / Paste properties, Pick color, Select all / matching / none / inverse | ✅ |
