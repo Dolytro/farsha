@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
+import { adjacentFrame, flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
 
 function setup() {
   const doc = new DesignDoc();
@@ -61,5 +61,36 @@ describe("frameSelection", () => {
     const a = doc.createNode("RECTANGLE", { parentId: page });
     const b = doc.createNode("RECTANGLE", { parentId: f });
     expect(frameSelection(doc, [a, b])).toEqual([a, b]);
+  });
+});
+
+describe("adjacentFrame", () => {
+  it("walks the top-level frames in reading order and wraps", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const b = doc.createNode("FRAME", { parentId: page, props: { x: 500, y: 0 } });
+    const a = doc.createNode("FRAME", { parentId: page, props: { x: 0, y: 0 } });
+    const c = doc.createNode("FRAME", { parentId: page, props: { x: 0, y: 900 } });
+    doc.createNode("RECTANGLE", { parentId: page });
+    expect(adjacentFrame(doc, page, undefined, 1)).toBe(a);
+    expect(adjacentFrame(doc, page, a, 1)).toBe(b);
+    expect(adjacentFrame(doc, page, b, 1)).toBe(c);
+    expect(adjacentFrame(doc, page, c, 1)).toBe(a);
+    expect(adjacentFrame(doc, page, a, -1)).toBe(c);
+    expect(adjacentFrame(doc, page, undefined, -1)).toBe(c);
+  });
+
+  it("starts from the frame that contains the selected layer", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("FRAME", { parentId: page, props: { x: 0, y: 0 } });
+    const b = doc.createNode("FRAME", { parentId: page, props: { x: 500, y: 0 } });
+    const inner = doc.createNode("RECTANGLE", { parentId: a });
+    expect(adjacentFrame(doc, page, inner, 1)).toBe(b);
+  });
+
+  it("is undefined without frames", () => {
+    const doc = new DesignDoc();
+    expect(adjacentFrame(doc, doc.pages()[0]!.id, undefined, 1)).toBeUndefined();
   });
 });

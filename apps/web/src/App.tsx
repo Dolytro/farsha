@@ -10,7 +10,7 @@ import { selectChildren, selectInverse, selectParent, selectSibling } from "./se
 import { createComponentFromSelection, detachSelection } from "./component-actions";
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
-import { flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
+import { adjacentFrame, flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
@@ -335,6 +335,15 @@ export function App() {
         // Figma's Flip horizontal / vertical
         e.preventDefault();
         flipSelection(doc, selection, key === "h" ? "x" : "y");
+      } else if (!mod && !e.altKey && key === "n") {
+        // Figma's "Zoom to next / previous frame"
+        e.preventDefault();
+        const frame = adjacentFrame(doc, s.pageId, selection[0], e.shiftKey ? -1 : 1);
+        if (frame) {
+          s.select([frame]);
+          const v = zoomFit(doc, s.pageId, [frame]);
+          if (v) s.setViewport(v);
+        }
       } else if (e.shiftKey && !mod && !e.altKey && key === "l") {
         // Figma's Arrow tool
         s.setTool("arrow");

@@ -130,3 +130,18 @@ export function frameSelection(doc: DesignDoc, ids: string[]): string[] {
   doc.stopCapturing();
   return [frame];
 }
+
+/** Figma's N / Shift+N: the next (or previous) top-level frame of the page in reading order (top to bottom, then left to right), wrapping around. */
+export function adjacentFrame(doc: DesignDoc, pageId: string, current: string | undefined, direction: 1 | -1): string | undefined {
+  const frames = doc
+    .children(pageId)
+    .filter((n) => n.type === "FRAME" && n.visible)
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+  if (!frames.length) return undefined;
+  // From a nested layer, start from the top-level frame it lives in.
+  let top = current ? doc.getNode(current) : undefined;
+  while (top && top.parentId && top.parentId !== pageId) top = doc.getNode(top.parentId);
+  const at = top ? frames.findIndex((f) => f.id === top!.id) : -1;
+  const next = at < 0 ? (direction === 1 ? 0 : frames.length - 1) : (at + direction + frames.length) % frames.length;
+  return frames[next]!.id;
+}

@@ -1,6 +1,6 @@
 import { alignSelection, type AlignMode } from "./align";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
-import { flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { adjacentFrame, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
@@ -104,6 +104,22 @@ export function buildCommands(): Command[] {
         if (v) state().setViewport(v);
       },
     },
+    ...([1, -1] as const).map(
+      (dir): Command => ({
+        id: `frame-${dir}`,
+        label: dir === 1 ? "Zoom to next frame" : "Zoom to previous frame",
+        shortcut: dir === 1 ? "N" : `${SHIFT}N`,
+        keywords: "view",
+        run: () => {
+          const s = state();
+          const frame = adjacentFrame(s.doc, s.pageId, s.selection[0], dir);
+          if (!frame) return;
+          s.select([frame]);
+          const v = zoomFit(s.doc, s.pageId, [frame]);
+          if (v) s.setViewport(v);
+        },
+      }),
+    ),
     { id: "zoom-100", label: "Zoom to 100%", shortcut: `${SHIFT}0`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, 1)) },
     { id: "rulers", label: "Show / hide rulers", shortcut: `${SHIFT}R`, keywords: "view guides", run: () => state().setRulers(!state().rulers) },
     { id: "dev-mode", label: "Toggle Dev Mode", shortcut: `${SHIFT}D`, keywords: "inspect code", run: () => state().setDevMode(!state().devMode) },
