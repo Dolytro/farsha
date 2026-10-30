@@ -37,12 +37,21 @@ export function backgroundCss(fills: Paint[]): string {
 }
 
 /** Computed style of one node as ordered CSS declarations. Children of a parent are placed absolutely. */
-export function declarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean } = {}): Decl[] {
+export function declarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean; parentLayout?: "HORIZONTAL" | "VERTICAL" } = {}): Decl[] {
   const d: Decl[] = [];
   if (opts.absolute) d.push(["position", "absolute"], ["left", px(node.x)], ["top", px(node.y)]);
   else if (opts.hasChildren) d.push(["position", "relative"]);
 
-  d.push(["width", px(node.width)], ["height", px(node.height)]);
+  // A child of an auto layout frame that fills the container grows with flex instead of having a fixed size.
+  const horizontal = opts.parentLayout === "HORIZONTAL";
+  const fillWidth = !!opts.parentLayout && node.layoutSizingH === "FILL";
+  const fillHeight = !!opts.parentLayout && node.layoutSizingV === "FILL";
+  const growsMain = horizontal ? fillWidth : fillHeight;
+  const stretches = horizontal ? fillHeight : fillWidth;
+  if (!fillWidth) d.push(["width", px(node.width)]);
+  if (!fillHeight) d.push(["height", px(node.height)]);
+  if (growsMain) d.push(["flex", "1 1 0"]);
+  if (stretches) d.push(["align-self", "stretch"]);
   const flips = `${node.flipX ? " scaleX(-1)" : ""}${node.flipY ? " scaleY(-1)" : ""}`;
   if (node.rotation || flips) d.push(["transform", `${node.rotation ? `rotate(${node.rotation}deg)` : ""}${flips}`.trim()]);
   if (node.opacity !== 1) d.push(["opacity", String(Math.round(node.opacity * 100) / 100)]);
@@ -150,7 +159,7 @@ interface Walked {
   kids: Walked[];
 }
 
-function walk(node: DesignNode, children: ChildrenOf, absolute: boolean, used: Map<string, number>): Walked {
+function walk(node: DesignNode, children: ChildrenOf, absolute: boolean, used: Map<string, number>, parentLayout?: "HORIZONTAL" | "VERTICAL"): Walked {
   const kids = children(node.id).filter((c) => c.visible);
   const base = slug(node.type === "TEXT" ? node.characters : node.name);
   const n = (used.get(base) ?? 0) + 1;
@@ -158,8 +167,8 @@ function walk(node: DesignNode, children: ChildrenOf, absolute: boolean, used: M
   return {
     node,
     cls: n === 1 ? base : `${base}-${n}`,
-    decls: declarations(node, { absolute, hasChildren: kids.length > 0 }),
-    kids: kids.map((k) => walk(k, children, !(node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")), used)),
+    decls: declarations(node, { absolute, hasChildren: kids.length > 0, parentLayout }),
+    kids: kids.map((k) => walk(k, children, !(node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")), used, node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL") ? node.layoutMode : undefined)),
   };
 }
 
