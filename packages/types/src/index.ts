@@ -107,6 +107,14 @@ export interface TextStyle {
 /** The text properties a text style controls. */
 export const TEXT_STYLE_KEYS = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing'] as const;
 
+/** What happens when someone clicks a layer in a prototype: go to a frame, or back to the previous one. */
+export type InteractionAction = { type: 'NAVIGATE'; targetId: string } | { type: 'BACK' };
+
+export interface Interaction {
+  trigger: 'ON_CLICK';
+  action: InteractionAction;
+}
+
 export interface BaseNode {
   id: string;
   type: NodeType;
@@ -136,6 +144,8 @@ export interface BaseNode {
   /** Inside an auto layout frame: FILL = take the free space of the frame along that side (Figma's "Fill container"). Missing means FIXED. */
   layoutSizingH?: 'FIXED' | 'FILL';
   layoutSizingV?: 'FIXED' | 'FILL';
+  /** Prototype links of this layer (Prototype tab). */
+  interactions?: Interaction[];
   /** Id of the colour style that supplies this layer's fills; the fills follow the style. */
   fillStyleId?: string;
   /** Id of the text style that supplies this text layer's font settings. */
@@ -293,6 +303,7 @@ export interface StylePatch extends AutoLayoutProps {
   clipsContent?: boolean;
   layoutSizingH?: 'FIXED' | 'FILL';
   layoutSizingV?: 'FIXED' | 'FILL';
+  interactions?: Interaction[];
 }
 
 export interface TextPatch {

@@ -18,6 +18,8 @@ import { placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
 import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { CommandPalette } from "./components/CommandPalette";
+import { Presenter } from "./components/Presenter";
+import { startFrame } from "./prototype";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
 import { restoreLocal, startLocalAutosave } from "./local-persist";
@@ -252,6 +254,12 @@ export function App() {
       } else if (!mod && (key === "+" || key === "=" || key === "-" || key === "_")) {
         e.preventDefault();
         s.setViewport(zoomBy(s.viewport, s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
+      } else if (mod && e.altKey && !e.shiftKey && key === "enter" && !s.viewer) {
+        // Figma's "Present"
+        e.preventDefault();
+        const frame = startFrame(doc, selection);
+        if (frame) s.setPresenting(frame);
+        else s.showToast("Add a frame to present");
       } else if (s.devMode) {
         // Dev Mode is read-only: only Esc (deselect) and the toggle above are active.
         if (key === "escape") s.select([]);
@@ -383,6 +391,7 @@ export function App() {
       <ShareDialog />
       <ContextMenu />
       <CommandPalette />
+      <Presenter />
     </div>
   );
 }

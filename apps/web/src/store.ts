@@ -54,6 +54,10 @@ interface EditorState {
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
+  /** Prototype tab: a read-only canvas where layers get click interactions. Implies devMode. */
+  prototypeMode: boolean;
+  /** Id of the frame the prototype presentation started from, or null when not presenting. */
+  presenting: string | null;
   /** Layer being renamed in the layers panel (F2 / Ctrl+R / double-click). */
   renaming: string | null;
   setRenaming: (id: string | null) => void;
@@ -71,6 +75,8 @@ interface EditorState {
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  setPrototypeMode: (on: boolean) => void;
+  setPresenting: (frameId: string | null) => void;
   setDrive: (patch: Partial<DriveState>) => void;
   setLoad: (state: LoadState, error?: string | null) => void;
   /** Replace the open document (Open from Drive, shared link, New). */
@@ -105,6 +111,8 @@ export const useEditor = create<EditorState>((set) => ({
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   paletteOpen: false,
+  prototypeMode: false,
+  presenting: null,
   renaming: null,
   setRenaming: (renaming) => set({ renaming }),
   menu: null,
@@ -115,7 +123,9 @@ export const useEditor = create<EditorState>((set) => ({
     set({ toast: message });
     toastTimer = setTimeout(() => set({ toast: null }), 2200);
   },
-  setDevMode: (devMode) => set((s) => (s.viewer ? s : { devMode, tool: "select" })),
+  setDevMode: (devMode) => set((s) => (s.viewer ? s : { devMode, prototypeMode: false, tool: "select" })),
+  setPrototypeMode: (on) => set((s) => (s.viewer ? s : { prototypeMode: on, devMode: on, tool: "select" })),
+  setPresenting: (presenting) => set({ presenting }),
   setTool: (tool) => set({ tool }),
   select: (selection) => set({ selection }),
   setPage: (id) =>
