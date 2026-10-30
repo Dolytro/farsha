@@ -187,3 +187,15 @@ describe("fill container in CSS", () => {
     expect(css).not.toContain("flex: 1 1 0");
   });
 });
+
+describe("wrapping auto layout in CSS", () => {
+  it("emits flex-wrap and the line gap", () => {
+    const doc = new DesignDoc();
+    const frame = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id });
+    doc.setStyle(frame, { layoutMode: "HORIZONTAL", layoutWrap: true, itemSpacing: 8, counterSpacing: 16 } as never);
+    doc.createNode("RECTANGLE", { parentId: frame });
+    const css = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "css");
+    expect(css).toContain("flex-wrap: wrap");
+    expect(css).toContain("gap: 16px 8px");
+  });
+});

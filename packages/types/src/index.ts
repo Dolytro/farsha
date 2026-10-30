@@ -208,6 +208,10 @@ export interface AutoLayoutProps {
   /** Hug = the frame grows / shrinks with its content along the layout direction. Missing means HUG. */
   primarySizing?: LayoutSizing;
   counterSizing?: LayoutSizing;
+  /** Wrap children onto new lines when they do not fit along the layout direction (needs a fixed size in that direction). */
+  layoutWrap?: boolean;
+  /** Space between wrapped lines. */
+  counterSpacing?: number;
 }
 
 /** A layout grid drawn over a frame as a guide (Figma's layout grid): columns, rows, or a square grid. */

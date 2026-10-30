@@ -120,6 +120,12 @@ export function AutoLayoutSection({ doc, node, select }: { doc: DesignDoc; node:
           </button>
         ))}
       </div>
+      <div className="props__grid props__grid--gap">
+        <button className={`seg__btn${node.layoutWrap ? " seg__btn--active" : ""}`} title="Wrap children onto new lines (needs a fixed size in the layout direction)" onClick={() => set({ layoutWrap: !node.layoutWrap })}>
+          Wrap
+        </button>
+        {node.layoutWrap && field("↨", "Gap between lines", num(node.counterSpacing ?? node.itemSpacing), (v) => set({ counterSpacing: v }))}
+      </div>
       <PaddingFields node={node} set={set} field={field} />
       <div className="props__grid props__grid--gap">
         <select className="field__select" title="Alignment along the layout direction" value={node.primaryAxisAlign ?? "MIN"} onChange={(e) => set({ primaryAxisAlign: e.target.value as LayoutAlign })}>
