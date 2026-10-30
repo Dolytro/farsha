@@ -4,6 +4,9 @@ export interface LayoutChild {
   id: string;
   width: number;
   height: number;
+  /** Fill the free space of the frame along its width / height. */
+  fillWidth?: boolean;
+  fillHeight?: boolean;
 }
 
 export interface LayoutFrame extends AutoLayoutProps {
@@ -13,6 +16,8 @@ export interface LayoutFrame extends AutoLayoutProps {
 
 export interface LayoutResult {
   positions: Record<string, { x: number; y: number }>;
+  /** New sizes of the children that fill the frame. */
+  sizes: Record<string, { width: number; height: number }>;
   /** New frame size (only differs from the current one for hugging axes). */
   width: number;
   height: number;
@@ -33,16 +38,33 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
   const padMainEnd = n(horizontal ? frame.paddingRight : frame.paddingBottom);
   const padCrossStart = n(horizontal ? frame.paddingTop : frame.paddingLeft);
   const padCrossEnd = n(horizontal ? frame.paddingBottom : frame.paddingRight);
+  const hugMain = (frame.primarySizing ?? 'HUG') === 'HUG' && children.length > 0;
+  const hugCross = (frame.counterSizing ?? 'HUG') === 'HUG' && children.length > 0;
+  // A hugging frame can't hand out free space, so "fill" only applies along fixed axes.
+  const fillsMain = (c: LayoutChild) => !hugMain && !!(horizontal ? c.fillWidth : c.fillHeight);
+  const fillsCross = (c: LayoutChild) => !hugCross && !!(horizontal ? c.fillHeight : c.fillWidth);
+  const gapSize = n(frame.itemSpacing);
+  const fixedMain = children.reduce((sum, c) => sum + (fillsMain(c) ? 0 : horizontal ? c.width : c.height), 0);
+  const fillCount = children.filter(fillsMain).length;
+  const freeMain = (horizontal ? frame.width : frame.height) - padMainStart - padMainEnd - fixedMain - gapSize * Math.max(0, children.length - 1);
+  const share = fillCount ? Math.max(0, freeMain) / fillCount : 0;
+  const crossBox = (horizontal ? frame.height : frame.width) - padCrossStart - padCrossEnd;
+  const sizes: LayoutResult['sizes'] = {};
+  const sized = children.map((c) => {
+    const next = { ...c };
+    if (fillsMain(c)) horizontal ? (next.width = share) : (next.height = share);
+    if (fillsCross(c)) horizontal ? (next.height = Math.max(0, crossBox)) : (next.width = Math.max(0, crossBox));
+    if (next.width !== c.width || next.height !== c.height) sizes[c.id] = { width: next.width, height: next.height };
+    return next;
+  });
   const main = (c: LayoutChild) => (horizontal ? c.width : c.height);
   const cross = (c: LayoutChild) => (horizontal ? c.height : c.width);
 
-  const gap = n(frame.itemSpacing);
-  const sizes = children.reduce((sum, c) => sum + main(c), 0);
-  const contentMain = sizes + gap * Math.max(0, children.length - 1);
-  const contentCross = children.reduce((m, c) => Math.max(m, cross(c)), 0);
+  const gap = gapSize;
+  const childMain = sized.reduce((sum, c) => sum + main(c), 0);
+  const contentMain = childMain + gap * Math.max(0, children.length - 1);
+  const contentCross = sized.reduce((m, c) => Math.max(m, cross(c)), 0);
 
-  const hugMain = (frame.primarySizing ?? 'HUG') === 'HUG' && children.length > 0;
-  const hugCross = (frame.counterSizing ?? 'HUG') === 'HUG' && children.length > 0;
   const frameMain = hugMain ? contentMain + padMainStart + padMainEnd : horizontal ? frame.width : frame.height;
   const frameCross = hugCross ? contentCross + padCrossStart + padCrossEnd : horizontal ? frame.height : frame.width;
   const innerMain = frameMain - padMainStart - padMainEnd;
@@ -53,11 +75,11 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
   let step = gap;
   if (align === 'CENTER') cursor += (innerMain - contentMain) / 2;
   else if (align === 'MAX') cursor += innerMain - contentMain;
-  else if (align === 'SPACE_BETWEEN' && children.length > 1) step = Math.max(0, (innerMain - sizes) / (children.length - 1));
+  else if (align === 'SPACE_BETWEEN' && children.length > 1) step = Math.max(0, (innerMain - childMain) / (children.length - 1));
 
   const counter = frame.counterAxisAlign ?? 'MIN';
   const positions: LayoutResult['positions'] = {};
-  for (const c of children) {
+  for (const c of sized) {
     let cPos = padCrossStart;
     if (counter === 'CENTER') cPos += (innerCross - cross(c)) / 2;
     else if (counter === 'MAX') cPos += innerCross - cross(c);
@@ -66,6 +88,7 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
   }
   return {
     positions,
+    sizes,
     width: horizontal ? frameMain : frameCross,
     height: horizontal ? frameCross : frameMain,
   };

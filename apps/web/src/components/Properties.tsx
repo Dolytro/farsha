@@ -4,7 +4,7 @@ import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";
 import { fitText } from "../text-layout";
 import { ConstraintsSection } from "./ConstraintsSection";
-import { AutoLayoutSection } from "./AutoLayoutSection";
+import { AutoLayoutSection, ChildSizingSection } from "./AutoLayoutSection";
 import { AlignRow } from "./AlignRow";
 import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
@@ -219,6 +219,7 @@ export function Properties() {
 
       <FillSection doc={doc} node={node} />
 
+      <ChildSizingSection doc={doc} node={node} />
       <AutoLayoutSection doc={doc} node={node} select={select} />
       <StrokeSection doc={doc} node={node} />
       <EffectsSection doc={doc} node={node} />

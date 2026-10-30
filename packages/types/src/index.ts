@@ -133,6 +133,9 @@ export interface BaseNode {
   /** Mirrored across the vertical / horizontal axis through the centre (Shift+H / Shift+V). */
   flipX?: boolean;
   flipY?: boolean;
+  /** Inside an auto layout frame: FILL = take the free space of the frame along that side (Figma's "Fill container"). Missing means FIXED. */
+  layoutSizingH?: 'FIXED' | 'FILL';
+  layoutSizingV?: 'FIXED' | 'FILL';
   /** Id of the colour style that supplies this layer's fills; the fills follow the style. */
   fillStyleId?: string;
   /** Id of the text style that supplies this text layer's font settings. */
@@ -288,6 +291,8 @@ export interface StylePatch extends AutoLayoutProps {
   visible?: boolean;
   locked?: boolean;
   clipsContent?: boolean;
+  layoutSizingH?: 'FIXED' | 'FILL';
+  layoutSizingV?: 'FIXED' | 'FILL';
 }
 
 export interface TextPatch {

@@ -42,3 +42,30 @@ describe('computeAutoLayout', () => {
     expect([r.width, r.height]).toEqual([50, 60]);
   });
 });
+
+describe('fill container', () => {
+  const frame = { layoutMode: 'HORIZONTAL' as const, itemSpacing: 10, paddingLeft: 10, paddingRight: 10, paddingTop: 5, paddingBottom: 5, primarySizing: 'FIXED' as const, counterSizing: 'FIXED' as const, width: 300, height: 100 };
+
+  it('shares the free width between the children that fill', () => {
+    const r = computeAutoLayout(frame, [
+      { id: 'a', width: 60, height: 20 },
+      { id: 'b', width: 10, height: 20, fillWidth: true },
+      { id: 'c', width: 10, height: 20, fillWidth: true },
+    ])!;
+    // 300 - 20 padding - 60 fixed - 20 gaps = 200 free, 100 each
+    expect(r.sizes).toEqual({ b: { width: 100, height: 20 }, c: { width: 100, height: 20 } });
+    expect(r.positions.b).toEqual({ x: 80, y: 5 });
+    expect(r.positions.c).toEqual({ x: 190, y: 5 });
+  });
+
+  it('stretches across the other axis', () => {
+    const r = computeAutoLayout(frame, [{ id: 'a', width: 50, height: 20, fillHeight: true }])!;
+    expect(r.sizes.a).toEqual({ width: 50, height: 90 });
+  });
+
+  it('is ignored along a hugging axis', () => {
+    const r = computeAutoLayout({ ...frame, primarySizing: 'HUG' }, [{ id: 'a', width: 50, height: 20, fillWidth: true }])!;
+    expect(r.sizes).toEqual({});
+    expect(r.width).toBe(70);
+  });
+});

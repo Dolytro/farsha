@@ -347,8 +347,14 @@ export class DesignDoc {
     });
   }
 
-  /** Lay out every auto layout frame, innermost first so hugging parents see their children's new sizes. */
+  /** Lay out every auto layout frame, repeating while a pass changed sizes (a child that fills its parent may need its own children re-laid out). */
   private relayout(): void {
+    for (let pass = 0; pass < 4; pass++) if (!this.relayoutPass()) break;
+  }
+
+  /** One pass over every auto layout frame, innermost first so hugging parents see their children's new sizes. Returns whether anything moved or resized. */
+  private relayoutPass(): boolean {
+    let changed = false;
     const frames: { id: string; depth: number }[] = [];
     for (const id of this.nodes.keys()) {
       const n = this.getNode(id);
@@ -357,7 +363,7 @@ export class DesignDoc {
       for (let p = n.parentId ? this.getNode(n.parentId) : undefined; p; p = p.parentId ? this.getNode(p.parentId) : undefined) depth++;
       frames.push({ id, depth });
     }
-    if (!frames.length) return;
+    if (!frames.length) return false;
     frames.sort((a, b) => b.depth - a.depth);
     this.relayouting = true;
     try {
@@ -365,15 +371,28 @@ export class DesignDoc {
         const frame = this.getNode(id);
         if (frame?.type !== 'FRAME') continue;
         const kids = this.children(id).filter((c) => c.visible);
-        const result = computeAutoLayout(frame, kids.map((c) => ({ id: c.id, width: c.width, height: c.height })));
+        const result = computeAutoLayout(
+          frame,
+          kids.map((c) => ({ id: c.id, width: c.width, height: c.height, fillWidth: c.layoutSizingH === 'FILL', fillHeight: c.layoutSizingV === 'FILL' })),
+        );
         if (!result) continue;
         const moves = kids.filter((c) => {
           const p = result.positions[c.id]!;
           return Math.abs(p.x - c.x) > 1e-6 || Math.abs(p.y - c.y) > 1e-6;
         });
         const resize = Math.abs(result.width - frame.width) > 1e-6 || Math.abs(result.height - frame.height) > 1e-6;
-        if (!moves.length && !resize) continue;
+        const resized = kids.filter((c) => {
+          const s = result.sizes[c.id];
+          return !!s && (Math.abs(s.width - c.width) > 1e-6 || Math.abs(s.height - c.height) > 1e-6);
+        });
+        if (!moves.length && !resize && !resized.length) continue;
+        changed = true;
         this.transact(() => {
+          for (const c of resized) {
+            const map = this.nodes.get(c.id)!;
+            map.set('width', result.sizes[c.id]!.width);
+            map.set('height', result.sizes[c.id]!.height);
+          }
           for (const c of moves) {
             const map = this.nodes.get(c.id)!;
             map.set('x', result.positions[c.id]!.x);
@@ -389,6 +408,7 @@ export class DesignDoc {
     } finally {
       this.relayouting = false;
     }
+    return changed;
   }
 
   /** Rebuild a document from bytes produced by `encodeState()`. */
@@ -570,6 +590,14 @@ export class DesignDoc {
       const extra: Record<string, unknown> = {};
       if (patch.width !== undefined && patch.width !== node.width) extra[widthKey] = 'FIXED';
       if (patch.height !== undefined && patch.height !== node.height) extra[heightKey] = 'FIXED';
+      this.setProps(id, { ...patch, ...extra });
+      return;
+    }
+    const parent = node.parentId ? this.getNode(node.parentId) : undefined;
+    if (parent?.type === 'FRAME' && (parent.layoutMode === 'HORIZONTAL' || parent.layoutMode === 'VERTICAL')) {
+      const extra: Record<string, unknown> = {};
+      if (patch.width !== undefined && patch.width !== node.width) extra.layoutSizingH = 'FIXED';
+      if (patch.height !== undefined && patch.height !== node.height) extra.layoutSizingV = 'FIXED';
       this.setProps(id, { ...patch, ...extra });
       return;
     }
