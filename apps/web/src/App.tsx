@@ -19,6 +19,8 @@ import { looksLikeSvg } from "./svg-import";
 import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { CommandPalette } from "./components/CommandPalette";
 import { Presenter } from "./components/Presenter";
+import { VersionHistory } from "./components/VersionHistory";
+import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
@@ -254,6 +256,10 @@ export function App() {
       } else if (!mod && (key === "+" || key === "=" || key === "-" || key === "_")) {
         e.preventDefault();
         s.setViewport(zoomBy(s.viewport, s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
+      } else if (mod && e.altKey && !e.shiftKey && key === "s" && !s.viewer) {
+        // Figma's "Save to version history"
+        e.preventDefault();
+        void saveVersion("");
       } else if (mod && e.altKey && !e.shiftKey && key === "enter" && !s.viewer) {
         // Figma's "Present"
         e.preventDefault();
@@ -392,6 +398,7 @@ export function App() {
       <ContextMenu />
       <CommandPalette />
       <Presenter />
+      <VersionHistory />
     </div>
   );
 }

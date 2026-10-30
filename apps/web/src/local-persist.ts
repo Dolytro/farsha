@@ -52,6 +52,15 @@ export async function readLocal(): Promise<LocalCopy | undefined> {
   return value && value.bytes instanceof Uint8Array ? value : undefined;
 }
 
+/** Generic keyed values in the same database, used for version history. */
+export async function readKey<T>(key: string): Promise<T | undefined> {
+  return run<T | undefined>("readonly", (s) => s.get(key));
+}
+
+export async function writeKey(key: string, value: unknown): Promise<void> {
+  await run("readwrite", (s) => s.put(value, key));
+}
+
 export async function clearLocal(): Promise<void> {
   await run("readwrite", (s) => s.delete(KEY));
 }

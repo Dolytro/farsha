@@ -61,6 +61,15 @@ export function DriveMenu() {
               }
             }}
           />
+          <button
+            className="drive__item"
+            onClick={() => {
+              setOpen(false);
+              useEditor.getState().setVersionsOpen(true);
+            }}
+          >
+            Version history…
+          </button>
           <div className="drive__divider" />
           {!driveConfigured ? (
             <p className="drive__note">Google Drive isn't configured. Set VITE_GOOGLE_CLIENT_ID and VITE_GOOGLE_API_KEY.</p>
