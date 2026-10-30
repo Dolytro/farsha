@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { armPasteMode, copyNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
+import { armPasteMode, copyNodes, duplicateNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
 
 function setup() {
   const doc = new DesignDoc();
@@ -244,5 +244,32 @@ describe("paste text and select all", () => {
     doc.setStyle(text, { locked: true });
     expect(selectAllIn(doc, [], page)).toEqual([frame]);
     expect(selectAllIn(doc, [rect], page)).toEqual([rect]);
+  });
+});
+
+describe("duplicate (Ctrl+D)", () => {
+  it("copies a frame with all its layers, offset by 10", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { x: 5, y: 5 } });
+    doc.createNode("RECTANGLE", { parentId: frame });
+    const [copy] = duplicateNodes(doc, [frame]);
+    expect(doc.getNode(copy!)).toMatchObject({ x: 15, y: 15, parentId: page });
+    expect(doc.children(copy!)).toHaveLength(1);
+  });
+
+  it("duplicates a main component into a new main, and an instance into an instance with its layers once", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const main = doc.createNode("FRAME", { parentId: page });
+    doc.createNode("RECTANGLE", { parentId: main });
+    doc.createComponent([main]);
+    const inst = doc.createInstance(main, page, 200, 0);
+    const [mainCopy] = duplicateNodes(doc, [main]);
+    expect(doc.getNode(mainCopy!)).toMatchObject({ isComponent: true });
+    expect(doc.children(mainCopy!)).toHaveLength(1);
+    const [instCopy] = duplicateNodes(doc, [inst]);
+    expect(doc.instanceOf(instCopy!)?.id).toBe(instCopy);
+    expect(doc.children(instCopy!)).toHaveLength(1);
   });
 });
