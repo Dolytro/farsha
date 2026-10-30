@@ -20,11 +20,11 @@ export interface StoredAsset {
 type NodeMap = Y.Map<unknown>;
 
 /** Keys that describe the instance link; never copied from the main component and never overridden. */
-const INSTANCE_KEYS = new Set(['id', 'type', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent']);
+const INSTANCE_KEYS = new Set(['id', 'type', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent', 'componentSetId', 'variantProps']);
 /** Keys of an instance's own root that belong to the instance (its place on the canvas and its name). */
 const ROOT_KEYS = new Set(['x', 'y', 'name', 'orderKey']);
 /** Keys not copied when a main component layer is cloned into an instance. */
-const CLONE_DROP = new Set(['id', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent']);
+const CLONE_DROP = new Set(['id', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent', 'componentSetId', 'variantProps']);
 type CreateProps = Partial<Omit<DesignNode, 'id' | 'type' | 'parentId' | 'orderKey'>>;
 
 export interface CreateNodeOptions {
@@ -389,6 +389,124 @@ export class DesignDoc {
     const node = this.requireNode(id);
     if (node.type !== 'FRAME' || !node.componentId) throw new Error('Not an instance');
     this.transact(() => this.stripInstance(id, this.rawChildren()));
+  }
+
+  // ---------- variants ----------
+
+  /** The main components of a variant set, left to right. */
+  variantsOf(mainId: string): DesignNode[] {
+    const main = this.getNode(mainId);
+    if (main?.type !== 'FRAME' || !main.isComponent) return [];
+    if (!main.componentSetId) return [main];
+    const out: DesignNode[] = [];
+    for (const id of this.nodes.keys()) {
+      const n = this.getNode(id);
+      if (n?.type === 'FRAME' && n.isComponent && n.componentSetId === main.componentSetId) out.push(n);
+    }
+    return out.sort((a, b) => a.x - b.x || a.y - b.y);
+  }
+
+  /** Property names with every value used by the variants, in order of first use. */
+  variantOptions(mainId: string): Record<string, string[]> {
+    const options: Record<string, string[]> = {};
+    for (const v of this.variantsOf(mainId)) {
+      for (const [prop, value] of Object.entries(v.type === 'FRAME' ? (v.variantProps ?? {}) : {})) {
+        const list = (options[prop] ??= []);
+        if (!list.includes(value)) list.push(value);
+      }
+    }
+    return options;
+  }
+
+  private copySubtree(srcId: string, parentId: string, extra: Record<string, unknown>): string {
+    const { id: _id, parentId: _p, orderKey: _o, type, ...props } = this.requireNode(srcId);
+    const id = this.createNode(type, { parentId, props: { ...props, ...extra } });
+    for (const child of this.children(srcId)) this.copySubtree(child.id, id, {});
+    return id;
+  }
+
+  /**
+   * Add a variant next to a main component: a copy of it in the same set. The first time, the set gets a property
+   * "Property 1" with the values "Variant 1" (the original) and "Variant 2" (the copy).
+   */
+  addVariant(mainId: string): string {
+    const main = this.requireNode(mainId);
+    if (main.type !== 'FRAME' || !main.isComponent) throw new Error('Variants need a main component');
+    let created = '';
+    this.transact(() => {
+      const setId = main.componentSetId ?? nanoid();
+      const variants = this.variantsOf(mainId);
+      let props: Record<string, string>;
+      if (!main.componentSetId) {
+        this.setProps(mainId, { componentSetId: setId, variantProps: { 'Property 1': 'Variant 1' } });
+        props = { 'Property 1': 'Variant 2' };
+      } else {
+        const names = Object.keys(main.variantProps ?? {});
+        props = Object.fromEntries((names.length ? names : ['Property 1']).map((n) => [n, `Variant ${variants.length + 1}`]));
+      }
+      const right = Math.max(...variants.map((v) => v.x + v.width));
+      created = this.copySubtree(mainId, main.parentId!, { componentSetId: setId, variantProps: props, x: right + 40, y: main.y });
+    });
+    return created;
+  }
+
+  /** Set this variant's value for a property. */
+  setVariantValue(mainId: string, prop: string, value: string): void {
+    const main = this.requireNode(mainId);
+    if (main.type !== 'FRAME' || !main.componentSetId) throw new Error('Not a variant');
+    this.setProps(mainId, { variantProps: { ...(main.variantProps ?? {}), [prop]: value } });
+  }
+
+  /** Add a property to every variant of the set. */
+  addVariantProperty(mainId: string, name: string): void {
+    const clean = name.trim();
+    const variants = this.variantsOf(mainId);
+    if (!clean || !variants.length || variants[0]!.type !== 'FRAME' || !variants[0]!.componentSetId) throw new Error('Add a variant first');
+    if (this.variantOptions(mainId)[clean]) throw new Error('That property already exists');
+    this.transact(() => {
+      for (const v of variants) this.setProps(v.id, { variantProps: { ...(v.type === 'FRAME' ? v.variantProps : {}), [clean]: 'Value 1' } });
+    });
+  }
+
+  renameVariantProperty(mainId: string, from: string, to: string): void {
+    const clean = to.trim();
+    if (!clean || clean === from) return;
+    if (this.variantOptions(mainId)[clean]) throw new Error('That property already exists');
+    this.transact(() => {
+      for (const v of this.variantsOf(mainId)) {
+        if (v.type !== 'FRAME' || !v.variantProps || !(from in v.variantProps)) continue;
+        this.setProps(v.id, { variantProps: Object.fromEntries(Object.entries(v.variantProps).map(([k, val]) => [k === from ? clean : k, val])) });
+      }
+    });
+  }
+
+  removeVariantProperty(mainId: string, prop: string): void {
+    this.transact(() => {
+      for (const v of this.variantsOf(mainId)) {
+        if (v.type !== 'FRAME' || !v.variantProps || !(prop in v.variantProps)) continue;
+        const { [prop]: _gone, ...rest } = v.variantProps;
+        this.setProps(v.id, { variantProps: rest });
+      }
+    });
+  }
+
+  /**
+   * Point an instance at another variant of its set: the one with the same property values, except that `prop` has `value`.
+   * Falls back to the variant that matches the most properties. The layers of the instance are rebuilt from the new variant.
+   */
+  swapInstanceVariant(instanceId: string, prop: string, value: string): void {
+    const inst = this.requireNode(instanceId);
+    if (inst.type !== 'FRAME' || !inst.componentId) throw new Error('Not an instance');
+    const current = this.getNode(inst.componentId);
+    if (current?.type !== 'FRAME' || !current.componentSetId) throw new Error('This component has no variants');
+    const wanted = { ...(current.variantProps ?? {}), [prop]: value };
+    const score = (v: DesignNode) => (v.type === 'FRAME' && v.variantProps ? Object.entries(wanted).filter(([k, val]) => v.variantProps![k] === val).length : -1);
+    const best = this.variantsOf(current.id)
+      .filter((v) => v.type === 'FRAME' && v.variantProps?.[prop] === value)
+      .sort((a, b) => score(b) - score(a))[0];
+    if (!best) throw new Error('No variant has that value');
+    if (best.id === current.id) return;
+    this.setProps(instanceId, { componentId: best.id });
   }
 
   /** Drop every override inside an instance so it matches its main component again. */

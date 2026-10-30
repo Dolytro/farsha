@@ -1682,3 +1682,15 @@ body {
     }
   }
 }
+
+.variant-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 24px;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.field__label--wide {
+  min-width: 70px;
+}

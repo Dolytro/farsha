@@ -34,7 +34,7 @@ export function Assets() {
       {mains.map((n) => (
         <li key={n.id} className="layers__item assets__item" title={viewer ? undefined : "Click to place an instance"} onClick={() => !viewer && place(n.id)}>
           <span className="layers__type layers__type--component">❖</span>
-          <span className="layers__name">{n.name}</span>
+          <span className="layers__name">{n.name}{n.type === "FRAME" && n.variantProps ? ` (${Object.entries(n.variantProps).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}</span>
         </li>
       ))}
     </ul>
