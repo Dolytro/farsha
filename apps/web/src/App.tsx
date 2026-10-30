@@ -22,6 +22,7 @@ import { Presenter } from "./components/Presenter";
 import { VersionHistory } from "./components/VersionHistory";
 import { VariablesDialog } from "./components/VariablesDialog";
 import { ExportDialog } from "./components/ExportDialog";
+import { FindBar } from "./components/FindBar";
 import { PreferencesDialog } from "./components/PreferencesDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
@@ -427,6 +428,10 @@ export function App() {
       } else if (mod && e.altKey && !e.shiftKey && ["l", "t", "r"].includes(key) && selection.length && !s.viewer && !e.metaKey) {
         e.preventDefault();
         setTextAlign(doc, selection, key === "l" ? "LEFT" : key === "t" ? "CENTER" : "RIGHT", refitText);
+      } else if (mod && !e.shiftKey && !e.altKey && key === "f" && !s.viewer) {
+        // Figma's "Find"
+        e.preventDefault();
+        s.setFindOpen(true);
       } else if (mod && e.shiftKey && !e.altKey && key === "k" && !s.viewer) {
         // Figma's "Place image"
         e.preventDefault();
@@ -518,6 +523,7 @@ export function App() {
       <VersionHistory />
       <VariablesDialog />
       <ExportDialog />
+      <FindBar />
       <PreferencesDialog />
     </div>
   );

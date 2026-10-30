@@ -622,3 +622,62 @@ textarea:focus-visible {
   &__underline { text-decoration: underline; }
   &__strikethrough { text-decoration: line-through; }
 }
+
+/* ---------- find bar ---------- */
+.findbar {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(520px, calc(100vw - 32px));
+  padding: 8px;
+  border: 1px solid var(--c-border);
+  border-radius: calc(var(--radius) + 6px);
+  background: var(--c-panel);
+  box-shadow: var(--shadow-pop);
+  transform: translateX(-50%);
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    height: var(--field-h);
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: var(--c-input);
+    color: var(--c-text);
+    font: inherit;
+
+    &:focus {
+      border-color: var(--c-accent);
+      outline: none;
+    }
+  }
+
+  &__count {
+    min-width: 64px;
+    color: var(--c-muted);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  &__btn {
+    flex: none;
+    padding: 0 12px;
+  }
+}
+
+.icon-btn--on {
+  background: var(--c-selected);
+  color: var(--c-accent);
+}

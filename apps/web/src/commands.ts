@@ -49,6 +49,8 @@ export function buildCommands(): Command[] {
     { id: "place-image", label: "Place image…", shortcut: `${MOD}${SHIFT}K`, keywords: "insert picture photo import", run: () => placeImagePicker() },
     { id: "export-dialog", label: "Export…", shortcut: `${MOD}${SHIFT}E`, keywords: "download png jpg svg", run: () => state().setExportOpen(true) },
     { id: "duplicate-file", label: "Duplicate file", keywords: "copy document", run: () => duplicateFile() },
+    { id: "find", label: "Find…", shortcut: `${MOD}F`, keywords: "search layers text", run: () => state().setFindOpen(true) },
+    { id: "find-replace", label: "Find and replace…", keywords: "search replace text", run: () => state().setFindOpen(true, true) },
     { id: "new-file", label: "New file", keywords: "blank document", run: () => newFile() },
     { id: "open-local", label: "Open local file…", keywords: "open canvylo", run: () => openLocalFilePicker() },
     { id: "select-none", label: "Select none", shortcut: "Esc", run: () => state().select([]) },

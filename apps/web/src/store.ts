@@ -72,6 +72,8 @@ interface EditorState {
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
+  findOpen: boolean;
+  findReplace: boolean;
   exportOpen: boolean;
   /** Bumped by "Collapse layers"; the Layers panel collapses every container when it changes. */
   collapseTick: number;
@@ -106,6 +108,8 @@ interface EditorState {
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  setFindOpen: (open: boolean, replace?: boolean) => void;
+  setFindReplace: (on: boolean) => void;
   setExportOpen: (open: boolean) => void;
   collapseLayers: () => void;
   setPixelGrid: (on: boolean) => void;
@@ -152,6 +156,8 @@ export const useEditor = create<EditorState>((set) => ({
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   paletteOpen: false,
+  findOpen: false,
+  findReplace: false,
   exportOpen: false,
   collapseTick: 0,
   pixelGrid: false,
@@ -197,6 +203,8 @@ export const useEditor = create<EditorState>((set) => ({
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setFindOpen: (findOpen, replace) => set((s) => ({ findOpen, findReplace: replace ?? s.findReplace })),
+  setFindReplace: (findReplace) => set({ findReplace }),
   setExportOpen: (exportOpen) => set({ exportOpen }),
   collapseLayers: () => set((s) => ({ collapseTick: s.collapseTick + 1 })),
   setPixelGrid: (pixelGrid) => set({ pixelGrid }),
