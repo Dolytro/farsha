@@ -15,7 +15,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Line (L), Arrow (Shift+L) | 🟡 | Drawn by dragging (Shift snaps to 15°), editable stroke colour / width, rotation. Missing: arrow head types, stroke caps, the arrow head stretches when the width changes, no handles on the line ends |
 | Polygon, Star | 🟡 | Toolbar buttons, fill and stroke editable. Missing: side count / star ratio controls, corner radius |
 | Image / video placement, paste or drop an image | ❌ | P1 |
-| Pen / vector editing, Pencil | ❌ | P2 |
+| Pen tool (P) | 🟡 | Click for corner points, drag for curve handles, click the first point to close, Enter / double-click / Esc to finish, Backspace removes the last point; result is a vector layer with editable stroke and fill. Missing: editing the points afterwards (vector edit mode), Pencil, joining paths, boolean operations |
 | Comment tool (C) | ❌ | P2 |
 | Color picker / eyedropper (I) (menu) | ❌ | P2 |
 | Tool dropdowns with variants in the toolbar | ❌ | P2 |

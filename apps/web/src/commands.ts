@@ -84,6 +84,7 @@ export function buildCommands(): Command[] {
     tool("arrow", "Arrow", `${SHIFT}L`),
     tool("polygon", "Polygon", ""),
     tool("star", "Star", ""),
+    tool("pen", "Pen", "P"),
     tool("text", "Text", "T"),
     {
       id: "zoom-fit",

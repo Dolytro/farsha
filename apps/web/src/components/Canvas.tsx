@@ -1,3 +1,4 @@
+import { PenLayer } from "./PenLayer";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
 import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
@@ -567,6 +568,7 @@ export function Canvas() {
           {guides.map((g, i) => (
             <line key={i} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke={RED} strokeWidth={sw} pointerEvents="none" />
           ))}
+          {tool === "pen" && !viewer && !devMode && <PenLayer svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
           {marquee && <rect x={marquee.x} y={marquee.y} width={marquee.width} height={marquee.height} fill={ACCENT} fillOpacity={0.08} stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />}
 
           {editing && editNode?.type === "TEXT" && editBox && (
