@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { TEXT_STYLE_KEYS, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
+import { TEXT_STYLE_KEYS, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -20,11 +20,11 @@ export interface StoredAsset {
 type NodeMap = Y.Map<unknown>;
 
 /** Keys that describe the instance link; never copied from the main component and never overridden. */
-const INSTANCE_KEYS = new Set(['id', 'type', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent', 'componentSetId', 'variantProps']);
+const INSTANCE_KEYS = new Set(['id', 'type', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent', 'componentSetId', 'variantProps', 'componentProps', 'propValues']);
 /** Keys of an instance's own root that belong to the instance (its place on the canvas and its name). */
 const ROOT_KEYS = new Set(['x', 'y', 'name', 'orderKey']);
 /** Keys not copied when a main component layer is cloned into an instance. */
-const CLONE_DROP = new Set(['id', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent', 'componentSetId', 'variantProps']);
+const CLONE_DROP = new Set(['id', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent', 'componentSetId', 'variantProps', 'componentProps', 'propValues']);
 type CreateProps = Partial<Omit<DesignNode, 'id' | 'type' | 'parentId' | 'orderKey'>>;
 
 export interface CreateNodeOptions {
@@ -236,7 +236,7 @@ export class DesignDoc {
             if (!main || !main.get('isComponent') || this.insideRaw(id, componentId)) {
               this.stripInstance(id, kids);
               changed = true;
-            } else if (this.syncNode(componentId, id, true, kids)) changed = true;
+            } else if (this.syncNode(componentId, id, true, kids, this.controlledLayers(main, map))) changed = true;
           }
           if (!changed) break;
         }
@@ -255,12 +255,32 @@ export class DesignDoc {
     return false;
   }
 
-  private syncNode(srcId: string, dstId: string, root: boolean, kids: Map<string, string[]>): boolean {
+  /** Layers of an instance whose visibility or text is set by a component property: main layer id -> the key and value to apply. */
+  private controlledLayers(main: NodeMap, instance: NodeMap): Map<string, { key: 'visible' | 'characters'; value: boolean | string }> {
+    const out = new Map<string, { key: 'visible' | 'characters'; value: boolean | string }>();
+    const props = (main.get('componentProps') as ComponentProperty[] | undefined) ?? [];
+    const values = (instance.get('propValues') as Record<string, boolean | string> | undefined) ?? {};
+    for (const p of props) out.set(p.targetId, { key: p.type === 'BOOLEAN' ? 'visible' : 'characters', value: values[p.id] ?? p.defaultValue });
+    return out;
+  }
+
+  private syncNode(
+    srcId: string,
+    dstId: string,
+    root: boolean,
+    kids: Map<string, string[]>,
+    controlled: Map<string, { key: 'visible' | 'characters'; value: boolean | string }> = new Map(),
+  ): boolean {
     const src = this.nodes.get(srcId)!;
     const dst = this.nodes.get(dstId)!;
     const overridden = new Set((dst.get('overrides') as string[] | undefined) ?? []);
-    const skip = (key: string) => INSTANCE_KEYS.has(key) || overridden.has(key) || (root && ROOT_KEYS.has(key));
+    const control = controlled.get((dst.get('mainId') as string | undefined) ?? '');
+    const skip = (key: string) => INSTANCE_KEYS.has(key) || overridden.has(key) || (root && ROOT_KEYS.has(key)) || key === control?.key;
     let changed = false;
+    if (control && dst.get(control.key) !== control.value) {
+      dst.set(control.key, control.value);
+      changed = true;
+    }
     for (const key of src.keys()) {
       if (skip(key)) continue;
       const value = src.get(key);
@@ -284,7 +304,7 @@ export class DesignDoc {
     for (const sk of srcKids) {
       const dk = mirrored.get(sk);
       if (dk) {
-        if (this.syncNode(sk, dk, false, kids)) changed = true;
+        if (this.syncNode(sk, dk, false, kids, controlled)) changed = true;
       } else {
         this.cloneInto(sk, dstId, kids);
         changed = true;
@@ -507,6 +527,55 @@ export class DesignDoc {
     if (!best) throw new Error('No variant has that value');
     if (best.id === current.id) return;
     this.setProps(instanceId, { componentId: best.id });
+  }
+
+  // ---------- component properties ----------
+
+  /** Add a property to a main component, controlling one of its layers. The default is what that layer is now. */
+  addComponentProperty(mainId: string, type: 'BOOLEAN' | 'TEXT', targetId: string, name?: string): string {
+    const main = this.requireNode(mainId);
+    if (main.type !== 'FRAME' || !main.isComponent) throw new Error('Properties belong to a main component');
+    const target = this.requireNode(targetId);
+    if (targetId === mainId || !this.isAncestor(mainId, targetId)) throw new Error('Pick a layer inside the component');
+    if (type === 'TEXT' && target.type !== 'TEXT') throw new Error('A text property needs a text layer');
+    const props = main.componentProps ?? [];
+    const id = nanoid();
+    const clean = name?.trim() || (type === 'BOOLEAN' ? `Show ${target.name}` : target.name);
+    const unique = props.some((p) => p.name === clean) ? `${clean} ${props.length + 1}` : clean;
+    const prop: ComponentProperty = { id, name: unique, type, targetId, defaultValue: type === 'BOOLEAN' ? target.visible : target.type === 'TEXT' ? target.characters : '' };
+    this.setProps(mainId, { componentProps: [...props, prop] });
+    return id;
+  }
+
+  updateComponentProperty(mainId: string, propId: string, patch: Partial<Pick<ComponentProperty, 'name' | 'defaultValue' | 'targetId'>>): void {
+    const main = this.requireNode(mainId);
+    if (main.type !== 'FRAME') throw new Error('Not a component');
+    const props = main.componentProps ?? [];
+    const prop = props.find((p) => p.id === propId);
+    if (!prop) throw new Error('Property not found');
+    if (patch.targetId) {
+      const target = this.requireNode(patch.targetId);
+      if (patch.targetId === mainId || !this.isAncestor(mainId, patch.targetId)) throw new Error('Pick a layer inside the component');
+      if (prop.type === 'TEXT' && target.type !== 'TEXT') throw new Error('A text property needs a text layer');
+    }
+    const next = { ...prop, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.defaultValue !== undefined ? { defaultValue: patch.defaultValue } : {}), ...(patch.targetId ? { targetId: patch.targetId } : {}) };
+    this.setProps(mainId, { componentProps: props.map((p) => (p.id === propId ? next : p)) });
+  }
+
+  removeComponentProperty(mainId: string, propId: string): void {
+    const main = this.requireNode(mainId);
+    if (main.type !== 'FRAME') throw new Error('Not a component');
+    this.setProps(mainId, { componentProps: (main.componentProps ?? []).filter((p) => p.id !== propId) });
+  }
+
+  /** Set (or with undefined, clear) an instance's value for one of its component's properties. */
+  setInstanceProperty(instanceId: string, propId: string, value: boolean | string | undefined): void {
+    const inst = this.requireNode(instanceId);
+    if (inst.type !== 'FRAME' || !inst.componentId) throw new Error('Not an instance');
+    const next = { ...(inst.propValues ?? {}) };
+    if (value === undefined) delete next[propId];
+    else next[propId] = value;
+    this.setProps(instanceId, { propValues: next });
   }
 
   /** Drop every override inside an instance so it matches its main component again. */
