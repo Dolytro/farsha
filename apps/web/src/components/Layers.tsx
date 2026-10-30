@@ -4,6 +4,7 @@ import { useEditor } from "../store";
 import { addPage, deletePage } from "../pages";
 import { isContainer, layerRows, moveLayers, type DropWhere, type LayerRow } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
+import { Assets } from "./Assets";
 
 const ICONS: Record<string, string> = { FRAME: "#", GROUP: "▤", RECTANGLE: "▭", ELLIPSE: "◯", TEXT: "T", IMAGE: "▨", VECTOR: "◇" };
 
@@ -52,6 +53,7 @@ export function Layers() {
 
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<"layers" | "assets">("layers");
   const [drop, setDrop] = useState<{ id: string; where: DropWhere } | null>(null);
   const dragging = useRef<string[]>([]);
   const rows = layerRows(doc, pageId, collapsed, query);
@@ -210,9 +212,21 @@ export function Layers() {
           </li>
         ))}
       </ul>
-      <h2 className="panel-title">Layers</h2>
-      <input className="layers__search" type="search" placeholder="Search layers" value={query} onChange={(e) => setQuery(e.target.value)} />
-      <ul className="layers__list">{rows.map(renderRow)}</ul>
+      <div className="layers__tabs" role="tablist">
+        {(["layers", "assets"] as const).map((t) => (
+          <button key={t} role="tab" aria-selected={tab === t} className={`layers__tab${tab === t ? " layers__tab--active" : ""}`} onClick={() => setTab(t)}>
+            {t === "layers" ? "Layers" : "Assets"}
+          </button>
+        ))}
+      </div>
+      {tab === "assets" ? (
+        <Assets />
+      ) : (
+        <>
+          <input className="layers__search" type="search" placeholder="Search layers" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <ul className="layers__list">{rows.map(renderRow)}</ul>
+        </>
+      )}
     </aside>
   );
 }

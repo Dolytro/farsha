@@ -349,7 +349,7 @@ Where the session stopped: everything above is committed and pushed to `main`, V
 180 tests pass. Nothing is half-done in the working tree. `.claude/launch.json` (preview server config) is committed.
 
 Suggested order (each is one feature = build, test, fix, push):
-1. **Components round 2**: Assets panel to insert instances, then variants / component properties. (Round 1, main +
+1. **Components round 2**: variants / component properties. (Round 1, main +
    instances + overrides + detach, is done, see "Components" in section 7.)
 2. Styles (color / text / effect) and variables.
 3. Multiple fills and strokes, hex input, Line / Arrow / Polygon / Star, Pen tool.
