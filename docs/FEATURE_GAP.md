@@ -121,7 +121,7 @@ Interactions (click / hover / drag), navigate / overlay / back, transitions, sma
 | Save / open / autosave (Google Drive), new file | ✅ | |
 | Rename the file (title in the top bar) | ❌ | P1 |
 | Home / recent files / folders / trash | ❌ | P2 |
-| Duplicate, "Save local copy" (.canvylo download), import local file (menu) | ❌ | P1 |
+| Save local copy (.canvylo download), open local file | ✅ | In the cloud menu, works without signing in. Missing: Duplicate file, drag a .canvylo onto the canvas |
 | Export all (File → Export, Ctrl+Shift+E), export frames to PDF (menu) | ❌ | P2 |
 | Import SVG / images / drag and drop files | ❌ | P1 |
 | Version history, restore | ❌ | P2 |
