@@ -8,7 +8,7 @@ import { saveLocalCopy } from "./local-file";
 import { pickColorFromScreen } from "./eyedropper";
 import { startFrame } from "./prototype";
 import { saveVersion } from "./versions";
-import { selectChildren, selectInverse, selectParent } from "./selection-nav";
+import { selectMatching, selectChildren, selectInverse, selectParent } from "./selection-nav";
 import { useEditor, type Tool } from "./store";
 
 export interface Command {
@@ -40,6 +40,7 @@ export function buildCommands(): Command[] {
     { id: "redo", label: "Redo", shortcut: `${MOD}${SHIFT}Z`, run: () => doc().redo() },
     { id: "select-all", label: "Select all", shortcut: `${MOD}A`, run: () => state().select(selectAllIn(doc(), sel(), state().pageId)) },
     { id: "select-inverse", label: "Select inverse", shortcut: `${MOD}${SHIFT}A`, needsSelection: true, run: () => state().select(selectInverse(doc(), sel(), state().pageId)) },
+    { id: "select-matching", label: "Select all matching properties", shortcut: `${MOD}${ALT}A`, needsSelection: true, keywords: "same fill color font", run: () => state().select(selectMatching(doc(), sel(), state().pageId)) },
     { id: "select-children", label: "Select children", shortcut: "Enter", needsSelection: true, run: () => state().select(selectChildren(doc(), sel())) },
     { id: "select-parent", label: "Select parent", shortcut: `${SHIFT}Enter`, needsSelection: true, run: () => state().select(selectParent(doc(), sel(), state().pageId)) },
     { id: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, needsSelection: true, run: () => state().select(duplicateNodes(doc(), sel())) },

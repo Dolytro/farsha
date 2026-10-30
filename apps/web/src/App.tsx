@@ -6,7 +6,7 @@ import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
-import { selectChildren, selectInverse, selectParent, selectSibling } from "./selection-nav";
+import { selectMatching, selectChildren, selectInverse, selectParent, selectSibling } from "./selection-nav";
 import { createComponentFromSelection, detachSelection } from "./component-actions";
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
@@ -240,6 +240,10 @@ export function App() {
         // Figma's "Actions" search
         e.preventDefault();
         s.setPaletteOpen(!s.paletteOpen);
+      } else if (mod && e.altKey && !e.shiftKey && key === "a" && selection.length && !s.viewer) {
+        // Figma's "Select all matching properties"
+        e.preventDefault();
+        s.select(selectMatching(doc, selection, s.pageId));
       } else if (mod && e.shiftKey && !e.altKey && key === "a" && !s.viewer) {
         // Figma's "Select inverse"
         e.preventDefault();

@@ -37,3 +37,21 @@ export function selectInverse(doc: DesignDoc, ids: string[], pageId: string): st
   const parentId = first?.parentId ?? pageId;
   return doc.children(parentId).filter((n) => pickable(doc, n.id) && !ids.includes(n.id)).map((n) => n.id);
 }
+
+/**
+ * Figma's "Select all matching properties" (Ctrl+Alt+A): every unlocked, visible layer on the page with the same type, fills and
+ * strokes as the first selected layer (and the same font, for text).
+ */
+export function selectMatching(doc: DesignDoc, ids: string[], pageId: string): string[] {
+  const first = ids[0] ? doc.getNode(ids[0]) : undefined;
+  if (!first) return ids;
+  const key = (n: NonNullable<ReturnType<DesignDoc["getNode"]>>) => {
+    const any = n as unknown as Record<string, unknown>;
+    return JSON.stringify([n.type, any.fills ?? null, any.strokes ?? null, n.type === "TEXT" ? [any.fontFamily, any.fontSize, any.fontWeight] : null]);
+  };
+  const wanted = key(first);
+  return doc
+    .descendants(pageId)
+    .filter((n) => pickable(doc, n.id) && key(n) === wanted)
+    .map((n) => n.id);
+}
