@@ -186,7 +186,8 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | File | New file, Place image… (Ctrl+Shift+K), Duplicate, Open / Save local copy, Save to version history (Ctrl+Alt+S), Show version history, Export… (Ctrl+Shift+E: selection, or every frame of the page) | ✅ |
 | File | Export frames to PDF, Create branch | ❌ (PDF later; branching needs a backend) |
 | Edit | Undo / Redo, Copy as, Paste over selection, Duplicate, Delete, Copy / Paste properties, Pick color, Select all / matching / none / inverse | ✅ |
-| Edit | Paste to replace (Ctrl+Shift+R alias), Find (Ctrl+F) / next / previous, Find and replace, Set default properties, Select all with… | ❌ |
+| Edit | Find (Ctrl+F: layer names and text, Enter / Shift+Enter step through the matches, Match case), Find and replace (text layers) | ✅ |
+| Edit | Paste to replace under Ctrl+Shift+R (the browser reserves it; it stays Ctrl+Alt+Shift+V), Set default properties, Select all with… | ❌ |
 | View | Zoom in / out / 100% / fit / selection, previous / next page, zoom to previous / next frame | ✅ |
 | View | Outlines, Panels (show / hide each panel), Find previous / next frame (Home / End), Switch to Draw | ❌ |
 | Object | Frame selection, Group, Ungroup, Use as mask, Add auto layout, Create component, Reset / Detach instance, Main component, order, Flip, Show / Hide, Lock / Unlock | ✅ |

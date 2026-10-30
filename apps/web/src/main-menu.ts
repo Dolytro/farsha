@@ -58,6 +58,7 @@ export function buildMainMenu(): MenuNode[] {
         item("duplicate", undefined, true),
         item("delete"),
         item("find", "Find…", true),
+        item("find-replace", "Find and replace…"),
         item("copy-props", "Copy properties", true),
         item("paste-props", "Paste properties"),
         item("eyedropper", "Pick color"),
