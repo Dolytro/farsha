@@ -54,7 +54,7 @@ async function pasteFromFigma(html: string, parentId: string, cx: number, cy: nu
 }
 
 const ALIGN_KEYS: Record<string, AlignMode> = { KeyA: "left", KeyH: "hcenter", KeyD: "right", KeyW: "top", KeyV: "vcenter", KeyS: "bottom" };
-const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text", l: "line" };
+const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text", l: "line", p: "pen" };
 
 export function App() {
   const loadState = useEditor((s) => s.loadState);
