@@ -6,6 +6,7 @@ import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
 import { saveLocalCopy } from "./local-file";
 import { startFrame } from "./prototype";
+import { saveVersion } from "./versions";
 import { selectChildren, selectInverse, selectParent } from "./selection-nav";
 import { useEditor, type Tool } from "./store";
 
@@ -168,6 +169,8 @@ export function buildCommands(): Command[] {
         },
       }),
     ),
+    { id: "save-version", label: "Save to version history", shortcut: `${MOD}${ALT}S`, keywords: "snapshot checkpoint", run: async () => void (await saveVersion("")) },
+    { id: "show-versions", label: "Show version history", keywords: "restore snapshot", run: () => state().setVersionsOpen(true) },
     { id: "save-local", label: "Save local copy", keywords: "download file .canvylo", run: saveLocalCopy },
     { id: "share", label: "Share", keywords: "link", run: () => state().setShareOpen(true) },
   ];

@@ -124,7 +124,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Save local copy (.canvylo download), open local file | ✅ | In the cloud menu, works without signing in. Missing: Duplicate file, drag a .canvylo onto the canvas |
 | Export all (File → Export, Ctrl+Shift+E), export frames to PDF (menu) | ❌ | P2 |
 | Import SVG / images / drag and drop files | ❌ | P1 |
-| Version history, restore | ❌ | P2 |
+| Version history, restore | 🟡 | Save a named version (Ctrl+Alt+S, Actions, cloud menu → Version history), list, restore (the current state is saved first), delete; newest 30 kept in this browser per file. Missing: automatic versions, versions on Drive (shared across devices), visual compare |
 | Branching (menu: Create branch) | ❌ | P3 |
 | Offline editing and sync queue | ❌ | P3 |
 
