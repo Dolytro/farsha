@@ -8,6 +8,8 @@ import { createComponentFromSelection, detachSelection, resetSelection } from ".
 import { openLocalFilePicker, saveLocalCopy } from "./local-file";
 import { hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, swapFillAndStroke } from "./object-actions";
 import { newFile } from "./drive/session";
+import { fitText } from "./text-layout";
+import { setTextAlign, setTextCase, toggleTextStyle } from "./text-actions";
 import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
 import { startFrame } from "./prototype";
@@ -88,6 +90,17 @@ export function buildCommands(): Command[] {
         },
       }),
     ),
+    { id: "text-bold", label: "Bold", shortcut: `${MOD}B`, needsSelection: true, keywords: "text weight", run: () => void toggleTextStyle(doc(), sel(), "bold", fitText) },
+    { id: "text-italic", label: "Italic", shortcut: `${MOD}I`, needsSelection: true, keywords: "text style", run: () => void toggleTextStyle(doc(), sel(), "italic", fitText) },
+    { id: "text-underline", label: "Underline", shortcut: `${MOD}U`, needsSelection: true, keywords: "text decoration", run: () => void toggleTextStyle(doc(), sel(), "underline", fitText) },
+    { id: "text-strike", label: "Strikethrough", shortcut: `${MOD}${SHIFT}X`, needsSelection: true, keywords: "text decoration line through", run: () => void toggleTextStyle(doc(), sel(), "strikethrough", fitText) },
+    { id: "text-case-none", label: "Original case", needsSelection: true, keywords: "text case", run: () => void setTextCase(doc(), sel(), "NONE", fitText) },
+    { id: "text-case-upper", label: "Upper case", needsSelection: true, keywords: "text case capitals", run: () => void setTextCase(doc(), sel(), "UPPER", fitText) },
+    { id: "text-case-lower", label: "Lower case", needsSelection: true, keywords: "text case", run: () => void setTextCase(doc(), sel(), "LOWER", fitText) },
+    { id: "text-case-title", label: "Title case", needsSelection: true, keywords: "text case capitalize", run: () => void setTextCase(doc(), sel(), "TITLE", fitText) },
+    { id: "text-align-left", label: "Align text left", shortcut: `${MOD}${ALT}L`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "LEFT", fitText) },
+    { id: "text-align-center", label: "Align text center", shortcut: `${MOD}${ALT}T`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "CENTER", fitText) },
+    { id: "text-align-right", label: "Align text right", shortcut: `${MOD}${ALT}R`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "RIGHT", fitText) },
     { id: "rotate-180", label: "Rotate 180°", needsSelection: true, keywords: "turn", run: () => void rotateSelectionBy(doc(), sel(), 180) },
     { id: "rotate-left", label: "Rotate 90° left", needsSelection: true, keywords: "turn counterclockwise", run: () => void rotateSelectionBy(doc(), sel(), -90) },
     { id: "rotate-right", label: "Rotate 90° right", needsSelection: true, keywords: "turn clockwise", run: () => void rotateSelectionBy(doc(), sel(), 90) },

@@ -1,4 +1,5 @@
 import { duplicateNodes } from "../clipboard";
+import { textFontStyle, verticalTextOffset } from "@canvylo/canvas-engine";
 import { PINCH_STRENGTH, WHEEL_STRENGTH, wheelZoomFactor } from "../prefs";
 import { showPixelGrid, visibleWorld } from "../pixel-grid";
 import { PenLayer } from "./PenLayer";
@@ -417,12 +418,13 @@ export function Canvas() {
             xmlSpace="preserve"
             x={n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0}
             textAnchor={n.textAlign === "CENTER" ? "middle" : n.textAlign === "RIGHT" ? "end" : "start"}
-            y={textBaseline(n)}
+            y={textBaseline(n) + verticalTextOffset(n, layoutText(n, canvasMeasure).height)}
             letterSpacing={n.letterSpacing || undefined}
             fill={color}
             fontFamily={n.fontFamily}
             fontSize={n.fontSize}
             fontWeight={n.fontWeight}
+            {...textFontStyle(n)}
           >
             {layoutText(n, canvasMeasure).lines.map((line, i) => (
               <tspan key={i} x={n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0} dy={i ? lineHeightPx(n) : 0}>

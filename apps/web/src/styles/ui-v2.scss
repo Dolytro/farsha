@@ -613,3 +613,12 @@ textarea:focus-visible {
     opacity: 0.7;
   }
 }
+
+.typo-format {
+  margin-top: 8px;
+
+  &__bold { font-weight: 800; }
+  &__italic { font-style: italic; }
+  &__underline { text-decoration: underline; }
+  &__strikethrough { text-decoration: line-through; }
+}

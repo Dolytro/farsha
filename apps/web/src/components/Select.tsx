@@ -117,14 +117,16 @@ export function Select({ value, onChange, children, className = "", title, disab
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    e.stopPropagation();
     if (!open) {
+      // closed: only the keys that open the list are ours; every other shortcut keeps working while the button has focus
       if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) {
         e.preventDefault();
+        e.stopPropagation();
         setOpen(true);
       }
       return;
     }
+    e.stopPropagation();
     if (e.key === "Escape") {
       e.preventDefault();
       close();

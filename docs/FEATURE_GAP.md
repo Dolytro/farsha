@@ -192,7 +192,8 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Object | Frame selection, Group, Ungroup, Use as mask, Add auto layout, Create component, Reset / Detach instance, Main component, order, Flip, Show / Hide, Lock / Unlock | ✅ |
 | Object | Ungroup with Ctrl+Backspace, Rotate 180° / 90° left / 90° right, Hide other layers, Collapse layers (Alt+L), Remove fill (Alt+/), Remove stroke (Shift+/), Swap fill and stroke (Shift+X), Remove interactions | ✅ (Delete contents ❌) |
 | Object | Wrap in new section (Ctrl+S), Convert to section / frame (Section tool Shift+S, Slice tool S), Flatten (Alt+Shift+F), Outline stroke (Ctrl+Alt+O), Boolean groups (live), Slots | ❌ |
-| Text | Bold / Italic (Ctrl+B / I), Underline (Ctrl+U), Strikethrough, Create link, Bulleted / Numbered list, Alignment, Case, Text direction, Spell check, Text on path | ❌ |
+| Text | Bold / Italic (Ctrl+B / I), Underline (Ctrl+U), Strikethrough (Ctrl+Shift+X), Alignment (Ctrl+Alt+L / T / R), Case, vertical alignment: whole-layer styles, Text menu and Typography panel | ✅ (formatting applies to the whole text layer) |
+| Text | Rich text: different styles inside one text layer, Create link, Bulleted / Numbered list, Text direction, Spell check, Text on path | ❌ |
 | Arrange | Align left / centers / right / top / middle / bottom (Alt+A H D W V S) | ✅ |
 | Arrange | Round to pixel, Tidy up (Ctrl+Alt+Shift+T), Pack horizontal / vertical, Distribute spacing (Alt+Shift+H / V), Distribute left / centers / right / top / middle / bottom | ✅ (Pack closes all gaps; Tidy up finds rows from the positions) |
 | Vector | Join selection (Ctrl+J), Smooth join, Delete and heal, Split vector, Simplify vector, Offset vector | ❌ |

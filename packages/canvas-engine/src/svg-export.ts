@@ -4,7 +4,7 @@ import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMa
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
-import { approxMeasure, layoutText, type Measure } from "./text";
+import { approxMeasure, layoutText, textFontStyle, verticalTextOffset, type Measure } from "./text";
 
 export interface SvgExport {
   svg: string;
@@ -71,9 +71,11 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     case "TEXT": {
       const anchor = n.textAlign === "CENTER" ? ' text-anchor="middle"' : n.textAlign === "RIGHT" ? ' text-anchor="end"' : "";
       const x = n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0;
-      const { lines, lineHeight } = layoutText(n, measure);
+      const { lines, lineHeight, height: textHeight } = layoutText(n, measure);
+      const style = textFontStyle(n);
+      const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;
       const spans = lines.map((l, i) => `<tspan x="${num(x)}" dy="${i ? num(lineHeight) : 0}">${esc(l)}</tspan>`).join("");
-      return `<g transform="${transform}"${opacity}><text x="${num(x)}" y="${num(textBaseline(n))}"${anchor}${letterSpacingAttr(n)} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs} xml:space="preserve">${spans}</text></g>`;
+      return `<g transform="${transform}"${opacity}><text x="${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs} xml:space="preserve">${spans}</text></g>`;
     }
     case "FRAME": {
       const clipId = `clip-${n.id}`;
