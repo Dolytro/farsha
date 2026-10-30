@@ -710,6 +710,12 @@ button {
     font-weight: 600;
   }
 
+  &__divider {
+    height: 1px;
+    margin: 6px 0;
+    background: var(--c-border);
+  }
+
   &__note {
     margin: 4px 6px;
 

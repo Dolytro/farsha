@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { driveConfigured, getToken } from "../drive/google";
 import { listFiles, type DriveFile } from "../drive/drive";
 import { connect, disconnect, newFile, openFile, save } from "../drive/session";
+import { openLocalFile, saveLocalCopy } from "../local-file";
 import { useEditor, type SaveStatus } from "../store";
 
 const STATUS: Record<SaveStatus, string> = {
@@ -17,6 +18,7 @@ export function DriveMenu() {
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<DriveFile[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open || !drive.user) return;
@@ -33,6 +35,33 @@ export function DriveMenu() {
       </button>
       {open && (
         <div className="drive__menu" role="menu">
+          <button
+            className="drive__item"
+            onClick={() => {
+              setOpen(false);
+              saveLocalCopy();
+            }}
+          >
+            Save local copy
+          </button>
+          <button className="drive__item" onClick={() => picker.current?.click()}>
+            Open local file…
+          </button>
+          <input
+            ref={picker}
+            type="file"
+            accept=".canvylo"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) {
+                setOpen(false);
+                void openLocalFile(file);
+              }
+            }}
+          />
+          <div className="drive__divider" />
           {!driveConfigured ? (
             <p className="drive__note">Google Drive isn't configured. Set VITE_GOOGLE_CLIENT_ID and VITE_GOOGLE_API_KEY.</p>
           ) : !drive.user ? (
