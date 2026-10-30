@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc, defaultsFor } from "@canvylo/design-core";
-import { declarations, generateCode, tailwindClass, toRgba } from "./index";
+import { backgroundCss, declarations, generateCode, tailwindClass, toRgba } from "./index";
 
 function setup() {
   const doc = new DesignDoc();
@@ -136,5 +136,18 @@ describe("generateCode", () => {
     const children = (id: string) => doc.children(id);
     expect(generateCode(doc.getNode(frame)!, children, "react")).toMatch(/^export function Card\(\)/);
     expect(generateCode(doc.getNode(frame)!, children, "tailwind")).toContain("absolute left-[20px] top-[30px] w-[120px] h-[44px]");
+  });
+});
+
+describe("multiple fills", () => {
+  it("lists the top fill first and wraps upper solid colours in a gradient", () => {
+    const css = backgroundCss([
+      { type: "SOLID", color: "#ff0000", opacity: 1 },
+      { type: "SOLID", color: "#0000ff", opacity: 0.5 },
+    ]);
+    expect(css).toBe("linear-gradient(rgba(0, 0, 255, 0.5), rgba(0, 0, 255, 0.5)), #ff0000");
+  });
+  it("keeps a single solid fill as a plain colour", () => {
+    expect(backgroundCss([{ type: "SOLID", color: "#ff0000", opacity: 1 }])).toBe("#ff0000");
   });
 });

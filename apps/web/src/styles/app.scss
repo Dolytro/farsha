@@ -1200,3 +1200,13 @@ body {
     font-size: 10px;
   }
 }
+
+.fill-item {
+  margin-bottom: 8px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}

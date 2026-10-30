@@ -185,3 +185,14 @@ describe("exportSvg", () => {
     expect(exportSvg(doc, [page])).toBeNull();
   });
 });
+
+describe("multiple fills", () => {
+  it("draws every fill, bottom first", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("RECTANGLE", { parentId: page, props: { fills: [...solid("#ff0000"), ...solid("#0000ff", 0.5)] } });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg.indexOf('fill="#ff0000"')).toBeGreaterThan(-1);
+    expect(svg.indexOf('fill="#0000ff"')).toBeGreaterThan(svg.indexOf('fill="#ff0000"'));
+  });
+});
