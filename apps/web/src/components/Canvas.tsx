@@ -1,3 +1,4 @@
+import { duplicateNodes } from "../clipboard";
 import { PINCH_STRENGTH, WHEEL_STRENGTH, wheelZoomFactor } from "../prefs";
 import { showPixelGrid, visibleWorld } from "../pixel-grid";
 import { PenLayer } from "./PenLayer";
@@ -171,6 +172,14 @@ export function Canvas() {
       select(next);
       if (next.includes(hit.id)) {
         doc.stopCapturing();
+        // Figma: Alt+drag drags a copy and leaves the original where it was
+        if (e.altKey && !viewer) {
+          const copies = duplicateNodes(doc, next, 0, false);
+          if (copies.length) {
+            next = copies;
+            select(copies);
+          }
+        }
         const origins: Record<string, { x: number; y: number }> = {};
         for (const id of next) {
           const n = doc.getNode(id);
