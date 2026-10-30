@@ -1,8 +1,10 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import { paintColor, type DesignNode, type Effect, type Paint, type StrokeAlign } from "@canvylo/types";
+import { paintColor, type DesignNode, type Effect, type LineEnd, type Paint, type StrokeAlign, type StrokeCap, type StrokeJoin } from "@canvylo/types";
 import { HexInput } from "./HexInput";
 import { VariableButton, VariableChip } from "./VariableMenu";
 import { Select } from "./Select";
+
+const LINE_END_LABEL: Record<LineEnd, string> = { NONE: "none", ARROW_LINES: "line arrow", ARROW_FILLED: "triangle arrow", CIRCLE: "circle", SQUARE: "square", DIAMOND: "diamond" };
 
 const ALIGN_LABEL: Record<StrokeAlign, string> = { INSIDE: "Inside", CENTER: "Center", OUTSIDE: "Outside" };
 const EFFECT_LABEL: Record<Effect["type"], string> = { DROP_SHADOW: "Drop shadow", INNER_SHADOW: "Inner shadow", LAYER_BLUR: "Layer blur" };
@@ -71,8 +73,57 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
           </Select>
           <label className="field">
             <span className="field__label">W</span>
-            <input className="field__input" type="number" min={0} step={0.5} value={node.strokeWidth} onChange={(e) => doc.setStyle(node.id, { strokeWidth: Math.max(0, Number(e.target.value)) })} />
+            <input className="field__input" type="number" min={0} step={0.5} value={node.strokeWidth ?? 1} onChange={(e) => doc.setStyle(node.id, { strokeWidth: Math.max(0, Number(e.target.value)) })} />
           </label>
+        </div>
+      )}
+      {strokes.length > 0 && (
+        <div className="props__grid props__grid--gap">
+          <label className="field" title="Dash length in pixels (0 = solid line)">
+            <span className="field__label">Dash</span>
+            <input
+              className="field__input"
+              type="number"
+              min={0}
+              value={node.strokeDash?.[0] ?? 0}
+              onChange={(e) => {
+                const dash = Math.max(0, Number(e.target.value));
+                doc.setStyle(node.id, { strokeDash: dash > 0 ? [dash, node.strokeDash?.[1] ?? dash] : [] });
+              }}
+            />
+          </label>
+          <label className="field" title="Gap between dashes in pixels">
+            <span className="field__label">Gap</span>
+            <input
+              className="field__input"
+              type="number"
+              min={0}
+              disabled={!(node.strokeDash?.[0] ?? 0)}
+              value={node.strokeDash?.[1] ?? 0}
+              onChange={(e) => doc.setStyle(node.id, { strokeDash: [node.strokeDash?.[0] ?? 0, Math.max(0, Number(e.target.value))] })}
+            />
+          </label>
+          <Select className="field__select" aria-label="Stroke cap" title="Line cap" value={node.strokeCap ?? (node.type === "VECTOR" ? "ROUND" : "NONE")} onChange={(e) => doc.setStyle(node.id, { strokeCap: e.target.value as StrokeCap })}>
+            <option value="NONE">Cap: none</option>
+            <option value="ROUND">Cap: round</option>
+            <option value="SQUARE">Cap: square</option>
+          </Select>
+          <Select className="field__select" aria-label="Stroke join" title="Line join" value={node.strokeJoin ?? (node.type === "VECTOR" ? "ROUND" : "MITER")} onChange={(e) => doc.setStyle(node.id, { strokeJoin: e.target.value as StrokeJoin })}>
+            <option value="MITER">Join: miter</option>
+            <option value="BEVEL">Join: bevel</option>
+            <option value="ROUND">Join: round</option>
+          </Select>
+          {node.type === "VECTOR" &&
+            (["strokeStartCap", "strokeEndCap"] as const).map((key) => (
+              <Select key={key} className="field__select" aria-label={key === "strokeStartCap" ? "Start point" : "End point"} value={node[key] ?? "NONE"} onChange={(e) => doc.setStyle(node.id, { [key]: e.target.value as LineEnd })}>
+                {(["NONE", "ARROW_LINES", "ARROW_FILLED", "CIRCLE", "SQUARE", "DIAMOND"] as const).map((v) => (
+                  <option key={v} value={v}>
+                    {key === "strokeStartCap" ? "Start: " : "End: "}
+                    {LINE_END_LABEL[v]}
+                  </option>
+                ))}
+              </Select>
+            ))}
         </div>
       )}
     </section>

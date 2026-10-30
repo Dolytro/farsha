@@ -94,6 +94,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
   if ("strokes" in node && node.strokes?.[0] && node.strokeWidth !== undefined) {
     d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity)}`]);
+    if (node.strokeDash?.some((v) => v > 0)) d.push(["border-style", (node.strokeDash[0] ?? 0) <= node.strokeWidth ? "dotted" : "dashed"]);
   }
   if (node.type === "FRAME" && node.clipsContent) d.push(["overflow", "hidden"]);
   if (node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")) {

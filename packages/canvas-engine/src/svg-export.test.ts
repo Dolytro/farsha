@@ -242,3 +242,44 @@ describe("multiple strokes", () => {
     expect(svg).toContain('stroke-width="2"');
   });
 });
+
+describe("advanced strokes", () => {
+  const rect = (props: Record<string, unknown>) => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { fills: [], strokes: solid("#123456"), strokeWidth: 2, strokeAlign: "CENTER", ...props } });
+    return exportSvg(doc, [id])?.svg ?? "";
+  };
+
+  it("draws dashes, caps and joins", () => {
+    const svg = rect({ strokeDash: [6, 3], strokeCap: "ROUND", strokeJoin: "BEVEL" });
+    expect(svg).toContain('stroke-dasharray="6 3"');
+    expect(svg).toContain('stroke-linecap="round"');
+    expect(svg).toContain('stroke-linejoin="bevel"');
+  });
+
+  it("leaves a plain stroke plain", () => {
+    const svg = rect({});
+    expect(svg).not.toContain("stroke-dasharray");
+    expect(svg).not.toContain("stroke-linecap");
+    expect(svg).not.toContain("stroke-linejoin");
+  });
+
+  it("ignores unsafe values from a shared file", () => {
+    const svg = rect({ strokeDash: [-5, "x", 99999, 4], strokeCap: "evil\"/><script>", strokeJoin: 7 });
+    expect(svg).toContain('stroke-dasharray="4"');
+    expect(svg).not.toContain("script");
+  });
+
+  it("gives a vector arrowheads through markers", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("VECTOR", {
+      parentId: doc.pages()[0]!.id,
+      props: { viewBox: "0 0 100 10", markup: '<path d="M0 5H100"/>', fills: [], strokes: solid("#ff0000"), strokeWidth: 2, strokeEndCap: "ARROW_FILLED", strokeStartCap: "CIRCLE" },
+    });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain(`<marker id="mk-e-${id}"`);
+    expect(svg).toContain(`<marker id="mk-s-${id}"`);
+    expect(svg).toContain(`marker-end="url(#mk-e-${id})"`);
+    expect(svg).toContain('fill="#ff0000"');
+  });
+});

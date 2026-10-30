@@ -66,6 +66,13 @@ export interface ImagePaint {
 
 export type Paint = SolidPaint | GradientPaint | ImagePaint;
 
+/** How the end of an open stroke is drawn. */
+export type StrokeCap = 'NONE' | 'ROUND' | 'SQUARE';
+/** How two stroke segments meet at a corner. */
+export type StrokeJoin = 'MITER' | 'BEVEL' | 'ROUND';
+/** Arrowheads and other end shapes of a vector's stroke. */
+export type LineEnd = 'NONE' | 'ARROW_LINES' | 'ARROW_FILLED' | 'CIRCLE' | 'SQUARE' | 'DIAMOND';
+
 /** Where a stroke sits relative to the shape edge (Figma: Inside, Center, Outside). */
 export type StrokeAlign = 'INSIDE' | 'CENTER' | 'OUTSIDE';
 
@@ -189,6 +196,13 @@ export interface BaseNode {
   isMask?: boolean;
   /** Prototype links of this layer (Prototype tab). */
   interactions?: Interaction[];
+  /** Dash pattern of the strokes as [dash, gap, ...] in pixels; missing or empty means solid. */
+  strokeDash?: number[];
+  strokeCap?: StrokeCap;
+  strokeJoin?: StrokeJoin;
+  /** Line ends of a vector's stroke (arrowheads). */
+  strokeStartCap?: LineEnd;
+  strokeEndCap?: LineEnd;
   /** Id of the colour style that supplies this layer's fills; the fills follow the style. */
   fillStyleId?: string;
   /** Id of the text style that supplies this text layer's font settings. */
@@ -401,6 +415,11 @@ export interface StylePatch extends AutoLayoutProps {
   layoutSizingH?: 'FIXED' | 'FILL';
   layoutSizingV?: 'FIXED' | 'FILL';
   layoutPositioning?: 'AUTO' | 'ABSOLUTE';
+  strokeDash?: number[];
+  strokeCap?: StrokeCap;
+  strokeJoin?: StrokeJoin;
+  strokeStartCap?: LineEnd;
+  strokeEndCap?: LineEnd;
   interactions?: Interaction[];
   isMask?: boolean;
   layoutGrids?: LayoutGrid[];
