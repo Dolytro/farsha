@@ -299,6 +299,9 @@ export interface VectorNode extends BaseNode {
   viewBox: string;
   /** One sanitised SVG shape element (path, polygon, ...). Built by the SVG importer, never raw clipboard text. */
   markup: string;
+  /** Pen paths only: the anchor points (in the layer's own coordinates, handles as offsets) so the path can be edited. */
+  penPoints?: { x: number; y: number; hx: number; hy: number }[];
+  penClosed?: boolean;
   /** Only on vectors drawn with the Line / Arrow / Polygon / Star tools: their fill and stroke are editable like a shape's. */
   fills?: Paint[];
   strokes?: Paint[];

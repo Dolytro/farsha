@@ -1006,6 +1006,15 @@ export class DesignDoc {
     this.setProps(nodeId, { ...Object.fromEntries(TEXT_STYLE_KEYS.map((k) => [k, style[k]])), textStyleId: styleId });
   }
 
+  /** Replace a pen path: its box, geometry and anchor points, as one edit. */
+  setVectorPath(
+    id: string,
+    path: { x: number; y: number; width: number; height: number; viewBox: string; markup: string; penPoints: { x: number; y: number; hx: number; hy: number }[]; penClosed: boolean },
+  ): void {
+    if (this.requireNode(id).type !== 'VECTOR') throw new Error('setVectorPath requires a VECTOR node');
+    this.setProps(id, { ...path });
+  }
+
   rename(id: string, name: string): void {
     this.requireNode(id);
     this.setProps(id, { name });

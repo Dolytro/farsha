@@ -67,6 +67,81 @@ function bounds(points: PenPoint[], closed: boolean): { x: number; y: number; wi
   return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
 }
 
+const cubic = (a: PenPoint, b: PenPoint, t: number): [number, number] => {
+  const [c1, c2] = controls(a, b);
+  const m = 1 - t;
+  return [m * m * m * a.x + 3 * m * m * t * c1[0] + 3 * m * t * t * c2[0] + t * t * t * b.x, m * m * m * a.y + 3 * m * m * t * c1[1] + 3 * m * t * t * c2[1] + t * t * t * b.y];
+};
+
+const pointAt = (a: PenPoint, b: PenPoint, t: number): [number, number] => (straight(a, b) ? [a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t] : cubic(a, b, t));
+
+export function scalePoints(points: PenPoint[], sx: number, sy: number): PenPoint[] {
+  return points.map((p) => ({ x: p.x * sx, y: p.y * sy, hx: p.hx * sx, hy: p.hy * sy }));
+}
+
+export function translatePoints(points: PenPoint[], dx: number, dy: number): PenPoint[] {
+  return points.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy }));
+}
+
+export interface PathHit {
+  /** Index of the point the segment starts at (the segment runs to the next point, or back to the first one when closed). */
+  segment: number;
+  t: number;
+  x: number;
+  y: number;
+  distance: number;
+}
+
+/** The closest spot on the path to (x, y), if it is within `tolerance`. */
+export function nearestOnPath(points: PenPoint[], closed: boolean, x: number, y: number, tolerance: number): PathHit | null {
+  let best: PathHit | null = null;
+  const count = closed && points.length > 2 ? points.length : points.length - 1;
+  for (let i = 0; i < count; i++) {
+    const a = points[i]!;
+    const b = points[(i + 1) % points.length]!;
+    const consider = (t: number) => {
+      const [px, py] = pointAt(a, b, t);
+      const d = Math.hypot(px - x, py - y);
+      if (d <= tolerance && (!best || d < best.distance)) best = { segment: i, t, x: px, y: py, distance: d };
+    };
+    if (straight(a, b)) {
+      // project the point onto the segment
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const len2 = dx * dx + dy * dy;
+      consider(len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / len2)));
+    } else {
+      for (let k = 0; k <= 32; k++) consider(k / 32);
+    }
+  }
+  return best;
+}
+
+/** Add a point on a segment at parameter t. On a curve the new point is smooth, with a handle along the curve. */
+export function insertPointAt(points: PenPoint[], segment: number, t: number): PenPoint[] {
+  const a = points[segment]!;
+  const b = points[(segment + 1) % points.length]!;
+  const [x, y] = pointAt(a, b, t);
+  let hx = 0;
+  let hy = 0;
+  if (!straight(a, b)) {
+    const [x1, y1] = pointAt(a, b, Math.max(0, t - 0.05));
+    const [x2, y2] = pointAt(a, b, Math.min(1, t + 0.05));
+    const len = Math.hypot(b.x - a.x, b.y - a.y) / 3;
+    const tl = Math.hypot(x2 - x1, y2 - y1) || 1;
+    hx = ((x2 - x1) / tl) * len * 0.5;
+    hy = ((y2 - y1) / tl) * len * 0.5;
+  }
+  const next = [...points];
+  next.splice(segment + 1, 0, { x, y, hx, hy });
+  return next;
+}
+
+/** Remove a point; a path keeps at least two. */
+export function removePointAt(points: PenPoint[], index: number): PenPoint[] {
+  return points.length <= 2 ? points : points.filter((_, i) => i !== index);
+}
+
 /** The VECTOR layer geometry for a finished pen path, in the same coordinates as the points. */
 export function penGeometry(points: PenPoint[], closed: boolean): PenGeometry | null {
   if (points.length < 2) return null;
