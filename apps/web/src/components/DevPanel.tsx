@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { generateCode, paintCss, type Language } from "@canvylo/code-generator";
 import { useEditor } from "../store";
+import { ExportSection } from "./ExportSection";
 
 const LANGS: { id: Language; label: string }[] = [
   { id: "css", label: "CSS" },
@@ -94,6 +95,7 @@ export function DevPanel() {
         </div>
         <pre className="dev__code"><code>{code}</code></pre>
       </section>
+      {node.type !== "PAGE" && <ExportSection doc={doc} ids={[node.id]} />}
     </div>
   );
 }
