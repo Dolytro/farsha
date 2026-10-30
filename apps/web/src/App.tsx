@@ -30,6 +30,8 @@ import { restoreLocal, startLocalAutosave } from "./local-persist";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
 import { resolveTheme } from "./theme";
+import { distributeSelection } from "./align";
+import { tidyUp } from "./arrange-actions";
 import { removePaint, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
 import { pickColorFromScreen } from "./eyedropper";
 
@@ -410,6 +412,14 @@ export function App() {
           const v = zoomFit(doc, s.pageId, [frame]);
           if (v) s.setViewport(v);
         }
+      } else if (mod && e.altKey && e.shiftKey && key === "t" && selection.length && !s.viewer) {
+        // Figma's "Tidy up"
+        e.preventDefault();
+        tidyUp(doc, selection);
+      } else if (e.altKey && e.shiftKey && !mod && (e.code === "KeyH" || e.code === "KeyV") && selection.length && !s.viewer) {
+        // Figma's "Distribute horizontal / vertical spacing"
+        e.preventDefault();
+        distributeSelection(doc, selection, e.code === "KeyH" ? "horizontal" : "vertical");
       } else if (mod && !e.shiftKey && !e.altKey && key === "backspace" && selection.length && !s.viewer) {
         // Figma's "Ungroup selection"
         e.preventDefault();

@@ -1,4 +1,5 @@
-import { alignSelection, type AlignMode } from "./align";
+import { alignSelection, distributeSelection, type AlignMode } from "./align";
+import { distributeEdges, packLayers, roundToPixel, tidyUp, type EdgeMode } from "./arrange-actions";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
 import { booleanSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
@@ -114,6 +115,22 @@ export function buildCommands(): Command[] {
     align("top", "top", "W"),
     align("vcenter", "vertical centers", "V"),
     align("bottom", "bottom", "S"),
+    { id: "round-to-pixel", label: "Round to pixel", needsSelection: true, keywords: "snap whole pixels", run: () => void roundToPixel(doc(), sel()) },
+    { id: "tidy-up", label: "Tidy up", shortcut: `${MOD}${ALT}${SHIFT}T`, needsSelection: true, keywords: "arrange grid rows", run: () => void tidyUp(doc(), sel()) },
+    { id: "pack-h", label: "Pack horizontal", needsSelection: true, keywords: "arrange row", run: () => void packLayers(doc(), sel(), "horizontal") },
+    { id: "pack-v", label: "Pack vertical", needsSelection: true, keywords: "arrange column", run: () => void packLayers(doc(), sel(), "vertical") },
+    { id: "distribute-h", label: "Distribute horizontal spacing", shortcut: `${ALT}${SHIFT}H`, needsSelection: true, run: () => void distributeSelection(doc(), sel(), "horizontal") },
+    { id: "distribute-v", label: "Distribute vertical spacing", shortcut: `${ALT}${SHIFT}V`, needsSelection: true, run: () => void distributeSelection(doc(), sel(), "vertical") },
+    ...(
+      [
+        ["left", "Distribute left"],
+        ["hcenter", "Distribute horizontal centers"],
+        ["right", "Distribute right"],
+        ["top", "Distribute top"],
+        ["vcenter", "Distribute vertical centers"],
+        ["bottom", "Distribute bottom"],
+      ] as [EdgeMode, string][]
+    ).map(([mode, label]): Command => ({ id: `distribute-${mode}`, label, needsSelection: true, keywords: "arrange space evenly", run: () => void distributeEdges(doc(), sel(), mode) })),
     tool("select", "Move", "V"),
     tool("hand", "Hand", "H"),
     tool("frame", "Frame", "F"),
