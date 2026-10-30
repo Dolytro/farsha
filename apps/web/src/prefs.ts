@@ -1,5 +1,22 @@
+/** Look of the interface: density, roundness, type size, accent colour and panel width (see styles/ui-v2.scss). */
+export type UiPreset = "canvylo" | "figma" | "compact" | "comfortable" | "contrast";
+
+export const UI_PRESETS: { id: UiPreset; label: string; description: string }[] = [
+  { id: "canvylo", label: "Canvylo", description: "Roomy and rounded, the default look" },
+  { id: "figma", label: "Figma-like", description: "Tight rows and Figma's blue, for muscle memory" },
+  { id: "compact", label: "Compact", description: "More on screen: small rows, narrow panels" },
+  { id: "comfortable", label: "Comfortable", description: "Large rows and type, wide panels" },
+  { id: "contrast", label: "High contrast", description: "Strong borders and text colours" },
+];
+
+export function parsePreset(value: unknown): UiPreset {
+  return UI_PRESETS.some((p) => p.id === value) ? (value as UiPreset) : "canvylo";
+}
+
 /** Preferences (Figma's Preferences menu): small switches that change how the editor behaves. */
 export interface Prefs {
+  /** The interface preset. */
+  preset: UiPreset;
   /** Stay on the drawing tool after drawing a layer instead of going back to Move. */
   keepTool: boolean;
   /** Reverse the direction of wheel zoom. */
@@ -15,7 +32,7 @@ export interface Prefs {
 
 export const PREFS_KEY = "canvylo.prefs";
 
-export const DEFAULT_PREFS: Prefs = { keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, nudge: 1, bigNudge: 10 };
+export const DEFAULT_PREFS: Prefs = { preset: "canvylo", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, nudge: 1, bigNudge: 10 };
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
 const amount = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 && v <= 1000 ? v : fallback);
@@ -30,6 +47,7 @@ export function parsePrefs(text: string | null | undefined): Prefs {
     /* damaged value: use the defaults */
   }
   return {
+    preset: parsePreset(raw.preset),
     keepTool: bool(raw.keepTool, DEFAULT_PREFS.keepTool),
     invertZoom: bool(raw.invertZoom, DEFAULT_PREFS.invertZoom),
     wheelZoom: bool(raw.wheelZoom, DEFAULT_PREFS.wheelZoom),

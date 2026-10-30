@@ -2,6 +2,7 @@ import type { DesignDoc } from "@canvylo/design-core";
 import { paintColor, type DesignNode, type Effect, type Paint, type StrokeAlign } from "@canvylo/types";
 import { HexInput } from "./HexInput";
 import { VariableButton, VariableChip } from "./VariableMenu";
+import { Select } from "./Select";
 
 const ALIGN_LABEL: Record<StrokeAlign, string> = { INSIDE: "Inside", CENTER: "Center", OUTSIDE: "Outside" };
 const EFFECT_LABEL: Record<Effect["type"], string> = { DROP_SHADOW: "Drop shadow", INNER_SHADOW: "Inner shadow", LAYER_BLUR: "Layer blur" };
@@ -61,13 +62,13 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
       })}
       {strokes.length > 0 && (
         <div className="props__grid props__grid--gap">
-          <select className="field__select" value={align} onChange={(e) => doc.setStyle(node.id, { strokeAlign: e.target.value as StrokeAlign })}>
+          <Select className="field__select" value={align} onChange={(e) => doc.setStyle(node.id, { strokeAlign: e.target.value as StrokeAlign })}>
             {(Object.keys(ALIGN_LABEL) as StrokeAlign[]).map((a) => (
               <option key={a} value={a}>
                 {ALIGN_LABEL[a]}
               </option>
             ))}
-          </select>
+          </Select>
           <label className="field">
             <span className="field__label">W</span>
             <input className="field__input" type="number" min={0} step={0.5} value={node.strokeWidth} onChange={(e) => doc.setStyle(node.id, { strokeWidth: Math.max(0, Number(e.target.value)) })} />
@@ -104,13 +105,13 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
       {effects.map((e, i) => (
         <div className="effect" key={i}>
           <div className="effect__head">
-            <select className="field__select" value={e.type} onChange={(ev) => changeType(i, ev.target.value as Effect["type"])}>
+            <Select className="field__select" value={e.type} onChange={(ev) => changeType(i, ev.target.value as Effect["type"])}>
               {(Object.keys(EFFECT_LABEL) as Effect["type"][]).map((t) => (
                 <option key={t} value={t}>
                   {EFFECT_LABEL[t]}
                 </option>
               ))}
-            </select>
+            </Select>
             <button className="props__add" title={e.visible ? "Hide effect" : "Show effect"} onClick={() => patch(i, { visible: !e.visible })}>
               {e.visible ? "◉" : "○"}
             </button>

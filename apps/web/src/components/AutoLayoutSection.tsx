@@ -2,6 +2,7 @@ import { useState, type ReactElement } from "react";
 import type { DesignDoc } from "@canvylo/design-core";
 import type { DesignNode, LayoutAlign, LayoutMode, LayoutSizing } from "@canvylo/types";
 import { addAutoLayout, removeAutoLayout } from "../auto-layout-actions";
+import { Select } from "./Select";
 
 const PRIMARY: [LayoutAlign, string][] = [
   ["MIN", "Start"],
@@ -20,10 +21,10 @@ export function ChildSizingSection({ doc, node }: { doc: DesignDoc; node: Design
   const row = (label: string, key: "layoutSizingH" | "layoutSizingV") => (
     <label className="field" title={`${label} resizing`}>
       <span className="field__label">{label}</span>
-      <select className="field__select" value={node[key] ?? "FIXED"} onChange={(e) => doc.setStyle(node.id, { [key]: e.target.value } as never)}>
+      <Select className="field__select" value={node[key] ?? "FIXED"} onChange={(e) => doc.setStyle(node.id, { [key]: e.target.value } as never)}>
         <option value="FIXED">Fixed</option>
         <option value="FILL">Fill container</option>
-      </select>
+      </Select>
     </label>
   );
   return (
@@ -132,28 +133,28 @@ export function AutoLayoutSection({ doc, node, select }: { doc: DesignDoc; node:
       </div>
       <PaddingFields node={node} set={set} field={field} />
       <div className="props__grid props__grid--gap">
-        <select className="field__select" title="Alignment along the layout direction" value={node.primaryAxisAlign ?? "MIN"} onChange={(e) => set({ primaryAxisAlign: e.target.value as LayoutAlign })}>
+        <Select className="field__select" title="Alignment along the layout direction" value={node.primaryAxisAlign ?? "MIN"} onChange={(e) => set({ primaryAxisAlign: e.target.value as LayoutAlign })}>
           {PRIMARY.map(([v, label]) => (
             <option key={v} value={v}>
               {label}
             </option>
           ))}
-        </select>
-        <select className="field__select" title="Alignment across the layout direction" value={node.counterAxisAlign ?? "MIN"} onChange={(e) => set({ counterAxisAlign: e.target.value as "MIN" | "CENTER" | "MAX" })}>
+        </Select>
+        <Select className="field__select" title="Alignment across the layout direction" value={node.counterAxisAlign ?? "MIN"} onChange={(e) => set({ counterAxisAlign: e.target.value as "MIN" | "CENTER" | "MAX" })}>
           {COUNTER.map(([v, label]) => (
             <option key={v} value={v}>
               {label}
             </option>
           ))}
-        </select>
-        <select className="field__select" title="Width" value={sizing(widthKey)} onChange={(e) => set({ [widthKey]: e.target.value as LayoutSizing })}>
+        </Select>
+        <Select className="field__select" title="Width" value={sizing(widthKey)} onChange={(e) => set({ [widthKey]: e.target.value as LayoutSizing })}>
           <option value="HUG">Hug width</option>
           <option value="FIXED">Fixed width</option>
-        </select>
-        <select className="field__select" title="Height" value={sizing(heightKey)} onChange={(e) => set({ [heightKey]: e.target.value as LayoutSizing })}>
+        </Select>
+        <Select className="field__select" title="Height" value={sizing(heightKey)} onChange={(e) => set({ [heightKey]: e.target.value as LayoutSizing })}>
           <option value="HUG">Hug height</option>
           <option value="FIXED">Fixed height</option>
-        </select>
+        </Select>
       </div>
     </section>
   );

@@ -7,6 +7,7 @@ import { paintColor, type DesignNode, type GradientPaint, type GradientStop, typ
 import { readImage } from "../images";
 import { HexInput } from "./HexInput";
 import { useEditor } from "../store";
+import { Select } from "./Select";
 
 type Kind = Paint["type"];
 const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial", IMAGE: "Image" };
@@ -77,13 +78,13 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
   return (
     <div className="fill-item">
       <div className="fill-item__head">
-        <select className="field__select field__select--wide" value={paint.type} onChange={(e) => setPaint(convertPaint(paint, e.target.value as Kind))}>
+        <Select className="field__select field__select--wide" value={paint.type} onChange={(e) => setPaint(convertPaint(paint, e.target.value as Kind))}>
           {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
             <option key={k} value={k}>
               {KIND_LABEL[k]}
             </option>
           ))}
-        </select>
+        </Select>
         {bind && paint.type === "SOLID" && !paint.variableId && <VariableButton doc={doc} onPick={bind} />}
         <button className="props__add" title="Remove fill" onClick={remove}>
           −
@@ -173,13 +174,13 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
   };
   return (
     <>
-      <select className="field__select field__select--wide field--gap" title="Scale mode" value={paint.scaleMode} onChange={(e) => setPaint({ ...paint, scaleMode: e.target.value as ImageScaleMode })}>
+      <Select className="field__select field__select--wide field--gap" title="Scale mode" value={paint.scaleMode} onChange={(e) => setPaint({ ...paint, scaleMode: e.target.value as ImageScaleMode })}>
         {(Object.keys(SCALE_LABEL) as ImageScaleMode[]).map((m) => (
           <option key={m} value={m}>
             {SCALE_LABEL[m]}
           </option>
         ))}
-      </select>
+      </Select>
       <label className="props__link props__file">
         {paint.assetId ? "Change image" : "Choose image"}
         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void choose(e.target.files?.[0])} />

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import type { Prefs } from "../prefs";
+import { UI_PRESETS, type Prefs, type UiPreset } from "../prefs";
+import { Select } from "./Select";
 import { useEditor } from "../store";
 
 const SWITCHES: { key: keyof Pick<Prefs, "keepTool" | "invertZoom" | "wheelZoom" | "snapping">; label: string; hint: string }[] = [
@@ -37,6 +38,17 @@ export function PreferencesDialog() {
           <button className="icon-btn" aria-label="Close" onClick={() => setOpen(false)}>
             ✕
           </button>
+        </div>
+        <div className="prefs__preset">
+          <span className="prefs__label">Interface preset</span>
+          <Select className="wide" aria-label="Interface preset" value={prefs.preset} onChange={(e) => setPrefs({ preset: e.target.value as UiPreset })}>
+            {UI_PRESETS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </Select>
+          <small className="prefs__hint">{UI_PRESETS.find((p) => p.id === prefs.preset)?.description}</small>
         </div>
         {SWITCHES.map((s) => (
           <label className="prefs__row" key={s.key}>

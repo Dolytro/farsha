@@ -1,6 +1,7 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { DesignNode } from "@canvylo/types";
 import { useEditor } from "../store";
+import { Select } from "./Select";
 
 const attempt = (fn: () => void) => {
   try {
@@ -80,13 +81,13 @@ export function VariantsSection({ doc, node }: { doc: DesignDoc; node: DesignNod
       {Object.entries(options).map(([name, values]) => (
         <label className="field field--gap" key={name}>
           <span className="field__label field__label--wide">{name}</span>
-          <select className="field__select" value={main.variantProps?.[name] ?? ""} onChange={(e) => attempt(() => doc.swapInstanceVariant(node.id, name, e.target.value))}>
+          <Select className="field__select" value={main.variantProps?.[name] ?? ""} onChange={(e) => attempt(() => doc.swapInstanceVariant(node.id, name, e.target.value))}>
             {values.map((v) => (
               <option key={v} value={v}>
                 {v}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       ))}
     </section>

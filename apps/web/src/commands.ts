@@ -5,6 +5,7 @@ import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
 import { saveLocalCopy } from "./local-file";
+import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
 import { startFrame } from "./prototype";
 import { saveVersion } from "./versions";
@@ -176,6 +177,7 @@ export function buildCommands(): Command[] {
     { id: "eyedropper", label: "Pick color from the screen", shortcut: "I", keywords: "eyedropper sample color", run: () => pickColorFromScreen(doc(), sel(), state().showToast) },
     { id: "preferences", label: "Preferences", keywords: "settings keep tool snapping zoom nudge", run: () => state().setPrefsOpen(true) },
     { id: "pixel-grid", label: "Show / hide pixel grid", shortcut: `${SHIFT}'`, keywords: "view pixels zoom", run: () => state().setPixelGrid(!state().pixelGrid) },
+    ...UI_PRESETS.map((p): Command => ({ id: `preset-${p.id}`, label: `UI preset: ${p.label}`, keywords: "interface look density compact comfortable contrast figma", run: () => state().setPrefs({ preset: p.id }) })),
     { id: "hide-ui", label: "Show / hide UI", shortcut: `${MOD}\\`, keywords: "minimize panels fullscreen focus", run: () => state().setUiHidden(!state().uiHidden) },
     { id: "rulers", label: "Show / hide rulers", shortcut: `${SHIFT}R`, keywords: "view guides", run: () => state().setRulers(!state().rulers) },
     { id: "dev-mode", label: "Toggle Dev Mode", shortcut: `${SHIFT}D`, keywords: "inspect code", run: () => state().setDevMode(!state().devMode) },

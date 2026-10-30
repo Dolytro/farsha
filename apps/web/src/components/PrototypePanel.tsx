@@ -1,6 +1,7 @@
 import type { Interaction } from "@canvylo/types";
 import { prototypeFrames, startFrame } from "../prototype";
 import { useEditor } from "../store";
+import { Select } from "./Select";
 
 /** The Prototype tab: interactions of the selected layer, and the Present button. */
 export function PrototypePanel() {
@@ -51,7 +52,7 @@ export function PrototypePanel() {
               <div className="interaction" key={i}>
                 <span className="interaction__trigger">On click</span>
                 <div className="interaction__row">
-                  <select
+                  <Select
                     className="field__select"
                     aria-label="Action"
                     value={it.action.type}
@@ -59,13 +60,13 @@ export function PrototypePanel() {
                   >
                     <option value="NAVIGATE">Navigate to</option>
                     <option value="BACK">Back</option>
-                  </select>
+                  </Select>
                   <button className="props__add" title="Remove interaction" onClick={() => set(interactions.filter((_, j) => j !== i))}>
                     −
                   </button>
                 </div>
                 {it.action.type === "NAVIGATE" && (
-                  <select
+                  <Select
                     className="field__select field__select--wide"
                     aria-label="Destination"
                     value={it.action.targetId}
@@ -77,7 +78,7 @@ export function PrototypePanel() {
                         {f.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </div>
             );

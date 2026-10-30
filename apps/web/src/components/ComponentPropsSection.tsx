@@ -1,6 +1,7 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { ComponentProperty, DesignNode } from "@canvylo/types";
 import { useEditor } from "../store";
+import { Select } from "./Select";
 
 const attempt = (fn: () => void) => {
   try {
@@ -57,7 +58,7 @@ export function ComponentPropsSection({ doc, node }: { doc: DesignDoc; node: Des
                 −
               </button>
             </div>
-            <select
+            <Select
               className="field__select field__select--wide"
               aria-label="Controlled layer"
               value={p.targetId}
@@ -70,7 +71,7 @@ export function ComponentPropsSection({ doc, node }: { doc: DesignDoc; node: Des
                     {l.name}
                   </option>
                 ))}
-            </select>
+            </Select>
             {p.type === "BOOLEAN" ? (
               <label className="props__check">
                 <input type="checkbox" checked={p.defaultValue === true} onChange={(e) => attempt(() => doc.updateComponentProperty(node.id, p.id, { defaultValue: e.target.checked }))} />
