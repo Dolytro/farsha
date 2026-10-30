@@ -80,7 +80,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Components, instances, detach, overrides | 🟡 | Create component (Ctrl+Alt+K, wraps non-frames), copy / paste a main component to get an instance, edits of the main flow into instances, property overrides kept per layer, Reset all overrides, Go to main component, Detach instance (Ctrl+Alt+B), purple layer icons. Assets tab (click to place an instance). Missing: drag from Assets, search in Assets, Alt-drag, instance swap, nested instances (they flatten), copying or duplicating an instance drops its layer overrides, overrides on deleted / re-ordered layers (deleted layers come back, order follows the main), main component purple selection outline |
 | Variants and component properties | ❌ | P2 |
 | "Main component" (Object menu) (menu) | ✅ | Create component |
-| Color / text / effect / grid styles | 🟡 | Color (fill) styles: create from a fill, apply, edit (every layer follows, also inside instances), rename, detach, delete, undo. Missing: text, effect and grid styles, stroke styles, a styles list in the Assets tab, folders (name / slash groups) |
+| Color / text / effect / grid styles | 🟡 | Color (fill) styles and text styles (font family, weight, size, line height, letter spacing): create from a layer, apply, edit (every layer follows, also inside instances), rename, detach, delete, undo. Missing: effect and grid styles, stroke styles, a styles list in the Assets tab, folders |
 | Variables (color, number, string, boolean) and modes (light / dark) | ❌ | P2 |
 | Libraries, publish, update | ❌ | P3 |
 

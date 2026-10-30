@@ -93,6 +93,20 @@ export interface FillStyle {
   paints: Paint[];
 }
 
+/** A reusable set of text properties: text layers that use it follow it. */
+export interface TextStyle {
+  id: string;
+  name: string;
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: number;
+  lineHeight: number | 'AUTO';
+  letterSpacing: number;
+}
+
+/** The text properties a text style controls. */
+export const TEXT_STYLE_KEYS = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing'] as const;
+
 export interface BaseNode {
   id: string;
   type: NodeType;
@@ -121,6 +135,8 @@ export interface BaseNode {
   flipY?: boolean;
   /** Id of the colour style that supplies this layer's fills; the fills follow the style. */
   fillStyleId?: string;
+  /** Id of the text style that supplies this text layer's font settings. */
+  textStyleId?: string;
   /** Inside an instance: id of the layer in the main component this layer mirrors. */
   mainId?: string;
   /** Inside an instance: property names the user changed, which stop following the main component. */

@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import type { Box, DesignNode, FillStyle, NodeType, Paint, StylePatch, TextPatch } from '@canvylo/types';
+import { TEXT_STYLE_KEYS, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -47,6 +47,7 @@ export class DesignDoc {
   private readonly assets: Y.Map<StoredAsset>;
   /** Colour styles, keyed by style id. */
   private readonly styles: Y.Map<FillStyle>;
+  private readonly textStyleMap: Y.Map<TextStyle>;
   private readonly undoManager: Y.UndoManager;
   private readonly listeners = new Set<() => void>();
   private nodeCache = new Map<string, DesignNode>();
@@ -59,6 +60,11 @@ export class DesignDoc {
     this.meta = ydoc.getMap('meta') as Y.Map<string>;
     this.assets = ydoc.getMap('assets') as Y.Map<StoredAsset>;
     this.styles = ydoc.getMap('styles') as Y.Map<FillStyle>;
+    this.textStyleMap = ydoc.getMap('textStyles') as Y.Map<TextStyle>;
+    this.textStyleMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
     this.styles.observe(() => {
       this.version++;
       this.listeners.forEach((fn) => fn());
@@ -68,7 +74,7 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
-    this.undoManager = new Y.UndoManager([this.nodes, this.styles], {
+    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
     });
@@ -138,10 +144,21 @@ export class DesignDoc {
       this.transact(() => {
         for (const map of this.nodes.values()) {
           const styleId = map.get('fillStyleId') as string | undefined;
-          if (!styleId) continue;
-          const style = this.styles.get(styleId);
-          if (!style) map.delete('fillStyleId');
-          else if (JSON.stringify(map.get('fills')) !== JSON.stringify(style.paints)) map.set('fills', style.paints);
+          if (styleId) {
+            const style = this.styles.get(styleId);
+            if (!style) map.delete('fillStyleId');
+            else if (JSON.stringify(map.get('fills')) !== JSON.stringify(style.paints)) map.set('fills', style.paints);
+          }
+          const textStyleId = map.get('textStyleId') as string | undefined;
+          if (textStyleId) {
+            const style = this.textStyleMap.get(textStyleId);
+            if (!style) map.delete('textStyleId');
+            else {
+              for (const key of TEXT_STYLE_KEYS) {
+                if (JSON.stringify(map.get(key)) !== JSON.stringify(style[key])) map.set(key, style[key]);
+              }
+            }
+          }
         }
       });
     } finally {
@@ -648,6 +665,46 @@ export class DesignDoc {
     this.setProps(nodeId, { fills: style.paints, fillStyleId: styleId });
   }
 
+  // ---------- text styles ----------
+
+  textStyles(): TextStyle[] {
+    return [...this.textStyleMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getTextStyle(id: string): TextStyle | undefined {
+    return this.textStyleMap.get(id);
+  }
+
+  createTextStyle(name: string, props: Omit<TextStyle, 'id' | 'name'>): string {
+    const id = nanoid();
+    this.transact(() => this.textStyleMap.set(id, { ...props, id, name: name.trim() || 'Text style' }));
+    return id;
+  }
+
+  updateTextStyle(id: string, patch: Partial<Omit<TextStyle, 'id'>>): void {
+    const style = this.textStyleMap.get(id);
+    if (!style) throw new Error('Style not found');
+    const clean = Object.fromEntries(Object.entries(patch).filter(([k, v]) => v !== undefined && (k !== 'name' || String(v).trim())));
+    this.transact(() => this.textStyleMap.set(id, { ...style, ...clean }));
+  }
+
+  deleteTextStyle(id: string): void {
+    this.transact(() => this.textStyleMap.delete(id));
+  }
+
+  /** Give a text layer a text style (its font settings now follow the style), or pass null to detach it. */
+  applyTextStyle(nodeId: string, styleId: string | null): void {
+    const node = this.requireNode(nodeId);
+    if (node.type !== 'TEXT') throw new Error('Text styles apply to text layers');
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('textStyleId'));
+      return;
+    }
+    const style = this.textStyleMap.get(styleId);
+    if (!style) throw new Error('Style not found');
+    this.setProps(nodeId, { ...Object.fromEntries(TEXT_STYLE_KEYS.map((k) => [k, style[k]])), textStyleId: styleId });
+  }
+
   rename(id: string, name: string): void {
     this.requireNode(id);
     this.setProps(id, { name });
@@ -729,6 +786,7 @@ export class DesignDoc {
       for (const [key, value] of Object.entries(patch)) map.set(key, value);
       // Changing the fills by hand detaches the layer from its colour style (Figma).
       if ('fills' in patch && !('fillStyleId' in patch)) map.delete('fillStyleId');
+      if (TEXT_STYLE_KEYS.some((k) => k in patch) && !('textStyleId' in patch)) map.delete('textStyleId');
       if (!follows) return;
       const isRoot = map.get('componentId') !== undefined;
       const keys = Object.keys(patch).filter((k) => !INSTANCE_KEYS.has(k) && (isRoot ? !ROOT_KEYS.has(k) : k !== 'orderKey'));

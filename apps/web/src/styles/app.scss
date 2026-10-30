@@ -1450,3 +1450,9 @@ body {
     opacity: 0.7;
   }
 }
+
+.stylemenu__meta {
+  flex: none;
+  color: var(--c-muted);
+  font-size: 11px;
+}
