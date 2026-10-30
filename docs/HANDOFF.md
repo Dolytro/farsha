@@ -242,6 +242,18 @@ in event handlers.
 - **Rulers / guides:** `rulers` flag in the store (localStorage); guides are `PageNode.guides` so they save and undo.
 - **Selection:** `hitTest` returns the outermost GROUP; `deep=true` returns the innermost layer (double-click enters).
 
+### Components
+- No new node types: a **main component** is a `FRAME` with `isComponent: true`; an **instance** is a `FRAME` with
+  `componentId` (the main's id). Every layer inside an instance has `mainId` (the layer it mirrors) and `overrides`
+  (property names the user changed, which stop following the main). Nested instances are not supported (they flatten).
+- `DesignDoc.syncInstances()` runs in the same `afterTransaction` handler as the auto layout relayout (LOCAL_ORIGIN only,
+  skipped for empty transactions), before it. It reads Yjs directly (`rawChildren`) because the node / child caches are
+  stale while the transaction is still being cleaned up. It clones missing layers, deletes removed ones, copies every
+  non-overridden property, and strips the link when the main is gone or the instance sits inside its own main.
+- `setProps` records overrides on layers that have `mainId` / `componentId` (not for constraint-driven moves, `noOverride`).
+- API: `createComponent(ids)`, `createInstance(componentId, parentId, x, y)`, `detachInstance`, `resetOverrides`, `instanceOf`.
+  Web: `component-actions.ts`, shortcuts Ctrl+Alt+K / Ctrl+Alt+B, context menu items, copying a main yields an instance (`clipboard.ts`).
+
 ### Conventions
 - Pure logic goes in small modules with vitest tests next to them (`*.test.ts`); components stay thin.
 - Styles: SCSS with BEM (`.layers__item--selected`), design tokens as CSS variables, light Figma-like theme
@@ -337,9 +349,8 @@ Where the session stopped: everything above is committed and pushed to `main`, V
 180 tests pass. Nothing is half-done in the working tree. `.claude/launch.json` (preview server config) is committed.
 
 Suggested order (each is one feature = build, test, fix, push):
-1. **Components**: main component + instances (copy of the subtree that follows edits of the main), detach, then
-   variants / properties. Plan: a `COMPONENT` node type + `INSTANCE` with `componentId`, and a sync step in
-   `DesignDoc` similar to the auto layout relayout (overrides stored per instance).
+1. **Components round 2**: Assets panel to insert instances, then variants / component properties. (Round 1, main +
+   instances + overrides + detach, is done, see "Components" in section 7.)
 2. Styles (color / text / effect) and variables.
 3. Multiple fills and strokes, hex input, Line / Arrow / Polygon / Star, Pen tool.
 4. Auto layout round 2: wrap, fill container, absolute-position children, per-side padding, drag to reorder;

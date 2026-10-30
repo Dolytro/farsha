@@ -109,6 +109,10 @@ export interface BaseNode {
   blendMode?: BlendMode;
   constraintH?: Constraint;
   constraintV?: Constraint;
+  /** Inside an instance: id of the layer in the main component this layer mirrors. */
+  mainId?: string;
+  /** Inside an instance: property names the user changed, which stop following the main component. */
+  overrides?: string[];
 }
 
 export interface DocumentNode extends BaseNode {
@@ -158,6 +162,10 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   /** Per-corner radii [top-left, top-right, bottom-right, bottom-left]; overrides cornerRadius when set. */
   cornerRadii?: [number, number, number, number];
   clipsContent: boolean;
+  /** True for a main component: its layers are mirrored by every instance. */
+  isComponent?: boolean;
+  /** Set on an instance: id of the main component it follows. */
+  componentId?: string;
 }
 
 export interface GroupNode extends BaseNode {

@@ -142,6 +142,10 @@ button {
     flex: none;
     text-align: center;
     color: var(--c-muted);
+
+    &--component {
+      color: #9747ff;
+    }
   }
 
   &__name {

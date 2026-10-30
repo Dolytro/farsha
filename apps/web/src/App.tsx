@@ -6,6 +6,7 @@ import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
+import { createComponentFromSelection, detachSelection } from "./component-actions";
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
 import { toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
@@ -248,6 +249,14 @@ export function App() {
       } else if (e.shiftKey && e.altKey && mod && key === "a") {
         e.preventDefault();
         removeAutoLayout(doc, selection);
+      } else if (mod && e.altKey && !e.shiftKey && key === "k" && selection.length && !s.viewer) {
+        // Figma's "Create component"
+        e.preventDefault();
+        s.select(createComponentFromSelection(doc, selection));
+      } else if (mod && e.altKey && !e.shiftKey && key === "b" && selection.length && !s.viewer) {
+        // Figma's "Detach instance"
+        e.preventDefault();
+        s.select(detachSelection(doc, selection));
       } else if (e.altKey && !mod && !e.shiftKey && ALIGN_KEYS[e.code]) {
         // Figma's align shortcuts: Alt+A / H / D (left, centers, right), Alt+W / V / S (top, centers, bottom).
         e.preventDefault();

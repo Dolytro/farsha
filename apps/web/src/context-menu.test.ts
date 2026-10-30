@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildMenu, type MenuContext } from "./context-menu";
 
-const base: MenuContext = { devMode: false, readOnlyViewer: false, selectionCount: 1, hasGroup: false, allHidden: false, allLocked: false };
+const base: MenuContext = { devMode: false, readOnlyViewer: false, selectionCount: 1, hasGroup: false, hasInstance: false, allHidden: false, allLocked: false };
 const actions = (c: Partial<MenuContext>) => buildMenu({ ...base, ...c }).map((i) => i.action);
 
 describe("buildMenu", () => {
@@ -14,6 +14,11 @@ describe("buildMenu", () => {
   it("shows Ungroup only with a group selected", () => {
     expect(actions({})).not.toContain("ungroup");
     expect(actions({ hasGroup: true })).toContain("ungroup");
+  });
+  it("offers component actions: create always, instance actions only for instances", () => {
+    expect(actions({})).toContain("create-component");
+    expect(actions({})).not.toContain("detach-instance");
+    expect(actions({ hasInstance: true })).toEqual(expect.arrayContaining(["go-to-main", "reset-overrides", "detach-instance"]));
   });
   it("offers Add auto layout for a selection", () => {
     expect(actions({})).toContain("auto-layout");

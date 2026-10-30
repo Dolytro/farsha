@@ -2,7 +2,8 @@ export type MenuAction =
   | "copy" | "cut" | "paste-here" | "paste-over"
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
-  | "group" | "ungroup" | "auto-layout" | "visibility" | "lock" | "delete";
+  | "group" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides"
+  | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
   action: MenuAction;
@@ -20,6 +21,8 @@ export interface MenuContext {
   readOnlyViewer: boolean;
   selectionCount: number;
   hasGroup: boolean;
+  /** The selection is, or sits inside, an instance of a main component. */
+  hasInstance: boolean;
   allHidden: boolean;
   allLocked: boolean;
 }
@@ -54,6 +57,14 @@ export function buildMenu(c: MenuContext): MenuItem[] {
     );
     if (c.hasGroup) items.push({ action: "ungroup", label: "Ungroup", shortcut: `${MOD}${SHIFT}G` });
     items.push({ action: "auto-layout", label: "Add auto layout", shortcut: `${SHIFT}A` });
+    items.push({ action: "create-component", label: "Create component", shortcut: `${MOD}${ALT}K`, divider: true });
+    if (c.hasInstance) {
+      items.push(
+        { action: "go-to-main", label: "Go to main component" },
+        { action: "reset-overrides", label: "Reset all overrides" },
+        { action: "detach-instance", label: "Detach instance", shortcut: `${MOD}${ALT}B` },
+      );
+    }
     items.push(
       { action: "visibility", label: c.allHidden ? "Show" : "Hide", shortcut: `${MOD}${SHIFT}H`, divider: true },
       { action: "lock", label: c.allLocked ? "Unlock" : "Lock", shortcut: `${MOD}${SHIFT}L` },
