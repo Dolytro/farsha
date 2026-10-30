@@ -22,6 +22,24 @@ export function hitTest(doc: DesignDoc, pageId: string, wx: number, wy: number, 
   return group ?? hit;
 }
 
+/** The box a click can land in: very thin layers (lines) get a few pixels of slack so they can be picked. */
+function pickBox(b: Bounds): Bounds {
+  const padX = b.width < 6 ? (6 - b.width) / 2 : 0;
+  const padY = b.height < 6 ? (6 - b.height) / 2 : 0;
+  return { x: b.x - padX, y: b.y - padY, width: b.width + padX * 2, height: b.height + padY * 2 };
+}
+
+/** A world point mapped into the unrotated frame of a layer that is rotated around its centre. */
+function localPoint(b: Bounds, rotation: number, wx: number, wy: number): [number, number] {
+  if (!rotation) return [wx, wy];
+  const cx = b.x + b.width / 2;
+  const cy = b.y + b.height / 2;
+  const rad = (-rotation * Math.PI) / 180;
+  const dx = wx - cx;
+  const dy = wy - cy;
+  return [cx + dx * Math.cos(rad) - dy * Math.sin(rad), cy + dx * Math.sin(rad) + dy * Math.cos(rad)];
+}
+
 function deepestHit(doc: DesignDoc, pageId: string, wx: number, wy: number): DesignNode | undefined {
   const walk = (parentId: string, ox: number, oy: number): DesignNode | undefined => {
     const kids = doc.children(parentId);
@@ -31,7 +49,7 @@ function deepestHit(doc: DesignDoc, pageId: string, wx: number, wy: number): Des
       const abs = { x: ox + n.x, y: oy + n.y, width: n.width, height: n.height };
       const inner = walk(n.id, abs.x, abs.y);
       if (inner) return inner;
-      if (contains(abs, wx, wy)) return n;
+      if (contains(pickBox(abs), ...localPoint(abs, n.rotation, wx, wy))) return n;
     }
     return undefined;
   };

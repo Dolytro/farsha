@@ -12,8 +12,8 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Frame (F), Rectangle (R), Ellipse (O), Text (T) | ✅ | |
 | Scale tool (K) | ❌ | P3 |
 | Section, Slice | ❌ | P3 |
-| Line, Arrow | ❌ | P1 |
-| Polygon, Star | ❌ | P2 |
+| Line (L), Arrow (Shift+L) | 🟡 | Drawn by dragging (Shift snaps to 15°), editable stroke colour / width, rotation. Missing: arrow head types, stroke caps, the arrow head stretches when the width changes, no handles on the line ends |
+| Polygon, Star | 🟡 | Toolbar buttons, fill and stroke editable. Missing: side count / star ratio controls, corner radius |
 | Image / video placement, paste or drop an image | ❌ | P1 |
 | Pen / vector editing, Pencil | ❌ | P2 |
 | Comment tool (C) | ❌ | P2 |
@@ -172,5 +172,5 @@ Interactions (click / hover / drag), navigate / overlay / back, transitions, sma
 2. ~~Stroke, effects (shadow / blur), text controls, gradients, image fills, export (PNG / SVG).~~ done
 3. ~~Auto Layout v1, constraints, snapping and smart guides, align / distribute, rulers and guides.~~ done (round 2 items are in the tables above)
 4. **Components, variants, styles, variables.** Components v1 done (main + instances, overrides, detach); next: Assets panel, then variants, styles, variables.
-5. **Line / Arrow / Polygon / Star, Pen, multiple fills and strokes.**
+5. **Pen, multiple fills and strokes.** (Line / Arrow / Polygon / Star done: VECTOR layers with optional `fills` / `strokes`, see `canvas-engine/src/shapes.ts`.)
 6. **Prototype, comments, live collaboration.**

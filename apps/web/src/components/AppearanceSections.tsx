@@ -10,9 +10,9 @@ const newEffect = (type: Effect["type"]): Effect =>
     : { type, x: 0, y: 4, blur: 4, color: "#000000", opacity: 0.25, visible: true };
 
 export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
-  if (!("strokes" in node)) return null;
+  if (!("strokes" in node) || !node.strokes) return null;
   const stroke = node.strokes[0];
-  const align = node.strokeAlign ?? "CENTER";
+  const align = ("strokeAlign" in node ? node.strokeAlign : undefined) ?? "CENTER";
   return (
     <section className="props__section">
       <h3 className="props__heading props__heading--row">

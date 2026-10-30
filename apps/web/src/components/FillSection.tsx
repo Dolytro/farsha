@@ -29,7 +29,7 @@ export function convertPaint(p: Paint, kind: Kind): Paint {
 }
 
 export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
-  if (!("fills" in node)) return null;
+  if (!("fills" in node) || !node.fills) return null;
   const paint = node.fills[0];
   const setPaint = (p: Paint) => doc.setStyle(node.id, { fills: [p] });
 

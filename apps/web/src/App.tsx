@@ -48,7 +48,7 @@ async function pasteFromFigma(html: string, parentId: string, cx: number, cy: nu
 }
 
 const ALIGN_KEYS: Record<string, AlignMode> = { KeyA: "left", KeyH: "hcenter", KeyD: "right", KeyW: "top", KeyV: "vcenter", KeyS: "bottom" };
-const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text" };
+const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text", l: "line" };
 
 export function App() {
   const loadState = useEditor((s) => s.loadState);
@@ -310,6 +310,9 @@ export function App() {
         const dx = key === "arrowleft" ? -step : key === "arrowright" ? step : 0;
         const dy = key === "arrowup" ? -step : key === "arrowdown" ? step : 0;
         selection.filter((id) => !doc.getNode(id)?.locked).forEach((id) => doc.moveNode(id, dx, dy));
+      } else if (e.shiftKey && !mod && !e.altKey && key === "l") {
+        // Figma's Arrow tool
+        s.setTool("arrow");
       } else if (!mod && KEYS[key]) {
         s.setTool(KEYS[key]!);
       }

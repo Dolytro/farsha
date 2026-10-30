@@ -5,7 +5,7 @@ import type { DriveUser } from "./drive/drive";
 import { parseRoute, type ViewerMode } from "./route";
 import { seedWelcome } from "./seed/welcome";
 
-export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text";
+export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star";
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "needs-auth";
 export type LoadState = "ready" | "loading" | "error";
 

@@ -272,7 +272,7 @@ export function copyProperties(doc: DesignDoc, id: string | undefined): boolean 
   if ("strokes" in n) {
     snap.strokes = JSON.parse(JSON.stringify(n.strokes));
     snap.strokeWidth = n.strokeWidth;
-    snap.strokeAlign = n.strokeAlign;
+    if ("strokeAlign" in n) snap.strokeAlign = n.strokeAlign;
   }
   snap.effects = JSON.parse(JSON.stringify(n.effects ?? []));
   if ("cornerRadius" in n) snap.cornerRadius = n.cornerRadius;
