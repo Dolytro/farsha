@@ -6,6 +6,7 @@ import { isContainer, layerRows, moveLayers, type DropWhere, type LayerRow } fro
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
+import { CommentsList } from "./CommentsList";
 import { renameCurrentFile } from "../drive/session";
 
 const ICONS: Record<string, string> = { FRAME: "#", GROUP: "▤", RECTANGLE: "▭", ELLIPSE: "◯", TEXT: "T", IMAGE: "▨", VECTOR: "◇" };
@@ -65,7 +66,7 @@ export function Layers() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collapseTick]);
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<"layers" | "assets">("layers");
+  const [tab, setTab] = useState<"layers" | "assets" | "comments">("layers");
   const [drop, setDrop] = useState<{ id: string; where: DropWhere } | null>(null);
   const dragging = useRef<string[]>([]);
   const rows = layerRows(doc, pageId, collapsed, query);
@@ -240,14 +241,16 @@ export function Layers() {
         ))}
       </ul>
       <div className="layers__tabs" role="tablist">
-        {(["layers", "assets"] as const).map((t) => (
+        {(["layers", "assets", "comments"] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} className={`layers__tab${tab === t ? " layers__tab--active" : ""}`} onClick={() => setTab(t)}>
-            {t === "layers" ? "Layers" : "Assets"}
+            {t === "layers" ? "Layers" : t === "assets" ? "Assets" : `Comments${doc.comments().filter((c) => !c.resolved).length ? ` (${doc.comments().filter((c) => !c.resolved).length})` : ""}`}
           </button>
         ))}
       </div>
       {tab === "assets" ? (
         <Assets />
+      ) : tab === "comments" ? (
+        <CommentsList />
       ) : (
         <>
           <input className="layers__search" type="search" placeholder="Search layers" value={query} onChange={(e) => setQuery(e.target.value)} />

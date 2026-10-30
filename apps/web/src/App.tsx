@@ -23,6 +23,7 @@ import { VersionHistory } from "./components/VersionHistory";
 import { VariablesDialog } from "./components/VariablesDialog";
 import { ExportDialog } from "./components/ExportDialog";
 import { FindBar } from "./components/FindBar";
+import { CommentPopover } from "./components/CommentPopover";
 import { PreferencesDialog } from "./components/PreferencesDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
@@ -67,7 +68,7 @@ async function pasteFromFigma(html: string, parentId: string, cx: number, cy: nu
 }
 
 const ALIGN_KEYS: Record<string, AlignMode> = { KeyA: "left", KeyH: "hcenter", KeyD: "right", KeyW: "top", KeyV: "vcenter", KeyS: "bottom" };
-const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text", l: "line", p: "pen", k: "scale" };
+const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rect", o: "ellipse", t: "text", l: "line", p: "pen", k: "scale", c: "comment" };
 
 export function App() {
   const theme = useEditor((s) => s.theme);
@@ -428,6 +429,10 @@ export function App() {
       } else if (mod && e.altKey && !e.shiftKey && ["l", "t", "r"].includes(key) && selection.length && !s.viewer && !e.metaKey) {
         e.preventDefault();
         setTextAlign(doc, selection, key === "l" ? "LEFT" : key === "t" ? "CENTER" : "RIGHT", refitText);
+      } else if (e.shiftKey && !mod && !e.altKey && key === "c" && !s.viewer) {
+        // Figma's "Show / hide comments"
+        e.preventDefault();
+        s.setCommentsVisible(!s.commentsVisible);
       } else if (mod && !e.shiftKey && !e.altKey && key === "f" && !s.viewer) {
         // Figma's "Find"
         e.preventDefault();
@@ -504,6 +509,7 @@ export function App() {
         <Canvas />
         {rulers && !viewer && <Rulers />}
         <Toolbar />
+        <CommentPopover />
         {toast && (
           <div className="toast" role="status">
             {toast}
