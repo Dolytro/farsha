@@ -1,3 +1,4 @@
+import { useState, type ReactElement } from "react";
 import type { DesignDoc } from "@canvylo/design-core";
 import type { DesignNode, LayoutAlign, LayoutMode, LayoutSizing } from "@canvylo/types";
 import { addAutoLayout, removeAutoLayout } from "../auto-layout-actions";
@@ -33,6 +34,44 @@ export function ChildSizingSection({ doc, node }: { doc: DesignDoc; node: Design
         {row("H", "layoutSizingV")}
       </div>
     </section>
+  );
+}
+
+/** Padding as horizontal + vertical, or one field per side (the toggle starts on when the sides differ). */
+function PaddingFields({
+  node,
+  set,
+  field,
+}: {
+  node: Extract<DesignNode, { type: "FRAME" }>;
+  set: (patch: Parameters<DesignDoc["setStyle"]>[1]) => void;
+  field: (label: string, title: string, value: number, onChange: (v: number) => void) => ReactElement;
+}) {
+  const differs = num(node.paddingLeft) !== num(node.paddingRight) || num(node.paddingTop) !== num(node.paddingBottom);
+  const [perSide, setPerSide] = useState(differs);
+  const sides = perSide || differs;
+  return (
+    <>
+      <div className="props__grid props__grid--gap">
+        {sides ? (
+          <>
+            {field("T", "Top padding", num(node.paddingTop), (v) => set({ paddingTop: v }))}
+            {field("R", "Right padding", num(node.paddingRight), (v) => set({ paddingRight: v }))}
+            {field("B", "Bottom padding", num(node.paddingBottom), (v) => set({ paddingBottom: v }))}
+            {field("L", "Left padding", num(node.paddingLeft), (v) => set({ paddingLeft: v }))}
+          </>
+        ) : (
+          <>
+            {field("↔", "Horizontal padding", num(node.paddingLeft), (v) => set({ paddingLeft: v, paddingRight: v }))}
+            {field("↕", "Vertical padding", num(node.paddingTop), (v) => set({ paddingTop: v, paddingBottom: v }))}
+          </>
+        )}
+        {field("⇿", "Gap between items", num(node.itemSpacing), (v) => set({ itemSpacing: v }))}
+        <button className={`seg__btn props__corner-toggle${sides ? " seg__btn--active" : ""}`} title="Padding per side" onClick={() => setPerSide(!sides)}>
+          ⌜⌝
+        </button>
+      </div>
+    </>
   );
 }
 
@@ -81,11 +120,7 @@ export function AutoLayoutSection({ doc, node, select }: { doc: DesignDoc; node:
           </button>
         ))}
       </div>
-      <div className="props__grid props__grid--gap">
-        {field("↔", "Horizontal padding", num(node.paddingLeft), (v) => set({ paddingLeft: v, paddingRight: v }))}
-        {field("↕", "Vertical padding", num(node.paddingTop), (v) => set({ paddingTop: v, paddingBottom: v }))}
-        {field("⇿", "Gap between items", num(node.itemSpacing), (v) => set({ itemSpacing: v }))}
-      </div>
+      <PaddingFields node={node} set={set} field={field} />
       <div className="props__grid props__grid--gap">
         <select className="field__select" title="Alignment along the layout direction" value={node.primaryAxisAlign ?? "MIN"} onChange={(e) => set({ primaryAxisAlign: e.target.value as LayoutAlign })}>
           {PRIMARY.map(([v, label]) => (

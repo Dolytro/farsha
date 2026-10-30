@@ -363,7 +363,7 @@ Suggested order (each is one feature = build, test, fix, push):
    instances + overrides + detach, is done, see "Components" in section 7.)
 2. Effect / grid / stroke styles, number / string variables, several collections and per-frame modes (colour variables with modes are done: `DesignDoc.createColorVariable`, `bindPaintVariable`, `SolidPaint.variableId`, synced in `syncVariables`) (color and text styles done, `textStyleId`, `TEXT_STYLE_KEYS`; color: `DesignDoc.createFillStyle` etc., `fillStyleId` on layers, synced in `syncStyles`).
 3. Editable (non-flattened) boolean groups, editing imported SVG vectors, flatten, outline stroke, mask (Ctrl+Alt+M), boolean operations.
-4. Auto layout round 2: wrap, absolute-position children, per-side padding fields, drag to reorder;
+4. Auto layout round 2: wrap, absolute-position children, drag to reorder;
    snapping while resizing and to layout grids, equal-spacing guides (layout grids themselves are done).
 5. Prototype round 2 (hover / key triggers, overlays, transitions, connectors), comments and live collaboration (need a backend or a relay such as y-webrtc), Drive-backed version history.
 6. Performance: Canvas / WebGL renderer path for thousands of nodes.
