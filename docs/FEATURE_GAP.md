@@ -10,7 +10,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 |---|---|---|
 | Move (V), Hand (H) | ✅ | |
 | Frame (F), Rectangle (R), Ellipse (O), Text (T) | ✅ | |
-| Scale tool (K) | ❌ | P3 |
+| Scale tool (K) | ✅ | One layer at a time; keeps the ratio (Alt scales from the centre) |
 | Section, Slice | ❌ | P3 |
 | Line (L), Arrow (Shift+L) | 🟡 | Drawn by dragging (Shift snaps to 15°), editable stroke colour / width, rotation. Missing: arrow head types, stroke caps, the arrow head stretches when the width changes, no handles on the line ends |
 | Polygon, Star | 🟡 | Toolbar buttons, fill and stroke editable. Missing: side count / star ratio controls, corner radius |
@@ -200,8 +200,8 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Vector | Join selection (Ctrl+J), Smooth join, Delete and heal, Split vector, Simplify vector, Offset vector | ❌ |
 | Preferences | Theme, Nudge amount, keep tool, snapping, zoom options | ✅ (Color profile, Keyboard layout, Accessibility, Permissions: ❌ / browser-bound) |
 | Toolbar | Move, Hand, Frame, Rectangle, Line, Arrow, Ellipse, Polygon, Star, Pen, Text | ✅ |
-| Toolbar | Section (Shift+S) | ✅ |
-| Toolbar | Scale tool (K), Slice (S), Image / video… (Ctrl+Shift+K), Pencil (Shift+P), Text on path, Comment tool (C) | ❌ |
+| Toolbar | Section (Shift+S), Scale tool (K: drag a corner, the layer and its text, strokes, radii, shadows and auto layout spacing scale together) | ✅ |
+| Toolbar | Slice (S), Image / video… (Ctrl+Shift+K), Pencil (Shift+P), Text on path, Comment tool (C) | ❌ |
 | Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | ✅ (opacity keys, Alt+drag copies the selection in one undo step) |
 | Design panel | Page background colour, Styles on a page, Selection colors, Export on a page | ❌ |
 | Design panel | Stroke dash / caps / joins / arrowheads, per-side stroke weights, background blur, corner smoothing | ❌ |

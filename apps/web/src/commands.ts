@@ -106,6 +106,7 @@ export function buildCommands(): Command[] {
     { id: "convert-section", label: "Convert to section", needsSelection: true, keywords: "frame section", run: () => void setSection(doc(), sel(), true) },
     { id: "convert-frame", label: "Convert to frame", needsSelection: true, keywords: "frame section", run: () => void setSection(doc(), sel(), false) },
     tool("section", "Section", `${SHIFT}S`),
+    tool("scale", "Scale", "K"),
     { id: "rotate-180", label: "Rotate 180°", needsSelection: true, keywords: "turn", run: () => void rotateSelectionBy(doc(), sel(), 180) },
     { id: "rotate-left", label: "Rotate 90° left", needsSelection: true, keywords: "turn counterclockwise", run: () => void rotateSelectionBy(doc(), sel(), -90) },
     { id: "rotate-right", label: "Rotate 90° right", needsSelection: true, keywords: "turn clockwise", run: () => void rotateSelectionBy(doc(), sel(), 90) },
