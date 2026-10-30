@@ -24,14 +24,29 @@ export interface ClipPayload {
 
 let pasteCount = 0;
 
-function toClip(doc: DesignDoc, node: DesignNode): ClipNode {
+function toClip(doc: DesignDoc, node: DesignNode, mainAsInstance = true): ClipNode {
   const { id, parentId: _p, orderKey: _o, type, ...props } = node;
   // Pasting a main component makes an instance of it (Figma); the instance fills its own layers.
-  if (node.type === "FRAME" && node.isComponent) {
+  if (mainAsInstance && node.type === "FRAME" && node.isComponent) {
     const { isComponent: _c, ...rest } = props as Record<string, unknown>;
     return { type, props: { ...rest, componentId: id }, children: [] };
   }
-  return { type, props, children: doc.children(id).map((c) => toClip(doc, c)) };
+  // An instance rebuilds its layers from the main component, so only the frame itself is copied (child overrides are not kept).
+  if (node.type === "FRAME" && node.componentId) return { type, props, children: [] };
+  return { type, props, children: doc.children(id).map((c) => toClip(doc, c, mainAsInstance)) };
+}
+
+/** Ctrl+D: copy each top-level layer with its whole subtree next to the original (a main component duplicates into a new main). */
+export function duplicateNodes(doc: DesignDoc, ids: string[]): string[] {
+  doc.stopCapturing();
+  const copies = topLevelOf(doc, ids).flatMap((id) => {
+    const n = doc.getNode(id);
+    if (!n?.parentId) return [];
+    const made = create(doc, toClip(doc, n, false), n.parentId, 10, 10);
+    return made ? [made] : [];
+  });
+  doc.stopCapturing();
+  return copies;
 }
 
 /** Drop ids whose ancestor is also selected, so a group and its child aren't both copied. */

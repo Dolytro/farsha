@@ -15,7 +15,7 @@ import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
 import { placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
-import { armPasteMode, copyNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
+import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
 import { restoreLocal, startLocalAutosave } from "./local-persist";
@@ -296,15 +296,7 @@ export function App() {
         reorderSelection(doc, selection, mod ? (up ? Infinity : -Infinity) : up ? 1 : -1);
       } else if (mod && key === "d") {
         e.preventDefault();
-        doc.stopCapturing();
-        const copies = selection.flatMap((id) => {
-          const n = doc.getNode(id);
-          if (!n?.parentId) return [];
-          const { id: _id, parentId, orderKey: _o, type, ...props } = n;
-          return [doc.createNode(type, { parentId, props: { ...props, x: n.x + 10, y: n.y + 10 } })];
-        });
-        s.select(copies);
-        doc.stopCapturing();
+        s.select(duplicateNodes(doc, selection));
       } else if (key === "delete" || key === "backspace") {
         doc.stopCapturing();
         selection.forEach((id) => doc.hasNode(id) && doc.deleteNode(id));
