@@ -18,6 +18,15 @@ export function saveLocalCopy(): void {
   useEditor.getState().showToast("Saved a local copy");
 }
 
+/** File > Duplicate: a copy of the open document as a new file that is not linked to Drive. */
+export function duplicateFile(): void {
+  const { doc, drive, loadDoc, setDrive, showToast } = useEditor.getState();
+  const copy = DesignDoc.fromState(doc.encodeState());
+  loadDoc(copy);
+  setDrive({ fileId: null, fileName: `${drive.fileName} copy`, status: "idle", error: null });
+  showToast("Duplicated the file");
+}
+
 /** Ask for a .canvylo file with a file picker, then open it. */
 export function openLocalFilePicker(): void {
   const input = document.createElement("input");

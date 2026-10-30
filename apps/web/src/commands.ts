@@ -5,7 +5,8 @@ import { booleanSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSele
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
-import { openLocalFilePicker, saveLocalCopy } from "./local-file";
+import { duplicateFile, openLocalFilePicker, saveLocalCopy } from "./local-file";
+import { placeImagePicker } from "./place-image";
 import { hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, swapFillAndStroke } from "./object-actions";
 import { newFile } from "./drive/session";
 import { fitText } from "./text-layout";
@@ -45,6 +46,9 @@ export function buildCommands(): Command[] {
   return [
     { id: "undo", label: "Undo", shortcut: `${MOD}Z`, run: () => doc().undo() },
     { id: "redo", label: "Redo", shortcut: `${MOD}${SHIFT}Z`, run: () => doc().redo() },
+    { id: "place-image", label: "Place image…", shortcut: `${MOD}${SHIFT}K`, keywords: "insert picture photo import", run: () => placeImagePicker() },
+    { id: "export-dialog", label: "Export…", shortcut: `${MOD}${SHIFT}E`, keywords: "download png jpg svg", run: () => state().setExportOpen(true) },
+    { id: "duplicate-file", label: "Duplicate file", keywords: "copy document", run: () => duplicateFile() },
     { id: "new-file", label: "New file", keywords: "blank document", run: () => newFile() },
     { id: "open-local", label: "Open local file…", keywords: "open canvylo", run: () => openLocalFilePicker() },
     { id: "select-none", label: "Select none", shortcut: "Esc", run: () => state().select([]) },

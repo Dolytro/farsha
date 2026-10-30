@@ -21,6 +21,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { Presenter } from "./components/Presenter";
 import { VersionHistory } from "./components/VersionHistory";
 import { VariablesDialog } from "./components/VariablesDialog";
+import { ExportDialog } from "./components/ExportDialog";
 import { PreferencesDialog } from "./components/PreferencesDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
@@ -35,6 +36,7 @@ import { tidyUp } from "./arrange-actions";
 import { fitText as refitText } from "./text-layout";
 import { setTextAlign, toggleTextStyle } from "./text-actions";
 import { wrapInSection } from "./section-actions";
+import { placeImagePicker } from "./place-image";
 import { removePaint, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
 import { pickColorFromScreen } from "./eyedropper";
 
@@ -425,6 +427,14 @@ export function App() {
       } else if (mod && e.altKey && !e.shiftKey && ["l", "t", "r"].includes(key) && selection.length && !s.viewer && !e.metaKey) {
         e.preventDefault();
         setTextAlign(doc, selection, key === "l" ? "LEFT" : key === "t" ? "CENTER" : "RIGHT", refitText);
+      } else if (mod && e.shiftKey && !e.altKey && key === "k" && !s.viewer) {
+        // Figma's "Place image"
+        e.preventDefault();
+        placeImagePicker();
+      } else if (mod && e.shiftKey && !e.altKey && key === "e" && !s.viewer) {
+        // Figma's "Export…"
+        e.preventDefault();
+        s.setExportOpen(true);
       } else if (e.shiftKey && !mod && !e.altKey && key === "s" && !s.viewer) {
         // Figma's Section tool
         e.preventDefault();
@@ -507,6 +517,7 @@ export function App() {
       <Presenter />
       <VersionHistory />
       <VariablesDialog />
+      <ExportDialog />
       <PreferencesDialog />
     </div>
   );

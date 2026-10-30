@@ -37,6 +37,7 @@ export function buildMainMenu(): MenuNode[] {
       children: list(
         item("new-file", "New file"),
         item("place-image", "Place image…"),
+        item("duplicate-file", "Duplicate"),
         item("open-local", "Open local file…", true),
         item("save-local", "Save local copy…"),
         item("save-version", "Save to version history…", true),
