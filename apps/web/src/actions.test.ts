@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { flipSelection, toggleHidden, toggleLocked } from "./actions";
+import { flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
 
 function setup() {
   const doc = new DesignDoc();
@@ -38,5 +38,28 @@ describe("flipSelection", () => {
     expect(doc.getNode(id)).toMatchObject({ flipX: true, flipY: true });
     flipSelection(doc, [id], "x");
     expect(doc.getNode(id)!.flipX).toBe(false);
+  });
+});
+
+describe("frameSelection", () => {
+  it("wraps the layers in a frame sized to their bounds, keeping their look", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("RECTANGLE", { parentId: page, props: { x: 50, y: 60, width: 20, height: 20 } });
+    const b = doc.createNode("ELLIPSE", { parentId: page, props: { x: 100, y: 90, width: 30, height: 30 } });
+    const [frame] = frameSelection(doc, [a, b]);
+    expect(doc.getNode(frame!)).toMatchObject({ type: "FRAME", x: 50, y: 60, width: 80, height: 60, parentId: page });
+    expect(doc.getNode(a)).toMatchObject({ parentId: frame, x: 0, y: 0 });
+    expect(doc.getNode(b)).toMatchObject({ parentId: frame, x: 50, y: 30 });
+    expect(doc.children(frame!).map((n) => n.id)).toEqual([a, b]);
+  });
+
+  it("does nothing for layers with different parents", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const f = doc.createNode("FRAME", { parentId: page });
+    const a = doc.createNode("RECTANGLE", { parentId: page });
+    const b = doc.createNode("RECTANGLE", { parentId: f });
+    expect(frameSelection(doc, [a, b])).toEqual([a, b]);
   });
 });

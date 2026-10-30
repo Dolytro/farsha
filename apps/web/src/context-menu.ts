@@ -2,7 +2,7 @@ export type MenuAction =
   | "copy" | "cut" | "paste-here" | "paste-over"
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
-  | "group" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides"
+  | "group" | "frame-selection" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides"
   | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
@@ -55,6 +55,7 @@ export function buildMenu(c: MenuContext): MenuItem[] {
       { action: "back", label: "Send to back", shortcut: `${MOD}[` },
       { action: "group", label: "Group selection", shortcut: `${MOD}G`, divider: true },
     );
+    items.push({ action: "frame-selection", label: "Frame selection", shortcut: `${MOD}${ALT}G` });
     if (c.hasGroup) items.push({ action: "ungroup", label: "Ungroup", shortcut: `${MOD}${SHIFT}G` });
     items.push({ action: "auto-layout", label: "Add auto layout", shortcut: `${SHIFT}A` });
     items.push({ action: "create-component", label: "Create component", shortcut: `${MOD}${ALT}K`, divider: true });
