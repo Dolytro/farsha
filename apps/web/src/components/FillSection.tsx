@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { DesignDoc } from "@canvylo/design-core";
+import { StyleMenu, StylePill } from "./StyleMenu";
 import { paintCss } from "@canvylo/code-generator";
 import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@canvylo/types";
 import { readImage } from "../images";
@@ -31,31 +33,39 @@ export function convertPaint(p: Paint, kind: Kind): Paint {
 
 /** Fills are stored bottom to top (SVG paint order) and listed top first, like Figma. */
 export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
+  const [editingStyle, setEditingStyle] = useState(false);
   if (!("fills" in node) || !node.fills) return null;
-  const fills = node.fills;
-  const setFills = (next: Paint[]) => doc.setStyle(node.id, { fills: next });
+  const style = node.fillStyleId ? doc.getFillStyle(node.fillStyleId) : undefined;
+  // While a colour style is applied the rows edit the style itself (every layer that uses it follows).
+  const fills = style && editingStyle ? style.paints : node.fills;
+  const setFills = (next: Paint[]) => (style ? doc.updateFillStyle(style.id, { paints: next }) : doc.setStyle(node.id, { fills: next }));
   // Text is drawn with a single colour, so it keeps one fill.
-  const canAdd = node.type !== "TEXT" || fills.length === 0;
+  const canAdd = !style && (node.type !== "TEXT" || fills.length === 0);
   return (
     <section className="props__section">
       <h3 className="props__heading props__heading--row">
         Fill
-        {canAdd && (
-          <button className="props__add" title="Add fill" onClick={() => setFills([...fills, { type: "SOLID", color: "#d9d9d9", opacity: 1 }])}>
-            +
-          </button>
-        )}
+        <span className="props__tools">
+          <StyleMenu doc={doc} node={node} />
+          {canAdd && (
+            <button className="props__add" title="Add fill" onClick={() => setFills([...fills, { type: "SOLID", color: "#d9d9d9", opacity: 1 }])}>
+              +
+            </button>
+          )}
+        </span>
       </h3>
-      {fills.map((_, k) => fills.length - 1 - k).map((i) => (
-        <FillRow
-          key={i}
-          doc={doc}
-          nodeId={node.id}
-          paint={fills[i]!}
-          setPaint={(p) => setFills(fills.map((f, j) => (j === i ? p : f)))}
-          remove={() => setFills(fills.filter((_, j) => j !== i))}
-        />
-      ))}
+      {style && <StylePill doc={doc} node={node} style={style} editing={editingStyle} setEditing={setEditingStyle} />}
+      {(!style || editingStyle) &&
+        fills.map((_, k) => fills.length - 1 - k).map((i) => (
+          <FillRow
+            key={i}
+            doc={doc}
+            nodeId={node.id}
+            paint={fills[i]!}
+            setPaint={(p) => setFills(fills.map((f, j) => (j === i ? p : f)))}
+            remove={() => setFills(fills.filter((_, j) => j !== i))}
+          />
+        ))}
     </section>
   );
 }

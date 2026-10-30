@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import type { Box, DesignNode, NodeType, StylePatch, TextPatch } from '@canvylo/types';
+import type { Box, DesignNode, FillStyle, NodeType, Paint, StylePatch, TextPatch } from '@canvylo/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -45,6 +45,8 @@ export class DesignDoc {
   private readonly meta: Y.Map<string>;
   /** Image bytes, keyed by asset id. Kept out of the node map so layers stay small. */
   private readonly assets: Y.Map<StoredAsset>;
+  /** Colour styles, keyed by style id. */
+  private readonly styles: Y.Map<FillStyle>;
   private readonly undoManager: Y.UndoManager;
   private readonly listeners = new Set<() => void>();
   private nodeCache = new Map<string, DesignNode>();
@@ -56,12 +58,17 @@ export class DesignDoc {
     this.nodes = ydoc.getMap('nodes') as Y.Map<NodeMap>;
     this.meta = ydoc.getMap('meta') as Y.Map<string>;
     this.assets = ydoc.getMap('assets') as Y.Map<StoredAsset>;
+    this.styles = ydoc.getMap('styles') as Y.Map<FillStyle>;
+    this.styles.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
     // An image arriving from a collaborator (or Drive) should redraw layers that reference it.
     this.assets.observe(() => {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
-    this.undoManager = new Y.UndoManager(this.nodes, {
+    this.undoManager = new Y.UndoManager([this.nodes, this.styles], {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
     });
@@ -75,6 +82,7 @@ export class DesignDoc {
     // (it follows the edit within the capture window); undo / redo and remote changes already carry their own layout.
     this.ydoc.on('afterTransaction', (tr: Y.Transaction) => {
       if (tr.origin !== LOCAL_ORIGIN || this.relayouting || this.syncing || tr.changed.size === 0) return;
+      this.syncStyles();
       this.syncInstances();
       this.relayout();
     });
@@ -121,6 +129,24 @@ export class DesignDoc {
       out.set(parent, list.map((e) => e.id));
     }
     return out;
+  }
+
+  /** Layers that use a colour style take its paints; a deleted style just leaves the layer with its current fills. */
+  private syncStyles(): void {
+    this.syncing = true;
+    try {
+      this.transact(() => {
+        for (const map of this.nodes.values()) {
+          const styleId = map.get('fillStyleId') as string | undefined;
+          if (!styleId) continue;
+          const style = this.styles.get(styleId);
+          if (!style) map.delete('fillStyleId');
+          else if (JSON.stringify(map.get('fills')) !== JSON.stringify(style.paints)) map.set('fills', style.paints);
+        }
+      });
+    } finally {
+      this.syncing = false;
+    }
   }
 
   /** Make every instance mirror its main component, except for the properties the instance overrides. */
@@ -581,6 +607,47 @@ export class DesignDoc {
     this.setProps(id, patch);
   }
 
+  // ---------- colour styles ----------
+
+  fillStyles(): FillStyle[] {
+    return [...this.styles.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getFillStyle(id: string): FillStyle | undefined {
+    return this.styles.get(id);
+  }
+
+  createFillStyle(name: string, paints: Paint[]): string {
+    const id = nanoid();
+    this.transact(() => this.styles.set(id, { id, name: name.trim() || 'Style', paints }));
+    return id;
+  }
+
+  updateFillStyle(id: string, patch: { name?: string; paints?: Paint[] }): void {
+    const style = this.styles.get(id);
+    if (!style) throw new Error('Style not found');
+    this.transact(() =>
+      this.styles.set(id, { ...style, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.paints ? { paints: patch.paints } : {}) }),
+    );
+  }
+
+  deleteFillStyle(id: string): void {
+    this.transact(() => this.styles.delete(id));
+  }
+
+  /** Give a layer a colour style (its fills now follow the style), or pass null to detach it. */
+  applyFillStyle(nodeId: string, styleId: string | null): void {
+    const node = this.requireNode(nodeId);
+    if (!('fills' in node)) throw new Error('This layer has no fills');
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('fillStyleId'));
+      return;
+    }
+    const style = this.styles.get(styleId);
+    if (!style) throw new Error('Style not found');
+    this.setProps(nodeId, { fills: style.paints, fillStyleId: styleId });
+  }
+
   rename(id: string, name: string): void {
     this.requireNode(id);
     this.setProps(id, { name });
@@ -660,6 +727,8 @@ export class DesignDoc {
     const follows = !this.noOverride && (map.get('mainId') !== undefined || map.get('componentId') !== undefined);
     this.transact(() => {
       for (const [key, value] of Object.entries(patch)) map.set(key, value);
+      // Changing the fills by hand detaches the layer from its colour style (Figma).
+      if ('fills' in patch && !('fillStyleId' in patch)) map.delete('fillStyleId');
       if (!follows) return;
       const isRoot = map.get('componentId') !== undefined;
       const keys = Object.keys(patch).filter((k) => !INSTANCE_KEYS.has(k) && (isRoot ? !ROOT_KEYS.has(k) : k !== 'orderKey'));

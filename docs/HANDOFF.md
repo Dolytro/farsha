@@ -351,7 +351,7 @@ Where the session stopped: everything above is committed and pushed to `main`, V
 Suggested order (each is one feature = build, test, fix, push):
 1. **Components round 2**: variants / component properties. (Round 1, main +
    instances + overrides + detach, is done, see "Components" in section 7.)
-2. Styles (color / text / effect) and variables.
+2. Text / effect styles and variables (color styles done: `DesignDoc.createFillStyle` etc., `fillStyleId` on layers, synced in `syncStyles`).
 3. Multiple strokes, Pen tool (Line / Arrow / Polygon / Star done).
 4. Auto layout round 2: wrap, fill container, absolute-position children, per-side padding, drag to reorder;
    snapping while resizing, equal-spacing guides, layout grids (Shift+G).
