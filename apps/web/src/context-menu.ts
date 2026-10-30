@@ -2,7 +2,7 @@ export type MenuAction =
   | "copy" | "cut" | "paste-here" | "paste-over"
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
-  | "group" | "frame-selection" | "use-as-mask" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides"
+  | "group" | "frame-selection" | "use-as-mask" | "bool-union" | "bool-subtract" | "bool-intersect" | "bool-exclude" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides"
   | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
@@ -55,6 +55,14 @@ export function buildMenu(c: MenuContext): MenuItem[] {
       { action: "back", label: "Send to back", shortcut: `${MOD}[` },
       { action: "group", label: "Group selection", shortcut: `${MOD}G`, divider: true },
     );
+    if (c.selectionCount > 1) {
+      items.push(
+        { action: "bool-union", label: "Union selection", shortcut: `${MOD}${ALT}U` },
+        { action: "bool-subtract", label: "Subtract selection" },
+        { action: "bool-intersect", label: "Intersect selection" },
+        { action: "bool-exclude", label: "Exclude selection" },
+      );
+    }
     items.push({ action: "use-as-mask", label: "Use as mask", shortcut: `${MOD}${ALT}M` });
     items.push({ action: "frame-selection", label: "Frame selection", shortcut: `${MOD}${ALT}G` });
     if (c.hasGroup) items.push({ action: "ungroup", label: "Ungroup", shortcut: `${MOD}${SHIFT}G` });

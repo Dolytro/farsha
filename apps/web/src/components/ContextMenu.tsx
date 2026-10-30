@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { buildMenu, type MenuAction } from "../context-menu";
-import { toggleHidden, toggleLocked, frameSelection, groupSelection, useAsMask, ungroupSelection, reorderSelection } from "../actions";
+import { toggleHidden, toggleLocked, booleanSelection, frameSelection, groupSelection, useAsMask, ungroupSelection, reorderSelection } from "../actions";
 import { addAutoLayout } from "../auto-layout-actions";
 import { createComponentFromSelection, detachSelection, mainsOf, resetSelection } from "../component-actions";
 import { copyAsCss, copyAsPng, copyAsSvg } from "../exporting";
@@ -82,6 +82,14 @@ async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
       case "backward": return reorderSelection(doc, selection, -1);
       case "back": return reorderSelection(doc, selection, -Infinity);
       case "group": return select(groupSelection(doc, selection));
+      case "bool-union":
+      case "bool-subtract":
+      case "bool-intersect":
+      case "bool-exclude": {
+        const out = booleanSelection(doc, selection, ({ "bool-union": "UNION", "bool-subtract": "SUBTRACT", "bool-intersect": "INTERSECT", "bool-exclude": "EXCLUDE" } as const)[action]);
+        if (out.error) return showToast(out.error);
+        return select(out.ids);
+      }
       case "use-as-mask": return select(useAsMask(doc, selection));
       case "frame-selection": return select(frameSelection(doc, selection));
       case "ungroup": return select(ungroupSelection(doc, selection));
