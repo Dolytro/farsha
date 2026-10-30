@@ -21,6 +21,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { Presenter } from "./components/Presenter";
 import { VersionHistory } from "./components/VersionHistory";
 import { VariablesDialog } from "./components/VariablesDialog";
+import { PreferencesDialog } from "./components/PreferencesDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
 import { ContextMenu } from "./components/ContextMenu";
@@ -382,7 +383,7 @@ export function App() {
         s.setTool("select");
       } else if (key.startsWith("arrow") && selection.length) {
         e.preventDefault();
-        const step = e.shiftKey ? 10 : 1;
+        const step = e.shiftKey ? s.prefs.bigNudge : s.prefs.nudge;
         const dx = key === "arrowleft" ? -step : key === "arrowright" ? step : 0;
         const dy = key === "arrowup" ? -step : key === "arrowdown" ? step : 0;
         selection.filter((id) => !doc.getNode(id)?.locked).forEach((id) => doc.moveNode(id, dx, dy));
@@ -445,6 +446,7 @@ export function App() {
       <Presenter />
       <VersionHistory />
       <VariablesDialog />
+      <PreferencesDialog />
     </div>
   );
 }

@@ -5,6 +5,15 @@ import type { DriveUser } from "./drive/drive";
 import { parseRoute, type ViewerMode } from "./route";
 import { seedWelcome } from "./seed/welcome";
 import { parseTheme, THEME_KEY, type ThemePreference } from "./theme";
+import { DEFAULT_PREFS, parsePrefs, PREFS_KEY, type Prefs } from "./prefs";
+
+function readPrefs(): Prefs {
+  try {
+    return parsePrefs(localStorage.getItem(PREFS_KEY));
+  } catch {
+    return DEFAULT_PREFS;
+  }
+}
 
 function readTheme(): ThemePreference {
   try {
@@ -63,6 +72,8 @@ interface EditorState {
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
+  prefs: Prefs;
+  prefsOpen: boolean;
   /** Figma's "Minimize UI": the side panels and toolbar are hidden so the canvas fills the window. */
   uiHidden: boolean;
   theme: ThemePreference;
@@ -91,6 +102,8 @@ interface EditorState {
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
+  setPrefs: (patch: Partial<Prefs>) => void;
+  setPrefsOpen: (open: boolean) => void;
   setUiHidden: (hidden: boolean) => void;
   setTheme: (theme: ThemePreference) => void;
   setVersionsOpen: (open: boolean) => void;
@@ -132,6 +145,8 @@ export const useEditor = create<EditorState>((set) => ({
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
   paletteOpen: false,
+  prefs: readPrefs(),
+  prefsOpen: false,
   uiHidden: false,
   theme: readTheme(),
   versionsOpen: false,
@@ -172,6 +187,17 @@ export const useEditor = create<EditorState>((set) => ({
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setPrefs: (patch) =>
+    set((s) => {
+      const prefs = { ...s.prefs, ...patch };
+      try {
+        localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+      } catch {
+        /* private mode: the choice lasts for this session */
+      }
+      return { prefs };
+    }),
+  setPrefsOpen: (prefsOpen) => set({ prefsOpen }),
   setUiHidden: (uiHidden) => set({ uiHidden }),
   setTheme: (theme) => {
     try {
