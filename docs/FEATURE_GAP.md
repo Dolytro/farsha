@@ -40,8 +40,8 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Paste images from the clipboard, drag and drop image files (PNG / JPEG / WebP / GIF; stored inside the .canvylo file) | ✅ | |
 | Image fills on shapes, crop, replace image | ❌ | P1 |
 | Select all (Ctrl+A) | ✅ | |
-| Select none / inverse / matching (Ctrl+Shift+A, Ctrl+Alt+A) (menu) | ❌ | P2 |
-| Select children (Enter), select parent (Shift+Enter), Tab to next | ❌ | P2 |
+| Select inverse (Ctrl+Shift+A) | ✅ | Select none is Esc. Missing: select all matching (Ctrl+Alt+A) |
+| Select children (Enter), select parent (Shift+Enter), Tab / Shift+Tab to next / previous sibling | ✅ | |
 | Double-click to enter a group; Figma selects the top-level layer first | ❌ | P1 |
 | Resize from all 8 handles, Shift = keep ratio, Alt = from center | 🟡 | All 8 handles (sides are invisible strips like Figma), Shift, Alt done. Missing: resizing several layers at once, rotated layers, flipping when dragged past the opposite side, children scaling (constraints) |
 | Rotate handle, rotate with Ctrl+Alt+arrows (menu) | 🟡 numeric only | P1 |
