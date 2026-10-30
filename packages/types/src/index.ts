@@ -224,6 +224,17 @@ export interface LayoutGrid {
   visible: boolean;
 }
 
+/** A property of a main component that its instances can set: show / hide a layer, or change a text layer's text. */
+export interface ComponentProperty {
+  id: string;
+  name: string;
+  type: 'BOOLEAN' | 'TEXT';
+  /** The value instances start with. */
+  defaultValue: boolean | string;
+  /** The layer inside the main component this property controls. */
+  targetId: string;
+}
+
 export interface FrameNode extends BaseNode, AutoLayoutProps {
   type: 'FRAME';
   fills: Paint[];
@@ -240,6 +251,10 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   isComponent?: boolean;
   /** Set on an instance: id of the main component it follows. */
   componentId?: string;
+  /** On a main component: the properties its instances can set. */
+  componentProps?: ComponentProperty[];
+  /** On an instance: the values it sets for those properties, by property id. */
+  propValues?: Record<string, boolean | string>;
   /** Main components that share a set id are the variants of one component (Figma's component set). */
   componentSetId?: string;
   /** Value of every variant property for this variant, e.g. { Size: 'Large', State: 'Hover' }. */
