@@ -183,7 +183,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Area | Figma item | Status |
 |---|---|---|
 | Menu bar | Main menu with File / Edit / View / Object / Text / Arrange / Vector / Preferences and shortcut hints | ✅ (hamburger in the left header; every entry is a command of the Actions palette, entries for commands that do not exist yet are hidden) |
-| File | New Design, Place image… (Ctrl+Shift+K), Duplicate, Save local copy, Save to version history (Ctrl+Alt+S), Show version history, Export… (Ctrl+Shift+E) | partly ✅ (Place image, Duplicate, Export… ❌) |
+| File | New file, Place image… (Ctrl+Shift+K), Duplicate, Open / Save local copy, Save to version history (Ctrl+Alt+S), Show version history, Export… (Ctrl+Shift+E: selection, or every frame of the page) | ✅ |
 | File | Export frames to PDF, Create branch | ❌ (PDF later; branching needs a backend) |
 | Edit | Undo / Redo, Copy as, Paste over selection, Duplicate, Delete, Copy / Paste properties, Pick color, Select all / matching / none / inverse | ✅ |
 | Edit | Paste to replace (Ctrl+Shift+R alias), Find (Ctrl+F) / next / previous, Find and replace, Set default properties, Select all with… | ❌ |
@@ -201,7 +201,8 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Preferences | Theme, Nudge amount, keep tool, snapping, zoom options | ✅ (Color profile, Keyboard layout, Accessibility, Permissions: ❌ / browser-bound) |
 | Toolbar | Move, Hand, Frame, Rectangle, Line, Arrow, Ellipse, Polygon, Star, Pen, Text | ✅ |
 | Toolbar | Section (Shift+S), Scale tool (K: drag a corner, the layer and its text, strokes, radii, shadows and auto layout spacing scale together) | ✅ |
-| Toolbar | Slice (S), Image / video… (Ctrl+Shift+K), Pencil (Shift+P), Text on path, Comment tool (C) | ❌ |
+| Toolbar | Image… (Ctrl+Shift+K) | ✅ (video ❌) |
+| Toolbar | Slice (S), Pencil (Shift+P), Text on path, Comment tool (C) | ❌ |
 | Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | ✅ (opacity keys, Alt+drag copies the selection in one undo step) |
 | Design panel | Page background colour, Styles on a page, Selection colors, Export on a page | ❌ |
 | Design panel | Stroke dash / caps / joins / arrowheads, per-side stroke weights, background blur, corner smoothing | ❌ |
