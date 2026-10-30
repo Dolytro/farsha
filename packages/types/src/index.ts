@@ -225,6 +225,10 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   isComponent?: boolean;
   /** Set on an instance: id of the main component it follows. */
   componentId?: string;
+  /** Main components that share a set id are the variants of one component (Figma's component set). */
+  componentSetId?: string;
+  /** Value of every variant property for this variant, e.g. { Size: 'Large', State: 'Hover' }. */
+  variantProps?: Record<string, string>;
 }
 
 export interface GroupNode extends BaseNode {

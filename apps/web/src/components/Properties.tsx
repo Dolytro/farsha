@@ -7,6 +7,7 @@ import { ConstraintsSection } from "./ConstraintsSection";
 import { AutoLayoutSection, ChildSizingSection } from "./AutoLayoutSection";
 import { AlignRow } from "./AlignRow";
 import { PrototypePanel } from "./PrototypePanel";
+import { VariantsSection } from "./VariantsSection";
 import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
@@ -229,6 +230,7 @@ export function Properties() {
 
       <FillSection doc={doc} node={node} />
 
+      <VariantsSection doc={doc} node={node} />
       <ChildSizingSection doc={doc} node={node} />
       <AutoLayoutSection doc={doc} node={node} select={select} />
       <StrokeSection doc={doc} node={node} />
