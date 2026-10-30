@@ -889,6 +889,15 @@ export class DesignDoc {
     this.setProps(id, clean);
   }
 
+  /** Write several properties of several layers in one undo step (used by the Scale tool). Unknown ids are skipped. */
+  patchNodes(updates: Record<string, Record<string, unknown>>): void {
+    this.transact(() => {
+      for (const [id, props] of Object.entries(updates)) {
+        if (this.nodes.has(id)) this.setProps(id, props);
+      }
+    });
+  }
+
   /** Replace the geometry of a VECTOR layer (used while a Line / Arrow is being drawn). */
   setVector(id: string, patch: { viewBox: string; markup: string }): void {
     if (this.requireNode(id).type !== 'VECTOR') throw new Error('setVector requires a VECTOR node');

@@ -1,4 +1,5 @@
 import { duplicateNodes } from "../clipboard";
+import { buildScaleUpdates } from "../scale";
 import { textFontStyle, verticalTextOffset } from "@canvylo/canvas-engine";
 import { PINCH_STRENGTH, WHEEL_STRENGTH, wheelZoomFactor } from "../prefs";
 import { showPixelGrid, visibleWorld } from "../pixel-grid";
@@ -19,6 +20,7 @@ type Drag =
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
   | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
+  | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
   | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
   | { kind: "line"; id: string; wx: number; wy: number; px: number; py: number; arrow: boolean }
   | { kind: "marquee"; wx: number; wy: number; additive: boolean; base: string[] };
@@ -154,11 +156,16 @@ export function Canvas() {
     if (corner && selection[0]) {
       const box = doc.getNode(selection[0])!;
       doc.stopCapturing();
+      if (tool === "scale") {
+        // the Scale tool grows the layer and everything in it; the layers are remembered as they were so each move starts from them
+        drag.current = { kind: "scale", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, snapshot: [box, ...doc.descendants(box.id)] };
+        return;
+      }
       drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height } };
       return;
     }
     const labelId = el.dataset.labelId;
-    if (tool === "select") {
+    if ((tool === "select" || tool === "scale")) {
       const labelHit = labelId ? doc.getNode(labelId) : undefined;
       const hit = labelHit ? (labelHit.locked ? undefined : labelHit) : pick(w.x, w.y);
       if (!hit) {
@@ -229,7 +236,7 @@ export function Canvas() {
   const onPointerMove = (e: PointerEvent) => {
     const d = drag.current;
     if (!d) {
-      if (tool === "select") {
+      if ((tool === "select" || tool === "scale")) {
         const w = world(e);
         const labelId = (e.target as SVGElement).dataset.labelId;
         setHoverId(labelId ?? pick(w.x, w.y)?.id ?? null);
@@ -260,6 +267,9 @@ export function Canvas() {
       const turned = ((Math.atan2(w.y - d.cy, w.x - d.cx) - d.start) * 180) / Math.PI;
       const next = d.base + turned;
       doc.rotateNode(d.id, e.shiftKey ? Math.round(next / 15) * 15 : Math.round(next * 10) / 10);
+    } else if (d.kind === "scale") {
+      const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: true, fromCenter: e.altKey });
+      doc.patchNodes(buildScaleUpdates(d.snapshot, next));
     } else if (d.kind === "resize") {
       // Shift keeps the ratio, Alt resizes from the centre (Figma).
       const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
@@ -515,7 +525,7 @@ export function Canvas() {
       ]
     : [];
 
-  const cursor = tool === "hand" || spaceDown ? "grab" : tool !== "select" ? "crosshair" : "default";
+  const cursor = tool === "hand" || spaceDown ? "grab" : tool !== "select" && tool !== "scale" ? "crosshair" : "default";
 
   return (
     <main

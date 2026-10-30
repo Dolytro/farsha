@@ -9,6 +9,7 @@ const icon = (d: ReactElement) => (
 
 const TOOLS: { id: Tool; label: string; key: string; icon: ReactElement; design?: boolean }[] = [
   { id: "select", label: "Move", key: "V", icon: icon(<path d="M3.5 2.5l9 4-3.8 1.4-1.4 3.8z" />) },
+  { id: "scale", label: "Scale", key: "K", design: true, icon: icon(<path d="M3 13l4-4M3 9.5V13h3.5M13 3L9.5 6.5M13 6.5V3H9.5M5 5h6v6H5z" />) },
   { id: "hand", label: "Hand tool", key: "H", icon: icon(<path d="M5.5 8V3.8a.9.9 0 011.8 0V7m0-3.7a.9.9 0 011.8 0V7m0-2.5a.9.9 0 011.8 0V9c0 2.5-1.5 4-3.7 4-1.7 0-2.6-.8-3.6-2.2L3 8.7a.9.9 0 011.4-1.1l1.1 1" />) },
   { id: "frame", label: "Frame", key: "F", design: true, icon: icon(<path d="M5 1.5v13M11 1.5v13M1.5 5h13M1.5 11h13" />) },
   { id: "section", label: "Section", key: "Shift+S", design: true, icon: icon(<path d="M2.5 4.5h4M2.5 4.5v8h11v-8H9.5M6.5 3v3" />) },
