@@ -77,9 +77,9 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 
 | Feature | Status | Pri |
 |---|---|---|
-| Components, instances, detach, overrides | ❌ | P1 |
+| Components, instances, detach, overrides | 🟡 | Create component (Ctrl+Alt+K, wraps non-frames), copy / paste a main component to get an instance, edits of the main flow into instances, property overrides kept per layer, Reset all overrides, Go to main component, Detach instance (Ctrl+Alt+B), purple layer icons. Missing: Assets panel to insert instances, Alt-drag, instance swap, nested instances (they flatten), overrides on deleted / re-ordered layers (deleted layers come back, order follows the main), Ctrl+D on a frame copies only the frame itself (existing bug), main component purple selection outline |
 | Variants and component properties | ❌ | P2 |
-| "Main component" (Object menu) (menu) | ❌ | P1 |
+| "Main component" (Object menu) (menu) | ✅ | Create component |
 | Color / text / effect / grid styles | ❌ | P2 |
 | Variables (color, number, string, boolean) and modes (light / dark) | ❌ | P2 |
 | Libraries, publish, update | ❌ | P3 |
@@ -171,6 +171,6 @@ Interactions (click / hover / drag), navigate / overlay / back, transitions, sma
 1. ~~Copy / cut / paste, select all, right-click menu, rename / lock, layer drag-reorder, pages.~~ done
 2. ~~Stroke, effects (shadow / blur), text controls, gradients, image fills, export (PNG / SVG).~~ done
 3. ~~Auto Layout v1, constraints, snapping and smart guides, align / distribute, rulers and guides.~~ done (round 2 items are in the tables above)
-4. **Components, variants, styles, variables.** (next)
+4. **Components, variants, styles, variables.** Components v1 done (main + instances, overrides, detach); next: Assets panel, then variants, styles, variables.
 5. **Line / Arrow / Polygon / Star, Pen, multiple fills and strokes.**
 6. **Prototype, comments, live collaboration.**

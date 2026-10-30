@@ -18,6 +18,13 @@ export interface StoredAsset {
 }
 
 type NodeMap = Y.Map<unknown>;
+
+/** Keys that describe the instance link; never copied from the main component and never overridden. */
+const INSTANCE_KEYS = new Set(['id', 'type', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent']);
+/** Keys of an instance's own root that belong to the instance (its place on the canvas and its name). */
+const ROOT_KEYS = new Set(['x', 'y', 'name', 'orderKey']);
+/** Keys not copied when a main component layer is cloned into an instance. */
+const CLONE_DROP = new Set(['id', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent']);
 type CreateProps = Partial<Omit<DesignNode, 'id' | 'type' | 'parentId' | 'orderKey'>>;
 
 export interface CreateNodeOptions {
@@ -67,7 +74,9 @@ export class DesignDoc {
     // Keep auto layout frames laid out after every local edit. The re-layout runs inside the same undo step
     // (it follows the edit within the capture window); undo / redo and remote changes already carry their own layout.
     this.ydoc.on('afterTransaction', (tr: Y.Transaction) => {
-      if (tr.origin === LOCAL_ORIGIN && !this.relayouting) this.relayout();
+      if (tr.origin !== LOCAL_ORIGIN || this.relayouting || this.syncing || tr.changed.size === 0) return;
+      this.syncInstances();
+      this.relayout();
     });
     if (options.init !== false && !this.meta.has('rootId')) this.initialise();
   }
@@ -76,7 +85,12 @@ export class DesignDoc {
   private followParent(frameId: string, from: { width: number; height: number }, to: { width: number; height: number }): void {
     for (const c of this.children(frameId)) {
       const box = applyConstraints(c, from, to);
-      this.setProps(c.id, { x: box.x, y: box.y, width: box.width, height: box.height });
+      this.noOverride = true;
+      try {
+        this.setProps(c.id, { x: box.x, y: box.y, width: box.width, height: box.height });
+      } finally {
+        this.noOverride = false;
+      }
       if (c.type === 'FRAME' && !c.layoutMode && (box.width !== c.width || box.height !== c.height)) {
         this.followParent(c.id, { width: c.width, height: c.height }, { width: box.width, height: box.height });
       }
@@ -84,6 +98,211 @@ export class DesignDoc {
   }
 
   private relayouting = false;
+  private syncing = false;
+  /** Set while the document itself moves layers (constraints), so those moves do not count as user overrides. */
+  private noOverride = false;
+
+  // ---------- components ----------
+
+  /** parentId -> child ids sorted by orderKey, read straight from Yjs (the caches are stale while a transaction is open). */
+  private rawChildren(): Map<string, string[]> {
+    const index = new Map<string, { id: string; key: string }[]>();
+    for (const [id, map] of this.nodes.entries()) {
+      const parent = map.get('parentId') as string | null;
+      if (!parent) continue;
+      const entry = { id, key: map.get('orderKey') as string };
+      const list = index.get(parent);
+      if (list) list.push(entry);
+      else index.set(parent, [entry]);
+    }
+    const out = new Map<string, string[]>();
+    for (const [parent, list] of index) {
+      list.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : a.id < b.id ? -1 : 1));
+      out.set(parent, list.map((e) => e.id));
+    }
+    return out;
+  }
+
+  /** Make every instance mirror its main component, except for the properties the instance overrides. */
+  private syncInstances(): void {
+    this.syncing = true;
+    try {
+      this.transact(() => {
+        for (let pass = 0; pass < 4; pass++) {
+          const kids = this.rawChildren();
+          let changed = false;
+          for (const [id, map] of [...this.nodes.entries()]) {
+            const componentId = map.get('componentId') as string | undefined;
+            if (!componentId) continue;
+            const main = this.nodes.get(componentId);
+            if (!main || !main.get('isComponent') || this.insideRaw(id, componentId)) {
+              this.stripInstance(id, kids);
+              changed = true;
+            } else if (this.syncNode(componentId, id, true, kids)) changed = true;
+          }
+          if (!changed) break;
+        }
+      });
+    } finally {
+      this.syncing = false;
+    }
+  }
+
+  /** True when `id` is `ancestorId` or sits somewhere below it, read straight from Yjs. */
+  private insideRaw(id: string, ancestorId: string): boolean {
+    for (let cur: string | null | undefined = id, n = 0; cur && n < 1000; n++) {
+      if (cur === ancestorId) return true;
+      cur = this.nodes.get(cur)?.get('parentId') as string | null | undefined;
+    }
+    return false;
+  }
+
+  private syncNode(srcId: string, dstId: string, root: boolean, kids: Map<string, string[]>): boolean {
+    const src = this.nodes.get(srcId)!;
+    const dst = this.nodes.get(dstId)!;
+    const overridden = new Set((dst.get('overrides') as string[] | undefined) ?? []);
+    const skip = (key: string) => INSTANCE_KEYS.has(key) || overridden.has(key) || (root && ROOT_KEYS.has(key));
+    let changed = false;
+    for (const key of src.keys()) {
+      if (skip(key)) continue;
+      const value = src.get(key);
+      if (JSON.stringify(value) !== JSON.stringify(dst.get(key))) {
+        dst.set(key, value);
+        changed = true;
+      }
+    }
+    for (const key of [...dst.keys()]) {
+      if (skip(key) || src.has(key)) continue;
+      dst.delete(key);
+      changed = true;
+    }
+    const srcKids = kids.get(srcId) ?? [];
+    const dstKids = kids.get(dstId) ?? [];
+    const mirrored = new Map<string, string>();
+    for (const k of dstKids) {
+      const m = this.nodes.get(k)!.get('mainId') as string | undefined;
+      if (m) mirrored.set(m, k);
+    }
+    for (const sk of srcKids) {
+      const dk = mirrored.get(sk);
+      if (dk) {
+        if (this.syncNode(sk, dk, false, kids)) changed = true;
+      } else {
+        this.cloneInto(sk, dstId, kids);
+        changed = true;
+      }
+    }
+    const live = new Set(srcKids);
+    for (const dk of dstKids) {
+      const m = this.nodes.get(dk)!.get('mainId') as string | undefined;
+      if (m && !live.has(m)) {
+        this.deleteRaw(dk, kids);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  /** Copy a main component layer (and its subtree) under `parentId` as an instance layer that remembers its source. */
+  private cloneInto(srcId: string, parentId: string, kids: Map<string, string[]>): void {
+    const src = this.nodes.get(srcId)!;
+    const id = nanoid();
+    const map: NodeMap = new Y.Map();
+    for (const [key, value] of src.entries()) {
+      if (!CLONE_DROP.has(key)) map.set(key, value);
+    }
+    map.set('id', id);
+    map.set('parentId', parentId);
+    map.set('mainId', srcId);
+    this.nodes.set(id, map);
+    for (const k of kids.get(srcId) ?? []) this.cloneInto(k, id, kids);
+  }
+
+  private deleteRaw(id: string, kids: Map<string, string[]>): void {
+    for (const k of kids.get(id) ?? []) this.deleteRaw(k, kids);
+    this.nodes.delete(id);
+  }
+
+  private stripInstance(id: string, kids: Map<string, string[]>): void {
+    const map = this.nodes.get(id)!;
+    map.delete('componentId');
+    map.delete('overrides');
+    for (const k of kids.get(id) ?? []) {
+      this.nodes.get(k)!.delete('mainId');
+      this.stripInstance(k, kids);
+    }
+  }
+
+  /** The instance a layer belongs to (the layer itself or an ancestor), if any. */
+  instanceOf(id: string): DesignNode | undefined {
+    for (let n = this.getNode(id); n; n = n.parentId ? this.getNode(n.parentId) : undefined) {
+      if (n.type === 'FRAME' && n.componentId) return n;
+    }
+    return undefined;
+  }
+
+  /** Turn a frame into a main component, or wrap other layers (which share a parent) in a new main component. */
+  createComponent(ids: string[]): string {
+    const nodes = ids.map((id) => this.requireNode(id));
+    if (!nodes.length) throw new Error('Nothing to turn into a component');
+    const parentId = nodes[0]!.parentId;
+    if (!parentId || nodes.some((n) => n.parentId !== parentId)) throw new Error('Layers must share a parent');
+    if (nodes.some((n) => n.mainId)) throw new Error('Cannot make a component from a layer inside an instance');
+    const only = nodes[0]!;
+    if (nodes.length === 1 && only.type === 'FRAME' && !only.componentId) {
+      this.setProps(only.id, { isComponent: true });
+      return only.id;
+    }
+    const order = this.children(parentId).map((n) => n.id);
+    const sorted = [...nodes].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    const x = Math.min(...sorted.map((n) => n.x));
+    const y = Math.min(...sorted.map((n) => n.y));
+    const right = Math.max(...sorted.map((n) => n.x + n.width));
+    const bottom = Math.max(...sorted.map((n) => n.y + n.height));
+    let wrapperId = '';
+    this.transact(() => {
+      wrapperId = this.createNode('FRAME', {
+        parentId,
+        index: order.indexOf(sorted[0]!.id),
+        props: { name: sorted[0]!.name, x, y, width: right - x, height: bottom - y, fills: [], clipsContent: false, isComponent: true },
+      });
+      for (const n of sorted) {
+        this.reparentNode(n.id, wrapperId);
+        this.setProps(n.id, { x: n.x - x, y: n.y - y });
+      }
+    });
+    return wrapperId;
+  }
+
+  /** Place a new instance of a main component. */
+  createInstance(componentId: string, parentId: string, x = 0, y = 0, index?: number): string {
+    const main = this.requireNode(componentId);
+    if (main.type !== 'FRAME' || !main.isComponent) throw new Error('Not a main component');
+    if (parentId === componentId || this.isAncestor(componentId, parentId)) throw new Error('Cannot place a component inside itself');
+    let id = '';
+    this.transact(() => {
+      id = this.createNode('FRAME', { parentId, index, props: { name: main.name, x, y, width: main.width, height: main.height, componentId } });
+    });
+    return id;
+  }
+
+  /** Cut an instance loose from its main component; it becomes a plain frame with the layers it has now. */
+  detachInstance(id: string): void {
+    const node = this.requireNode(id);
+    if (node.type !== 'FRAME' || !node.componentId) throw new Error('Not an instance');
+    this.transact(() => this.stripInstance(id, this.rawChildren()));
+  }
+
+  /** Drop every override inside an instance so it matches its main component again. */
+  resetOverrides(id: string): void {
+    this.requireNode(id);
+    this.transact(() => {
+      for (const n of [this.getNode(id)!, ...this.descendants(id)]) {
+        const map = this.nodes.get(n.id)!;
+        if (map.has('overrides')) map.delete('overrides');
+      }
+    });
+  }
 
   /** Lay out every auto layout frame, innermost first so hugging parents see their children's new sizes. */
   private relayout(): void {
@@ -432,8 +651,13 @@ export class DesignDoc {
 
   private setProps(id: string, patch: Record<string, unknown>): void {
     const map = this.nodes.get(id)!;
+    const follows = !this.noOverride && (map.get('mainId') !== undefined || map.get('componentId') !== undefined);
     this.transact(() => {
       for (const [key, value] of Object.entries(patch)) map.set(key, value);
+      if (!follows) return;
+      const isRoot = map.get('componentId') !== undefined;
+      const keys = Object.keys(patch).filter((k) => !INSTANCE_KEYS.has(k) && (isRoot ? !ROOT_KEYS.has(k) : k !== 'orderKey'));
+      if (keys.length) map.set('overrides', [...new Set([...((map.get('overrides') as string[] | undefined) ?? []), ...keys])]);
     });
   }
 

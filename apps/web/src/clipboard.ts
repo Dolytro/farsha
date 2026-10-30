@@ -26,6 +26,11 @@ let pasteCount = 0;
 
 function toClip(doc: DesignDoc, node: DesignNode): ClipNode {
   const { id, parentId: _p, orderKey: _o, type, ...props } = node;
+  // Pasting a main component makes an instance of it (Figma); the instance fills its own layers.
+  if (node.type === "FRAME" && node.isComponent) {
+    const { isComponent: _c, ...rest } = props as Record<string, unknown>;
+    return { type, props: { ...rest, componentId: id }, children: [] };
+  }
   return { type, props, children: doc.children(id).map((c) => toClip(doc, c)) };
 }
 
@@ -69,6 +74,13 @@ function create(doc: DesignDoc, clip: ClipNode, parentId: string, dx: number, dy
     const props = { ...clip.props } as Record<string, unknown> & { x?: number; y?: number };
     if (typeof props.x === "number") props.x += dx;
     if (typeof props.y === "number") props.y += dy;
+    // An instance can't live inside its own main component: it lands beside it instead.
+    const main = typeof props.componentId === "string" ? doc.getNode(props.componentId) : undefined;
+    if (main && (parentId === main.id || doc.isAncestor(main.id, parentId))) {
+      parentId = main.parentId ?? parentId;
+      if (typeof props.x === "number") props.x = main.x + main.width + 20;
+      if (typeof props.y === "number") props.y = main.y;
+    }
     const id = doc.createNode(clip.type, { parentId, props });
     for (const child of clip.children) create(doc, child, id, 0, 0);
     return id;

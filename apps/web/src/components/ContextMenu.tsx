@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { buildMenu, type MenuAction } from "../context-menu";
 import { toggleHidden, toggleLocked, groupSelection, ungroupSelection, reorderSelection } from "../actions";
 import { addAutoLayout } from "../auto-layout-actions";
+import { createComponentFromSelection, detachSelection, mainsOf, resetSelection } from "../component-actions";
 import { copyAsCss, copyAsPng, copyAsSvg } from "../exporting";
 import { copyNodes, copyProperties, parseClip, pasteNodes, pasteOver, pasteProperties, pasteTarget, pasteText, topLevelOf } from "../clipboard";
 import { useEditor } from "../store";
@@ -83,6 +84,16 @@ async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
       case "group": return select(groupSelection(doc, selection));
       case "ungroup": return select(ungroupSelection(doc, selection));
       case "auto-layout": return select(addAutoLayout(doc, selection));
+      case "create-component": return select(createComponentFromSelection(doc, selection));
+      case "detach-instance": return select(detachSelection(doc, selection));
+      case "reset-overrides": return resetSelection(doc, selection);
+      case "go-to-main": {
+        const mains = mainsOf(doc, selection);
+        if (!mains.length) return showToast("The main component no longer exists");
+        const page = doc.pages().find((p) => p.id === mains[0] || doc.isAncestor(p.id, mains[0]!));
+        if (page && page.id !== s.pageId) s.setPage(page.id);
+        return select(mains);
+      }
       case "visibility": return toggleHidden(doc, selection);
       case "lock": return toggleLocked(doc, selection);
       case "delete":
@@ -145,6 +156,7 @@ export function ContextMenu() {
     readOnlyViewer: Boolean(st.viewer) && !canInspect,
     selectionCount: nodes.length,
     hasGroup: nodes.some((n) => n.type === "GROUP"),
+    hasInstance: nodes.some((n) => st.doc.instanceOf(n.id)),
     allHidden: nodes.length > 0 && nodes.every((n) => !n.visible),
     allLocked: nodes.length > 0 && nodes.every((n) => n.locked),
   });
