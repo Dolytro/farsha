@@ -17,7 +17,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Image / video placement, paste or drop an image | ❌ | P1 |
 | Pen tool (P) | 🟡 | Click for corner points, drag for curve handles, click the first point to close, Enter / double-click / Esc to finish, Backspace removes the last point; result is a vector layer with editable stroke and fill. Point editing done (Enter or double-click a pen path: drag anchors and handles, click the path to add a point, Alt+click or Delete removes one, double-click a point to switch corner / smooth; needs no rotation or flip). Missing: Pencil, joining / splitting paths, editing imported SVG vectors, boolean operations |
 | Comment tool (C) | ❌ | P2 |
-| Color picker / eyedropper (I) (menu) | ❌ | P2 |
+| Color picker / eyedropper (I) (menu) | 🟡 | Eyedropper (I or Actions) picks a colour anywhere on the screen and applies it to the selection (copies it when nothing is selected); needs Chromium's EyeDropper API. Real screen picking could not be driven in the test browser (a stub was used). Missing: a colour picker popover with a spectrum |
 | Tool dropdowns with variants in the toolbar | ❌ | P2 |
 | "Keep tool selected after use" setting (menu) | ❌ | P3 |
 
@@ -109,7 +109,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Pixel grid (Shift+') and pixel preview (menu) | ❌ | P2 |
 | Rulers (Shift+R) and guides, layout guides (Shift+G) (menu) | 🟡 | Rulers with selection range, drag out guides, move them, drop on a ruler to delete, layers snap to guides, guides are saved per page and undoable. Layout grids done: a Layout grid section on frames (columns, rows or a square grid with count, gutter, margin, size, colour, opacity, show / hide) and Shift+G shows or hides them; grids are not exported and layers do not snap to them yet. Missing: frame-level rulers, guide value editing, hiding guides without hiding rulers, a guide readout while dragging layers |
 | Outlines, mask outlines, frame outlines (menu) | ❌ | P3 |
-| Minimize UI / hide UI (Ctrl+\\) (menu) | ❌ | P3 |
+| Minimize UI / hide UI (Ctrl+\\) (menu) | ✅ | Hides both panels and the toolbar; also in Actions |
 | Multiplayer cursors (menu) | ❌ | P3 |
 | Comments (Shift+C) and annotations (Shift+Y) visibility (menu) | ❌ | P2 |
 | Dev Mode toggle (Shift+D) | ✅ | |
