@@ -1,16 +1,19 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { Box, DesignNode, Interaction } from "@canvylo/types";
+import { topLevelFrames } from "./section-actions";
 
 /** Top-level frames of every page: the screens a prototype can navigate between. */
 export function prototypeFrames(doc: DesignDoc): DesignNode[] {
-  return doc.pages().flatMap((p) => doc.children(p.id).filter((n) => n.type === "FRAME"));
+  return doc.pages().flatMap((p) => topLevelFrames(doc, p.id));
 }
 
 /** The top-level frame a layer lives in (or the layer itself when it is one). */
 export function topFrameOf(doc: DesignDoc, id: string | undefined): DesignNode | undefined {
   let cur = id ? doc.getNode(id) : undefined;
-  while (cur?.parentId && doc.getNode(cur.parentId)?.type !== "PAGE") cur = doc.getNode(cur.parentId);
-  return cur?.type === "FRAME" ? cur : undefined;
+  // sections are only folders: a frame directly inside one is still a top-level frame
+  const screenParent = (n: DesignNode | undefined) => !n || n.type === "PAGE" || (n.type === "FRAME" && !!n.isSection);
+  while (cur?.parentId && !screenParent(doc.getNode(cur.parentId))) cur = doc.getNode(cur.parentId);
+  return cur?.type === "FRAME" && !cur.isSection ? cur : undefined;
 }
 
 /** The frame a presentation starts from: the selected layer's frame, else the first frame. */

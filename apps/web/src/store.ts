@@ -23,7 +23,7 @@ function readTheme(): ThemePreference {
   }
 }
 
-export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star" | "pen";
+export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star" | "pen" | "section";
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "needs-auth";
 export type LoadState = "ready" | "loading" | "error";
 

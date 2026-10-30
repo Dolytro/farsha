@@ -253,6 +253,8 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   cornerRadii?: [number, number, number, number];
   clipsContent: boolean;
   layoutGrids?: LayoutGrid[];
+  /** A section: a named area of the canvas that holds frames and layers but is not itself a screen (Figma's Section tool). */
+  isSection?: boolean;
   /** True for a main component: its layers are mirrored by every instance. */
   isComponent?: boolean;
   /** Set on an instance: id of the main component it follows. */

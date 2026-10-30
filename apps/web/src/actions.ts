@@ -1,6 +1,7 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import { booleanShapes, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@canvylo/canvas-engine";
 import type { Box } from "@canvylo/types";
+import { isSection, topLevelFrames } from "./section-actions";
 
 /** Group selected siblings under a new GROUP (Ctrl+G). Returns the new selection. */
 export function groupSelection(doc: DesignDoc, ids: string[]): string[] {
@@ -186,14 +187,14 @@ export function booleanSelection(doc: DesignDoc, ids: string[], op: BooleanOp): 
 }
 
 export function adjacentFrame(doc: DesignDoc, pageId: string, current: string | undefined, direction: 1 | -1): string | undefined {
-  const frames = doc
-    .children(pageId)
-    .filter((n) => n.type === "FRAME" && n.visible)
-    .sort((a, b) => a.y - b.y || a.x - b.x);
+  const place = (id: string) => doc.absoluteBox(id) ?? { x: 0, y: 0, width: 0, height: 0 };
+  const frames = topLevelFrames(doc, pageId)
+    .filter((n) => n.visible)
+    .sort((a, b) => place(a.id).y - place(b.id).y || place(a.id).x - place(b.id).x);
   if (!frames.length) return undefined;
   // From a nested layer, start from the top-level frame it lives in.
   let top = current ? doc.getNode(current) : undefined;
-  while (top && top.parentId && top.parentId !== pageId) top = doc.getNode(top.parentId);
+  while (top && top.parentId && top.parentId !== pageId && !isSection(doc.getNode(top.parentId))) top = doc.getNode(top.parentId);
   const at = top ? frames.findIndex((f) => f.id === top!.id) : -1;
   const next = at < 0 ? (direction === 1 ? 0 : frames.length - 1) : (at + direction + frames.length) % frames.length;
   return frames[next]!.id;
