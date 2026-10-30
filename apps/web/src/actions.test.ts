@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { adjacentFrame, flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
+import { groupSelection, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
 
 function setup() {
   const doc = new DesignDoc();
@@ -92,5 +92,38 @@ describe("adjacentFrame", () => {
   it("is undefined without frames", () => {
     const doc = new DesignDoc();
     expect(adjacentFrame(doc, doc.pages()[0]!.id, undefined, 1)).toBeUndefined();
+  });
+});
+
+describe("useAsMask", () => {
+  it("toggles a single layer as mask", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("ELLIPSE", { parentId: doc.pages()[0]!.id });
+    useAsMask(doc, [id]);
+    expect(doc.getNode(id)!.isMask).toBe(true);
+    useAsMask(doc, [id]);
+    expect(doc.getNode(id)!.isMask).toBe(false);
+  });
+
+  it("groups several layers and makes the bottom one the mask", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const shape = doc.createNode("ELLIPSE", { parentId: page, props: { x: 0, y: 0, width: 50, height: 50 } });
+    const photo = doc.createNode("RECTANGLE", { parentId: page, props: { x: 10, y: 10, width: 80, height: 80 } });
+    const [group] = useAsMask(doc, [shape, photo]);
+    expect(doc.getNode(group!)!.type).toBe("GROUP");
+    expect(doc.getNode(shape)!.isMask).toBe(true);
+    expect(doc.getNode(photo)!.isMask).toBeFalsy();
+  });
+});
+
+describe("groupSelection order", () => {
+  it("keeps the stacking order, not the selection order", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const bottom = doc.createNode("RECTANGLE", { parentId: page });
+    const top = doc.createNode("RECTANGLE", { parentId: page });
+    const [group] = groupSelection(doc, [top, bottom]);
+    expect(doc.children(group!).map((n) => n.id)).toEqual([bottom, top]);
   });
 });

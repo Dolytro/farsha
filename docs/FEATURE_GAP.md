@@ -50,7 +50,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Snapping, smart guides, pixel snapping | 🟡 | Moving snaps to edges and centres of sibling layers and the parent frame, red guide lines, hold Ctrl to turn off. Missing: snapping while resizing, equal-spacing guides, distance labels while dragging, pixel snapping, a setting to turn it off |
 | Align and distribute, Tidy up | 🟡 | Align (6 modes, Alt+A/H/D/W/V/S, panel row) and distribute spacing (panel buttons, 3+ layers) done. Missing: Tidy up, distribute shortcuts, aligning to the selection when a single layer is on a page |
 | Boolean operations, flatten, outline stroke | ❌ | P3 |
-| Mask (Ctrl+Alt+M), frame selection (Ctrl+Alt+G) | 🟡 | Frame selection done (shortcut, context menu, Actions). Mask missing |
+| Mask (Ctrl+Alt+M), frame selection (Ctrl+Alt+G) | ✅ | Mask: several layers are grouped and the bottom one masks the rest; one layer masks the layers above it; shape mask (alpha), also in SVG export. Missing: luminance masks, outline-only masks |
 | Right-click context menu (Figma items; read-only in Dev Mode; none on view links; submenu is a flat "Copy/Paste as" group) | ✅ | |
 | Command palette "Actions" (Ctrl+/ or Ctrl+K) | ✅ | Search ~50 actions with their shortcuts (also works as a shortcut cheat sheet). Missing: recent actions, plugins, searching layers / pages from the palette |
 | Find (Ctrl+F), find next / previous (menu) | ❌ | P3 |

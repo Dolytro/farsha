@@ -144,6 +144,8 @@ export interface BaseNode {
   /** Inside an auto layout frame: FILL = take the free space of the frame along that side (Figma's "Fill container"). Missing means FIXED. */
   layoutSizingH?: 'FIXED' | 'FILL';
   layoutSizingV?: 'FIXED' | 'FILL';
+  /** True for a mask layer: it is not drawn itself, and only shows through its shape the layers above it in the same parent. */
+  isMask?: boolean;
   /** Prototype links of this layer (Prototype tab). */
   interactions?: Interaction[];
   /** Id of the colour style that supplies this layer's fills; the fills follow the style. */
@@ -304,6 +306,7 @@ export interface StylePatch extends AutoLayoutProps {
   layoutSizingH?: 'FIXED' | 'FILL';
   layoutSizingV?: 'FIXED' | 'FILL';
   interactions?: Interaction[];
+  isMask?: boolean;
 }
 
 export interface TextPatch {

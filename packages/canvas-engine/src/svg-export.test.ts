@@ -196,3 +196,29 @@ describe("multiple fills", () => {
     expect(svg.indexOf('fill="#0000ff"')).toBeGreaterThan(svg.indexOf('fill="#ff0000"'));
   });
 });
+
+describe("masks", () => {
+  it("does not draw the mask layer and clips the layers above it", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { width: 100, height: 100 } });
+    const mask = doc.createNode("ELLIPSE", { parentId: frame, props: { width: 50, height: 50, fills: solid("#ff0000"), isMask: true } });
+    doc.createNode("RECTANGLE", { parentId: frame, props: { width: 100, height: 100, fills: solid("#00ff00") } });
+    const svg = exportSvg(doc, [frame])?.svg ?? "";
+    expect(svg).toContain(`<mask id="mask-${mask}"`);
+    expect(svg).toContain(`mask="url(#mask-${mask})"`);
+    expect(svg).not.toContain("#ff0000");
+    expect(svg).toContain("#00ff00");
+  });
+
+  it("leaves layers below the mask alone", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { width: 100, height: 100 } });
+    doc.createNode("RECTANGLE", { parentId: frame, props: { fills: solid("#0000ff") } });
+    doc.createNode("ELLIPSE", { parentId: frame, props: { isMask: true } });
+    const svg = exportSvg(doc, [frame])?.svg ?? "";
+    const maskAt = svg.indexOf("<mask");
+    expect(svg.indexOf("#0000ff")).toBeLessThan(maskAt);
+  });
+});

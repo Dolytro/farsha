@@ -1,4 +1,5 @@
 import { PenLayer } from "./PenLayer";
+import { maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
 import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
@@ -342,11 +343,25 @@ export function Canvas() {
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
+  /** Sibling layers bottom to top; a mask layer is not drawn and clips everything above it. */
+  function renderChildren(list: DesignNode[]): ReactElement[] {
+    const at = list.findIndex((c) => c.isMask && c.visible);
+    if (at < 0) return list.map(renderNode).filter((e): e is ReactElement => !!e);
+    const mask = maskMarkup(list[at]!);
+    return [
+      ...list.slice(0, at).map(renderNode).filter((e): e is ReactElement => !!e),
+      <mask key={mask.id} id={mask.id} maskUnits="userSpaceOnUse" x={-1e6} y={-1e6} width={2e6} height={2e6} dangerouslySetInnerHTML={{ __html: mask.inner }} />,
+      <g key={`masked-${list[at]!.id}`} mask={`url(#${mask.id})`}>
+        {renderChildren(list.slice(at + 1))}
+      </g>,
+    ];
+  }
+
   const renderNode = (n: DesignNode): ReactElement | null => {
-    if (!n.visible) return null;
+    if (!n.visible || n.isMask) return null;
     const { color } = fillOf(n);
     const transform = nodeTransform(n);
-    const kids = doc.children(n.id).map(renderNode);
+    const kids = renderChildren(doc.children(n.id));
     if (n.type === "ELLIPSE") {
       return (
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
@@ -473,7 +488,7 @@ export function Canvas() {
         onDrop={onDrop}
       >
         <g transform={`translate(${viewport.x} ${viewport.y}) scale(${z})`}>
-          {doc.children(pageId).map(renderNode)}
+          {renderChildren(doc.children(pageId))}
 
           {doc
             .children(pageId)
