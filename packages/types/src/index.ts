@@ -86,6 +86,13 @@ export interface BlurEffect {
 
 export type Effect = ShadowEffect | BlurEffect;
 
+/** A reusable colour: layers that use it get its paints as their fills. */
+export interface FillStyle {
+  id: string;
+  name: string;
+  paints: Paint[];
+}
+
 export interface BaseNode {
   id: string;
   type: NodeType;
@@ -112,6 +119,8 @@ export interface BaseNode {
   /** Mirrored across the vertical / horizontal axis through the centre (Shift+H / Shift+V). */
   flipX?: boolean;
   flipY?: boolean;
+  /** Id of the colour style that supplies this layer's fills; the fills follow the style. */
+  fillStyleId?: string;
   /** Inside an instance: id of the layer in the main component this layer mirrors. */
   mainId?: string;
   /** Inside an instance: property names the user changed, which stop following the main component. */
