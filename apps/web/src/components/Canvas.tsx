@@ -15,6 +15,7 @@ type Drag =
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
   | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
+  | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
   | { kind: "line"; id: string; wx: number; wy: number; px: number; py: number; arrow: boolean }
   | { kind: "marquee"; wx: number; wy: number; additive: boolean; base: string[] };
 
@@ -134,6 +135,16 @@ export function Canvas() {
       select(hit ? [hit.id] : []);
       return;
     }
+    if (el.dataset.rotate && selection[0]) {
+      // Rotating: the angle between the pointer and the layer's centre decides the rotation.
+      const node = doc.getNode(selection[0])!;
+      const abs = doc.absoluteBox(node.id)!;
+      const cx = abs.x + abs.width / 2;
+      const cy = abs.y + abs.height / 2;
+      doc.stopCapturing();
+      drag.current = { kind: "rotate", id: node.id, wx: w.x, wy: w.y, cx, cy, start: Math.atan2(w.y - cy, w.x - cx), base: node.rotation };
+      return;
+    }
     const corner = el.dataset.corner as Handle | undefined;
     if (corner && selection[0]) {
       const box = doc.getNode(selection[0])!;
@@ -230,6 +241,10 @@ export function Canvas() {
         setGuides(snap.guides);
       } else setGuides([]);
       for (const [id, o] of Object.entries(d.origins)) doc.setPosition(id, o.x + dx, o.y + dy);
+    } else if (d.kind === "rotate") {
+      const turned = ((Math.atan2(w.y - d.cy, w.x - d.cx) - d.start) * 180) / Math.PI;
+      const next = d.base + turned;
+      doc.rotateNode(d.id, e.shiftKey ? Math.round(next / 15) * 15 : Math.round(next * 10) / 10);
     } else if (d.kind === "resize") {
       // Shift keeps the ratio, Alt resizes from the centre (Figma).
       const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
@@ -471,6 +486,8 @@ export function Canvas() {
   const editBox = editing ? doc.absoluteBox(editing) : undefined;
 
   const CURSORS: Record<Handle, string> = { n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize", nw: "nwse-resize", se: "nwse-resize", ne: "nesw-resize", sw: "nesw-resize" };
+  const selNode = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
+  const rotated = !!selNode && !!selNode.rotation;
   const corners: { c: Handle; x: number; y: number }[] = sel
     ? [
         { c: "nw", x: sel.x, y: sel.y },
@@ -559,8 +576,22 @@ export function Canvas() {
 
           {sel && (
             <g>
+              <g transform={rotated && selNode ? `rotate(${selNode.rotation} ${sel.x + sel.width / 2} ${sel.y + sel.height / 2})` : undefined}>
               <rect x={sel.x} y={sel.y} width={sel.width} height={sel.height} fill="none" stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />
-              {selection.length === 1 && !devMode &&
+              {selection.length === 1 && !devMode && !viewer &&
+                // Invisible discs just outside the corners rotate the layer (Shift snaps to 15 degrees).
+                corners.map(({ c, x, y }) => (
+                  <circle
+                    key={`rot-${c}`}
+                    data-rotate="1"
+                    cx={x + (c.includes("w") ? -1 : 1) * (hs * 1.1)}
+                    cy={y + (c.includes("n") ? -1 : 1) * (hs * 1.1)}
+                    r={hs * 1.1}
+                    fill="transparent"
+                    style={{ cursor: "alias" }}
+                  />
+                ))}
+              {selection.length === 1 && !devMode && !rotated &&
                 // Invisible strips along the four sides, so every edge can be dragged like in Figma.
                 ([
                   ["n", sel.x, sel.y - hs / 2, sel.width, hs],
@@ -570,7 +601,7 @@ export function Canvas() {
                 ] as [Handle, number, number, number, number][]).map(([h, x, y, w, ht]) => (
                   <rect key={h} className="canvas__handle" data-corner={h} x={x} y={y} width={w} height={ht} fill="transparent" style={{ cursor: CURSORS[h] }} />
                 ))}
-              {selection.length === 1 && !devMode &&
+              {selection.length === 1 && !devMode && !rotated &&
                 corners.map(({ c, x, y }) => (
                   <rect
                     key={c}
@@ -586,6 +617,7 @@ export function Canvas() {
                     style={{ cursor: CURSORS[c] }}
                   />
                 ))}
+              </g>
               <g pointerEvents="none" transform={`translate(${sel.x + sel.width / 2} ${sel.y + sel.height + 14 / z})`}>
                 <rect x={-34 / z} y={-9 / z} width={68 / z} height={18 / z} rx={3 / z} fill={ACCENT} />
                 <text textAnchor="middle" y={4 / z} fontSize={11 / z} fill="#fff">
