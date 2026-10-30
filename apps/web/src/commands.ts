@@ -1,6 +1,6 @@
 import { alignSelection, type AlignMode } from "./align";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
-import { flipSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
@@ -54,6 +54,7 @@ export function buildCommands(): Command[] {
       },
     },
     { id: "group", label: "Group selection", shortcut: `${MOD}G`, needsSelection: true, run: () => state().select(groupSelection(doc(), sel())) },
+    { id: "frame-selection", label: "Frame selection", shortcut: `${MOD}${ALT}G`, needsSelection: true, keywords: "wrap", run: () => state().select(frameSelection(doc(), sel())) },
     { id: "ungroup", label: "Ungroup", shortcut: `${MOD}${SHIFT}G`, needsSelection: true, run: () => state().select(ungroupSelection(doc(), sel())) },
     { id: "front", label: "Bring to front", shortcut: `${MOD}]`, needsSelection: true, keywords: "order z", run: () => reorderSelection(doc(), sel(), Infinity) },
     { id: "back", label: "Send to back", shortcut: `${MOD}[`, needsSelection: true, keywords: "order z", run: () => reorderSelection(doc(), sel(), -Infinity) },

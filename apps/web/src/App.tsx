@@ -10,7 +10,7 @@ import { selectChildren, selectInverse, selectParent, selectSibling } from "./se
 import { createComponentFromSelection, detachSelection } from "./component-actions";
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
-import { flipSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
+import { flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
@@ -266,6 +266,10 @@ export function App() {
       } else if (e.shiftKey && e.altKey && mod && key === "a") {
         e.preventDefault();
         removeAutoLayout(doc, selection);
+      } else if (mod && e.altKey && !e.shiftKey && key === "g" && selection.length && !s.viewer) {
+        // Figma's "Frame selection"
+        e.preventDefault();
+        s.select(frameSelection(doc, selection));
       } else if (mod && e.altKey && !e.shiftKey && key === "k" && selection.length && !s.viewer) {
         // Figma's "Create component"
         e.preventDefault();

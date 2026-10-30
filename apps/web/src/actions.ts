@@ -112,3 +112,21 @@ export function flipSelection(doc: DesignDoc, ids: string[], axis: "x" | "y"): v
   }
   doc.stopCapturing();
 }
+
+/** Figma's "Frame selection" (Ctrl+Alt+G): wrap sibling layers in a new frame the size of their bounds. */
+export function frameSelection(doc: DesignDoc, ids: string[]): string[] {
+  const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n?.parentId);
+  const parentId = nodes[0]?.parentId;
+  if (!parentId || nodes.some((n) => n.parentId !== parentId)) return ids;
+  const box = unionBox(nodes.map((n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })))!;
+  const order = doc.children(parentId).map((n) => n.id);
+  const sorted = [...nodes].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  doc.stopCapturing();
+  const frame = doc.createNode("FRAME", { parentId, index: order.indexOf(sorted[0]!.id), props: { x: box.x, y: box.y, width: box.width, height: box.height } });
+  for (const n of sorted) {
+    doc.reparentNode(n.id, frame);
+    doc.setPosition(n.id, n.x - box.x, n.y - box.y);
+  }
+  doc.stopCapturing();
+  return [frame];
+}

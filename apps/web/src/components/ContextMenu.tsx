@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { buildMenu, type MenuAction } from "../context-menu";
-import { toggleHidden, toggleLocked, groupSelection, ungroupSelection, reorderSelection } from "../actions";
+import { toggleHidden, toggleLocked, frameSelection, groupSelection, ungroupSelection, reorderSelection } from "../actions";
 import { addAutoLayout } from "../auto-layout-actions";
 import { createComponentFromSelection, detachSelection, mainsOf, resetSelection } from "../component-actions";
 import { copyAsCss, copyAsPng, copyAsSvg } from "../exporting";
@@ -82,6 +82,7 @@ async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
       case "backward": return reorderSelection(doc, selection, -1);
       case "back": return reorderSelection(doc, selection, -Infinity);
       case "group": return select(groupSelection(doc, selection));
+      case "frame-selection": return select(frameSelection(doc, selection));
       case "ungroup": return select(ungroupSelection(doc, selection));
       case "auto-layout": return select(addAutoLayout(doc, selection));
       case "create-component": return select(createComponentFromSelection(doc, selection));
