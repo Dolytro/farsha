@@ -109,6 +109,9 @@ export interface BaseNode {
   blendMode?: BlendMode;
   constraintH?: Constraint;
   constraintV?: Constraint;
+  /** Mirrored across the vertical / horizontal axis through the centre (Shift+H / Shift+V). */
+  flipX?: boolean;
+  flipY?: boolean;
   /** Inside an instance: id of the layer in the main component this layer mirrors. */
   mainId?: string;
   /** Inside an instance: property names the user changed, which stop following the main component. */
@@ -252,6 +255,8 @@ export interface StylePatch extends AutoLayoutProps {
   blendMode?: BlendMode;
   constraintH?: Constraint;
   constraintV?: Constraint;
+  flipX?: boolean;
+  flipY?: boolean;
   cornerRadius?: number;
   cornerRadii?: [number, number, number, number] | null;
   opacity?: number;

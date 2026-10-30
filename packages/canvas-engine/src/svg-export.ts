@@ -2,6 +2,7 @@ import type { DesignDoc } from "@canvylo/design-core";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@canvylo/types";
 import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorPaintAttrs } from "./appearance";
 import { unionBox } from "./measure";
+import { nodeTransform } from "./transform";
 import { approxMeasure, layoutText, type Measure } from "./text";
 
 export interface SvgExport {
@@ -47,7 +48,7 @@ function render(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
 }
 
 function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
-  const transform = `translate(${num(n.x)} ${num(n.y)})${n.rotation ? ` rotate(${num(n.rotation)} ${num(n.width / 2)} ${num(n.height / 2)})` : ""}`;
+  const transform = nodeTransform(n);
   const blend = cssBlendMode(n.blendMode);
   const opacity = (n.opacity !== 1 ? ` opacity="${num(n.opacity)}"` : "") + (blend ? ` style="mix-blend-mode:${blend}"` : "");
   const fill = paint(n, "fills");

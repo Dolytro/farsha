@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { toggleHidden, toggleLocked } from "./actions";
+import { flipSelection, toggleHidden, toggleLocked } from "./actions";
 
 function setup() {
   const doc = new DesignDoc();
@@ -25,5 +25,18 @@ describe("toggleLocked / toggleHidden", () => {
     expect(doc.getNode(a)!.visible).toBe(false);
     toggleHidden(doc, [a]);
     expect(doc.getNode(a)!.visible).toBe(true);
+  });
+});
+
+describe("flipSelection", () => {
+  it("toggles the flip flags per layer", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id });
+    flipSelection(doc, [id], "x");
+    expect(doc.getNode(id)).toMatchObject({ flipX: true });
+    flipSelection(doc, [id], "y");
+    expect(doc.getNode(id)).toMatchObject({ flipX: true, flipY: true });
+    flipSelection(doc, [id], "x");
+    expect(doc.getNode(id)!.flipX).toBe(false);
   });
 });

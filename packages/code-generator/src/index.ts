@@ -43,7 +43,8 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   else if (opts.hasChildren) d.push(["position", "relative"]);
 
   d.push(["width", px(node.width)], ["height", px(node.height)]);
-  if (node.rotation) d.push(["transform", `rotate(${node.rotation}deg)`]);
+  const flips = `${node.flipX ? " scaleX(-1)" : ""}${node.flipY ? " scaleY(-1)" : ""}`;
+  if (node.rotation || flips) d.push(["transform", `${node.rotation ? `rotate(${node.rotation}deg)` : ""}${flips}`.trim()]);
   if (node.opacity !== 1) d.push(["opacity", String(Math.round(node.opacity * 100) / 100)]);
   const blendMode = cssBlendMode(node.blendMode);
   if (blendMode) d.push(["mix-blend-mode", blendMode]);
