@@ -86,7 +86,7 @@ const geometry = shapeGeometry;
 /** Fill and stroke of a rectangle, frame or ellipse. Inside/outside strokes are clipped/masked double-width strokes. */
 export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => string | undefined): string {
   const fills = "fills" in n ? (n.fills ?? []) : [];
-  const stroke = "strokes" in n ? n.strokes?.[0] : undefined;
+  const strokes = "strokes" in n ? (n.strokes ?? []) : [];
   // Fills are stored bottom to top, so each one is drawn over the previous.
   let out = fills.length ? "" : geometry(n, ' fill="none"');
   fills.forEach((fill, i) => {
@@ -107,21 +107,23 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
     }
     out += fillDef + geometry(n, fillAttrs);
   });
-  if (!stroke || !("strokeWidth" in n)) return out;
+  if (!strokes.length || !("strokeWidth" in n)) return out;
 
   const w = Math.max(0, (n.strokeWidth ?? 1));
   const id = safeId(n.id);
-  const base = ` fill="none" stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}"`;
   const align = "strokeAlign" in n && n.strokeAlign ? n.strokeAlign : "CENTER";
-  if (align === "INSIDE") {
-    out += `<clipPath id="sc-${id}">${geometry(n, "")}</clipPath>` + geometry(n, `${base} stroke-width="${num(w * 2)}" clip-path="url(#sc-${id})"`);
-  } else if (align === "OUTSIDE") {
+  // Inside / outside strokes share one clip / mask; every stroke of the layer is drawn with it, bottom first.
+  if (align === "INSIDE") out += `<clipPath id="sc-${id}">${geometry(n, "")}</clipPath>`;
+  else if (align === "OUTSIDE") {
     out +=
       `<mask id="sm-${id}" maskUnits="userSpaceOnUse" x="${num(-w)}" y="${num(-w)}" width="${num(n.width + w * 2)}" height="${num(n.height + w * 2)}">` +
-      `<rect x="${num(-w)}" y="${num(-w)}" width="${num(n.width + w * 2)}" height="${num(n.height + w * 2)}" fill="#fff"/>${geometry(n, ' fill="#000"')}</mask>` +
-      geometry(n, `${base} stroke-width="${num(w * 2)}" mask="url(#sm-${id})"`);
-  } else {
-    out += geometry(n, `${base} stroke-width="${num(w)}"`);
+      `<rect x="${num(-w)}" y="${num(-w)}" width="${num(n.width + w * 2)}" height="${num(n.height + w * 2)}" fill="#fff"/>${geometry(n, ' fill="#000"')}</mask>`;
+  }
+  for (const stroke of strokes) {
+    const base = ` fill="none" stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}"`;
+    if (align === "INSIDE") out += geometry(n, `${base} stroke-width="${num(w * 2)}" clip-path="url(#sc-${id})"`);
+    else if (align === "OUTSIDE") out += geometry(n, `${base} stroke-width="${num(w * 2)}" mask="url(#sm-${id})"`);
+    else out += geometry(n, `${base} stroke-width="${num(w)}"`);
   }
   return out;
 }

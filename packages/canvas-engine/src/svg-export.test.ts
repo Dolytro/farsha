@@ -222,3 +222,23 @@ describe("masks", () => {
     expect(svg.indexOf("#0000ff")).toBeLessThan(maskAt);
   });
 });
+
+describe("multiple strokes", () => {
+  it("draws every stroke, bottom first, sharing one clip for inside strokes", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("RECTANGLE", { parentId: page, props: { fills: [], strokes: [...solid("#ff0000"), ...solid("#0000ff")], strokeWidth: 4, strokeAlign: "INSIDE" } });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg.match(/<clipPath/g)).toHaveLength(1);
+    expect(svg.match(/stroke="#/g)).toHaveLength(2);
+    expect(svg.indexOf('stroke="#ff0000"')).toBeLessThan(svg.indexOf('stroke="#0000ff"'));
+  });
+
+  it("still draws a single centered stroke", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { fills: [], strokes: solid("#00ff00"), strokeWidth: 2, strokeAlign: "CENTER" } });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain('stroke="#00ff00"');
+    expect(svg).toContain('stroke-width="2"');
+  });
+});

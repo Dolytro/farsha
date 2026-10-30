@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import { paintColor, type DesignNode, type Effect, type StrokeAlign } from "@canvylo/types";
+import { paintColor, type DesignNode, type Effect, type Paint, type StrokeAlign } from "@canvylo/types";
 import { HexInput } from "./HexInput";
 import { VariableButton, VariableChip } from "./VariableMenu";
 
@@ -11,71 +11,68 @@ const newEffect = (type: Effect["type"]): Effect =>
     ? { type, radius: 4, visible: true }
     : { type, x: 0, y: 4, blur: 4, color: "#000000", opacity: 0.25, visible: true };
 
+/** Strokes are stored bottom to top and listed top first; position and weight are shared by all of them. */
 export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
   if (!("strokes" in node) || !node.strokes) return null;
-  const stroke = node.strokes[0];
+  const strokes = node.strokes;
   const align = ("strokeAlign" in node ? node.strokeAlign : undefined) ?? "CENTER";
+  const setStrokes = (next: Paint[]) => doc.setStyle(node.id, { strokes: next });
+  // Drawn vectors take one stroke; frames, rectangles and ellipses can stack several.
+  const canAdd = node.type !== "VECTOR" || strokes.length === 0;
   return (
     <section className="props__section">
       <h3 className="props__heading props__heading--row">
         Stroke
-        {!stroke && (
-          <button className="props__add" title="Add stroke" onClick={() => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color: "#000000", opacity: 1 }] })}>
+        {canAdd && (
+          <button className="props__add" title="Add stroke" onClick={() => setStrokes([...strokes, { type: "SOLID", color: "#000000", opacity: 1 }])}>
             +
           </button>
         )}
       </h3>
-      {stroke && (
-        <>
-          {stroke.type === "SOLID" && stroke.variableId ? (
-            <VariableChip doc={doc} variableId={stroke.variableId} onDetach={() => doc.bindPaintVariable(node.id, "strokes", 0, null)} />
-          ) : null}
-          <div className="fill-row">
-            {!(stroke.type === "SOLID" && stroke.variableId) && (
-              <>
-                <input
-                  className="fill-row__swatch"
-                  type="color"
-                  value={paintColor(stroke)}
-                  onChange={(e) => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color: e.target.value, opacity: stroke.opacity }] })}
-                />
-                <HexInput value={paintColor(stroke)} onChange={(color) => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color, opacity: stroke.opacity }] })} />
-                {stroke.type === "SOLID" && <VariableButton doc={doc} onPick={(variableId) => doc.bindPaintVariable(node.id, "strokes", 0, variableId)} />}
-              </>
-            )}
-            <input
-              className="fill-row__pct"
-              type="number"
-              min={0}
-              max={100}
-              value={Math.round(stroke.opacity * 100)}
-              onChange={(e) => doc.setStyle(node.id, { strokes: [{ ...stroke, opacity: Math.min(1, Math.max(0, Number(e.target.value) / 100)) }] })}
-            />
-            <button className="props__add" title="Remove stroke" onClick={() => doc.setStyle(node.id, { strokes: [] })}>
-              −
-            </button>
-          </div>
-          <div className="props__grid props__grid--gap">
-            <select className="field__select" value={align} onChange={(e) => doc.setStyle(node.id, { strokeAlign: e.target.value as StrokeAlign })}>
-              {(Object.keys(ALIGN_LABEL) as StrokeAlign[]).map((a) => (
-                <option key={a} value={a}>
-                  {ALIGN_LABEL[a]}
-                </option>
-              ))}
-            </select>
-            <label className="field">
-              <span className="field__label">W</span>
+      {strokes.map((_, k) => strokes.length - 1 - k).map((i) => {
+        const stroke = strokes[i]!;
+        const replace = (p: Paint) => setStrokes(strokes.map((s, j) => (j === i ? p : s)));
+        const bound = stroke.type === "SOLID" && stroke.variableId;
+        return (
+          <div key={i}>
+            {bound ? <VariableChip doc={doc} variableId={stroke.variableId!} onDetach={() => doc.bindPaintVariable(node.id, "strokes", i, null)} /> : null}
+            <div className="fill-row fill-row--gap">
+              {!bound && (
+                <>
+                  <input className="fill-row__swatch" type="color" value={paintColor(stroke)} onChange={(e) => replace({ type: "SOLID", color: e.target.value, opacity: stroke.opacity })} />
+                  <HexInput value={paintColor(stroke)} onChange={(color) => replace({ type: "SOLID", color, opacity: stroke.opacity })} />
+                  {stroke.type === "SOLID" && <VariableButton doc={doc} onPick={(variableId) => doc.bindPaintVariable(node.id, "strokes", i, variableId)} />}
+                </>
+              )}
               <input
-                className="field__input"
+                className="fill-row__pct"
                 type="number"
                 min={0}
-                step={0.5}
-                value={node.strokeWidth}
-                onChange={(e) => doc.setStyle(node.id, { strokeWidth: Math.max(0, Number(e.target.value)) })}
+                max={100}
+                value={Math.round(stroke.opacity * 100)}
+                onChange={(e) => replace({ ...stroke, opacity: Math.min(1, Math.max(0, Number(e.target.value) / 100)) })}
               />
-            </label>
+              <button className="props__add" title="Remove stroke" onClick={() => setStrokes(strokes.filter((_, j) => j !== i))}>
+                −
+              </button>
+            </div>
           </div>
-        </>
+        );
+      })}
+      {strokes.length > 0 && (
+        <div className="props__grid props__grid--gap">
+          <select className="field__select" value={align} onChange={(e) => doc.setStyle(node.id, { strokeAlign: e.target.value as StrokeAlign })}>
+            {(Object.keys(ALIGN_LABEL) as StrokeAlign[]).map((a) => (
+              <option key={a} value={a}>
+                {ALIGN_LABEL[a]}
+              </option>
+            ))}
+          </select>
+          <label className="field">
+            <span className="field__label">W</span>
+            <input className="field__input" type="number" min={0} step={0.5} value={node.strokeWidth} onChange={(e) => doc.setStyle(node.id, { strokeWidth: Math.max(0, Number(e.target.value)) })} />
+          </label>
+        </div>
       )}
     </section>
   );
