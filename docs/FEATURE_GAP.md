@@ -174,3 +174,34 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 4. **Components, variants, styles, variables.** Components v1 done (main + instances, overrides, detach); next: Assets panel, then variants, styles, variables.
 5. **Pen, multiple strokes (multiple fills done).** (Line / Arrow / Polygon / Star done: VECTOR layers with optional `fills` / `strokes`, see `canvas-engine/src/shapes.ts`.)
 6. **Prototype, comments, live collaboration.**
+
+## 10. Figma menu audit (read from the live Figma editor, 2026-10-31)
+
+Source: the main menu (File, Edit, View, Object, Text, Arrange, Vector, Preferences), the toolbar dropdowns and the Design panel of an empty Figma file.
+Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or the Actions palette. Status here is kept up to date as items are built (✅ done · ❌ missing).
+
+| Area | Figma item | Status |
+|---|---|---|
+| Menu bar | Main menu with File / Edit / View / Object / Text / Arrange / Vector / Preferences and shortcut hints | ❌ → building first |
+| File | New Design, Place image… (Ctrl+Shift+K), Duplicate, Save local copy, Save to version history (Ctrl+Alt+S), Show version history, Export… (Ctrl+Shift+E) | partly ✅ (Place image, Duplicate, Export… ❌) |
+| File | Export frames to PDF, Create branch | ❌ (PDF later; branching needs a backend) |
+| Edit | Undo / Redo, Copy as, Paste over selection, Duplicate, Delete, Copy / Paste properties, Pick color, Select all / matching / none / inverse | ✅ |
+| Edit | Paste to replace (Ctrl+Shift+R alias), Find (Ctrl+F) / next / previous, Find and replace, Set default properties, Select all with… | ❌ |
+| View | Zoom in / out / 100% / fit / selection, previous / next page, zoom to previous / next frame | ✅ |
+| View | Outlines, Panels (show / hide each panel), Find previous / next frame (Home / End), Switch to Draw | ❌ |
+| Object | Frame selection, Group, Ungroup, Use as mask, Add auto layout, Create component, Reset / Detach instance, Main component, order, Flip, Show / Hide, Lock / Unlock | ✅ |
+| Object | Ungroup with Ctrl+Backspace, Rotate 180° / 90° left / 90° right, Hide other layers, Collapse layers (Alt+L), Remove fill (Alt+/), Remove stroke (Shift+/), Swap fill and stroke (Shift+X), Remove interactions, Delete contents | ❌ |
+| Object | Wrap in new section (Ctrl+S), Convert to section / frame (Section tool Shift+S, Slice tool S), Flatten (Alt+Shift+F), Outline stroke (Ctrl+Alt+O), Boolean groups (live), Slots | ❌ |
+| Text | Bold / Italic (Ctrl+B / I), Underline (Ctrl+U), Strikethrough, Create link, Bulleted / Numbered list, Alignment, Case, Text direction, Spell check, Text on path | ❌ |
+| Arrange | Align left / centers / right / top / middle / bottom (Alt+A H D W V S) | ✅ |
+| Arrange | Round to pixel, Tidy up, Pack horizontal / vertical, Distribute spacing (Alt+Shift+H / V), Distribute left / centers / right / top / middle / bottom | ❌ |
+| Vector | Join selection (Ctrl+J), Smooth join, Delete and heal, Split vector, Simplify vector, Offset vector | ❌ |
+| Preferences | Theme, Nudge amount, keep tool, snapping, zoom options | ✅ (Color profile, Keyboard layout, Accessibility, Permissions: ❌ / browser-bound) |
+| Toolbar | Move, Hand, Frame, Rectangle, Line, Arrow, Ellipse, Polygon, Star, Pen, Text | ✅ |
+| Toolbar | Scale tool (K), Section (Shift+S), Slice (S), Image / video… (Ctrl+Shift+K), Pencil (Shift+P), Text on path, Comment tool (C) | ❌ |
+| Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | partly ✅ (Alt+drag, opacity keys ❌) |
+| Design panel | Page background colour, Styles on a page, Selection colors, Export on a page | ❌ |
+| Design panel | Stroke dash / caps / joins / arrowheads, per-side stroke weights, background blur, corner smoothing | ❌ |
+| Prototype | Hover / drag / key triggers, overlays, scroll, transitions, flow starting points, device frames | ❌ |
+| Dev Mode | Ready-for-dev status, annotations, compare changes, variables in code | ❌ |
+| Collaboration | Comments, live cursors, branching, libraries | ❌ needs a backend; a local-first version of comments is planned |
