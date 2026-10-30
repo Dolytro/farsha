@@ -210,6 +210,20 @@ export interface AutoLayoutProps {
   counterSizing?: LayoutSizing;
 }
 
+/** A layout grid drawn over a frame as a guide (Figma's layout grid): columns, rows, or a square grid. */
+export interface LayoutGrid {
+  type: 'GRID' | 'COLUMNS' | 'ROWS';
+  /** Columns / rows: how many. */
+  count?: number;
+  gutter?: number;
+  margin?: number;
+  /** Square grid: the size of a cell. */
+  size?: number;
+  color: string;
+  opacity: number;
+  visible: boolean;
+}
+
 export interface FrameNode extends BaseNode, AutoLayoutProps {
   type: 'FRAME';
   fills: Paint[];
@@ -221,6 +235,7 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   /** Per-corner radii [top-left, top-right, bottom-right, bottom-left]; overrides cornerRadius when set. */
   cornerRadii?: [number, number, number, number];
   clipsContent: boolean;
+  layoutGrids?: LayoutGrid[];
   /** True for a main component: its layers are mirrored by every instance. */
   isComponent?: boolean;
   /** Set on an instance: id of the main component it follows. */
@@ -327,6 +342,7 @@ export interface StylePatch extends AutoLayoutProps {
   layoutSizingV?: 'FIXED' | 'FILL';
   interactions?: Interaction[];
   isMask?: boolean;
+  layoutGrids?: LayoutGrid[];
 }
 
 export interface TextPatch {

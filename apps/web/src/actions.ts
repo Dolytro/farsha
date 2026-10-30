@@ -135,6 +135,17 @@ export function frameSelection(doc: DesignDoc, ids: string[]): string[] {
 }
 
 /** Figma's N / Shift+N: the next (or previous) top-level frame of the page in reading order (top to bottom, then left to right), wrapping around. */
+/** Figma's "Layout grids" (Shift+G): show the grids of the selected frames, or hide them when they are all showing. */
+export function toggleLayoutGrids(doc: DesignDoc, ids: string[]): number {
+  const frames = ids.map((id) => doc.getNode(id)).filter((n): n is Extract<NonNullable<ReturnType<DesignDoc["getNode"]>>, { type: "FRAME" }> => n?.type === "FRAME" && !!n.layoutGrids?.length);
+  if (!frames.length) return 0;
+  const allShown = frames.every((f) => f.layoutGrids!.every((g) => g.visible));
+  doc.stopCapturing();
+  for (const f of frames) doc.setStyle(f.id, { layoutGrids: f.layoutGrids!.map((g) => ({ ...g, visible: !allShown })) });
+  doc.stopCapturing();
+  return frames.length;
+}
+
 export function adjacentFrame(doc: DesignDoc, pageId: string, current: string | undefined, direction: 1 | -1): string | undefined {
   const frames = doc
     .children(pageId)

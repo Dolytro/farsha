@@ -1,6 +1,6 @@
 import { alignSelection, type AlignMode } from "./align";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
-import { adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
@@ -137,6 +137,7 @@ export function buildCommands(): Command[] {
       },
     },
     { id: "prototype-tab", label: "Open Prototype tab", keywords: "interactions links", run: () => state().setPrototypeMode(true) },
+    { id: "layout-grids", label: "Show / hide layout grids", shortcut: `${SHIFT}G`, needsSelection: true, keywords: "columns rows guides", run: () => void (toggleLayoutGrids(doc(), sel()) || state().showToast("Select a frame with a layout grid")) },
     { id: "rulers", label: "Show / hide rulers", shortcut: `${SHIFT}R`, keywords: "view guides", run: () => state().setRulers(!state().rulers) },
     { id: "dev-mode", label: "Toggle Dev Mode", shortcut: `${SHIFT}D`, keywords: "inspect code", run: () => state().setDevMode(!state().devMode) },
     {

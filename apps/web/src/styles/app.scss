@@ -1694,3 +1694,16 @@ body {
 .field__label--wide {
   min-width: 70px;
 }
+
+.grid-item {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--c-input);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}

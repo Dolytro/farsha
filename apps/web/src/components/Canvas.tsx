@@ -1,5 +1,5 @@
 import { PenLayer } from "./PenLayer";
-import { maskMarkup } from "@canvylo/canvas-engine";
+import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
 import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
@@ -435,6 +435,13 @@ export function Canvas() {
           <>
             <clipPath id={`clip-${n.id}`} dangerouslySetInnerHTML={{ __html: shapeGeometry(n, "") }} />
             <g clipPath={`url(#clip-${n.id})`}>{kids}</g>
+            {n.type === "FRAME" && !devMode && (n.layoutGrids ?? []).filter((g) => g.visible).map((g, gi) => (
+              <g key={`grid-${gi}`} pointerEvents="none" fill={/^#[0-9a-fA-F]{3,8}$/.test(g.color) ? g.color : "#ff0000"} fillOpacity={Math.min(1, Math.max(0, Number(g.opacity) || 0.1))}>
+                {gridRects(g, n.width, n.height).map((r, ri) => (
+                  <rect key={ri} x={r.x} y={r.y} width={r.width} height={r.height} />
+                ))}
+              </g>
+            ))}
           </>
         ) : (
           kids
