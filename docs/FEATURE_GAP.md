@@ -81,7 +81,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Variants and component properties | ❌ | P2 |
 | "Main component" (Object menu) (menu) | ✅ | Create component |
 | Color / text / effect / grid styles | 🟡 | Color (fill) styles and text styles (font family, weight, size, line height, letter spacing): create from a layer, apply, edit (every layer follows, also inside instances), rename, detach, delete, undo. Missing: effect and grid styles, stroke styles, a styles list in the Assets tab, folders |
-| Variables (color, number, string, boolean) and modes (light / dark) | ❌ | P2 |
+| Variables (color, number, string, boolean) and modes (light / dark) | 🟡 | Colour variables with modes: create, rename, edit per mode, add / rename / delete modes, bind a solid fill or stroke (◆ button), switch the active mode (dialog or Actions: "Switch to next variable mode"), undo. Missing: number / string / boolean variables, several collections, groups, per-frame mode override, variables in styles, gradients, variable names in Dev Mode code |
 | Libraries, publish, update | ❌ | P3 |
 
 ## 5. Prototype

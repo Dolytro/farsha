@@ -171,6 +171,19 @@ export function buildCommands(): Command[] {
         },
       }),
     ),
+    { id: "show-variables", label: "Show variables", keywords: "colors modes tokens", run: () => state().setVariablesOpen(true) },
+    {
+      id: "next-mode",
+      label: "Switch to next variable mode",
+      keywords: "light dark theme",
+      run: () => {
+        const d = doc();
+        const modes = d.modes();
+        const next = modes[(modes.findIndex((m) => m.id === d.activeModeId()) + 1) % modes.length]!;
+        d.setActiveMode(next.id);
+        state().showToast(`Mode: ${next.name}`);
+      },
+    },
     { id: "save-version", label: "Save to version history", shortcut: `${MOD}${ALT}S`, keywords: "snapshot checkpoint", run: async () => void (await saveVersion("")) },
     { id: "show-versions", label: "Show version history", keywords: "restore snapshot", run: () => state().setVersionsOpen(true) },
     { id: "save-local", label: "Save local copy", keywords: "download file .canvylo", run: saveLocalCopy },

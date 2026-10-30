@@ -1639,3 +1639,46 @@ body {
     font-size: 11px;
   }
 }
+
+.dialog__box--wide {
+  width: min(760px, calc(100vw - 32px));
+}
+
+.vars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+
+  &__row {
+    display: grid;
+    align-items: center;
+    gap: 8px;
+
+    &--head {
+      color: var(--c-muted);
+      font-weight: 600;
+    }
+  }
+
+  &__mode {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__modebtn {
+    padding: 2px 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &--active {
+      border-color: var(--c-accent);
+      color: var(--c-accent);
+    }
+  }
+}

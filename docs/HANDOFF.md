@@ -361,7 +361,7 @@ restored from IndexedDB, so wait about 1.5 s after loading before driving the pa
 Suggested order (each is one feature = build, test, fix, push):
 1. **Components round 2**: variants / component properties, nested instances, instance swap, overrides kept when copying an instance. (Round 1, main +
    instances + overrides + detach, is done, see "Components" in section 7.)
-2. Effect / grid / stroke styles and variables (colour, number, string, boolean + modes) (color and text styles done, `textStyleId`, `TEXT_STYLE_KEYS`; color: `DesignDoc.createFillStyle` etc., `fillStyleId` on layers, synced in `syncStyles`).
+2. Effect / grid / stroke styles, number / string variables, several collections and per-frame modes (colour variables with modes are done: `DesignDoc.createColorVariable`, `bindPaintVariable`, `SolidPaint.variableId`, synced in `syncVariables`) (color and text styles done, `textStyleId`, `TEXT_STYLE_KEYS`; color: `DesignDoc.createFillStyle` etc., `fillStyleId` on layers, synced in `syncStyles`).
 3. Multiple strokes, vector edit mode for pen paths (move points), mask (Ctrl+Alt+M), boolean operations.
 4. Auto layout round 2: wrap, absolute-position children, per-side padding fields, drag to reorder, fill container in the Dev Mode CSS;
    snapping while resizing, equal-spacing guides, layout grids (Shift+G).
