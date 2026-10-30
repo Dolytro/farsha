@@ -1,6 +1,6 @@
 import { alignSelection, type AlignMode } from "./align";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
-import { toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { booleanSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
@@ -58,6 +58,27 @@ export function buildCommands(): Command[] {
     { id: "group", label: "Group selection", shortcut: `${MOD}G`, needsSelection: true, run: () => state().select(groupSelection(doc(), sel())) },
     { id: "frame-selection", label: "Frame selection", shortcut: `${MOD}${ALT}G`, needsSelection: true, keywords: "wrap", run: () => state().select(frameSelection(doc(), sel())) },
     { id: "use-as-mask", label: "Use as mask", shortcut: `${MOD}${ALT}M`, needsSelection: true, keywords: "clip", run: () => state().select(useAsMask(doc(), sel())) },
+    ...(
+      [
+        ["UNION", "Union selection", `${MOD}${ALT}U`],
+        ["SUBTRACT", "Subtract selection", ""],
+        ["INTERSECT", "Intersect selection", ""],
+        ["EXCLUDE", "Exclude selection", ""],
+      ] as const
+    ).map(
+      ([op, label, shortcut]): Command => ({
+        id: `boolean-${op}`,
+        label,
+        shortcut: shortcut || undefined,
+        needsSelection: true,
+        keywords: "boolean combine merge shapes",
+        run: () => {
+          const out = booleanSelection(doc(), sel(), op);
+          if (out.error) state().showToast(out.error);
+          else state().select(out.ids);
+        },
+      }),
+    ),
     { id: "ungroup", label: "Ungroup", shortcut: `${MOD}${SHIFT}G`, needsSelection: true, run: () => state().select(ungroupSelection(doc(), sel())) },
     { id: "front", label: "Bring to front", shortcut: `${MOD}]`, needsSelection: true, keywords: "order z", run: () => reorderSelection(doc(), sel(), Infinity) },
     { id: "back", label: "Send to back", shortcut: `${MOD}[`, needsSelection: true, keywords: "order z", run: () => reorderSelection(doc(), sel(), -Infinity) },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { toggleLayoutGrids, groupSelection, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
+import { booleanSelection, toggleLayoutGrids, groupSelection, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
 
 function setup() {
   const doc = new DesignDoc();
@@ -143,5 +143,45 @@ describe("toggleLayoutGrids", () => {
     const doc = new DesignDoc();
     const f = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id });
     expect(toggleLayoutGrids(doc, [f])).toBe(0);
+  });
+});
+
+describe("booleanSelection", () => {
+  function shapes() {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("RECTANGLE", { parentId: page, props: { x: 0, y: 0, width: 100, height: 100, fills: [{ type: "SOLID", color: "#ff0000", opacity: 1 }] } });
+    const b = doc.createNode("ELLIPSE", { parentId: page, props: { x: 50, y: 50, width: 100, height: 100 } });
+    return { doc, page, a, b };
+  }
+
+  it("replaces the shapes with one vector that keeps the bottom fill", () => {
+    const { doc, page, a, b } = shapes();
+    const out = booleanSelection(doc, [b, a], "UNION");
+    expect(out.error).toBeUndefined();
+    expect(doc.hasNode(a)).toBe(false);
+    expect(doc.hasNode(b)).toBe(false);
+    const node = doc.getNode(out.ids[0]!)!;
+    expect(node).toMatchObject({ type: "VECTOR", name: "Union", parentId: page, x: 0, y: 0 });
+    expect((node as unknown as { fills: { color: string }[] }).fills[0]!.color).toBe("#ff0000");
+    expect((node as unknown as { markup: string }).markup).toContain("evenodd");
+  });
+
+  it("can be undone in one step", () => {
+    const { doc, a, b } = shapes();
+    doc.stopCapturing();
+    booleanSelection(doc, [a, b], "SUBTRACT");
+    doc.undo();
+    expect(doc.hasNode(a)).toBe(true);
+    expect(doc.hasNode(b)).toBe(true);
+  });
+
+  it("explains what is wrong instead of changing anything", () => {
+    const { doc, page, a } = shapes();
+    expect(booleanSelection(doc, [a], "UNION").error).toBeTruthy();
+    const text = doc.createNode("TEXT", { parentId: page });
+    const out = booleanSelection(doc, [a, text], "UNION");
+    expect(out.error).toBeTruthy();
+    expect(doc.hasNode(a)).toBe(true);
   });
 });
