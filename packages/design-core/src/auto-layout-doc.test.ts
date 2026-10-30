@@ -69,3 +69,36 @@ describe('auto layout in the document', () => {
     expect(pos(doc, b)).toEqual([8, 38]);
   });
 });
+
+describe('fill container in the document', () => {
+  it('fills the free width and follows the frame when it is resized', () => {
+    const { doc, frame, a, b } = setup({ layoutMode: 'HORIZONTAL', primarySizing: 'FIXED', counterSizing: 'FIXED', itemSpacing: 10 });
+    doc.resizeNode(frame, { width: 300, height: 100 });
+    doc.setStyle(b, { layoutSizingH: 'FILL', layoutSizingV: 'FILL' } as never);
+    // 300 - 8 - 8 padding - 40 (a) - 10 gap = 234
+    expect(size(doc, b)).toEqual([234, 84]);
+    doc.resizeNode(frame, { width: 400 });
+    expect(size(doc, b)).toEqual([334, 84]);
+    expect(size(doc, a)).toEqual([40, 20]);
+  });
+
+  it('resizing a filling child by hand makes it fixed again', () => {
+    const { doc, frame, b } = setup({ layoutMode: 'HORIZONTAL', primarySizing: 'FIXED', counterSizing: 'FIXED' });
+    doc.resizeNode(frame, { width: 300, height: 100 });
+    doc.setStyle(b, { layoutSizingH: 'FILL' } as never);
+    doc.resizeNode(b, { width: 50 });
+    expect(doc.getNode(b)).toMatchObject({ width: 50, layoutSizingH: 'FIXED' });
+  });
+
+  it('a filling child frame lays out its own children at the new size', () => {
+    const { doc, page, frame } = setup({ layoutMode: 'HORIZONTAL', primarySizing: 'FIXED', counterSizing: 'FIXED' });
+    doc.resizeNode(frame, { width: 300, height: 100 });
+    const inner = doc.createNode('FRAME', { parentId: frame, props: { width: 20, height: 20 } });
+    doc.setStyle(inner, { layoutMode: 'HORIZONTAL', primarySizing: 'FIXED', counterSizing: 'FIXED', primaryAxisAlign: 'MAX', layoutSizingH: 'FILL' } as never);
+    const leaf = doc.createNode('RECTANGLE', { parentId: inner, props: { width: 10, height: 10 } });
+    // inner takes the remaining width and its child sits at the far end (MAX)
+    expect(doc.getNode(inner)!.width).toBeGreaterThan(100);
+    expect(doc.getNode(leaf)!.x).toBeCloseTo(doc.getNode(inner)!.width - 10);
+    expect(page).toBeTruthy();
+  });
+});

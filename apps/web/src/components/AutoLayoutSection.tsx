@@ -12,6 +12,30 @@ const COUNTER: [LayoutAlign, string][] = PRIMARY.slice(0, 3);
 
 const num = (v: number | undefined) => (typeof v === "number" ? v : 0);
 
+/** Resizing of a layer inside an auto layout frame: fixed, or fill the free space (Figma's "Fill container"). */
+export function ChildSizingSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
+  const parent = node.parentId ? doc.getNode(node.parentId) : undefined;
+  if (parent?.type !== "FRAME" || (parent.layoutMode !== "HORIZONTAL" && parent.layoutMode !== "VERTICAL")) return null;
+  const row = (label: string, key: "layoutSizingH" | "layoutSizingV") => (
+    <label className="field" title={`${label} resizing`}>
+      <span className="field__label">{label}</span>
+      <select className="field__select" value={node[key] ?? "FIXED"} onChange={(e) => doc.setStyle(node.id, { [key]: e.target.value } as never)}>
+        <option value="FIXED">Fixed</option>
+        <option value="FILL">Fill container</option>
+      </select>
+    </label>
+  );
+  return (
+    <section className="props__section">
+      <h3 className="props__heading">Resizing</h3>
+      <div className="props__grid">
+        {row("W", "layoutSizingH")}
+        {row("H", "layoutSizingV")}
+      </div>
+    </section>
+  );
+}
+
 export function AutoLayoutSection({ doc, node, select }: { doc: DesignDoc; node: DesignNode; select: (ids: string[]) => void }) {
   if (node.type !== "FRAME") return null;
   const mode = node.layoutMode;
