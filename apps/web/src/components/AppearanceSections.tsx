@@ -1,6 +1,7 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import { paintColor, type DesignNode, type Effect, type StrokeAlign } from "@canvylo/types";
 import { HexInput } from "./HexInput";
+import { VariableButton, VariableChip } from "./VariableMenu";
 
 const ALIGN_LABEL: Record<StrokeAlign, string> = { INSIDE: "Inside", CENTER: "Center", OUTSIDE: "Outside" };
 const EFFECT_LABEL: Record<Effect["type"], string> = { DROP_SHADOW: "Drop shadow", INNER_SHADOW: "Inner shadow", LAYER_BLUR: "Layer blur" };
@@ -26,14 +27,22 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
       </h3>
       {stroke && (
         <>
+          {stroke.type === "SOLID" && stroke.variableId ? (
+            <VariableChip doc={doc} variableId={stroke.variableId} onDetach={() => doc.bindPaintVariable(node.id, "strokes", 0, null)} />
+          ) : null}
           <div className="fill-row">
-            <input
-              className="fill-row__swatch"
-              type="color"
-              value={paintColor(stroke)}
-              onChange={(e) => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color: e.target.value, opacity: stroke.opacity }] })}
-            />
-            <HexInput value={paintColor(stroke)} onChange={(color) => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color, opacity: stroke.opacity }] })} />
+            {!(stroke.type === "SOLID" && stroke.variableId) && (
+              <>
+                <input
+                  className="fill-row__swatch"
+                  type="color"
+                  value={paintColor(stroke)}
+                  onChange={(e) => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color: e.target.value, opacity: stroke.opacity }] })}
+                />
+                <HexInput value={paintColor(stroke)} onChange={(color) => doc.setStyle(node.id, { strokes: [{ type: "SOLID", color, opacity: stroke.opacity }] })} />
+                {stroke.type === "SOLID" && <VariableButton doc={doc} onPick={(variableId) => doc.bindPaintVariable(node.id, "strokes", 0, variableId)} />}
+              </>
+            )}
             <input
               className="fill-row__pct"
               type="number"

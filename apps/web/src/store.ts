@@ -55,6 +55,7 @@ interface EditorState {
   shareOpen: boolean;
   paletteOpen: boolean;
   versionsOpen: boolean;
+  variablesOpen: boolean;
   /** Prototype tab: a read-only canvas where layers get click interactions. Implies devMode. */
   prototypeMode: boolean;
   /** Id of the frame the prototype presentation started from, or null when not presenting. */
@@ -77,6 +78,7 @@ interface EditorState {
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   setVersionsOpen: (open: boolean) => void;
+  setVariablesOpen: (open: boolean) => void;
   setPrototypeMode: (on: boolean) => void;
   setPresenting: (frameId: string | null) => void;
   setDrive: (patch: Partial<DriveState>) => void;
@@ -114,6 +116,7 @@ export const useEditor = create<EditorState>((set) => ({
   shareOpen: false,
   paletteOpen: false,
   versionsOpen: false,
+  variablesOpen: false,
   prototypeMode: false,
   presenting: null,
   renaming: null,
@@ -150,6 +153,7 @@ export const useEditor = create<EditorState>((set) => ({
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setVersionsOpen: (versionsOpen) => set({ versionsOpen }),
+  setVariablesOpen: (variablesOpen) => set({ variablesOpen }),
   setDrive: (patch) => set((s) => ({ drive: { ...s.drive, ...patch } })),
   setLoad: (loadState, loadError = null) => set({ loadState, loadError }),
   loadDoc: (doc) => {

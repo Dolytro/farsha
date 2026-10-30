@@ -35,6 +35,8 @@ export interface SolidPaint {
   /** CSS hex colour, e.g. `#388bff` */
   color: string;
   opacity: number;
+  /** Id of the colour variable that supplies `color`; the colour follows the variable's value in the active mode. */
+  variableId?: string;
 }
 
 export interface GradientStop {
@@ -85,6 +87,20 @@ export interface BlurEffect {
 }
 
 export type Effect = ShadowEffect | BlurEffect;
+
+/** A column of variable values (for example Light and Dark). */
+export interface VariableMode {
+  id: string;
+  name: string;
+}
+
+/** A named colour with one value per mode. Paints bound to it show the value of the active mode. */
+export interface ColorVariable {
+  id: string;
+  name: string;
+  /** Hex colour per mode id. */
+  values: Record<string, string>;
+}
 
 /** A reusable colour: layers that use it get its paints as their fills. */
 export interface FillStyle {

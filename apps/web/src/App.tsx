@@ -20,6 +20,7 @@ import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pas
 import { CommandPalette } from "./components/CommandPalette";
 import { Presenter } from "./components/Presenter";
 import { VersionHistory } from "./components/VersionHistory";
+import { VariablesDialog } from "./components/VariablesDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
 import { ContextMenu } from "./components/ContextMenu";
@@ -403,6 +404,7 @@ export function App() {
       <CommandPalette />
       <Presenter />
       <VersionHistory />
+      <VariablesDialog />
     </div>
   );
 }

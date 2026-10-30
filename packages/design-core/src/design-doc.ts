@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { TEXT_STYLE_KEYS, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
+import { TEXT_STYLE_KEYS, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -48,6 +48,8 @@ export class DesignDoc {
   /** Colour styles, keyed by style id. */
   private readonly styles: Y.Map<FillStyle>;
   private readonly textStyleMap: Y.Map<TextStyle>;
+  private readonly variableMap: Y.Map<ColorVariable>;
+  private readonly modeMap: Y.Map<VariableMode & { order: number }>;
   private readonly undoManager: Y.UndoManager;
   private readonly listeners = new Set<() => void>();
   private nodeCache = new Map<string, DesignNode>();
@@ -60,6 +62,14 @@ export class DesignDoc {
     this.meta = ydoc.getMap('meta') as Y.Map<string>;
     this.assets = ydoc.getMap('assets') as Y.Map<StoredAsset>;
     this.styles = ydoc.getMap('styles') as Y.Map<FillStyle>;
+    this.variableMap = ydoc.getMap('variables') as Y.Map<ColorVariable>;
+    this.modeMap = ydoc.getMap('variableModes') as Y.Map<VariableMode & { order: number }>;
+    for (const map of [this.variableMap, this.modeMap, this.meta]) {
+      map.observe(() => {
+        this.version++;
+        this.listeners.forEach((fn) => fn());
+      });
+    }
     this.textStyleMap = ydoc.getMap('textStyles') as Y.Map<TextStyle>;
     this.textStyleMap.observe(() => {
       this.version++;
@@ -74,7 +84,7 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
-    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap], {
+    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.variableMap, this.modeMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
     });
@@ -89,6 +99,7 @@ export class DesignDoc {
     this.ydoc.on('afterTransaction', (tr: Y.Transaction) => {
       if (tr.origin !== LOCAL_ORIGIN || this.relayouting || this.syncing || tr.changed.size === 0) return;
       this.syncStyles();
+      this.syncVariables();
       this.syncInstances();
       this.relayout();
     });
@@ -135,6 +146,50 @@ export class DesignDoc {
       out.set(parent, list.map((e) => e.id));
     }
     return out;
+  }
+
+  /** Paints bound to a colour variable take its value in the active mode; a deleted variable just leaves the colour as it was. */
+  private syncVariables(): void {
+    if (!this.variableMap.size && ![...this.nodes.values()].some((m) => this.hasBoundPaint(m))) return;
+    this.syncing = true;
+    try {
+      const mode = this.activeModeId();
+      const resolve = (paints: unknown): Paint[] | null => {
+        if (!Array.isArray(paints)) return null;
+        let changed = false;
+        const next = (paints as Paint[]).map((p) => {
+          if (p.type !== 'SOLID' || !p.variableId) return p;
+          const v = this.variableMap.get(p.variableId);
+          if (!v) {
+            changed = true;
+            const { variableId: _gone, ...rest } = p;
+            return rest;
+          }
+          const color = v.values[mode] ?? Object.values(v.values)[0] ?? p.color;
+          if (color === p.color) return p;
+          changed = true;
+          return { ...p, color };
+        });
+        return changed ? next : null;
+      };
+      this.transact(() => {
+        for (const map of this.nodes.values()) {
+          for (const key of ['fills', 'strokes']) {
+            const next = resolve(map.get(key));
+            if (next) map.set(key, next);
+          }
+        }
+      });
+    } finally {
+      this.syncing = false;
+    }
+  }
+
+  private hasBoundPaint(map: NodeMap): boolean {
+    return ['fills', 'strokes'].some((k) => {
+      const paints = map.get(k);
+      return Array.isArray(paints) && paints.some((p: Paint) => p.type === 'SOLID' && !!p.variableId);
+    });
   }
 
   /** Layers that use a colour style take its paints; a deleted style just leaves the layer with its current fills. */
@@ -691,6 +746,106 @@ export class DesignDoc {
     const style = this.styles.get(styleId);
     if (!style) throw new Error('Style not found');
     this.setProps(nodeId, { fills: style.paints, fillStyleId: styleId });
+  }
+
+  // ---------- colour variables ----------
+
+  /** The modes in order; a document without any has the single implicit mode "Mode 1". */
+  modes(): VariableMode[] {
+    const list = [...this.modeMap.values()].sort((a, b) => a.order - b.order).map(({ id, name }) => ({ id, name }));
+    return list.length ? list : [{ id: 'default', name: 'Mode 1' }];
+  }
+
+  activeModeId(): string {
+    const id = this.meta.get('activeMode');
+    const modes = this.modes();
+    return id && modes.some((m) => m.id === id) ? id : modes[0]!.id;
+  }
+
+  setActiveMode(id: string): void {
+    if (!this.modes().some((m) => m.id === id)) throw new Error('Mode not found');
+    this.transact(() => this.meta.set('activeMode', id));
+  }
+
+  /** Add a mode; every variable starts with the value it has in the active mode. */
+  addMode(name: string): string {
+    const id = nanoid();
+    const base = this.activeModeId();
+    this.transact(() => {
+      if (!this.modeMap.size) this.modeMap.set('default', { id: 'default', name: 'Mode 1', order: 0 });
+      const order = Math.max(-1, ...[...this.modeMap.values()].map((m) => m.order)) + 1;
+      this.modeMap.set(id, { id, name: name.trim() || `Mode ${order + 1}`, order });
+      for (const v of this.variableMap.values()) this.variableMap.set(v.id, { ...v, values: { ...v.values, [id]: v.values[base] ?? Object.values(v.values)[0] ?? '#000000' } });
+    });
+    return id;
+  }
+
+  renameMode(id: string, name: string): void {
+    const mode = this.modeMap.get(id);
+    if (mode && name.trim()) this.transact(() => this.modeMap.set(id, { ...mode, name: name.trim() }));
+    else if (!mode && id === 'default' && name.trim()) this.transact(() => this.modeMap.set('default', { id: 'default', name: name.trim(), order: 0 }));
+  }
+
+  /** Remove a mode (the last one cannot be removed). */
+  deleteMode(id: string): void {
+    if (this.modes().length < 2) throw new Error('A collection needs at least one mode');
+    this.transact(() => {
+      this.modeMap.delete(id);
+      for (const v of this.variableMap.values()) {
+        const { [id]: _dropped, ...values } = v.values;
+        this.variableMap.set(v.id, { ...v, values });
+      }
+      if (this.meta.get('activeMode') === id) this.meta.delete('activeMode');
+    });
+  }
+
+  colorVariables(): ColorVariable[] {
+    return [...this.variableMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getColorVariable(id: string): ColorVariable | undefined {
+    return this.variableMap.get(id);
+  }
+
+  createColorVariable(name: string, color: string): string {
+    const id = nanoid();
+    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Color', values: Object.fromEntries(this.modes().map((m) => [m.id, color])) }));
+    return id;
+  }
+
+  updateColorVariable(id: string, patch: { name?: string; modeId?: string; color?: string }): void {
+    const v = this.variableMap.get(id);
+    if (!v) throw new Error('Variable not found');
+    this.transact(() =>
+      this.variableMap.set(id, {
+        ...v,
+        ...(patch.name?.trim() ? { name: patch.name.trim() } : {}),
+        values: patch.color && patch.modeId ? { ...v.values, [patch.modeId]: patch.color } : v.values,
+      }),
+    );
+  }
+
+  deleteColorVariable(id: string): void {
+    this.transact(() => this.variableMap.delete(id));
+  }
+
+  /** Bind one solid fill or stroke of a layer to a colour variable (or pass null to keep its colour and detach). */
+  bindPaintVariable(nodeId: string, key: 'fills' | 'strokes', index: number, variableId: string | null): void {
+    const node = this.requireNode(nodeId) as unknown as Record<string, unknown>;
+    const paints = node[key];
+    if (!Array.isArray(paints) || !paints[index]) throw new Error('No such paint');
+    const paint = paints[index] as Paint;
+    if (paint.type !== 'SOLID') throw new Error('Only solid colours can use a variable');
+    let next: Paint;
+    if (variableId === null) {
+      const { variableId: _gone, ...rest } = paint;
+      next = rest;
+    } else {
+      const v = this.variableMap.get(variableId);
+      if (!v) throw new Error('Variable not found');
+      next = { ...paint, variableId, color: v.values[this.activeModeId()] ?? paint.color };
+    }
+    this.setStyle(nodeId, { [key]: (paints as Paint[]).map((p, i) => (i === index ? next : p)) } as StylePatch);
   }
 
   // ---------- text styles ----------

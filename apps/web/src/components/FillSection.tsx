@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { DesignDoc } from "@canvylo/design-core";
 import { StyleMenu, StylePill } from "./StyleMenu";
+import { VariableButton, VariableChip } from "./VariableMenu";
 import { paintCss } from "@canvylo/code-generator";
 import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@canvylo/types";
 import { readImage } from "../images";
@@ -64,13 +65,14 @@ export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
             paint={fills[i]!}
             setPaint={(p) => setFills(fills.map((f, j) => (j === i ? p : f)))}
             remove={() => setFills(fills.filter((_, j) => j !== i))}
+            bind={style ? undefined : (variableId) => doc.bindPaintVariable(node.id, "fills", i, variableId)}
           />
         ))}
     </section>
   );
 }
 
-function FillRow({ doc, nodeId, paint, setPaint, remove }: { doc: DesignDoc; nodeId: string; paint: Paint; setPaint: (p: Paint) => void; remove: () => void }) {
+function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDoc; nodeId: string; paint: Paint; setPaint: (p: Paint) => void; remove: () => void; bind?: (variableId: string | null) => void }) {
   const setStops = (g: GradientPaint, stops: GradientStop[]) => setPaint({ ...g, stops });
   return (
     <div className="fill-item">
@@ -82,14 +84,16 @@ function FillRow({ doc, nodeId, paint, setPaint, remove }: { doc: DesignDoc; nod
             </option>
           ))}
         </select>
+        {bind && paint.type === "SOLID" && !paint.variableId && <VariableButton doc={doc} onPick={bind} />}
         <button className="props__add" title="Remove fill" onClick={remove}>
           −
         </button>
       </div>
+      {paint.type === "SOLID" && paint.variableId && bind && <VariableChip doc={doc} variableId={paint.variableId} onDetach={() => bind(null)} />}
 
       {paint.type === "IMAGE" ? (
         <ImageFill doc={doc} nodeId={nodeId} paint={paint} setPaint={setPaint} />
-      ) : paint.type === "SOLID" ? (
+      ) : paint.type === "SOLID" && paint.variableId && bind ? null : paint.type === "SOLID" ? (
         <div className="fill-row fill-row--gap">
           <input className="fill-row__swatch" type="color" value={paint.color} onChange={(e) => setPaint({ ...paint, color: e.target.value })} />
           <HexInput value={paint.color} onChange={(color) => setPaint({ ...paint, color })} />
