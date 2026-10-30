@@ -44,7 +44,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Select children (Enter), select parent (Shift+Enter), Tab / Shift+Tab to next / previous sibling | ✅ | |
 | Double-click to enter a group; Figma selects the top-level layer first | ❌ | P1 |
 | Resize from all 8 handles, Shift = keep ratio, Alt = from center | 🟡 | All 8 handles (sides are invisible strips like Figma), Shift, Alt done. Missing: resizing several layers at once, rotated layers, flipping when dragged past the opposite side, children scaling (constraints) |
-| Rotate handle, rotate with Ctrl+Alt+arrows (menu) | 🟡 numeric only | P1 |
+| Rotate handle, rotate with Ctrl+Alt+arrows (menu) | 🟡 | Drag just outside a corner of a single layer to rotate it (Shift snaps to 15°), plus the numeric field. While a layer is rotated only the rotated outline shows (no resize handles; resize with the W / H fields). Missing: Ctrl+Alt+arrows, rotating several layers together, resizing a rotated layer by its handles |
 | Flip horizontal / vertical (Shift+H / Shift+V) | 🟡 | Each selected layer flips about its own centre (Figma flips a multi-selection about the selection centre). Missing: menu entries |
 | Rename (F2 / Ctrl+R / double-click), lock (Ctrl+Shift+L), hide (Ctrl+Shift+H); locked layers cannot be picked or nudged on the canvas | ✅ | |
 | Snapping, smart guides, pixel snapping | 🟡 | Moving snaps to edges and centres of sibling layers and the parent frame, red guide lines, hold Ctrl to turn off. Missing: snapping while resizing, equal-spacing guides, distance labels while dragging, pixel snapping, a setting to turn it off |
