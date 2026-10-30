@@ -511,3 +511,14 @@ textarea:focus-visible {
 .fill-item {
   margin-bottom: 10px;
 }
+
+.prefs__nudge .field__label {
+  width: auto;
+  padding: 0 4px 0 12px;
+  white-space: nowrap;
+}
+
+.prefs__nudge .field__input {
+  text-align: right;
+  padding-right: 10px;
+}
