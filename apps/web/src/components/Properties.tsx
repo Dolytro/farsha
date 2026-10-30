@@ -6,6 +6,7 @@ import { fitText } from "../text-layout";
 import { ConstraintsSection } from "./ConstraintsSection";
 import { AutoLayoutSection } from "./AutoLayoutSection";
 import { AlignRow } from "./AlignRow";
+import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
@@ -221,6 +222,7 @@ export function Properties() {
       <AutoLayoutSection doc={doc} node={node} select={select} />
       <StrokeSection doc={doc} node={node} />
       <EffectsSection doc={doc} node={node} />
+      {node.type !== "PAGE" && <ExportSection doc={doc} ids={[node.id]} />}
     </aside>
   );
 }
