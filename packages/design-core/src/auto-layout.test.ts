@@ -69,3 +69,53 @@ describe('fill container', () => {
     expect(r.width).toBe(70);
   });
 });
+
+describe('wrap', () => {
+  const frame = { layoutMode: 'HORIZONTAL' as const, layoutWrap: true, itemSpacing: 10, counterSpacing: 6, paddingLeft: 10, paddingRight: 10, paddingTop: 5, paddingBottom: 5, primarySizing: 'FIXED' as const, counterSizing: 'HUG' as const, width: 100, height: 0 };
+  const items = [
+    { id: 'a', width: 40, height: 20 },
+    { id: 'b', width: 40, height: 30 },
+    { id: 'c', width: 40, height: 10 },
+  ];
+
+  it('breaks into lines that fit the inner width, with a line gap', () => {
+    // inner width 80: a (40) + gap 10 + b (40) = 90 does not fit, so every item gets its own line
+    const r = computeAutoLayout(frame, items)!;
+    expect(r.positions.a).toEqual({ x: 10, y: 5 });
+    expect(r.positions.b).toEqual({ x: 10, y: 31 });
+    expect(r.positions.c).toEqual({ x: 10, y: 67 });
+  });
+
+  it('puts items that fit on the same line and hugs the cross size', () => {
+    const r = computeAutoLayout({ ...frame, width: 120 }, items)!;
+    // inner width 100: a + b = 90 fit, c wraps
+    expect(r.positions.a).toEqual({ x: 10, y: 5 });
+    expect(r.positions.b).toEqual({ x: 60, y: 5 });
+    expect(r.positions.c).toEqual({ x: 10, y: 41 });
+    // 5 + 30 (tallest of line 1) + 6 + 10 + 5
+    expect(r.height).toBe(56);
+    expect(r.width).toBe(120);
+  });
+
+  it('aligns each line and the items inside it', () => {
+    const r = computeAutoLayout({ ...frame, width: 120, primaryAxisAlign: 'MAX', counterAxisAlign: 'CENTER' }, items)!;
+    // line 1 content 90 inside 100 -> starts at 10 + 10; a (h 20) is centred in the 30 high line
+    expect(r.positions.a).toEqual({ x: 20, y: 10 });
+    expect(r.positions.c.x).toBe(10 + 100 - 40);
+  });
+
+  it('works vertically', () => {
+    const r = computeAutoLayout({ ...frame, layoutMode: 'VERTICAL', width: 0, height: 80, primarySizing: 'FIXED', counterSizing: 'HUG', paddingTop: 5, paddingBottom: 5 }, items)!;
+    // inner height 70: a (20) + 10 + b (30) = 60 fit, c (10) needs 80 -> wraps to a new column
+    expect(r.positions.a).toEqual({ x: 10, y: 5 });
+    expect(r.positions.b).toEqual({ x: 10, y: 35 });
+    expect(r.positions.c.y).toBe(5);
+    expect(r.positions.c.x).toBeGreaterThan(10);
+  });
+
+  it('ignores wrap while the main size hugs', () => {
+    const r = computeAutoLayout({ ...frame, primarySizing: 'HUG' }, items)!;
+    expect(r.positions.c.y).toBe(5);
+    expect(r.width).toBe(10 + 40 * 3 + 20 + 10);
+  });
+});

@@ -61,6 +61,55 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
   const cross = (c: LayoutChild) => (horizontal ? c.height : c.width);
 
   const gap = gapSize;
+  // Wrapping needs a fixed size along the layout direction to break lines against.
+  if (frame.layoutWrap && !hugMain && sized.length) {
+    const innerMain = (horizontal ? frame.width : frame.height) - padMainStart - padMainEnd;
+    const lines: LayoutChild[][] = [[]];
+    let used = 0;
+    for (const c of sized) {
+      const line = lines[lines.length - 1]!;
+      const need = main(c) + (line.length ? gap : 0);
+      if (line.length && used + need > innerMain + 1e-6) {
+        lines.push([c]);
+        used = main(c);
+      } else {
+        line.push(c);
+        used += need;
+      }
+    }
+    const lineGap = n(frame.counterSpacing ?? frame.itemSpacing);
+    const lineCross = lines.map((l) => l.reduce((m, c) => Math.max(m, cross(c)), 0));
+    const contentCrossTotal = lineCross.reduce((a, b) => a + b, 0) + lineGap * (lines.length - 1);
+    const frameCrossWrapped = hugCross ? contentCrossTotal + padCrossStart + padCrossEnd : horizontal ? frame.height : frame.width;
+    const alignMain = frame.primaryAxisAlign ?? 'MIN';
+    const counterAlign = frame.counterAxisAlign ?? 'MIN';
+    const wrapped: LayoutResult['positions'] = {};
+    let crossCursor = padCrossStart;
+    lines.forEach((line, li) => {
+      const lineMainSum = line.reduce((s, c) => s + main(c), 0);
+      const lineContent = lineMainSum + gap * (line.length - 1);
+      let cursor = padMainStart;
+      let step = gap;
+      if (alignMain === 'CENTER') cursor += (innerMain - lineContent) / 2;
+      else if (alignMain === 'MAX') cursor += innerMain - lineContent;
+      else if (alignMain === 'SPACE_BETWEEN' && line.length > 1) step = Math.max(0, (innerMain - lineMainSum) / (line.length - 1));
+      for (const c of line) {
+        let cPos = crossCursor;
+        if (counterAlign === 'CENTER') cPos += (lineCross[li]! - cross(c)) / 2;
+        else if (counterAlign === 'MAX') cPos += lineCross[li]! - cross(c);
+        wrapped[c.id] = horizontal ? { x: cursor, y: cPos } : { x: cPos, y: cursor };
+        cursor += main(c) + step;
+      }
+      crossCursor += lineCross[li]! + lineGap;
+    });
+    return {
+      positions: wrapped,
+      sizes,
+      width: horizontal ? frame.width : frameCrossWrapped,
+      height: horizontal ? frameCrossWrapped : frame.height,
+    };
+  }
+
   const childMain = sized.reduce((sum, c) => sum + main(c), 0);
   const contentMain = childMain + gap * Math.max(0, children.length - 1);
   const contentCross = sized.reduce((m, c) => Math.max(m, cross(c)), 0);

@@ -90,7 +90,12 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     // Auto layout is a flex container; its children are in the flow instead of absolutely positioned.
     const justify = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", SPACE_BETWEEN: "space-between" } as const;
     d.push(["display", "flex"], ["flex-direction", node.layoutMode === "HORIZONTAL" ? "row" : "column"]);
-    if (node.itemSpacing) d.push(["gap", px(node.itemSpacing)]);
+    if (node.layoutWrap) {
+      // wrapped lines are spaced by the line gap: row-gap / column-gap swap with the direction
+      const along = px(node.itemSpacing ?? 0);
+      const between = px(node.counterSpacing ?? node.itemSpacing ?? 0);
+      d.push(["flex-wrap", "wrap"], ["gap", node.layoutMode === "HORIZONTAL" ? `${between} ${along}` : `${along} ${between}`]);
+    } else if (node.itemSpacing) d.push(["gap", px(node.itemSpacing)]);
     const pad = [node.paddingTop, node.paddingRight, node.paddingBottom, node.paddingLeft].map((v) => v ?? 0);
     if (pad.some((v) => v > 0)) d.push(["padding", pad.map(px).join(" ")]);
     d.push(["justify-content", justify[node.primaryAxisAlign ?? "MIN"]], ["align-items", justify[node.counterAxisAlign ?? "MIN"]]);
