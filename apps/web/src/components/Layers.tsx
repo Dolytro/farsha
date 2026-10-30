@@ -130,7 +130,7 @@ export function Layers() {
           {collapsed.has(n.id) ? "▸" : "▾"}
         </button>
         <span className={`layers__type${n.type === "FRAME" && (n.isComponent || n.componentId) ? " layers__type--component" : ""}`}>
-          {n.isMask ? "◐" : n.type === "FRAME" && n.isComponent ? "❖" : n.type === "FRAME" && n.componentId ? "◇" : (ICONS[n.type] ?? "·")}
+          {n.isMask ? "◐" : n.type === "FRAME" && n.isSection ? "§" : n.type === "FRAME" && n.isComponent ? "❖" : n.type === "FRAME" && n.componentId ? "◇" : (ICONS[n.type] ?? "·")}
         </span>
         {renaming === n.id ? (
           <RenameInput

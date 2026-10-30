@@ -23,8 +23,8 @@ type Drag =
   | { kind: "line"; id: string; wx: number; wy: number; px: number; py: number; arrow: boolean }
   | { kind: "marquee"; wx: number; wy: number; additive: boolean; base: string[] };
 
-const CREATE: Partial<Record<Tool, NodeType>> = { frame: "FRAME", rect: "RECTANGLE", ellipse: "ELLIPSE", text: "TEXT", line: "VECTOR", arrow: "VECTOR", polygon: "VECTOR", star: "VECTOR" };
-const NAMES: Partial<Record<Tool, string>> = { frame: "Frame", rect: "Rectangle", ellipse: "Ellipse", text: "Text", line: "Line", arrow: "Arrow", polygon: "Polygon", star: "Star" };
+const CREATE: Partial<Record<Tool, NodeType>> = { section: "FRAME", frame: "FRAME", rect: "RECTANGLE", ellipse: "ELLIPSE", text: "TEXT", line: "VECTOR", arrow: "VECTOR", polygon: "VECTOR", star: "VECTOR" };
+const NAMES: Partial<Record<Tool, string>> = { section: "Section", frame: "Frame", rect: "Rectangle", ellipse: "Ellipse", text: "Text", line: "Line", arrow: "Arrow", polygon: "Polygon", star: "Star" };
 
 /** Starting geometry and paint of the vector tools: lines are stroked, polygons and stars are filled grey. */
 function vectorStart(tool: Tool): Record<string, unknown> {
@@ -204,7 +204,8 @@ export function Canvas() {
     if (!type) return;
     // Draw a new shape, positioned relative to the frame under the cursor (if any).
     const under = hitTest(doc, pageId, w.x, w.y);
-    const parentFrame = under?.type === "FRAME" ? under : undefined;
+    // sections always sit on the page itself
+    const parentFrame = tool !== "section" && under?.type === "FRAME" ? under : undefined;
     const pb = parentFrame ? (doc.absoluteBox(parentFrame.id) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
     doc.stopCapturing();
     const id = doc.createNode(type, {
@@ -216,6 +217,7 @@ export function Canvas() {
         width: 1,
         height: 1,
         ...(tool === "text" ? { fills: solid("#111111") } : {}),
+        ...(tool === "section" ? { isSection: true, clipsContent: false, fills: solid("#eceef2") } : {}),
         ...(type === "VECTOR" ? vectorStart(tool) : {}),
         ...(tool === "line" || tool === "arrow" ? { height: 0 } : {}),
       },
@@ -552,22 +554,25 @@ export function Canvas() {
             );
           })()}
 
-          {doc
-            .children(pageId)
-            .filter((n) => n.type === "FRAME" && n.visible)
-            .map((n) => (
+          {[...doc.children(pageId).filter((n) => n.type === "FRAME"), ...doc.children(pageId).filter((n) => n.type === "FRAME" && n.isSection).flatMap((s) => doc.children(s.id).filter((c) => c.type === "FRAME"))]
+            .filter((n) => n.visible)
+            .map((n) => {
+              const abs = doc.absoluteBox(n.id) ?? n;
+              return (
               <text
                 key={`label-${n.id}`}
                 className="canvas__frame-label"
                 data-label-id={n.id}
-                x={n.x}
-                y={n.y - 6 / z}
-                fontSize={11 / z}
-                fill={selection.includes(n.id) ? ACCENT : "#8c8c8c"}
+                x={abs.x}
+                y={abs.y - (n.type === "FRAME" && n.isSection ? 8 : 6) / z}
+                fontSize={(n.type === "FRAME" && n.isSection ? 14 : 11) / z}
+                fontWeight={n.type === "FRAME" && n.isSection ? 700 : undefined}
+                fill={selection.includes(n.id) ? ACCENT : n.type === "FRAME" && n.isSection ? "#4b5563" : "#8c8c8c"}
               >
                 {n.name}
               </text>
-            ))}
+              );
+            })}
 
           {hoverBox && <rect x={hoverBox.x} y={hoverBox.y} width={hoverBox.width} height={hoverBox.height} fill="none" stroke={altDown ? RED : ACCENT} strokeWidth={sw * 1.5} pointerEvents="none" />}
 

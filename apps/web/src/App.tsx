@@ -34,6 +34,7 @@ import { distributeSelection } from "./align";
 import { tidyUp } from "./arrange-actions";
 import { fitText as refitText } from "./text-layout";
 import { setTextAlign, toggleTextStyle } from "./text-actions";
+import { wrapInSection } from "./section-actions";
 import { removePaint, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
 import { pickColorFromScreen } from "./eyedropper";
 
@@ -424,6 +425,14 @@ export function App() {
       } else if (mod && e.altKey && !e.shiftKey && ["l", "t", "r"].includes(key) && selection.length && !s.viewer && !e.metaKey) {
         e.preventDefault();
         setTextAlign(doc, selection, key === "l" ? "LEFT" : key === "t" ? "CENTER" : "RIGHT", refitText);
+      } else if (e.shiftKey && !mod && !e.altKey && key === "s" && !s.viewer) {
+        // Figma's Section tool
+        e.preventDefault();
+        s.setTool("section");
+      } else if (mod && !e.shiftKey && !e.altKey && key === "s" && selection.length && !s.viewer) {
+        // Figma's "Wrap in new section" (also stops the browser's Save dialog)
+        e.preventDefault();
+        s.select(wrapInSection(doc, selection));
       } else if (mod && e.altKey && e.shiftKey && key === "t" && selection.length && !s.viewer) {
         // Figma's "Tidy up"
         e.preventDefault();

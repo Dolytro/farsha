@@ -9,6 +9,7 @@ import { openLocalFilePicker, saveLocalCopy } from "./local-file";
 import { hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, swapFillAndStroke } from "./object-actions";
 import { newFile } from "./drive/session";
 import { fitText } from "./text-layout";
+import { setSection, wrapInSection } from "./section-actions";
 import { setTextAlign, setTextCase, toggleTextStyle } from "./text-actions";
 import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
@@ -101,6 +102,10 @@ export function buildCommands(): Command[] {
     { id: "text-align-left", label: "Align text left", shortcut: `${MOD}${ALT}L`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "LEFT", fitText) },
     { id: "text-align-center", label: "Align text center", shortcut: `${MOD}${ALT}T`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "CENTER", fitText) },
     { id: "text-align-right", label: "Align text right", shortcut: `${MOD}${ALT}R`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "RIGHT", fitText) },
+    { id: "wrap-section", label: "Wrap in new section", shortcut: `${MOD}S`, needsSelection: true, keywords: "section group canvas area", run: () => state().select(wrapInSection(doc(), sel())) },
+    { id: "convert-section", label: "Convert to section", needsSelection: true, keywords: "frame section", run: () => void setSection(doc(), sel(), true) },
+    { id: "convert-frame", label: "Convert to frame", needsSelection: true, keywords: "frame section", run: () => void setSection(doc(), sel(), false) },
+    tool("section", "Section", `${SHIFT}S`),
     { id: "rotate-180", label: "Rotate 180°", needsSelection: true, keywords: "turn", run: () => void rotateSelectionBy(doc(), sel(), 180) },
     { id: "rotate-left", label: "Rotate 90° left", needsSelection: true, keywords: "turn counterclockwise", run: () => void rotateSelectionBy(doc(), sel(), -90) },
     { id: "rotate-right", label: "Rotate 90° right", needsSelection: true, keywords: "turn clockwise", run: () => void rotateSelectionBy(doc(), sel(), 90) },

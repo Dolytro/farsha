@@ -95,6 +95,8 @@ export function buildMainMenu(): MenuNode[] {
         item("group"),
         item("ungroup"),
         item("wrap-section"),
+        item("convert-section"),
+        item("convert-frame"),
         item("use-as-mask"),
         item("auto-layout", undefined, true),
         item("remove-auto-layout"),
