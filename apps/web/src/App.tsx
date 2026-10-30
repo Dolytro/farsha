@@ -29,6 +29,7 @@ import { restoreLocal, startLocalAutosave } from "./local-persist";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
 import { resolveTheme } from "./theme";
+import { pickColorFromScreen } from "./eyedropper";
 
 /** Run a "Copy as ..." action and report the result in a toast. */
 async function copyWithToast(label: string, task: () => Promise<boolean>): Promise<void> {
@@ -394,6 +395,10 @@ export function App() {
           const v = zoomFit(doc, s.pageId, [frame]);
           if (v) s.setViewport(v);
         }
+      } else if (!e.shiftKey && !mod && !e.altKey && key === "i" && !s.viewer) {
+        // Figma's eyedropper
+        e.preventDefault();
+        void pickColorFromScreen(doc, selection, s.showToast);
       } else if (e.shiftKey && !mod && !e.altKey && key === "l") {
         // Figma's Arrow tool
         s.setTool("arrow");
