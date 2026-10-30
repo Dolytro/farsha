@@ -151,3 +151,39 @@ describe("multiple fills", () => {
     expect(backgroundCss([{ type: "SOLID", color: "#ff0000", opacity: 1 }])).toBe("#ff0000");
   });
 });
+
+describe("fill container in CSS", () => {
+  function row(layout: "HORIZONTAL" | "VERTICAL") {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { width: 300, height: 100 } });
+    doc.setStyle(frame, { layoutMode: layout, primarySizing: "FIXED", counterSizing: "FIXED" } as never);
+    const kid = doc.createNode("RECTANGLE", { parentId: frame, props: { width: 50, height: 20 } });
+    doc.setStyle(kid, { layoutSizingH: "FILL", layoutSizingV: "FILL" } as never);
+    return generateCode(doc.getNode(frame)!, (id) => doc.children(id), "css");
+  }
+
+  it("grows along the main axis and stretches across it in a row", () => {
+    const css = row("HORIZONTAL");
+    expect(css).toContain("flex: 1 1 0");
+    expect(css).toContain("align-self: stretch");
+    const kidRule = css.slice(css.indexOf("Rectangle") >= 0 ? css.indexOf("Rectangle") : css.lastIndexOf("{"));
+    expect(kidRule).not.toMatch(/width: 50px/);
+    expect(kidRule).not.toMatch(/height: 20px/);
+  });
+
+  it("uses the vertical axis as the main axis in a column", () => {
+    expect(row("VERTICAL")).toContain("flex: 1 1 0");
+  });
+
+  it("keeps fixed sizes without fill", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page });
+    doc.setStyle(frame, { layoutMode: "HORIZONTAL" } as never);
+    doc.createNode("RECTANGLE", { parentId: frame, props: { width: 50, height: 20 } });
+    const css = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "css");
+    expect(css).toContain("width: 50px");
+    expect(css).not.toContain("flex: 1 1 0");
+  });
+});
