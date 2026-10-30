@@ -70,7 +70,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Effects | 🟡 | Drop shadow, inner shadow, layer blur (hide / remove / change type) done. Missing: shadow spread, background blur, show-behind, multiple blurs. Shadow offset rotates with a rotated layer. Dev Mode CSS shows outside strokes as an inside border. |
 | Typography | 🟡 | Content, font family (a short built-in list, system fonts only), weight names, size, line height, letter spacing, text align (left / center / right) done. Multi-line text (Enter = new line), wrapping, auto width / auto height / fixed (also set by dragging handles like Figma) done; wrapping uses the browser's canvas measureText, so very different fonts may wrap slightly differently in exports. Missing: Google Fonts, paragraph spacing, vertical align, decoration, case, truncate, lists, mixed styles inside one text box, text selection inside the editor styling |
 | Selection colors | ❌ | |
-| Export | ❌ | PNG / JPG / SVG / PDF, 1x–4x, suffix, export frames to PDF (menu) |
+| Export | 🟡 | Export section in the Design panel: PNG / JPG / SVG at 0.5x–4x, one file per layer, "@2x" file names. Missing: PDF, saved export settings per layer, suffix, multi-selection export, export from Dev Mode, export frames to PDF |
 | Constraints | 🟡 | Left / Right / Left & Right / Center / Scale (and Top / Bottom) for layers inside frames, applied when the frame is resized (also in nested frames). Missing: groups scaling their children, the clickable constraint diagram, children of auto layout frames |
 
 ## 4. Components and design system

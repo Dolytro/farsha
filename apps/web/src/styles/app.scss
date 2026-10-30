@@ -1220,3 +1220,24 @@ body {
   font: inherit;
   outline: none;
 }
+
+.props__button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--c-border);
+  border-radius: 5px;
+  background: var(--c-panel);
+  color: var(--c-text);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--c-input);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
