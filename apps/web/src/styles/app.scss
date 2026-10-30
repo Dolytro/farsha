@@ -1744,3 +1744,24 @@ body {
     display: none;
   }
 }
+
+.prefs {
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 4px 0;
+    cursor: pointer;
+  }
+
+  &__hint {
+    display: block;
+    color: var(--c-muted);
+  }
+
+  &__nudge {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}

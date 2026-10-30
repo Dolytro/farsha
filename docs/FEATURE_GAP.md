@@ -19,7 +19,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Comment tool (C) | ❌ | P2 |
 | Color picker / eyedropper (I) (menu) | 🟡 | Eyedropper (I or Actions) picks a colour anywhere on the screen and applies it to the selection (copies it when nothing is selected); needs Chromium's EyeDropper API. Real screen picking could not be driven in the test browser (a stub was used). Missing: a colour picker popover with a spectrum |
 | Tool dropdowns with variants in the toolbar | ❌ | P2 |
-| "Keep tool selected after use" setting (menu) | ❌ | P3 |
+| "Keep tool selected after use" setting (menu) | ✅ | Preferences |
 
 ## 2. Selection and editing
 
@@ -142,18 +142,18 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 
 | Setting | Canvylo |
 |---|---|
-| Keep tool selected after use | ❌ |
+| Keep tool selected after use | ✅ |
 | Use alternate zoom handling | ❌ |
 | Highlight layers on hover | ✅ always on |
 | Show dimensions on objects | ✅ always on |
 | Hide canvas UI during changes | ❌ |
 | Keyboard zooms into selection | ❌ |
-| Invert zoom direction | ❌ |
+| Invert zoom direction | ✅ |
 | Ctrl+click opens right-click menus | ❌ |
-| Use scroll wheel zoom (instead of pan) | ❌ |
+| Use scroll wheel zoom (instead of pan) | ✅ |
 | Right-click and drag to pan | ❌ |
 | Theme (light / dark / system) | ✅ (cloud menu or Actions; the canvas and panels follow, design layers are never recoloured) |
-| Snapping, nudge amount, color profile | ❌ |
+| Snapping, nudge amount, color profile | 🟡 snapping on / off and nudge amounts done (Preferences in the cloud menu or Actions); no colour profile |
 | Keyboard layout, accessibility settings | ❌ |
 | Keyboard shortcuts cheat sheet (Ctrl+Shift+?) | ❌ |
 | Help and account menu, sign out in a profile menu | 🟡 sign out is in ☁ |

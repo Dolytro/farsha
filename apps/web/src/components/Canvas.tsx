@@ -1,3 +1,4 @@
+import { PINCH_STRENGTH, WHEEL_STRENGTH, wheelZoomFactor } from "../prefs";
 import { PenLayer } from "./PenLayer";
 import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
@@ -229,7 +230,7 @@ export function Canvas() {
     let dx = w.x - d.wx;
     let dy = w.y - d.wy;
     if (d.kind === "move") {
-      if (d.startBox && !e.ctrlKey && !e.metaKey) {
+      if (d.startBox && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping) {
         const page = doc.getNode(pageId);
         const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
         const snap = snapMove({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets, 5 / viewport.zoom, {
@@ -293,14 +294,15 @@ export function Canvas() {
     if (d.kind === "line") {
       // A plain click makes a 100 px line.
       if (doc.getNode(d.id)!.width < 4) placeLine(d, d.wx + 100, d.wy, false);
-      setTool("select");
+      if (!useEditor.getState().prefs.keepTool) setTool("select");
     }
     if (d.kind === "draw") {
       const n = doc.getNode(d.id)!;
       if (n.width < 4 && n.height < 4) {
         doc.resizeNode(d.id, n.type === "TEXT" ? { width: 120, height: 24 } : { width: 100, height: 100 });
       }
-      setTool("select");
+      // text always goes back to Move because it opens the editor
+      if (n.type === "TEXT" || !useEditor.getState().prefs.keepTool) setTool("select");
       if (n.type === "TEXT") {
         // Figma: a click makes auto-width text, dragging a box makes auto-height text.
         if (n.width >= 4 || n.height >= 4) doc.setText(d.id, { textAutoResize: "HEIGHT" });
@@ -359,7 +361,8 @@ export function Canvas() {
       e.preventDefault();
       const { viewport: v, setViewport: set } = useEditor.getState();
       const r = el.getBoundingClientRect();
-      if (e.ctrlKey || e.metaKey) set(zoomAt(v, e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.01)));
+      const { wheelZoom, invertZoom } = useEditor.getState().prefs;
+      if (e.ctrlKey || e.metaKey || wheelZoom) set(zoomAt(v, e.clientX - r.left, e.clientY - r.top, wheelZoomFactor(e.deltaY, invertZoom, e.ctrlKey || e.metaKey ? PINCH_STRENGTH : WHEEL_STRENGTH)));
       else set({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY });
     };
     el.addEventListener("wheel", onWheel, { passive: false });
