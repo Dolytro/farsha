@@ -53,6 +53,7 @@ interface EditorState {
   setRulers: (on: boolean) => void;
   drive: DriveState;
   shareOpen: boolean;
+  paletteOpen: boolean;
   /** Layer being renamed in the layers panel (F2 / Ctrl+R / double-click). */
   renaming: string | null;
   setRenaming: (id: string | null) => void;
@@ -69,6 +70,7 @@ interface EditorState {
   setPage: (id: string) => void;
   setViewport: (v: Viewport) => void;
   setShareOpen: (open: boolean) => void;
+  setPaletteOpen: (open: boolean) => void;
   setDrive: (patch: Partial<DriveState>) => void;
   setLoad: (state: LoadState, error?: string | null) => void;
   /** Replace the open document (Open from Drive, shared link, New). */
@@ -102,6 +104,7 @@ export const useEditor = create<EditorState>((set) => ({
   viewport: DEFAULT_VIEWPORT,
   drive: { checked: false, user: null, fileId: null, fileName: "Untitled", status: "idle", error: null },
   shareOpen: false,
+  paletteOpen: false,
   renaming: null,
   setRenaming: (renaming) => set({ renaming }),
   menu: null,
@@ -132,6 +135,7 @@ export const useEditor = create<EditorState>((set) => ({
     set({ rulers });
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
+  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setDrive: (patch) => set((s) => ({ drive: { ...s.drive, ...patch } })),
   setLoad: (loadState, loadError = null) => set({ loadState, loadError }),
   loadDoc: (doc) => {

@@ -52,7 +52,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Boolean operations, flatten, outline stroke | ❌ | P3 |
 | Mask (Ctrl+Alt+M), frame selection (Ctrl+Alt+G) | ❌ | P2 |
 | Right-click context menu (Figma items; read-only in Dev Mode; none on view links; submenu is a flat "Copy/Paste as" group) | ✅ | |
-| Command palette "Actions" (Ctrl+K) (menu) | ❌ | P2 |
+| Command palette "Actions" (Ctrl+/ or Ctrl+K) | ✅ | Search ~50 actions with their shortcuts (also works as a shortcut cheat sheet). Missing: recent actions, plugins, searching layers / pages from the palette |
 | Find (Ctrl+F), find next / previous (menu) | ❌ | P3 |
 | Draggable layer reorder, drag to reparent (drop on a frame or group) | ✅ | |
 | Layers panel: expand / collapse, search, lock icon, rename (selecting on canvas does not auto-expand parents yet) | ✅ | |
