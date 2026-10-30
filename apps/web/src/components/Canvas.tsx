@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -344,7 +344,7 @@ export function Canvas() {
   const renderNode = (n: DesignNode): ReactElement | null => {
     if (!n.visible) return null;
     const { color } = fillOf(n);
-    const transform = `translate(${n.x} ${n.y}) rotate(${n.rotation} ${n.width / 2} ${n.height / 2})`;
+    const transform = nodeTransform(n);
     const kids = doc.children(n.id).map(renderNode);
     if (n.type === "ELLIPSE") {
       return (

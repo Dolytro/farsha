@@ -101,3 +101,14 @@ export function toggleLocked(doc: DesignDoc, ids: string[]): void {
   nodes.forEach((n) => doc.setStyle(n.id, { locked: lock }));
   doc.stopCapturing();
 }
+
+/** Figma's Flip horizontal / vertical (Shift+H / Shift+V): each selected layer is mirrored about its own centre. */
+export function flipSelection(doc: DesignDoc, ids: string[], axis: "x" | "y"): void {
+  doc.stopCapturing();
+  for (const id of ids) {
+    const n = doc.getNode(id);
+    if (!n || n.type === "PAGE" || n.type === "DOCUMENT") continue;
+    doc.setStyle(id, axis === "x" ? { flipX: !n.flipX } : { flipY: !n.flipY });
+  }
+  doc.stopCapturing();
+}
