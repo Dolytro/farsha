@@ -63,6 +63,11 @@ const KEYS: Record<string, Tool> = { v: "select", h: "hand", f: "frame", r: "rec
 export function App() {
   const theme = useEditor((s) => s.theme);
   const uiHidden = useEditor((s) => s.uiHidden);
+  const preset = useEditor((s) => s.prefs.preset);
+  // The interface preset is a data attribute that the stylesheet reads (density, roundness, accent, panel width).
+  useEffect(() => {
+    document.documentElement.dataset.ui = preset;
+  }, [preset]);
   // Light, dark or follow the system; the page reads the result from data-theme on <html>.
   useEffect(() => {
     const query = window.matchMedia("(prefers-color-scheme: dark)");

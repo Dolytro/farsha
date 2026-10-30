@@ -1,0 +1,513 @@
+/*
+ * Canvylo UI v2: design tokens, UI presets, and the refined look of the panels.
+ * Loaded after app.scss, so it only has to override what changes. Presets (data-ui on <html>) switch the tokens below:
+ * density (--field-h, --row-h), roundness (--radius), type size (--font-size), accent and panel width.
+ */
+
+:root {
+  /* tokens shared by every preset unless a preset overrides them */
+  --font-size: 12px;
+  --field-h: 28px;
+  --row-h: 28px;
+  --radius: 8px;
+  --panel-w: 264px;
+  --pad-x: 16px;
+  --pad-y: 12px;
+  --c-accent: #5b6cff;
+  --c-accent-soft: color-mix(in srgb, var(--c-accent) 14%, transparent);
+  --c-panel: #ffffff;
+  --c-border: #ebedf0;
+  --c-text: #1d2129;
+  --c-muted: #7b8494;
+  --c-hover: #f3f4f7;
+  --c-input: #f3f4f7;
+  --c-selected: color-mix(in srgb, var(--c-accent) 14%, transparent);
+  --c-canvas: #e9ebef;
+  --shadow-pop: 0 10px 32px rgba(15, 23, 42, 0.18), 0 1px 3px rgba(15, 23, 42, 0.1);
+}
+
+:root[data-theme="dark"] {
+  --c-panel: #1f2125;
+  --c-border: #31343a;
+  --c-text: #eceff4;
+  --c-muted: #97a0ae;
+  --c-hover: #2a2d33;
+  --c-input: #2a2d33;
+  --c-canvas: #14161a;
+  --c-accent-soft: color-mix(in srgb, var(--c-accent) 24%, transparent);
+  --c-selected: color-mix(in srgb, var(--c-accent) 26%, transparent);
+  --shadow-pop: 0 12px 36px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- presets ---------- */
+:root[data-ui="figma"] {
+  --font-size: 11px;
+  --field-h: 24px;
+  --row-h: 24px;
+  --radius: 4px;
+  --panel-w: 240px;
+  --pad-x: 12px;
+  --pad-y: 8px;
+  --c-accent: #0d99ff;
+}
+
+:root[data-ui="compact"] {
+  --font-size: 11px;
+  --field-h: 24px;
+  --row-h: 24px;
+  --radius: 5px;
+  --panel-w: 224px;
+  --pad-x: 12px;
+  --pad-y: 8px;
+}
+
+:root[data-ui="comfortable"] {
+  --font-size: 13px;
+  --field-h: 34px;
+  --row-h: 34px;
+  --radius: 10px;
+  --panel-w: 296px;
+  --pad-x: 20px;
+  --pad-y: 16px;
+}
+
+:root[data-ui="contrast"] {
+  --font-size: 12px;
+  --field-h: 30px;
+  --row-h: 30px;
+  --radius: 4px;
+  --panel-w: 272px;
+  --c-accent: #0050d0;
+  --c-border: #6b7280;
+  --c-text: #000000;
+  --c-muted: #374151;
+  --c-input: #e5e7eb;
+  --c-hover: #d1d5db;
+}
+
+:root[data-ui="contrast"][data-theme="dark"] {
+  --c-accent: #5aa2ff;
+  --c-border: #9ca3af;
+  --c-text: #ffffff;
+  --c-muted: #d1d5db;
+  --c-input: #111827;
+  --c-hover: #374151;
+  --c-panel: #000000;
+  --c-canvas: #0b0b0b;
+}
+
+/* ---------- base ---------- */
+body {
+  font-size: var(--font-size);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 1px;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--c-muted) 45%, transparent) transparent;
+}
+
+.editor {
+  grid-template-columns: var(--panel-w) 1fr var(--panel-w);
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius);
+}
+
+/* ---------- panel headers ---------- */
+.layers__header {
+  height: 52px;
+  padding: 0 12px 0 var(--pad-x);
+}
+
+.layers__brand,
+.layers__file {
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+.layers__file {
+  max-width: 150px;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  color: var(--c-text);
+}
+
+.props__header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  height: auto;
+  gap: 10px 8px;
+  padding: 12px var(--pad-x) 12px;
+
+  .props__actions {
+    grid-row: 1;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-direction: row-reverse;
+  }
+
+  .props__tabs {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+}
+
+.props__tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--c-input);
+}
+
+.props__tab {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: var(--radius);
+  text-align: center;
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover {
+    color: var(--c-text);
+  }
+
+  &--active {
+    background: var(--c-panel);
+    color: var(--c-text);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), 0 0 0 1px var(--c-border);
+  }
+}
+
+.props__share {
+  height: 28px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.props__zoom {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius);
+  color: var(--c-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- sections ---------- */
+.props__section {
+  padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 4px);
+}
+
+.props__heading {
+  margin-bottom: 10px;
+  font-size: calc(var(--font-size) - 0px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.props__heading--row {
+  min-height: 24px;
+  margin-bottom: 8px;
+}
+
+.props__name {
+  padding: 14px var(--pad-x) 4px;
+  font-size: calc(var(--font-size) + 1px);
+  font-weight: 700;
+}
+
+.props__grid {
+  gap: 8px;
+}
+
+.props__add {
+  width: 24px;
+  height: 24px;
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.props__empty {
+  padding: 24px var(--pad-x);
+  text-align: center;
+}
+
+.props__link {
+  margin-top: 8px;
+}
+
+/* ---------- fields ---------- */
+.field {
+  height: var(--field-h);
+  border-radius: var(--radius);
+  transition: border-color 0.12s, background 0.12s;
+
+  &__label {
+    width: 26px;
+    font-size: calc(var(--font-size) - 1px);
+  }
+
+  &__input {
+    font-variant-numeric: tabular-nums;
+
+    &--wide {
+      height: var(--field-h);
+      margin-bottom: 8px;
+      border-radius: var(--radius);
+    }
+  }
+}
+
+.fill-row {
+  height: var(--field-h);
+  padding: 0 6px;
+  gap: 8px;
+  border-radius: var(--radius);
+
+  &__swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+  }
+}
+
+.seg {
+  padding: 3px;
+  border-radius: calc(var(--radius) + 1px);
+
+  &__btn {
+    height: calc(var(--field-h) - 8px);
+    border-radius: calc(var(--radius) - 1px);
+    font-weight: 500;
+
+    &:hover {
+      color: var(--c-text);
+    }
+
+    &--active {
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), 0 0 0 1px var(--c-border);
+    }
+  }
+}
+
+.dd__button {
+  height: var(--field-h);
+  border-radius: var(--radius);
+}
+
+.stylepill,
+.interaction,
+.grid-item {
+  border-radius: calc(var(--radius) + 2px);
+}
+
+/* ---------- layers + pages ---------- */
+.layers__item {
+  height: var(--row-h);
+  border-radius: calc(var(--radius) - 1px);
+  transition: background 0.1s;
+
+  &--selected,
+  &--selected:hover {
+    background: var(--c-selected);
+    color: var(--c-text);
+  }
+}
+
+.layers__type {
+  width: 16px;
+  font-size: calc(var(--font-size) - 1px);
+}
+
+.layers__search {
+  height: var(--field-h);
+  margin: 4px 12px 8px;
+  padding: 0 10px;
+  border-color: transparent;
+  border-radius: var(--radius);
+  background: var(--c-input);
+
+  &:focus {
+    border-color: var(--c-accent);
+    outline: none;
+  }
+}
+
+.layers__list {
+  padding: 6px 8px 12px;
+}
+
+.layers__tabs {
+  gap: 4px;
+  padding: 8px 12px 4px;
+}
+
+.layers__tab {
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-size: var(--font-size);
+  font-weight: 500;
+
+  &:hover {
+    color: var(--c-text);
+    background: var(--c-hover);
+  }
+
+  &--active {
+    background: var(--c-input);
+    color: var(--c-text);
+    font-weight: 600;
+  }
+}
+
+.panel-title {
+  padding: 12px var(--pad-x) 6px;
+  font-size: calc(var(--font-size) - 1px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+
+.pages {
+  padding: 0 8px;
+
+  &__item {
+    height: var(--row-h);
+    padding: 0 10px;
+    border-radius: calc(var(--radius) - 1px);
+
+    &--current {
+      background: var(--c-selected);
+    }
+  }
+}
+
+/* ---------- floating bits ---------- */
+.toolbar {
+  gap: 6px;
+  padding: 6px;
+  border-radius: 16px;
+  box-shadow: 0 0 0 1px var(--c-border), var(--shadow-pop);
+
+  &__btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    transition: background 0.12s, color 0.12s, transform 0.08s;
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  &__group--modes {
+    margin-left: 6px;
+    padding-left: 10px;
+  }
+}
+
+.palette__box,
+.dialog__box,
+.drive__menu,
+.ctxmenu {
+  border-radius: calc(var(--radius) + 6px);
+  box-shadow: var(--shadow-pop);
+}
+
+.palette__input {
+  height: 52px;
+  padding: 0 18px;
+  font-size: calc(var(--font-size) + 2px);
+}
+
+.palette__item {
+  min-height: 36px;
+  margin: 0 4px;
+  border-radius: var(--radius);
+
+  &--active {
+    background: var(--c-accent);
+  }
+}
+
+.ctxmenu__item,
+.drive__item {
+  border-radius: calc(var(--radius) - 1px);
+}
+
+.toast {
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: var(--shadow-pop);
+}
+
+.dd__button {
+  background: var(--c-input);
+}
+
+.dd__list {
+  box-shadow: var(--shadow-pop);
+  border-radius: calc(var(--radius) + 4px);
+}
+
+.dd__option {
+  min-height: calc(var(--row-h) + 4px);
+  border-radius: calc(var(--radius) - 1px);
+}
+
+.prefs__preset {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.prefs__label {
+  font-weight: 600;
+}
+
+/* the canvas takes keyboard focus for shortcuts; it should not draw a focus ring around itself */
+.canvas:focus,
+.canvas:focus-visible,
+.canvas__svg:focus {
+  outline: none;
+}
+
+.dd--wide {
+  margin-bottom: 8px;
+}
+
+.fill-item__head .dd--wide,
+.interaction__row .dd--wide,
+.effect__head .dd--wide {
+  margin-bottom: 0;
+}
+
+.fill-item__head {
+  gap: 8px;
+}
+
+.fill-item {
+  margin-bottom: 10px;
+}

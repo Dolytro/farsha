@@ -1,6 +1,7 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { DesignNode, LayoutGrid } from "@canvylo/types";
 import { HexInput } from "./HexInput";
+import { Select } from "./Select";
 
 const LABEL: Record<LayoutGrid["type"], string> = { COLUMNS: "Columns", ROWS: "Rows", GRID: "Grid" };
 
@@ -36,13 +37,13 @@ export function LayoutGridSection({ doc, node }: { doc: DesignDoc; node: DesignN
       {grids.map((g, i) => (
         <div className="grid-item" key={i}>
           <div className="grid-item__head">
-            <select className="field__select" aria-label="Grid type" value={g.type} onChange={(e) => patch(i, { type: e.target.value as LayoutGrid["type"], ...(e.target.value === "GRID" ? { size: g.size ?? 10 } : {}) })}>
+            <Select className="field__select" aria-label="Grid type" value={g.type} onChange={(e) => patch(i, { type: e.target.value as LayoutGrid["type"], ...(e.target.value === "GRID" ? { size: g.size ?? 10 } : {}) })}>
               {(Object.keys(LABEL) as LayoutGrid["type"][]).map((t) => (
                 <option key={t} value={t}>
                   {LABEL[t]}
                 </option>
               ))}
-            </select>
+            </Select>
             <button className="props__add" title={g.visible ? "Hide grid" : "Show grid"} onClick={() => patch(i, { visible: !g.visible })}>
               {g.visible ? "◉" : "○"}
             </button>

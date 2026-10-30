@@ -3,6 +3,7 @@ import type { TextAlign, TextAutoResize, TextNode } from "@canvylo/types";
 import { useState } from "react";
 import { fitText } from "../text-layout";
 import { TextStyleMenu, TextStylePill } from "./TextStyleMenu";
+import { Select } from "./Select";
 
 export const FONTS: { label: string; stack: string }[] = [
   { label: "Inter", stack: "Inter, system-ui, sans-serif" },
@@ -49,23 +50,23 @@ function FontControls({ value: node, onChange: set }: { value: FontValue; onChan
   const weightKnown = WEIGHTS.some(([w]) => w === node.fontWeight);
   return (
     <>
-      <select className="field__select field__select--wide" value={known?.stack ?? node.fontFamily} onChange={(e) => set({ fontFamily: e.target.value })}>
+      <Select className="field__select field__select--wide" value={known?.stack ?? node.fontFamily} onChange={(e) => set({ fontFamily: e.target.value })}>
         {!known && <option value={node.fontFamily}>{firstFamily(node.fontFamily)}</option>}
         {FONTS.map((f) => (
           <option key={f.label} value={f.stack}>
             {f.label}
           </option>
         ))}
-      </select>
+      </Select>
       <div className="props__grid props__grid--gap">
-        <select className="field__select" value={node.fontWeight} onChange={(e) => set({ fontWeight: Number(e.target.value) })}>
+        <Select className="field__select" value={node.fontWeight} onChange={(e) => set({ fontWeight: Number(e.target.value) })}>
           {!weightKnown && <option value={node.fontWeight}>{node.fontWeight}</option>}
           {WEIGHTS.map(([w, label]) => (
             <option key={w} value={w}>
               {label}
             </option>
           ))}
-        </select>
+        </Select>
         <label className="field">
           <span className="field__label">Size</span>
           <input className="field__input" type="number" min={1} value={node.fontSize} onChange={(e) => Number(e.target.value) > 0 && set({ fontSize: Number(e.target.value) })} />

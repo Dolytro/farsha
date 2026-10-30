@@ -14,6 +14,7 @@ import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
+import { Select } from "./Select";
 
 const BLEND_MODES: [BlendMode, string][] = [
   ["NORMAL", "Normal"],
@@ -156,7 +157,7 @@ export function Properties() {
 
       <section className="props__section">
         <h3 className="props__heading">Appearance</h3>
-        <select
+        <Select
           className="field__select field__select--wide"
           title="Blend mode"
           value={node.blendMode ?? "NORMAL"}
@@ -167,7 +168,7 @@ export function Properties() {
               {label}
             </option>
           ))}
-        </select>
+        </Select>
         <div className="props__grid">
           <label className="field">
             <span className="field__label">%</span>

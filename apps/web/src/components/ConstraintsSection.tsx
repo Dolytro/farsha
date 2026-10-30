@@ -1,5 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import type { Constraint, DesignNode } from "@canvylo/types";
+import { Select } from "./Select";
 
 const HORIZONTAL: [Constraint, string][] = [
   ["MIN", "Left"],
@@ -21,13 +22,13 @@ export function ConstraintsSection({ doc, node }: { doc: DesignDoc; node: Design
   const parent = node.parentId ? doc.getNode(node.parentId) : undefined;
   if (parent?.type !== "FRAME" || parent.layoutMode) return null;
   const select = (title: string, value: Constraint, options: [Constraint, string][], onChange: (c: Constraint) => void) => (
-    <select className="field__select" title={title} value={value} onChange={(e) => onChange(e.target.value as Constraint)}>
+    <Select className="field__select" title={title} value={value} onChange={(e) => onChange(e.target.value as Constraint)}>
       {options.map(([v, label]) => (
         <option key={v} value={v}>
           {label}
         </option>
       ))}
-    </select>
+    </Select>
   );
   return (
     <section className="props__section">

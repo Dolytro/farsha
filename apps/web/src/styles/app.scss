@@ -1765,3 +1765,117 @@ body {
     gap: 8px;
   }
 }
+
+/* ---------- Dropdown (replaces the native select) ---------- */
+.dd {
+  position: relative;
+  min-width: 0;
+
+  &--wide {
+    width: 100%;
+  }
+
+  &__button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    height: 28px;
+    padding: 0 8px 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radius, 6px);
+    background: var(--c-input);
+    color: var(--c-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+
+    &:hover:not(:disabled) {
+      border-color: var(--c-border);
+    }
+
+    &:focus-visible,
+    &--open {
+      border-color: var(--c-accent);
+      outline: none;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+
+  &__value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__chevron {
+    flex: none;
+    color: var(--c-muted);
+  }
+
+  &__list {
+    position: fixed;
+    z-index: 100;
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid var(--c-border);
+    border-radius: calc(var(--radius, 6px) + 4px);
+    background: var(--c-panel);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22), 0 1px 3px rgba(0, 0, 0, 0.1);
+    animation: dd-in 0.1s ease-out;
+  }
+
+  &__group {
+    padding: 8px 10px 4px;
+    color: var(--c-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 6px 10px 6px 6px;
+    border-radius: var(--radius, 6px);
+    color: var(--c-text);
+    cursor: pointer;
+
+    &--active {
+      background: var(--c-accent);
+      color: #fff;
+    }
+
+    &--disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  &__check {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+  }
+}
+
+@keyframes dd-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}

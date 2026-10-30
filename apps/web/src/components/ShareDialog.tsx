@@ -4,6 +4,7 @@ import { connect, save } from "../drive/session";
 import { getToken } from "../drive/google";
 import { shareUrl, type ViewerMode } from "../route";
 import { useEditor } from "../store";
+import { Select } from "./Select";
 
 export function ShareDialog() {
   const { shareOpen, setShareOpen, drive } = useEditor();
@@ -90,10 +91,10 @@ export function ShareDialog() {
               <>
                 <div className="modal__row">
                   <span className="modal__label">Link opens in</span>
-                  <select className="modal__select" value={mode} onChange={(e) => setMode(e.target.value as ViewerMode)}>
+                  <Select className="modal__select" value={mode} onChange={(e) => setMode(e.target.value as ViewerMode)}>
                     <option value="view">View only (public)</option>
                     <option value="inspect">Inspect (Google sign-in required)</option>
-                  </select>
+                  </Select>
                 </div>
                 <div className="modal__row">
                   <input className="modal__link" readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
