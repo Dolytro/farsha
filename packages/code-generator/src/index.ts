@@ -25,6 +25,17 @@ export function paintCss(p: Paint): string {
   return p.type === "GRADIENT_RADIAL" ? `radial-gradient(circle, ${stops})` : `linear-gradient(${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
 }
 
+/** CSS `background` for fills stored bottom to top: CSS lists the top layer first, and a solid colour can only be the bottom layer. */
+export function backgroundCss(fills: Paint[]): string {
+  const top = [...fills].reverse();
+  return top
+    .map((p, i) => {
+      const css = paintCss(p);
+      return p.type === "SOLID" && i < top.length - 1 ? `linear-gradient(${css}, ${css})` : css;
+    })
+    .join(", ");
+}
+
 /** Computed style of one node as ordered CSS declarations. Children of a parent are placed absolutely. */
 export function declarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean } = {}): Decl[] {
   const d: Decl[] = [];
@@ -57,7 +68,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     return d;
   }
 
-  if ("fills" in node && node.fills?.[0]) d.push(["background", paintCss(node.fills[0])]);
+  if ("fills" in node && node.fills?.length) d.push(["background", backgroundCss(node.fills)]);
   if (node.type === "ELLIPSE") d.push(["border-radius", "50%"]);
   else if ("cornerRadii" in node && node.cornerRadii?.length === 4 && node.cornerRadii.some((r) => r > 0)) d.push(["border-radius", node.cornerRadii.map(px).join(" ")]);
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);

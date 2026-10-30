@@ -28,43 +28,56 @@ export function convertPaint(p: Paint, kind: Kind): Paint {
   };
 }
 
+/** Fills are stored bottom to top (SVG paint order) and listed top first, like Figma. */
 export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
   if (!("fills" in node) || !node.fills) return null;
-  const paint = node.fills[0];
-  const setPaint = (p: Paint) => doc.setStyle(node.id, { fills: [p] });
-
-  if (!paint) {
-    return (
-      <section className="props__section">
-        <h3 className="props__heading props__heading--row">
-          Fill
-          <button className="props__add" title="Add fill" onClick={() => setPaint({ type: "SOLID", color: "#d9d9d9", opacity: 1 })}>
-            +
-          </button>
-        </h3>
-      </section>
-    );
-  }
-
-  const setStops = (g: GradientPaint, stops: GradientStop[]) => setPaint({ ...g, stops });
+  const fills = node.fills;
+  const setFills = (next: Paint[]) => doc.setStyle(node.id, { fills: next });
+  // Text is drawn with a single colour, so it keeps one fill.
+  const canAdd = node.type !== "TEXT" || fills.length === 0;
   return (
     <section className="props__section">
       <h3 className="props__heading props__heading--row">
         Fill
-        <button className="props__add" title="Remove fill" onClick={() => doc.setStyle(node.id, { fills: [] })}>
+        {canAdd && (
+          <button className="props__add" title="Add fill" onClick={() => setFills([...fills, { type: "SOLID", color: "#d9d9d9", opacity: 1 }])}>
+            +
+          </button>
+        )}
+      </h3>
+      {fills.map((_, k) => fills.length - 1 - k).map((i) => (
+        <FillRow
+          key={i}
+          doc={doc}
+          nodeId={node.id}
+          paint={fills[i]!}
+          setPaint={(p) => setFills(fills.map((f, j) => (j === i ? p : f)))}
+          remove={() => setFills(fills.filter((_, j) => j !== i))}
+        />
+      ))}
+    </section>
+  );
+}
+
+function FillRow({ doc, nodeId, paint, setPaint, remove }: { doc: DesignDoc; nodeId: string; paint: Paint; setPaint: (p: Paint) => void; remove: () => void }) {
+  const setStops = (g: GradientPaint, stops: GradientStop[]) => setPaint({ ...g, stops });
+  return (
+    <div className="fill-item">
+      <div className="fill-item__head">
+        <select className="field__select field__select--wide" value={paint.type} onChange={(e) => setPaint(convertPaint(paint, e.target.value as Kind))}>
+          {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
+            <option key={k} value={k}>
+              {KIND_LABEL[k]}
+            </option>
+          ))}
+        </select>
+        <button className="props__add" title="Remove fill" onClick={remove}>
           −
         </button>
-      </h3>
-      <select className="field__select field__select--wide" value={paint.type} onChange={(e) => setPaint(convertPaint(paint, e.target.value as Kind))}>
-        {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
-          <option key={k} value={k}>
-            {KIND_LABEL[k]}
-          </option>
-        ))}
-      </select>
+      </div>
 
       {paint.type === "IMAGE" ? (
-        <ImageFill doc={doc} nodeId={node.id} paint={paint} setPaint={setPaint} />
+        <ImageFill doc={doc} nodeId={nodeId} paint={paint} setPaint={setPaint} />
       ) : paint.type === "SOLID" ? (
         <div className="fill-row fill-row--gap">
           <input className="fill-row__swatch" type="color" value={paint.color} onChange={(e) => setPaint({ ...paint, color: e.target.value })} />
@@ -125,7 +138,7 @@ export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
           </button>
         </>
       )}
-    </section>
+    </div>
   );
 }
 
