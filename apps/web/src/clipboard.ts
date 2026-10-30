@@ -37,15 +37,16 @@ function toClip(doc: DesignDoc, node: DesignNode, mainAsInstance = true): ClipNo
 }
 
 /** Ctrl+D: copy each top-level layer with its whole subtree next to the original (a main component duplicates into a new main). */
-export function duplicateNodes(doc: DesignDoc, ids: string[]): string[] {
+export function duplicateNodes(doc: DesignDoc, ids: string[], offset = 10, closeStep = true): string[] {
   doc.stopCapturing();
   const copies = topLevelOf(doc, ids).flatMap((id) => {
     const n = doc.getNode(id);
     if (!n?.parentId) return [];
-    const made = create(doc, toClip(doc, n, false), n.parentId, 10, 10);
+    const made = create(doc, toClip(doc, n, false), n.parentId, offset, offset);
     return made ? [made] : [];
   });
-  doc.stopCapturing();
+  // Alt+drag keeps the copy and the drag that follows in one undo step
+  if (closeStep) doc.stopCapturing();
   return copies;
 }
 

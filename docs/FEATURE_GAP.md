@@ -199,7 +199,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Preferences | Theme, Nudge amount, keep tool, snapping, zoom options | ✅ (Color profile, Keyboard layout, Accessibility, Permissions: ❌ / browser-bound) |
 | Toolbar | Move, Hand, Frame, Rectangle, Line, Arrow, Ellipse, Polygon, Star, Pen, Text | ✅ |
 | Toolbar | Scale tool (K), Section (Shift+S), Slice (S), Image / video… (Ctrl+Shift+K), Pencil (Shift+P), Text on path, Comment tool (C) | ❌ |
-| Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | partly ✅ (opacity keys ✅, Alt+drag ❌) |
+| Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | ✅ (opacity keys, Alt+drag copies the selection in one undo step) |
 | Design panel | Page background colour, Styles on a page, Selection colors, Export on a page | ❌ |
 | Design panel | Stroke dash / caps / joins / arrowheads, per-side stroke weights, background blur, corner smoothing | ❌ |
 | Prototype | Hover / drag / key triggers, overlays, scroll, transitions, flow starting points, device frames | ❌ |
