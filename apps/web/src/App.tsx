@@ -6,6 +6,7 @@ import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
+import { selectChildren, selectInverse, selectParent, selectSibling } from "./selection-nav";
 import { createComponentFromSelection, detachSelection } from "./component-actions";
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
@@ -215,6 +216,17 @@ export function App() {
         // Ctrl +/-/0 would zoom the whole browser page; zoom the canvas instead (like Figma).
         e.preventDefault();
         s.setViewport(zoomBy(s.viewport, key === "0" ? 1 : s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
+      } else if (mod && e.shiftKey && !e.altKey && key === "a" && !s.viewer) {
+        // Figma's "Select inverse"
+        e.preventDefault();
+        s.select(selectInverse(doc, selection, s.pageId));
+      } else if (key === "enter" && !mod && !e.altKey && selection.length && !s.viewer) {
+        // Enter selects the children, Shift+Enter the parent
+        e.preventDefault();
+        s.select(e.shiftKey ? selectParent(doc, selection, s.pageId) : selectChildren(doc, selection));
+      } else if (key === "tab" && !mod && !e.altKey && !s.viewer) {
+        e.preventDefault();
+        s.select(selectSibling(doc, selection, s.pageId, e.shiftKey ? -1 : 1));
       } else if (mod && key === "a" && !s.viewer) {
         e.preventDefault();
         s.select(selectAllIn(doc, selection, s.pageId));
