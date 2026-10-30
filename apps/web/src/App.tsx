@@ -32,6 +32,8 @@ import { route, useEditor, type Tool } from "./store";
 import { resolveTheme } from "./theme";
 import { distributeSelection } from "./align";
 import { tidyUp } from "./arrange-actions";
+import { fitText as refitText } from "./text-layout";
+import { setTextAlign, toggleTextStyle } from "./text-actions";
 import { removePaint, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
 import { pickColorFromScreen } from "./eyedropper";
 
@@ -412,6 +414,16 @@ export function App() {
           const v = zoomFit(doc, s.pageId, [frame]);
           if (v) s.setViewport(v);
         }
+      } else if (mod && !e.altKey && ["b", "i", "u"].includes(key) && !(key !== "b" && e.shiftKey) && selection.length && !s.viewer && !e.shiftKey) {
+        // Figma's text formatting shortcuts apply to the selected text layers
+        e.preventDefault();
+        toggleTextStyle(doc, selection, key === "b" ? "bold" : key === "i" ? "italic" : "underline", refitText);
+      } else if (mod && e.shiftKey && !e.altKey && key === "x" && selection.length && !s.viewer) {
+        e.preventDefault();
+        toggleTextStyle(doc, selection, "strikethrough", refitText);
+      } else if (mod && e.altKey && !e.shiftKey && ["l", "t", "r"].includes(key) && selection.length && !s.viewer && !e.metaKey) {
+        e.preventDefault();
+        setTextAlign(doc, selection, key === "l" ? "LEFT" : key === "t" ? "CENTER" : "RIGHT", refitText);
       } else if (mod && e.altKey && e.shiftKey && key === "t" && selection.length && !s.viewer) {
         // Figma's "Tidy up"
         e.preventDefault();

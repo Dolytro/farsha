@@ -290,6 +290,9 @@ export interface EllipseNode extends BaseNode {
 }
 
 export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT';
+export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH';
+export type TextCase = 'NONE' | 'UPPER' | 'LOWER' | 'TITLE';
+export type TextVerticalAlign = 'TOP' | 'CENTER' | 'BOTTOM';
 
 /** Figma's text resizing: auto width, auto height (wraps at the layer width) or a fixed box. Missing means auto width. */
 export type TextAutoResize = 'WIDTH_AND_HEIGHT' | 'HEIGHT' | 'NONE';
@@ -304,6 +307,14 @@ export interface TextNode extends BaseNode {
   letterSpacing: number;
   textAlign: TextAlign;
   textAutoResize?: TextAutoResize;
+  /** Italic style (Ctrl+I). */
+  italic?: boolean;
+  /** Underline or strikethrough (Ctrl+U, Ctrl+Shift+X). Missing means none. */
+  textDecoration?: TextDecoration;
+  /** Upper case, lower case or Title Case display of the characters. Missing means as typed. */
+  textCase?: TextCase;
+  /** Where the text sits inside a box taller than the text. Missing means top. */
+  textVerticalAlign?: TextVerticalAlign;
   fills: Paint[];
 }
 
@@ -379,6 +390,10 @@ export interface TextPatch {
   letterSpacing?: number;
   textAlign?: TextAlign;
   textAutoResize?: TextAutoResize;
+  italic?: boolean;
+  textDecoration?: TextDecoration;
+  textCase?: TextCase;
+  textVerticalAlign?: TextVerticalAlign;
 }
 
 export interface Box {

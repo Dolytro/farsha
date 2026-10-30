@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import type { TextAlign, TextAutoResize, TextNode } from "@canvylo/types";
+import type { TextAlign, TextAutoResize, TextCase, TextNode, TextVerticalAlign } from "@canvylo/types";
 import { useState } from "react";
 import { fitText } from "../text-layout";
 import { TextStyleMenu, TextStylePill } from "./TextStyleMenu";
@@ -120,6 +120,31 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
       {style && <TextStylePill doc={doc} node={node} style={style} editing={editingStyle} setEditing={setEditingStyle} />}
       <textarea className="field__input field__input--wide field__input--area" rows={2} value={node.characters} onChange={(e) => set({ characters: e.target.value })} />
       {(!style || editingStyle) && <FontControls value={style && editingStyle ? style : node} onChange={style ? setStyleProps : set} />}
+      <div className="seg seg--flat typo-format" role="group" aria-label="Text style">
+        {([
+          ["bold", "B", "Bold (Ctrl+B)", node.fontWeight >= 600, { fontWeight: node.fontWeight >= 600 ? 400 : 700 }],
+          ["italic", "I", "Italic (Ctrl+I)", !!node.italic, { italic: !node.italic }],
+          ["underline", "U", "Underline (Ctrl+U)", node.textDecoration === "UNDERLINE", { textDecoration: node.textDecoration === "UNDERLINE" ? "NONE" : "UNDERLINE" }],
+          ["strikethrough", "S", "Strikethrough (Ctrl+Shift+X)", node.textDecoration === "STRIKETHROUGH", { textDecoration: node.textDecoration === "STRIKETHROUGH" ? "NONE" : "STRIKETHROUGH" }],
+        ] as [string, string, string, boolean, Parameters<DesignDoc["setText"]>[1]][]).map(([key, label, title, on, patch]) => (
+          <button key={key} className={`seg__btn typo-format__${key}${on ? " seg__btn--active" : ""}`} title={title} aria-pressed={on} onClick={() => set(patch)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="props__grid props__grid--gap">
+        <Select className="field__select" aria-label="Text case" value={node.textCase ?? "NONE"} onChange={(e) => set({ textCase: e.target.value as TextCase })}>
+          <option value="NONE">Original case</option>
+          <option value="UPPER">UPPER CASE</option>
+          <option value="LOWER">lower case</option>
+          <option value="TITLE">Title Case</option>
+        </Select>
+        <Select className="field__select" aria-label="Vertical alignment" value={node.textVerticalAlign ?? "TOP"} onChange={(e) => set({ textVerticalAlign: e.target.value as TextVerticalAlign })}>
+          <option value="TOP">Align top</option>
+          <option value="CENTER">Align middle</option>
+          <option value="BOTTOM">Align bottom</option>
+        </Select>
+      </div>
       <div className="seg">
         {RESIZE.map(([mode, label, title]) => (
           <button key={mode} className={`seg__btn${(node.textAutoResize ?? "WIDTH_AND_HEIGHT") === mode ? " seg__btn--active" : ""}`} title={title} onClick={() => set({ textAutoResize: mode })}>

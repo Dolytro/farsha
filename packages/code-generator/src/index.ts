@@ -73,6 +73,15 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     d.push(["font-family", node.fontFamily], ["font-size", px(node.fontSize)], ["font-weight", String(node.fontWeight)]);
     d.push(["line-height", node.lineHeight === "AUTO" ? "normal" : px(node.lineHeight)]);
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
+    if (node.italic) d.push(["font-style", "italic"]);
+    if (node.textDecoration === "UNDERLINE") d.push(["text-decoration", "underline"]);
+    else if (node.textDecoration === "STRIKETHROUGH") d.push(["text-decoration", "line-through"]);
+    if (node.textCase === "UPPER") d.push(["text-transform", "uppercase"]);
+    else if (node.textCase === "LOWER") d.push(["text-transform", "lowercase"]);
+    else if (node.textCase === "TITLE") d.push(["text-transform", "capitalize"]);
+    if (node.textVerticalAlign === "CENTER" || node.textVerticalAlign === "BOTTOM") {
+      d.push(["display", "flex"], ["align-items", node.textVerticalAlign === "CENTER" ? "center" : "flex-end"]);
+    }
     d.push(["text-align", node.textAlign.toLowerCase()]);
     if (node.characters.includes("\n") || (node.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT") d.push(["white-space", "pre-wrap"]);
     effectDecls();
