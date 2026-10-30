@@ -113,3 +113,17 @@ describe('colour variables', () => {
     expect(copy.colorVariables()[0]!.name).toBe('Background');
   });
 });
+
+describe('page background', () => {
+  it('is per page, validated, resettable, undoable and saved', () => {
+    const { doc, page } = setup();
+    expect(doc.pageBackground(page)).toBeUndefined();
+    doc.stopCapturing();
+    doc.setPageBackground(page, '#1E1E1E');
+    expect(doc.pageBackground(page)).toBe('#1e1e1e');
+    expect(DesignDoc.fromState(doc.encodeState()).pageBackground(page)).toBe('#1e1e1e');
+    expect(() => doc.setPageBackground(page, 'red')).toThrow();
+    doc.setPageBackground(page, undefined);
+    expect(doc.pageBackground(page)).toBeUndefined();
+  });
+});

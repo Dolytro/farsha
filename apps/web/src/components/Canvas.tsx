@@ -536,7 +536,7 @@ export function Canvas() {
   return (
     <main
       className="canvas"
-      style={{ cursor }}
+      style={{ cursor, background: doc.pageBackground(pageId) }}
       tabIndex={0}
       onKeyDown={(e) => e.code === "Space" && setSpaceDown(true)}
       onKeyUp={(e) => e.code === "Space" && setSpaceDown(false)}

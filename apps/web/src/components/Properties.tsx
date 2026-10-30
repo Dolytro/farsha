@@ -15,6 +15,7 @@ import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
 import { Select } from "./Select";
+import { SelectionColors } from "./SelectionColors";
 
 const BLEND_MODES: [BlendMode, string][] = [
   ["NORMAL", "Normal"],
@@ -38,7 +39,7 @@ const BLEND_MODES: [BlendMode, string][] = [
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
 export function Properties() {
-  const { doc, selection, select, viewport, setViewport, devMode, setDevMode, prototypeMode, setPrototypeMode, viewer, setShareOpen } = useEditor();
+  const { doc, pageId, selection, select, viewport, setViewport, devMode, setDevMode, prototypeMode, setPrototypeMode, viewer, setShareOpen } = useEditor();
   const signedIn = useEditor((s) => s.drive.user !== null);
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
@@ -103,6 +104,23 @@ export function Properties() {
       <aside className="props">
         {header}
         {!viewer && <AlignRow />}
+        {selection.length === 0 && !viewer && (
+          <section className="props__section">
+            <h3 className="props__heading">Page</h3>
+            <div className="fill-row fill-row--gap">
+              <input
+                className="fill-row__swatch"
+                type="color"
+                aria-label="Page background"
+                value={doc.pageBackground(pageId) ?? "#e5e5e5"}
+                onChange={(e) => doc.setPageBackground(pageId, e.target.value)}
+              />
+              <span>Background</span>
+              <button className="props__button" onClick={() => doc.setPageBackground(pageId, undefined)}>Reset</button>
+            </div>
+          </section>
+        )}
+        {selection.length > 0 && !viewer && <SelectionColors />}
         <p className="props__empty">{selection.length > 1 ? `${selection.length} layers selected` : "Select a layer to edit its properties"}</p>
       </aside>
     );
@@ -239,6 +257,7 @@ export function Properties() {
       <AutoLayoutSection doc={doc} node={node} select={select} />
       <LayoutGridSection doc={doc} node={node} />
       <StrokeSection doc={doc} node={node} />
+      {(node.type === "FRAME" || node.type === "GROUP") && <SelectionColors />}
       <EffectsSection doc={doc} node={node} />
       {node.type !== "PAGE" && <ExportSection doc={doc} ids={[node.id]} />}
     </aside>
