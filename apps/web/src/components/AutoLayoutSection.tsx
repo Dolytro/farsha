@@ -33,6 +33,10 @@ export function ChildSizingSection({ doc, node }: { doc: DesignDoc; node: Design
         {row("W", "layoutSizingH")}
         {row("H", "layoutSizingV")}
       </div>
+      <label className="props__check" title="Take this layer out of the auto layout flow; it keeps the position you give it">
+        <input type="checkbox" checked={node.layoutPositioning === "ABSOLUTE"} onChange={(e) => doc.setStyle(node.id, { layoutPositioning: e.target.checked ? "ABSOLUTE" : "AUTO" })} />
+        Absolute position
+      </label>
     </section>
   );
 }

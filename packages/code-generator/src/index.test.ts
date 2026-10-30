@@ -199,3 +199,18 @@ describe("wrapping auto layout in CSS", () => {
     expect(css).toContain("gap: 16px 8px");
   });
 });
+
+describe("absolute children of auto layout in CSS", () => {
+  it("are positioned absolutely instead of in the flex flow", () => {
+    const doc = new DesignDoc();
+    const frame = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id });
+    doc.setStyle(frame, { layoutMode: "HORIZONTAL" } as never);
+    const badge = doc.createNode("RECTANGLE", { parentId: frame, props: { name: "Badge", width: 10, height: 10 } });
+    doc.setStyle(badge, { layoutPositioning: "ABSOLUTE" } as never);
+    doc.setPosition(badge, 7, 9);
+    const css = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "css");
+    expect(css).toContain("position: absolute");
+    expect(css).toContain("left: 7px");
+    expect(css).toContain("top: 9px");
+  });
+});

@@ -44,8 +44,9 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
 
   // A child of an auto layout frame that fills the container grows with flex instead of having a fixed size.
   const horizontal = opts.parentLayout === "HORIZONTAL";
-  const fillWidth = !!opts.parentLayout && node.layoutSizingH === "FILL";
-  const fillHeight = !!opts.parentLayout && node.layoutSizingV === "FILL";
+  const inFlow = !!opts.parentLayout && node.layoutPositioning !== "ABSOLUTE";
+  const fillWidth = inFlow && node.layoutSizingH === "FILL";
+  const fillHeight = inFlow && node.layoutSizingV === "FILL";
   const growsMain = horizontal ? fillWidth : fillHeight;
   const stretches = horizontal ? fillHeight : fillWidth;
   if (!fillWidth) d.push(["width", px(node.width)]);
@@ -173,7 +174,7 @@ function walk(node: DesignNode, children: ChildrenOf, absolute: boolean, used: M
     node,
     cls: n === 1 ? base : `${base}-${n}`,
     decls: declarations(node, { absolute, hasChildren: kids.length > 0, parentLayout }),
-    kids: kids.map((k) => walk(k, children, !(node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")), used, node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL") ? node.layoutMode : undefined)),
+    kids: kids.map((k) => walk(k, children, k.layoutPositioning === "ABSOLUTE" || !(node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")), used, node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL") ? node.layoutMode : undefined)),
   };
 }
 

@@ -160,6 +160,8 @@ export interface BaseNode {
   /** Inside an auto layout frame: FILL = take the free space of the frame along that side (Figma's "Fill container"). Missing means FIXED. */
   layoutSizingH?: 'FIXED' | 'FILL';
   layoutSizingV?: 'FIXED' | 'FILL';
+  /** Inside an auto layout frame: ABSOLUTE takes the layer out of the flow, so it stays where it is placed (Figma's "Ignore auto layout"). */
+  layoutPositioning?: 'AUTO' | 'ABSOLUTE';
   /** True for a mask layer: it is not drawn itself, and only shows through its shape the layers above it in the same parent. */
   isMask?: boolean;
   /** Prototype links of this layer (Prototype tab). */
@@ -362,6 +364,7 @@ export interface StylePatch extends AutoLayoutProps {
   clipsContent?: boolean;
   layoutSizingH?: 'FIXED' | 'FILL';
   layoutSizingV?: 'FIXED' | 'FILL';
+  layoutPositioning?: 'AUTO' | 'ABSOLUTE';
   interactions?: Interaction[];
   isMask?: boolean;
   layoutGrids?: LayoutGrid[];

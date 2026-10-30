@@ -612,7 +612,8 @@ export class DesignDoc {
       for (const { id } of frames) {
         const frame = this.getNode(id);
         if (frame?.type !== 'FRAME') continue;
-        const kids = this.children(id).filter((c) => c.visible);
+        // Layers set to absolute position stay out of the flow.
+        const kids = this.children(id).filter((c) => c.visible && c.layoutPositioning !== 'ABSOLUTE');
         const result = computeAutoLayout(
           frame,
           kids.map((c) => ({ id: c.id, width: c.width, height: c.height, fillWidth: c.layoutSizingH === 'FILL', fillHeight: c.layoutSizingV === 'FILL' })),
