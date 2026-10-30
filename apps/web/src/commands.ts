@@ -138,6 +138,18 @@ export function buildCommands(): Command[] {
     },
     { id: "prototype-tab", label: "Open Prototype tab", keywords: "interactions links", run: () => state().setPrototypeMode(true) },
     { id: "layout-grids", label: "Show / hide layout grids", shortcut: `${SHIFT}G`, needsSelection: true, keywords: "columns rows guides", run: () => void (toggleLayoutGrids(doc(), sel()) || state().showToast("Select a frame with a layout grid")) },
+    {
+      id: "edit-points",
+      label: "Edit points of the pen path",
+      shortcut: "Enter",
+      needsSelection: true,
+      keywords: "vector anchors curve",
+      run: () => {
+        const id = sel()[0];
+        if ((doc().getNode(id ?? "") as { penPoints?: unknown } | undefined)?.penPoints) state().setEditingPath(id!);
+        else state().showToast("Select a path drawn with the Pen tool");
+      },
+    },
     { id: "rulers", label: "Show / hide rulers", shortcut: `${SHIFT}R`, keywords: "view guides", run: () => state().setRulers(!state().rulers) },
     { id: "dev-mode", label: "Toggle Dev Mode", shortcut: `${SHIFT}D`, keywords: "inspect code", run: () => state().setDevMode(!state().devMode) },
     {

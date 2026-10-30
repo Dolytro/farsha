@@ -230,6 +230,10 @@ export function App() {
         // Figma's "Select inverse"
         e.preventDefault();
         s.select(selectInverse(doc, selection, s.pageId));
+      } else if (key === "enter" && !mod && !e.altKey && !e.shiftKey && selection.length === 1 && !s.viewer && (doc.getNode(selection[0]!) as { penPoints?: unknown } | undefined)?.penPoints) {
+        // Enter on a pen path edits its points
+        e.preventDefault();
+        s.setEditingPath(selection[0]!);
       } else if (key === "enter" && !mod && !e.altKey && selection.length && !s.viewer) {
         // Enter selects the children, Shift+Enter the parent
         e.preventDefault();

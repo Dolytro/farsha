@@ -1,4 +1,5 @@
 import { PenLayer } from "./PenLayer";
+import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
@@ -54,6 +55,7 @@ const intersects = (a: Box, b: Box) =>
 export function Canvas() {
   const { doc, pageId, selection, select, viewport, setViewport, tool, setTool, devMode, viewer, setMenu } = useEditor();
   const signedIn = useEditor((s) => s.drive.user !== null);
+  const editingPath = useEditor((s) => s.editingPath);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
@@ -64,6 +66,11 @@ export function Canvas() {
   const [editing, setEditing] = useState<string | null>(null);
   const [altDown, setAltDown] = useState(false);
   const z = viewport.zoom;
+
+  // Selecting something else ends the point editing of a pen path.
+  useEffect(() => {
+    if (editingPath && selection[0] !== editingPath) useEditor.getState().setEditingPath(null);
+  }, [editingPath, selection]);
 
   // Holding Alt shows distances between the selection and the hovered layer (Figma redlines).
   useEffect(() => {
@@ -325,6 +332,7 @@ export function Canvas() {
     }
     select([target.id]);
     if (target.type === "TEXT") setEditing(target.id);
+    else if (target.type === "VECTOR" && target.penPoints && !viewer) useEditor.getState().setEditingPath(target.id);
   };
 
   // React's onWheel is passive, so it cannot stop the browser from zooming the whole page on
@@ -590,6 +598,7 @@ export function Canvas() {
           {guides.map((g, i) => (
             <line key={i} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke={RED} strokeWidth={sw} pointerEvents="none" />
           ))}
+          {editingPath && !viewer && !devMode && tool === "select" && <VectorEditLayer nodeId={editingPath} svgRef={svgRef} viewport={viewport} />}
           {tool === "pen" && !viewer && !devMode && <PenLayer svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
           {marquee && <rect x={marquee.x} y={marquee.y} width={marquee.width} height={marquee.height} fill={ACCENT} fillOpacity={0.08} stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />}
 

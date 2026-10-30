@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { hitTest, penGeometry, penPathData, screenToWorld, type PenPoint, type Viewport } from "@canvylo/canvas-engine";
+import { hitTest, penGeometry, penPathData, screenToWorld, translatePoints, type PenPoint, type Viewport } from "@canvylo/canvas-engine";
 import { useEditor } from "../store";
 
 const ACCENT = "#0d99ff";
@@ -52,6 +52,8 @@ export function PenLayer({ svgRef, viewport, spaceDown }: { svgRef: RefObject<SV
         height: geo.box.height,
         viewBox: geo.viewBox,
         markup: geo.markup,
+        penPoints: translatePoints(pts, -geo.box.x, -geo.box.y),
+        penClosed: closed,
         fills: [],
         strokes: [{ type: "SOLID", color: "#000000", opacity: 1 }],
         strokeWidth: 1,

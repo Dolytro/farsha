@@ -55,6 +55,8 @@ interface EditorState {
   shareOpen: boolean;
   paletteOpen: boolean;
   versionsOpen: boolean;
+  /** Id of the pen path whose points are being edited. */
+  editingPath: string | null;
   variablesOpen: boolean;
   /** Prototype tab: a read-only canvas where layers get click interactions. Implies devMode. */
   prototypeMode: boolean;
@@ -78,6 +80,7 @@ interface EditorState {
   setShareOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   setVersionsOpen: (open: boolean) => void;
+  setEditingPath: (id: string | null) => void;
   setVariablesOpen: (open: boolean) => void;
   setPrototypeMode: (on: boolean) => void;
   setPresenting: (frameId: string | null) => void;
@@ -116,6 +119,7 @@ export const useEditor = create<EditorState>((set) => ({
   shareOpen: false,
   paletteOpen: false,
   versionsOpen: false,
+  editingPath: null,
   variablesOpen: false,
   prototypeMode: false,
   presenting: null,
@@ -153,6 +157,7 @@ export const useEditor = create<EditorState>((set) => ({
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setVersionsOpen: (versionsOpen) => set({ versionsOpen }),
+  setEditingPath: (editingPath) => set({ editingPath }),
   setVariablesOpen: (variablesOpen) => set({ variablesOpen }),
   setDrive: (patch) => set((s) => ({ drive: { ...s.drive, ...patch } })),
   setLoad: (loadState, loadError = null) => set({ loadState, loadError }),
