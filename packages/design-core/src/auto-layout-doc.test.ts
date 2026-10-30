@@ -102,3 +102,22 @@ describe('fill container in the document', () => {
     expect(page).toBeTruthy();
   });
 });
+
+describe('absolute position inside auto layout', () => {
+  it('keeps the layer out of the flow and out of hugging', () => {
+    const { doc, frame, a, b } = setup();
+    doc.setStyle(a, { layoutPositioning: 'ABSOLUTE' } as never);
+    doc.setPosition(a, 200, 300);
+    expect(pos(doc, a)).toEqual([200, 300]);
+    expect(pos(doc, b)).toEqual([8, 8]);
+    expect(size(doc, frame)).toEqual([76, 46]); // only b: 8 + 30 + 8 high, 8 + 60 + 8 wide
+  });
+
+  it('goes back into the flow when set to auto again', () => {
+    const { doc, a, b } = setup();
+    doc.setStyle(a, { layoutPositioning: 'ABSOLUTE' } as never);
+    doc.setStyle(a, { layoutPositioning: 'AUTO' } as never);
+    expect(pos(doc, a)).toEqual([8, 8]);
+    expect(pos(doc, b)).toEqual([8, 38]);
+  });
+});
