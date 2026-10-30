@@ -1,6 +1,6 @@
 import { DesignDoc } from "@canvylo/design-core";
 import { useEditor } from "../store";
-import { createFile, downloadFile, DriveError, getUser, updateFile, type DriveFile } from "./drive";
+import { createFile, downloadFile, DriveError, getUser, renameFile, updateFile, type DriveFile } from "./drive";
 import { getToken, signIn, signOut } from "./google";
 
 const AUTOSAVE_MS = 2000;
@@ -40,6 +40,21 @@ export async function restoreSession(): Promise<void> {
   } catch {
     signOut();
     setDrive({ checked: true });
+  }
+}
+
+/** Rename the open file; a Drive file is renamed on Drive too (when signed in). */
+export async function renameCurrentFile(name: string): Promise<void> {
+  const { drive, setDrive } = useEditor.getState();
+  const next = name.replace(/.canvylo$/i, "").trim();
+  if (!next || next === drive.fileName) return;
+  setDrive({ fileName: next });
+  const t = getToken();
+  if (!drive.fileId || !t) return;
+  try {
+    await renameFile(t, drive.fileId, `${next}.canvylo`);
+  } catch (e) {
+    setDrive({ error: message(e) });
   }
 }
 
