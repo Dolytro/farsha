@@ -48,9 +48,9 @@ export function interactionsIn(doc: DesignDoc, frameId: string, triggers: Intera
   return out;
 }
 
-/** Clickable and hoverable areas inside a frame, relative to the frame; layers drawn later (on top) come last. */
+/** Clickable, hoverable and draggable areas inside a frame, relative to the frame; layers drawn later (on top) come last. */
 export function hotspotsIn(doc: DesignDoc, frameId: string): Hotspot[] {
-  return interactionsIn(doc, frameId, ["ON_CLICK", "ON_HOVER"]);
+  return interactionsIn(doc, frameId, ["ON_CLICK", "ON_HOVER", "ON_DRAG"]);
 }
 
 /** Interactions that start by themselves after a delay, or when a key is pressed. */

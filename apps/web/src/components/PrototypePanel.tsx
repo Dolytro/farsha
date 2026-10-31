@@ -6,6 +6,7 @@ import { Select } from "./Select";
 const TRIGGERS: [InteractionTrigger, string][] = [
   ["ON_CLICK", "On click"],
   ["ON_HOVER", "While hovering"],
+  ["ON_DRAG", "On drag"],
   ["AFTER_DELAY", "After delay"],
   ["ON_KEY", "Key press"],
 ];

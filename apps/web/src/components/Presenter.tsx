@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Interaction } from "@canvylo/types";
 import { exportSvg } from "@canvylo/canvas-engine";
 import { canvasMeasure } from "../text-layout";
@@ -14,6 +14,7 @@ export function Presenter() {
   const [current, setCurrent] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const [overlay, setOverlay] = useState<string | null>(null);
+  const dragFrom = useRef<{ x: number; y: number } | null>(null);
   const [transition, setTransition] = useState<{ name: string; durationMs: number; n: number } | null>(null);
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
 
@@ -55,6 +56,25 @@ export function Presenter() {
     setTransition(anim ? { ...anim, n: Date.now() } : null);
     setCurrent(next.frame);
     setHistory(next.history);
+  };
+
+  /** Mouse handlers of a hotspot: click, hover, or a drag of more than 10 pixels. */
+  const spotEvents = (interaction: Interaction) => {
+    if (interaction.trigger === "ON_CLICK") return { onClick: () => run(interaction) };
+    if (interaction.trigger === "ON_HOVER") return { onMouseEnter: () => run(interaction) };
+    if (interaction.trigger === "ON_DRAG") {
+      return {
+        onPointerDown: (e: React.PointerEvent) => {
+          dragFrom.current = { x: e.clientX, y: e.clientY };
+        },
+        onPointerUp: (e: React.PointerEvent) => {
+          const from = dragFrom.current;
+          dragFrom.current = null;
+          if (from && Math.hypot(e.clientX - from.x, e.clientY - from.y) > 10) run(interaction);
+        },
+      };
+    }
+    return {};
   };
 
   useEffect(() => {
@@ -119,8 +139,7 @@ export function Presenter() {
               key={`${h.id}-${i}`}
               className="presenter__hotspot"
               style={{ left: h.box.x * scale, top: h.box.y * scale, width: h.box.width * scale, height: h.box.height * scale }}
-              onClick={h.interaction.trigger === "ON_CLICK" ? () => run(h.interaction) : undefined}
-              onMouseEnter={h.interaction.trigger === "ON_HOVER" ? () => run(h.interaction) : undefined}
+              {...spotEvents(h.interaction)}
             />
           ))}
           {overlayFrame && (
@@ -136,8 +155,7 @@ export function Presenter() {
                     key={`o-${h.id}-${i}`}
                     className="presenter__hotspot"
                     style={{ left: h.box.x * scale, top: h.box.y * scale, width: h.box.width * scale, height: h.box.height * scale }}
-                    onClick={h.interaction.trigger === "ON_CLICK" ? () => run(h.interaction) : undefined}
-                    onMouseEnter={h.interaction.trigger === "ON_HOVER" ? () => run(h.interaction) : undefined}
+                    {...spotEvents(h.interaction)}
                   />
                 ))}
               </div>
