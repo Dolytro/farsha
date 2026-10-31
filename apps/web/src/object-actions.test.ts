@@ -89,3 +89,24 @@ describe("remove interactions and opacity keys", () => {
     expect(setOpacityFromKey(doc, [a], "x")).toBe(0);
   });
 });
+
+describe("deleteContents", () => {
+  it("empties frames and groups but keeps them, in one undo step", async () => {
+    const { DesignDoc } = await import("@canvylo/design-core");
+    const { deleteContents } = await import("./object-actions");
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page });
+    doc.createNode("RECTANGLE", { parentId: frame });
+    doc.createNode("TEXT", { parentId: frame });
+    const rect = doc.createNode("RECTANGLE", { parentId: page });
+    doc.stopCapturing();
+    expect(deleteContents(doc, [frame, rect])).toBe(2);
+    expect(doc.children(frame)).toHaveLength(0);
+    expect(doc.hasNode(frame)).toBe(true);
+    expect(doc.hasNode(rect)).toBe(true);
+    expect(deleteContents(doc, [frame])).toBe(0);
+    doc.undo();
+    expect(doc.children(frame)).toHaveLength(2);
+  });
+});
