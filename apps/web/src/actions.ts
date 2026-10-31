@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import { booleanShapes, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@canvylo/canvas-engine";
+import { booleanShapes, flattenShapes, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@canvylo/canvas-engine";
 import type { Box } from "@canvylo/types";
 import { isSection, topLevelFrames } from "./section-actions";
 
@@ -177,6 +177,39 @@ export function booleanSelection(doc: DesignDoc, ids: string[], op: BooleanOp): 
       viewBox: `0 0 ${result.box.width} ${result.box.height}`,
       markup: `<path d="${result.d}" fill-rule="evenodd" vector-effect="non-scaling-stroke"/>`,
       fills: Array.isArray(bottom.fills) ? bottom.fills : [{ type: "SOLID", color: "#d9d9d9", opacity: 1 }],
+      strokes: Array.isArray(bottom.strokes) ? bottom.strokes.slice(0, 1) : [],
+      strokeWidth: bottom.strokeWidth ?? 1,
+    },
+  });
+  for (const n of sorted) doc.deleteNode(n.id);
+  doc.stopCapturing();
+  return { ids: [id] };
+}
+
+/** Figma's Flatten: turn the selected shapes (or the shapes inside groups and frames) into a single vector. */
+export function flattenSelection(doc: DesignDoc, ids: string[]): { ids: string[]; error?: string } {
+  const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n?.parentId);
+  const parentId = nodes[0]?.parentId;
+  if (!nodes.length || !parentId || nodes.some((n) => n.parentId !== parentId)) return { ids, error: "Select layers in the same frame to flatten" };
+  const order = doc.children(parentId).map((n) => n.id);
+  const sorted = [...nodes].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  const result = flattenShapes(doc, sorted.map((n) => n.id));
+  if (!result) return { ids, error: "Flatten works on rectangles, ellipses, polygons, stars and pen paths" };
+  const origin = parentId === doc.rootId || doc.getNode(parentId)?.type === "PAGE" ? { x: 0, y: 0 } : (doc.absoluteBox(parentId) ?? { x: 0, y: 0 });
+  const bottom = sorted[0] as unknown as { fills?: unknown; strokes?: unknown; strokeWidth?: number };
+  doc.stopCapturing();
+  const id = doc.createNode("VECTOR", {
+    parentId,
+    index: order.indexOf(sorted[sorted.length - 1]!.id) - sorted.length + 1,
+    props: {
+      name: "Vector",
+      x: result.box.x - origin.x,
+      y: result.box.y - origin.y,
+      width: result.box.width,
+      height: result.box.height,
+      viewBox: `0 0 ${result.box.width} ${result.box.height}`,
+      markup: `<path d="${result.d}" fill-rule="evenodd" vector-effect="non-scaling-stroke"/>`,
+      fills: Array.isArray(bottom.fills) && bottom.fills.length ? bottom.fills : [{ type: "SOLID", color: "#d9d9d9", opacity: 1 }],
       strokes: Array.isArray(bottom.strokes) ? bottom.strokes.slice(0, 1) : [],
       strokeWidth: bottom.strokeWidth ?? 1,
     },
