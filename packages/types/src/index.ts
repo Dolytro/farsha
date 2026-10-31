@@ -332,6 +332,8 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   layoutGrids?: LayoutGrid[];
   /** A section: a named area of the canvas that holds frames and layers but is not itself a screen (Figma's Section tool). */
   isSection?: boolean;
+  /** Prototype: a frame taller than the window scrolls vertically while presenting (Figma's Vertical scrolling). */
+  overflowScroll?: 'NONE' | 'VERTICAL';
   /** True for a main component: its layers are mirrored by every instance. */
   isComponent?: boolean;
   /** Set on an instance: id of the main component it follows. */
@@ -467,6 +469,7 @@ export interface StylePatch extends AutoLayoutProps {
   devStatus?: DevStatus | null;
   devNote?: string | null;
   flowStart?: boolean | null;
+  overflowScroll?: 'NONE' | 'VERTICAL' | null;
   opacity?: number;
   visible?: boolean;
   locked?: boolean;

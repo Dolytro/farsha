@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Interaction } from "@canvylo/types";
 import { exportSvg } from "@canvylo/canvas-engine";
 import { canvasMeasure } from "../text-layout";
-import { followInteraction, hotspotsIn, overlayTarget, safeUrl, timedAndKeyIn, transitionAnimation } from "../prototype";
+import { followInteraction, hotspotsIn, overlayTarget, safeUrl, stageLayout, timedAndKeyIn, transitionAnimation } from "../prototype";
 import { useEditor } from "../store";
 
 /** Full-screen prototype presentation: shows one frame at a time; layers with interactions react to clicks, hovering, time and keys. */
@@ -121,7 +121,9 @@ export function Presenter() {
 
   if (!start) return null;
 
-  const scale = frame ? Math.min((size.w - 40) / frame.width, (size.h - 40) / frame.height, 4) : 1;
+  const currentNode = current ? doc.getNode(current) : undefined;
+  const scrolls = currentNode?.type === "FRAME" && currentNode.overflowScroll === "VERTICAL";
+  const { scale, stageHeight } = frame ? stageLayout(frame, size, scrolls) : { scale: 1, stageHeight: 0 };
 
   return (
     <div className="presenter" role="dialog" aria-label="Prototype">
@@ -132,8 +134,10 @@ export function Presenter() {
         <div
           key={transition?.n ?? 0}
           className={`presenter__stage${device !== "none" ? ` presenter__stage--${device}` : ""}`}
-          style={{ width: frame.width * scale, height: frame.height * scale, animation: transition ? `${transition.name} ${transition.durationMs}ms ease both` : undefined }}
+          style={{ width: frame.width * scale, height: stageHeight, animation: transition ? `${transition.name} ${transition.durationMs}ms ease both` : undefined }}
         >
+          <div className="presenter__scroll" style={{ height: stageHeight, overflowY: scrolls ? "auto" : "hidden" }}>
+          <div style={{ position: "relative", width: frame.width * scale, height: frame.height * scale }}>
           <div className="presenter__frame" style={{ width: frame.width, height: frame.height, transform: `scale(${scale})` }} dangerouslySetInnerHTML={{ __html: frame.svg }} />
           {spots.map((h, i) => (
             <div
@@ -143,6 +147,8 @@ export function Presenter() {
               {...spotEvents(h.interaction)}
             />
           ))}
+          </div>
+          </div>
           {overlayFrame && (
             <div className="presenter__overlay" onClick={() => setOverlay(null)}>
               <div

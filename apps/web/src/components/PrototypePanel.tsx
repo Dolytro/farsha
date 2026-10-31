@@ -70,6 +70,10 @@ export function PrototypePanel() {
             <input type="checkbox" aria-label="Flow starting point" checked={!!node.flowStart} onChange={(e) => doc.setStyle(node.id, { flowStart: e.target.checked ? true : null })} />
             Flow starting point
           </label>
+          <label className="props__check">
+            <input type="checkbox" aria-label="Vertical scrolling" checked={node.type === "FRAME" && node.overflowScroll === "VERTICAL"} onChange={(e) => doc.setStyle(node.id, { overflowScroll: e.target.checked ? "VERTICAL" : null })} />
+            Vertical scrolling
+          </label>
         </section>
       )}
       {!node || node.type === "PAGE" ? (
