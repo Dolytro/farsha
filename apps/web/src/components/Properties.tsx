@@ -226,8 +226,9 @@ export function Properties() {
           )}
         </div>
         {(node.type === "RECTANGLE" || node.type === "FRAME") && (
+          <div className="props__grid props__grid--gap">
           <label className="field" title="Corner smoothing (0 to 100%)">
-            <span className="field__label">Smoothing</span>
+            <span className="field__label">Sm</span>
             <input
               className="field__input"
               type="number"
@@ -239,6 +240,7 @@ export function Properties() {
               onChange={(e) => doc.setStyle(node.id, { cornerSmoothing: Math.min(1, Math.max(0, Number(e.target.value) / 100)) })}
             />
           </label>
+          </div>
         )}
         {(node.type === "RECTANGLE" || node.type === "FRAME") && node.cornerRadii && (
           <div className="props__grid props__grid--gap">

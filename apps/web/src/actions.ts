@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import { booleanShapes, flattenShapes, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@canvylo/canvas-engine";
+import { booleanShapes, flattenShapes, outlineStrokeShape, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@canvylo/canvas-engine";
 import type { Box } from "@canvylo/types";
 import { isSection, topLevelFrames } from "./section-actions";
 
@@ -217,6 +217,43 @@ export function flattenSelection(doc: DesignDoc, ids: string[]): { ids: string[]
   for (const n of sorted) doc.deleteNode(n.id);
   doc.stopCapturing();
   return { ids: [id] };
+}
+
+/** Figma's Outline stroke: the stroke of each selected shape becomes a filled vector placed above it; the original loses its stroke. */
+export function outlineStrokeSelection(doc: DesignDoc, ids: string[]): { ids: string[]; error?: string } {
+  const made: string[] = [];
+  doc.stopCapturing();
+  for (const id of ids) {
+    const n = doc.getNode(id);
+    if (!n?.parentId) continue;
+    const strokes = "strokes" in n && Array.isArray(n.strokes) ? n.strokes : [];
+    const result = strokes.length ? outlineStrokeShape(doc, id) : null;
+    if (!result) continue;
+    const parentId = n.parentId;
+    const origin = parentId === doc.rootId || doc.getNode(parentId)?.type === "PAGE" ? { x: 0, y: 0 } : (doc.absoluteBox(parentId) ?? { x: 0, y: 0 });
+    const index = doc.children(parentId).findIndex((c) => c.id === id) + 1;
+    made.push(
+      doc.createNode("VECTOR", {
+        parentId,
+        index,
+        props: {
+          name: `${n.name} outline`,
+          x: result.box.x - origin.x,
+          y: result.box.y - origin.y,
+          width: result.box.width,
+          height: result.box.height,
+          viewBox: `0 0 ${result.box.width} ${result.box.height}`,
+          markup: `<path d="${result.d}" fill-rule="nonzero" vector-effect="non-scaling-stroke"/>`,
+          fills: strokes.slice(0, 1),
+          strokes: [],
+          strokeWidth: 0,
+        },
+      }),
+    );
+    doc.setStyle(id, { strokes: [] });
+  }
+  doc.stopCapturing();
+  return made.length ? { ids: made } : { ids, error: "Select a rectangle, ellipse, polygon, star or pen path that has a stroke" };
 }
 
 export function adjacentFrame(doc: DesignDoc, pageId: string, current: string | undefined, direction: 1 | -1): string | undefined {

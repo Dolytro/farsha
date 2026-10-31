@@ -10,7 +10,7 @@ import { selectMatching, selectChildren, selectInverse, selectParent, selectSibl
 import { createComponentFromSelection, detachSelection } from "./component-actions";
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
-import { booleanSelection, flattenSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
+import { booleanSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
@@ -331,6 +331,12 @@ export function App() {
         // Figma's "Show / hide UI"
         e.preventDefault();
         s.setUiHidden(!s.uiHidden);
+      } else if (mod && e.shiftKey && !e.altKey && key === "o" && selection.length && !s.viewer) {
+        // Figma's "Outline stroke"
+        e.preventDefault();
+        const out = outlineStrokeSelection(doc, selection);
+        if (out.error) s.showToast(out.error);
+        else s.select(out.ids);
       } else if (mod && !e.shiftKey && !e.altKey && key === "e" && selection.length && !s.viewer) {
         // Figma's "Flatten selection"
         e.preventDefault();

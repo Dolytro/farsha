@@ -1,7 +1,7 @@
 import { alignSelection, distributeSelection, type AlignMode } from "./align";
 import { distributeEdges, packLayers, roundToPixel, tidyUp, type EdgeMode } from "./arrange-actions";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
-import { booleanSelection, flattenSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { booleanSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
@@ -105,6 +105,18 @@ export function buildCommands(): Command[] {
       keywords: "vector merge outline convert",
       run: () => {
         const out = flattenSelection(doc(), sel());
+        if (out.error) state().showToast(out.error);
+        else state().select(out.ids);
+      },
+    },
+    {
+      id: "outline-stroke",
+      label: "Outline stroke",
+      shortcut: `${MOD}${SHIFT}O`,
+      needsSelection: true,
+      keywords: "stroke convert vector fill",
+      run: () => {
+        const out = outlineStrokeSelection(doc(), sel());
         if (out.error) state().showToast(out.error);
         else state().select(out.ids);
       },
