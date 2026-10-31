@@ -14,6 +14,8 @@ export const approxMeasure: Measure = (text, f) => text.length * (f.size * 0.56 
 
 export interface TextLayout {
   lines: string[];
+  /** Extra space added to every word gap of a line so a justified line fills the box (0 for the last line of a paragraph and for other alignments). */
+  wordSpacing: number[];
   /** For every line, the index in `characters` of the line's first character (list markers count as sitting just before their paragraph). */
   starts: number[];
   lineHeight: number;
@@ -23,7 +25,7 @@ export interface TextLayout {
   height: number;
 }
 
-type TextLike = Pick<TextNode, "characters" | "fontFamily" | "fontSize" | "fontWeight" | "letterSpacing" | "lineHeight" | "width"> & { textAutoResize?: TextNode["textAutoResize"]; textCase?: TextCase; textList?: TextList };
+type TextLike = Pick<TextNode, "characters" | "fontFamily" | "fontSize" | "fontWeight" | "letterSpacing" | "lineHeight" | "width"> & { textAutoResize?: TextNode["textAutoResize"]; textCase?: TextCase; textList?: TextList; textAlign?: string };
 
 /** The characters as they are drawn: upper case, lower case or Title Case when the layer asks for it. */
 export function applyTextCase(text: string, mode: TextCase | undefined): string {
@@ -116,7 +118,23 @@ export function layoutText(n: TextLike, measure: Measure = approxMeasure): TextL
     offset += (original[pi] ?? "").length + 1;
   });
   const lineHeight = lineHeightPx(n);
-  return { lines, starts, lineHeight, width: Math.max(0, ...lines.map(w)), height: lines.length * lineHeight };
+  // justified text: spread the leftover width of every line over its spaces, except the last line of a paragraph
+  const lastOfParagraph = new Set<number>();
+  {
+    let at = 0;
+    paragraphs.forEach((p) => {
+      const count = wrap ? wrapParagraph(p, Math.max(1, n.width), w).length : 1;
+      at += count;
+      lastOfParagraph.add(at - 1);
+    });
+  }
+  const wordSpacing = lines.map((line, i) => {
+    if (n.textAlign !== "JUSTIFIED" || !wrap || lastOfParagraph.has(i)) return 0;
+    const gaps = line.split(" ").length - 1;
+    const free = n.width - w(line);
+    return gaps > 0 && free > 0 ? free / gaps : 0;
+  });
+  return { lines, starts, wordSpacing, lineHeight, width: Math.max(0, ...lines.map(w)), height: lines.length * lineHeight };
 }
 
 /** One piece of a line with the same style (rich text). */

@@ -509,6 +509,7 @@ export function Canvas() {
                     key={`${i}-${j}`}
                     x={j === 0 ? textPlacement(n).x : undefined}
                     dy={j === 0 && i ? lineHeightPx(n) : undefined}
+                    wordSpacing={layout.wordSpacing[i] || undefined}
                     fontWeight={seg.bold ? 700 : undefined}
                     fontStyle={seg.italic ? "italic" : undefined}
                     textDecoration={seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : undefined}

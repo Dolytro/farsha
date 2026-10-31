@@ -29,6 +29,7 @@ export const WEIGHTS: [number, string][] = [
 ];
 
 const ALIGNS: [TextAlign, string, string][] = [
+  ["JUSTIFIED", "☰", "Justify"],
   ["LEFT", "⇤", "Align left"],
   ["CENTER", "↔", "Align center"],
   ["RIGHT", "⇥", "Align right"],

@@ -29,6 +29,7 @@ import { PreferencesDialog } from "./components/PreferencesDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
 import { buildCommands } from "./commands";
+import { textShortcutCommand } from "./text-shortcuts";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
 import { restoreLocal, startLocalAutosave } from "./local-persist";
@@ -458,6 +459,10 @@ export function App() {
           const v = zoomFit(doc, s.pageId, [frame]);
           if (v) s.setViewport(v);
         }
+      } else if (textShortcutCommand(e) && selection.length && !s.viewer) {
+        // Text menu shortcuts: justify, link, lists and the Adjust steps
+        e.preventDefault();
+        buildCommands().find((c) => c.id === textShortcutCommand(e))?.run();
       } else if (mod && !e.altKey && ["b", "i", "u"].includes(key) && !(key !== "b" && e.shiftKey) && selection.length && !s.viewer && !e.shiftKey) {
         // Figma's text formatting shortcuts apply to the selected text layers
         e.preventDefault();

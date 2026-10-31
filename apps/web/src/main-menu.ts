@@ -152,7 +152,11 @@ export function buildMainMenu(): MenuNode[] {
         item("text-underline"),
         item("text-strike"),
         sub("Case", list(item("text-case-none"), item("text-case-upper"), item("text-case-lower"), item("text-case-title")), true),
-        sub("Alignment", list(item("text-align-left"), item("text-align-center"), item("text-align-right")), false),
+        item("text-link", undefined, true),
+        item("text-list-bullet"),
+        item("text-list-number"),
+        sub("Alignment", list(item("text-align-left"), item("text-align-center"), item("text-align-right"), item("text-align-justify"), item("text-valign-top", undefined, true), item("text-valign-middle"), item("text-valign-bottom")), true),
+        sub("Adjust", list(item("text-size-up"), item("text-size-down"), item("text-weight-up"), item("text-weight-down"), item("text-leading-up"), item("text-leading-down"), item("text-tracking-up"), item("text-tracking-down")), false),
       ),
     },
     {

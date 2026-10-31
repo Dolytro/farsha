@@ -386,7 +386,7 @@ export interface EllipseNode extends BaseNode {
   strokeAlign?: StrokeAlign;
 }
 
-export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT';
+export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED';
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH';
 export type TextCase = 'NONE' | 'UPPER' | 'LOWER' | 'TITLE';
 /** Every paragraph of a text layer starts with a bullet or a running number. */
