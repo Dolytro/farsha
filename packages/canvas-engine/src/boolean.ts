@@ -121,6 +121,56 @@ export function flattenShapes(doc: DesignDoc, ids: string[]): BooleanResult | nu
   return { rings, box, d };
 }
 
+/**
+ * The stroke of a layer as a filled outline (Figma's Outline stroke): every segment becomes a quad of the stroke width and every corner a disc,
+ * all merged. Inside and outside strokes are cut against the shape. Joins are always round; open paths get round caps. Null when the layer has no outline.
+ */
+export function outlineStrokeShape(doc: DesignDoc, id: string): BooleanResult | null {
+  const n = doc.getNode(id);
+  if (!n) return null;
+  const ring = pageOutline(doc, n);
+  const width = "strokeWidth" in n && typeof n.strokeWidth === "number" ? n.strokeWidth : 0;
+  if (!ring || ring.length < 2 || width <= 0) return null;
+  const closed = !(n.type === "VECTOR" && n.penPoints && n.penClosed === false);
+  const align = "strokeAlign" in n && n.strokeAlign ? n.strokeAlign : "CENTER";
+  // An inside or outside stroke is a centred one of twice the width, cut to the right side of the edge.
+  const half = align === "CENTER" || !closed ? width / 2 : width;
+  const parts: Shape[] = [];
+  const count = closed ? ring.length : ring.length - 1;
+  for (let i = 0; i < count; i++) {
+    const a = ring[i]!;
+    const b = ring[(i + 1) % ring.length]!;
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) continue;
+    const ox = (-dy / len) * half;
+    const oy = (dx / len) * half;
+    parts.push([[[[a[0] + ox, a[1] + oy], [b[0] + ox, b[1] + oy], [b[0] - ox, b[1] - oy], [a[0] - ox, a[1] - oy]]]]);
+  }
+  const joints = closed ? ring : ring;
+  for (const p of joints) {
+    const disc: Ring = Array.from({ length: 16 }, (_, k) => [p[0] + Math.cos((k / 16) * Math.PI * 2) * half, p[1] + Math.sin((k / 16) * Math.PI * 2) * half]);
+    parts.push([[disc]]);
+  }
+  if (!parts.length) return null;
+  const [first, ...rest] = parts as [Shape, ...Shape[]];
+  let result = polygonClipping.union(first, ...rest) as Shape;
+  if (closed && align !== "CENTER") {
+    const body: Shape = [[ring]];
+    result = (align === "INSIDE" ? polygonClipping.intersection(result, body) : polygonClipping.difference(result, body)) as Shape;
+  }
+  const rings = result.flatMap((poly) => poly.map((r) => r.slice(0, -1) as Ring)).filter((r) => r.length > 2);
+  if (!rings.length) return null;
+  const xs = rings.flatMap((r) => r.map((p) => p[0]));
+  const ys = rings.flatMap((r) => r.map((p) => p[1]));
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  const box = { x, y, width: Math.max(1, Math.max(...xs) - x), height: Math.max(1, Math.max(...ys) - y) };
+  const d = rings.map((r) => `M${r.map((p) => `${r2(p[0] - x)} ${r2(p[1] - y)}`).join(" L")} Z`).join(" ");
+  return { rings, box, d };
+}
+
 /** Combine layers (listed bottom to top) with a boolean operation. Returns null when a layer cannot be outlined or the result is empty. */
 export function booleanShapes(doc: DesignDoc, ids: string[], op: BooleanOp): BooleanResult | null {
   const shapes: Shape[] = [];
