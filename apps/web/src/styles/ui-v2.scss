@@ -1239,3 +1239,12 @@ textarea:focus-visible {
     font-size: 11px;
   }
 }
+
+// Export settings rows: scale, suffix, format and a remove button.
+.export-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 76px 24px;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 6px;
+}
