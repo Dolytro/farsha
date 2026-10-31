@@ -204,6 +204,8 @@ export interface BaseNode {
   devStatus?: DevStatus;
   /** Dev Mode: a note for developers. */
   devNote?: string;
+  /** Prototype: this top-level frame is where a flow starts (Figma's flow starting point). */
+  flowStart?: boolean;
   /** Optional so documents saved before effects existed still load. */
   effects?: Effect[];
   /** Missing means NORMAL. */
@@ -446,6 +448,7 @@ export interface StylePatch extends AutoLayoutProps {
   strokeSides?: [number, number, number, number] | null;
   devStatus?: DevStatus | null;
   devNote?: string | null;
+  flowStart?: boolean | null;
   opacity?: number;
   visible?: boolean;
   locked?: boolean;

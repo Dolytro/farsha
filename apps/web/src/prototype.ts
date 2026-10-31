@@ -16,9 +16,10 @@ export function topFrameOf(doc: DesignDoc, id: string | undefined): DesignNode |
   return cur?.type === "FRAME" && !cur.isSection ? cur : undefined;
 }
 
-/** The frame a presentation starts from: the selected layer's frame, else the first frame. */
+/** The frame a presentation starts from: the selected layer's frame, else the first flow starting point, else the first frame. */
 export function startFrame(doc: DesignDoc, selection: string[]): string | undefined {
-  return topFrameOf(doc, selection[0])?.id ?? prototypeFrames(doc)[0]?.id;
+  const frames = prototypeFrames(doc);
+  return topFrameOf(doc, selection[0])?.id ?? frames.find((f) => f.flowStart)?.id ?? frames[0]?.id;
 }
 
 export interface Hotspot {
