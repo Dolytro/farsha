@@ -1,6 +1,5 @@
 import { DesignDoc } from "@farsha/design-core";
 import { debounced } from "./debounce";
-import { migrateLegacyDb } from "./legacy";
 import { useEditor } from "./store";
 
 /**
@@ -20,16 +19,11 @@ export interface LocalCopy {
   savedAt: number;
 }
 
-let migrated: Promise<void> | undefined;
-
 function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB, 1);
     req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-    req.onsuccess = () => {
-      const db = req.result;
-      void (migrated ??= migrateLegacyDb(db, STORE)).then(() => resolve(db));
-    };
+    req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
