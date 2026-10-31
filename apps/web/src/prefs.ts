@@ -38,7 +38,7 @@ export interface Prefs {
   bigNudge: number;
 }
 
-export const PREFS_KEY = "canvylo.prefs";
+export const PREFS_KEY = "farsha.prefs";
 
 export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, nudge: 1, bigNudge: 10 };
 

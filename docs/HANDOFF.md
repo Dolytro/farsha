@@ -70,8 +70,8 @@ Out of scope for now: plugins, FigJam/Slides, AI features, enterprise features, 
 | Thing | Details |
 |---|---|
 | GitHub | `Dolytro/canvylo`, branch `main`. The `gh` CLI was logged in on the old PC. |
-| Vercel | Project `farsha` in the project owner's team (Hobby). **Root Directory = `apps/web`**, "include source files outside root" on, framework Vite. Auto-deploys on every push to `main`. `apps/web/vercel.json` rewrites all paths to `index.html` (needed for `/v/<fileId>` links). |
-| Google Cloud | Project id `farsha`, owned by the project owner's Google account. Drive API enabled. Google Auth Platform: External app "Farsha", **In production**, scope `drive.file` (non-sensitive, no verification needed), home page / privacy / terms links point to the live site. OAuth client "Web client 1" (authorised JS origins: `http://localhost:5173`, `http://localhost:5174`, `https://canvylo.vercel.app`). API key "Farsha Drive key": restricted to Drive API and to those three origins as HTTP referrers. |
+| Vercel | Project `canvylo` in the project owner's team (Hobby). **Root Directory = `apps/web`**, "include source files outside root" on, framework Vite. Auto-deploys on every push to `main`. `apps/web/vercel.json` rewrites all paths to `index.html` (needed for `/v/<fileId>` links). |
+| Google Cloud | Project id `canvylo`, owned by the project owner's Google account. Drive API enabled. Google Auth Platform: External app "Farsha", **In production**, scope `drive.file` (non-sensitive, no verification needed), home page / privacy / terms links point to the live site. OAuth client "Web client 1" (authorised JS origins: `http://localhost:5173`, `http://localhost:5174`, `https://canvylo.vercel.app`). API key "Farsha Drive key": restricted to Drive API and to those three origins as HTTP referrers. |
 | Env vars | `VITE_GOOGLE_CLIENT_ID` and `VITE_GOOGLE_API_KEY`. Set in Vercel (Production) and in `apps/web/.env.local` locally. Both end up in the browser bundle, so neither is a secret, but the key stays out of git. Find the values in Google Cloud Console → APIs & Services → Credentials. |
 | Public pages | `/privacy.html`, `/terms.html` (`apps/web/public`), required by the Google consent screen. |
 
@@ -456,4 +456,4 @@ attribution, never put secrets in git or web forms. Reply in Banglish.
 
 ## Rename to Farsha
 
-The product was renamed from Canvylo to Farsha (packages `@farsha/*`, file extension `.farsha`; `.canvylo` files still open). Kept on purpose so that nothing saved is lost: the IndexedDB name `canvylo`, the localStorage keys `canvylo.*`, the Drive `appProperties` key `canvylo`, the repo name `Dolytro/canvylo` and the address canvylo.vercel.app. Renaming the GitHub repo, Vercel project and local folder are owner steps.
+The product was renamed from Canvylo to Farsha (packages `@farsha/*`, file extension `.farsha`; `.canvylo` files still open). Browser storage (IndexedDB, localStorage keys) and Drive files made under the old name are carried over by `apps/web/src/legacy.ts`. Still named canvylo because they are outside the code: the repo name `Dolytro/canvylo` and the address canvylo.vercel.app. Renaming the GitHub repo, Vercel project and local folder are owner steps.

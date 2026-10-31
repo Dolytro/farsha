@@ -1,10 +1,11 @@
 import { API_KEY } from "./google";
+import { OLD_DRIVE_MARK } from "../legacy";
 
 const API = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
 
 /** Marks files created by Farsha so they can be listed (drive.file only sees these anyway). */
-const APP_PROP = { canvylo: "1" };
+const APP_PROP = { farsha: "1" };
 
 export class DriveError extends Error {
   constructor(
@@ -88,7 +89,7 @@ export async function renameFile(token: string, id: string, name: string): Promi
 }
 
 export async function listFiles(token: string): Promise<DriveFile[]> {
-  const q = encodeURIComponent("appProperties has { key='canvylo' and value='1' } and trashed=false");
+  const q = encodeURIComponent("(appProperties has { key='farsha' and value='1' } or appProperties has { key='"+OLD_DRIVE_MARK+"' and value='1' }) and trashed=false");
   const res = await check(
     await fetch(`${API}/files?q=${q}&orderBy=modifiedTime desc&pageSize=50&fields=files(id,name,modifiedTime)`, { headers: auth(token) }),
   );

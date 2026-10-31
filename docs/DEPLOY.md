@@ -64,4 +64,4 @@ pnpm dev
 
 ## Live site
 
-Production: https://canvylo.vercel.app (Vercel project `farsha`, root directory `apps/web`).
+Production: https://canvylo.vercel.app (Vercel project `canvylo`, root directory `apps/web`).

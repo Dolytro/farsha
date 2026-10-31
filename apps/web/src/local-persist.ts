@@ -1,5 +1,6 @@
 import { DesignDoc } from "@farsha/design-core";
 import { debounced } from "./debounce";
+import { migrateLegacyDb } from "./legacy";
 import { useEditor } from "./store";
 
 /**
@@ -7,7 +8,7 @@ import { useEditor } from "./store";
  * Google Drive stays the place designs are shared from; this is only the safety net next to it.
  */
 
-const DB = "canvylo";
+const DB = "farsha";
 const STORE = "kv";
 const KEY = "current";
 const SAVE_DELAY_MS = 800;
@@ -19,11 +20,16 @@ export interface LocalCopy {
   savedAt: number;
 }
 
+let migrated: Promise<void> | undefined;
+
 function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB, 1);
     req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      void (migrated ??= migrateLegacyDb(db, STORE)).then(() => resolve(db));
+    };
     req.onerror = () => reject(req.error);
   });
 }

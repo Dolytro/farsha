@@ -155,7 +155,7 @@ interface EditorState {
 
 function readRulers(): boolean {
   try {
-    return localStorage.getItem("canvylo.rulers") === "1";
+    return localStorage.getItem("farsha.rulers") === "1";
   } catch {
     return false;
   }
@@ -230,7 +230,7 @@ export const useEditor = create<EditorState>((set) => ({
   rulers: readRulers(),
   setRulers: (rulers) => {
     try {
-      localStorage.setItem("canvylo.rulers", rulers ? "1" : "0");
+      localStorage.setItem("farsha.rulers", rulers ? "1" : "0");
     } catch {
       /* private window: the setting just won't be remembered */
     }
