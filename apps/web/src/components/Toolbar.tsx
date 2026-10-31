@@ -20,6 +20,7 @@ const TOOLS: { id: Tool; label: string; key: string; icon: ReactElement; design?
   { id: "polygon", label: "Polygon", key: "", design: true, icon: icon(<path d="M8 2.5l5.5 10h-11z" />) },
   { id: "star", label: "Star", key: "", design: true, icon: icon(<path d="M8 2l1.8 4 4.2.4-3.2 2.8 1 4.2L8 11.2 4.2 13.4l1-4.2L2 6.4 6.2 6z" />) },
   { id: "pen", label: "Pen", key: "P", design: true, icon: icon(<path d="M3 13l1.2-3.6L10.8 2.8a1.3 1.3 0 011.8 0l.6.6a1.3 1.3 0 010 1.8L6.6 11.8zM9.6 4l2.4 2.4" />) },
+  { id: "pencil", label: "Pencil", key: "Shift+P", design: true, icon: icon(<path d="M3 13l.8-2.8 7.4-7.4a1.3 1.3 0 011.8 0l.2.2a1.3 1.3 0 010 1.8L5.8 12.2zM9.6 4.4l2 2" />) },
   { id: "comment", label: "Comment", key: "C", icon: icon(<path d="M3 3.5h10v7H8l-3 2.5v-2.5H3z" />) },
   { id: "text", label: "Text", key: "T", design: true, icon: icon(<path d="M3 4V3h10v1M8 3v10M6 13h4" />) },
 ];

@@ -12,6 +12,7 @@ export * from "./ruler";
 export * from "./shapes";
 export * from "./transform";
 export * from "./pen";
+export * from "./pencil";
 export * from "./mask";
 export * from "./layout-grid";
 export * from "./boolean";
