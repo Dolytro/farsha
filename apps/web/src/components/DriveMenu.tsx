@@ -51,7 +51,7 @@ export function DriveMenu() {
           <input
             ref={picker}
             type="file"
-            accept=".farsha"
+            accept=".farsha,.canvylo"
             hidden
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -133,7 +133,7 @@ export function DriveMenu() {
                       void openFile(f.id, f.name);
                     }}
                   >
-                    {f.name.replace(/\.farsha$/, "")}
+                    {f.name.replace(/\.(farsha|canvylo)$/, "")}
                   </button>
                 ))}
               </div>
