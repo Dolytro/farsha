@@ -318,3 +318,5 @@ Agents, Actions (AI), Make / code layers, Build this with code, generate image, 
 
 ### 12.5 Separate Figma products (not part of the editor)
 FigJam (whiteboard), Slides, Buzz, Sites. FigJam-like sticky notes and connectors or a Slides mode could be built later as new modes.
+
+AI features are listed in `docs/AI_PLAN.md` (planned for later). The server-bound items of 12.3 are not planned: they cannot be done without a server.
