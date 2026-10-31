@@ -41,8 +41,8 @@ describe("prototype triggers", () => {
     expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "OPEN_URL", url: "https://x.dev" } })).toBeNull();
     expect(transitionAnimation(undefined)).toBeNull();
     expect(transitionAnimation({ type: "INSTANT", durationMs: 300 })).toBeNull();
-    expect(transitionAnimation({ type: "DISSOLVE", durationMs: 99999 })).toEqual({ name: "presenter-dissolve", durationMs: 5000 });
-    expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 1 })).toEqual({ name: "presenter-slide-left", durationMs: 50 });
+    expect(transitionAnimation({ type: "DISSOLVE", durationMs: 99999 })).toEqual({ name: "presenter-dissolve", durationMs: 5000, timing: "ease" });
+    expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 1 })).toEqual({ name: "presenter-slide-left", durationMs: 50, timing: "ease" });
   });
 });
 
@@ -129,5 +129,31 @@ describe("connectors", () => {
     expect(connectorsIn(doc, page)).toEqual([]);
     doc.setStyle(button, { interactions: [{ trigger: "ON_CLICK", action: { type: "NAVIGATE", targetId: detail } }], visible: false });
     expect(connectorsIn(doc, page)).toEqual([]);
+  });
+});
+
+describe("prototype round 3", () => {
+  it("easing curves start at 0, end at 1 and have css forms", async () => {
+    const { easingFn, easingCss } = await import("./prototype");
+    for (const e of ["LINEAR", "EASE_IN", "EASE_OUT", "EASE_IN_OUT", "SPRING"] as const) {
+      expect(easingFn(e)(0)).toBeCloseTo(0, 1);
+      expect(easingFn(e)(1)).toBeCloseTo(1, 1);
+    }
+    expect(easingFn("EASE_IN")(0.5)).toBeLessThan(0.5);
+    expect(easingFn("EASE_OUT")(0.5)).toBeGreaterThan(0.5);
+    expect(easingCss("LINEAR")).toBe("linear");
+    expect(easingCss(undefined)).toBe("ease");
+  });
+
+  it("scroll modes size the stage", async () => {
+    const { stageLayout } = await import("./prototype");
+    const wide = { width: 3000, height: 400 };
+    const h = stageLayout(wide, { w: 1040, h: 840 }, "HORIZONTAL");
+    expect(h.stageWidth).toBe(1000);
+    expect(h.stageHeight).toBe(400 * h.scale);
+    const both = stageLayout({ width: 3000, height: 3000 }, { w: 1040, h: 840 }, "BOTH");
+    expect(both.scale).toBe(1);
+    expect(both.stageWidth).toBe(1000);
+    expect(both.stageHeight).toBe(800);
   });
 });

@@ -38,8 +38,8 @@ export const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 *
  * The destination frame drawn part-way through the animation: every paired layer sits between its old and new position, size and opacity.
  * `scratch` is a copy of the document that this function is free to change.
  */
-export function frameAt(scratch: DesignDoc, toFrame: string, pairs: LayerPair[], progress: number): { svg: string; width: number; height: number } | null {
-  const t = easeInOut(Math.min(1, Math.max(0, progress)));
+export function frameAt(scratch: DesignDoc, toFrame: string, pairs: LayerPair[], progress: number, ease: (t: number) => number = easeInOut): { svg: string; width: number; height: number } | null {
+  const t = ease(Math.min(1, Math.max(0, progress)));
   scratch.patchNodes(
     Object.fromEntries(
       pairs.map((p) => [p.toId, { x: mix(p.from.x, p.to.x, t), y: mix(p.from.y, p.to.y, t), width: mix(p.from.width, p.to.width, t), height: mix(p.from.height, p.to.height, t), opacity: mix(p.from.opacity, p.to.opacity, t) }]),

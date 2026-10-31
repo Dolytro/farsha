@@ -280,11 +280,11 @@ Design panel
 - Layers panel: filter by type, Rename shortcut, hover highlight
 
 Prototype
-- Triggers: While pressing, Mouse enter / leave / down / up
-- Actions: Scroll to, Swap overlay, Set variable, Set variable mode, Conditional, Media controls
-- Overlay settings (position, dim, close on outside click)
-- Animations: Move in / out, Push, Slide out, easing curves and springs
-- Scrolling: horizontal and both, fixed (sticky) layers
+- Triggers: While pressing (Mouse enter / leave / down / up done ✅)
+- Actions: Set variable, Set variable mode, Conditional, Media controls (Scroll to and Swap overlay done ✅)
+- Overlay position, dim and close on outside click done ✅
+- Animations: Move in / out, Push, Slide out (easing curves and spring done ✅)
+- Scrolling: fixed (sticky) layers (horizontal and both done ✅)
 - Prototype settings: background, scale options, restart, hotspot hints, several named flows
 - Interactive components (variant switching on interaction)
 

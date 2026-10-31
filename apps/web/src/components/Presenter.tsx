@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Interaction } from "@canvylo/types";
+import type { Easing, Interaction, OverlayPosition } from "@canvylo/types";
 import { exportSvg } from "@canvylo/canvas-engine";
 import { canvasMeasure } from "../text-layout";
-import { followInteraction, hotspotsIn, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
+import { easingFn, followInteraction, hotspotsIn, layerBoxIn, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
 import { frameAt, matchLayers, scratchCopy } from "../smart-animate";
 import { videoUrl } from "../video";
 import { useEditor } from "../store";
@@ -19,8 +19,10 @@ export function Presenter() {
   const [overlay, setOverlay] = useState<string | null>(null);
   const [tween, setTween] = useState<{ svg: string; width: number; height: number } | null>(null);
   const tweenRun = useRef(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [overlayCfg, setOverlayCfg] = useState<{ dim: boolean; closeOnOutside: boolean; position: OverlayPosition }>({ dim: true, closeOnOutside: true, position: "CENTER" });
   const dragFrom = useRef<{ x: number; y: number } | null>(null);
-  const [transition, setTransition] = useState<{ name: string; durationMs: number; n: number } | null>(null);
+  const [transition, setTransition] = useState<{ name: string; durationMs: number; timing: string; n: number } | null>(null);
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
 
   useEffect(() => {
@@ -40,7 +42,8 @@ export function Presenter() {
   const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start]);
 
   /** Smart animate: tween the paired layers of the next frame from where they were in this one. */
-  const startTween = (from: string, to: string, durationMs: number) => {
+  const startTween = (from: string, to: string, durationMs: number, easing?: Easing) => {
+    const ease = easingFn(easing);
     const pairs = matchLayers(doc, from, to);
     const run = ++tweenRun.current;
     if (!pairs.length) return;
@@ -50,10 +53,10 @@ export function Presenter() {
     const step = (now: number) => {
       if (tweenRun.current !== run) return;
       const p = Math.min(1, (now - t0) / total);
-      setTween(p >= 1 ? null : frameAt(scratch, to, pairs, p));
+      setTween(p >= 1 ? null : frameAt(scratch, to, pairs, p, ease));
       if (p < 1) requestAnimationFrame(step);
     };
-    setTween(frameAt(scratch, to, pairs, 0));
+    setTween(frameAt(scratch, to, pairs, 0, ease));
     requestAnimationFrame(step);
   };
 
@@ -70,9 +73,17 @@ export function Presenter() {
       setOverlay(null);
       return;
     }
+    if (interaction.action.type === "SCROLL_TO") {
+      const box = layerBoxIn(doc, current, interaction.action.targetId);
+      if (box && scrollRef.current) scrollRef.current.scrollTo({ top: box.y * scale, left: box.x * scale, behavior: "smooth" });
+      else showToast("The layer to scroll to is not in this frame");
+      return;
+    }
     const toOpen = overlayTarget(doc, overlay ?? current, interaction);
     if (toOpen) {
+      const a = interaction.action;
       setOverlay(toOpen);
+      setOverlayCfg(a.type === "OPEN_OVERLAY" || a.type === "SWAP_OVERLAY" ? { dim: a.dim !== false, closeOnOutside: a.closeOnOutside !== false, position: a.position ?? "CENTER" } : { dim: true, closeOnOutside: true, position: "CENTER" });
       return;
     }
     const next = followInteraction(doc, current, history, interaction);
@@ -80,7 +91,7 @@ export function Presenter() {
     setOverlay(null);
     tweenRun.current++;
     setTween(null);
-    if (interaction.transition?.type === "SMART_ANIMATE") startTween(current, next.frame, interaction.transition.durationMs);
+    if (interaction.transition?.type === "SMART_ANIMATE") startTween(current, next.frame, interaction.transition.durationMs, interaction.transition.easing);
     const anim = transitionAnimation(interaction.transition);
     setTransition(anim ? { ...anim, n: Date.now() } : null);
     setCurrent(next.frame);
@@ -90,7 +101,10 @@ export function Presenter() {
   /** Mouse handlers of a hotspot: click, hover, or a drag of more than 10 pixels. */
   const spotEvents = (interaction: Interaction) => {
     if (interaction.trigger === "ON_CLICK") return { onClick: () => run(interaction) };
-    if (interaction.trigger === "ON_HOVER") return { onMouseEnter: () => run(interaction) };
+    if (interaction.trigger === "ON_HOVER" || interaction.trigger === "ON_MOUSE_ENTER") return { onMouseEnter: () => run(interaction) };
+    if (interaction.trigger === "ON_MOUSE_LEAVE") return { onMouseLeave: () => run(interaction) };
+    if (interaction.trigger === "ON_MOUSE_DOWN") return { onPointerDown: () => run(interaction) };
+    if (interaction.trigger === "ON_MOUSE_UP") return { onPointerUp: () => run(interaction) };
     if (interaction.trigger === "ON_DRAG") {
       return {
         onPointerDown: (e: React.PointerEvent) => {
@@ -150,9 +164,9 @@ export function Presenter() {
   if (!start) return null;
 
   const currentNode = current ? doc.getNode(current) : undefined;
-  const scrolls = currentNode?.type === "FRAME" && currentNode.overflowScroll === "VERTICAL";
+  const scrollMode = currentNode?.type === "FRAME" && currentNode.overflowScroll ? currentNode.overflowScroll : "NONE";
   const shown = tween ?? frame;
-  const { scale, stageHeight } = frame ? stageLayout(frame, size, scrolls) : { scale: 1, stageHeight: 0 };
+  const { scale, stageWidth, stageHeight } = frame ? stageLayout(frame, size, scrollMode) : { scale: 1, stageWidth: 0, stageHeight: 0 };
 
   return (
     <div className="presenter" role="dialog" aria-label="Prototype">
@@ -163,9 +177,9 @@ export function Presenter() {
         <div
           key={transition?.n ?? 0}
           className={`presenter__stage${device !== "none" ? ` presenter__stage--${device}` : ""}`}
-          style={{ width: frame.width * scale, height: stageHeight, animation: transition ? `${transition.name} ${transition.durationMs}ms ease both` : undefined }}
+          style={{ width: stageWidth, height: stageHeight, animation: transition ? `${transition.name} ${transition.durationMs}ms ${transition.timing} both` : undefined }}
         >
-          <div className="presenter__scroll" style={{ height: stageHeight, overflowY: scrolls ? "auto" : "hidden" }}>
+          <div className="presenter__scroll" ref={scrollRef} style={{ height: stageHeight, width: stageWidth, overflowY: scrollMode === "VERTICAL" || scrollMode === "BOTH" ? "auto" : "hidden", overflowX: scrollMode === "HORIZONTAL" || scrollMode === "BOTH" ? "auto" : "hidden" }}>
           <div style={{ position: "relative", width: frame.width * scale, height: frame.height * scale }}>
           <div className="presenter__frame" style={{ width: frame.width, height: frame.height, transform: `scale(${scale})` }} dangerouslySetInnerHTML={{ __html: shown!.svg }} />
           {videos.map((v) => {
@@ -185,7 +199,7 @@ export function Presenter() {
           </div>
           </div>
           {overlayFrame && (
-            <div className="presenter__overlay" onClick={() => setOverlay(null)}>
+            <div className={`presenter__overlay presenter__overlay--${overlayCfg.position.toLowerCase()}`} style={{ background: overlayCfg.dim ? undefined : "transparent" }} onClick={() => overlayCfg.closeOnOutside && setOverlay(null)}>
               <div
                 className="presenter__overlay-frame"
                 style={{ width: overlayFrame.width * scale, height: overlayFrame.height * scale }}

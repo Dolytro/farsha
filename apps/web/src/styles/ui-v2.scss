@@ -1351,3 +1351,12 @@ textarea:focus-visible {
     cursor: pointer;
   }
 }
+
+// Overlay positions in the prototype.
+.presenter__overlay--top {
+  align-items: flex-start;
+}
+
+.presenter__overlay--bottom {
+  align-items: flex-end;
+}

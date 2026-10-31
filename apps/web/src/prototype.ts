@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import type { Box, DesignNode, Interaction } from "@canvylo/types";
+import type { Box, DesignNode, Easing, Interaction } from "@canvylo/types";
 import { topLevelFrames } from "./section-actions";
 
 /** Top-level frames of every page: the screens a prototype can navigate between. */
@@ -50,7 +50,7 @@ export function interactionsIn(doc: DesignDoc, frameId: string, triggers: Intera
 
 /** Clickable, hoverable and draggable areas inside a frame, relative to the frame; layers drawn later (on top) come last. */
 export function hotspotsIn(doc: DesignDoc, frameId: string): Hotspot[] {
-  return interactionsIn(doc, frameId, ["ON_CLICK", "ON_HOVER", "ON_DRAG"]);
+  return interactionsIn(doc, frameId, ["ON_CLICK", "ON_HOVER", "ON_DRAG", "ON_MOUSE_ENTER", "ON_MOUSE_LEAVE", "ON_MOUSE_DOWN", "ON_MOUSE_UP"]);
 }
 
 /** Interactions that start by themselves after a delay, or when a key is pressed. */
@@ -71,7 +71,7 @@ export function safeUrl(url: string): string | null {
 /** Where an interaction leads: the next frame and the new history, or null when it does nothing (or only opens a web address). */
 export function followInteraction(doc: DesignDoc, current: string, history: string[], interaction: Interaction): { frame: string; history: string[] } | null {
   const action = interaction.action;
-  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "CLOSE_OVERLAY") return null;
+  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO") return null;
   if (action.type === "BACK") {
     const prev = history[history.length - 1];
     return prev ? { frame: prev, history: history.slice(0, -1) } : null;
@@ -84,24 +84,92 @@ export function followInteraction(doc: DesignDoc, current: string, history: stri
 /** The frame an Open overlay interaction shows, when it still exists and is not the frame already on screen. */
 export function overlayTarget(doc: DesignDoc, current: string, interaction: Interaction): string | null {
   const action = interaction.action;
-  if (action.type !== "OPEN_OVERLAY") return null;
+  if (action.type !== "OPEN_OVERLAY" && action.type !== "SWAP_OVERLAY") return null;
   const target = doc.getNode(action.targetId);
   return target?.type === "FRAME" && action.targetId !== current ? action.targetId : null;
 }
 
 /** CSS keyframes name and duration for a transition (null for an instant change). */
-export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number } | null {
+/** CSS timing function of an easing. The spring is a short overshoot written with linear(). */
+export function easingCss(e: Easing | undefined): string {
+  switch (e) {
+    case "LINEAR":
+      return "linear";
+    case "EASE_IN":
+      return "cubic-bezier(0.42, 0, 1, 1)";
+    case "EASE_OUT":
+      return "cubic-bezier(0, 0, 0.58, 1)";
+    case "SPRING":
+      return "linear(0, 0.38 8%, 0.82 18%, 1.08 30%, 1.12 38%, 1.04 52%, 0.99 66%, 1 80%, 1)";
+    default:
+      return "ease";
+  }
+}
+
+/** The same curves as functions of progress 0..1 (used by Smart animate). */
+export function easingFn(e: Easing | undefined): (t: number) => number {
+  const bezier = (p1x: number, p1y: number, p2x: number, p2y: number) => (t: number) => {
+    // solve x(u) = t by bisection, then return y(u)
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 24; i++) {
+      const u = (lo + hi) / 2;
+      const x = 3 * (1 - u) * (1 - u) * u * p1x + 3 * (1 - u) * u * u * p2x + u * u * u;
+      if (x < t) lo = u;
+      else hi = u;
+    }
+    const u = (lo + hi) / 2;
+    return 3 * (1 - u) * (1 - u) * u * p1y + 3 * (1 - u) * u * u * p2y + u * u * u;
+  };
+  switch (e) {
+    case "LINEAR":
+      return (t) => t;
+    case "EASE_IN":
+      return bezier(0.42, 0, 1, 1);
+    case "EASE_OUT":
+      return bezier(0, 0, 0.58, 1);
+    case "SPRING":
+      return (t) => 1 - Math.exp(-6 * t) * Math.cos(10 * t);
+    default:
+      return bezier(0.42, 0, 0.58, 1);
+  }
+}
+
+/** CSS keyframes name, duration and timing function for a transition (null for an instant change). */
+export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string } | null {
   if (!t || t.type === "INSTANT" || t.type === "SMART_ANIMATE") return null;
   const name = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" }[t.type];
-  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)) };
+  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)), timing: easingCss(t.easing) };
 }
 
 /** How big the prototype stage is in a window: fit the whole frame, or (vertical scrolling) fit the width and scroll the rest. */
-export function stageLayout(frame: { width: number; height: number }, win: { w: number; h: number }, scrolls: boolean): { scale: number; stageHeight: number } {
+export type ScrollMode = "NONE" | "VERTICAL" | "HORIZONTAL" | "BOTH";
+
+/**
+ * How big the prototype stage is in a window: fit the whole frame, or fit the width and scroll down (VERTICAL),
+ * fit the height and scroll across (HORIZONTAL), or show it at the size that fills the window's width and scroll both ways (BOTH).
+ */
+export function stageLayout(frame: { width: number; height: number }, win: { w: number; h: number }, scroll: ScrollMode | boolean): { scale: number; stageWidth: number; stageHeight: number } {
+  const mode: ScrollMode = scroll === true ? "VERTICAL" : scroll === false ? "NONE" : scroll;
   const maxW = Math.max(1, win.w - 40);
   const maxH = Math.max(1, win.h - 40);
-  const scale = scrolls ? Math.min(maxW / frame.width, 4) : Math.min(maxW / frame.width, maxH / frame.height, 4);
-  return { scale, stageHeight: scrolls ? Math.min(frame.height * scale, maxH) : frame.height * scale };
+  const scale =
+    mode === "VERTICAL" ? Math.min(maxW / frame.width, 4) : mode === "HORIZONTAL" ? Math.min(maxH / frame.height, 4) : mode === "BOTH" ? 1 : Math.min(maxW / frame.width, maxH / frame.height, 4);
+  const w = frame.width * scale;
+  const h = frame.height * scale;
+  return {
+    scale,
+    stageWidth: mode === "HORIZONTAL" || mode === "BOTH" ? Math.min(w, maxW) : w,
+    stageHeight: mode === "VERTICAL" || mode === "BOTH" ? Math.min(h, maxH) : h,
+  };
+}
+
+/** Where a layer sits inside a frame (relative to it), or null when it is not inside. */
+export function layerBoxIn(doc: DesignDoc, frameId: string, layerId: string): Box | null {
+  const origin = doc.absoluteBox(frameId);
+  const abs = doc.absoluteBox(layerId);
+  if (!origin || !abs || (layerId !== frameId && !doc.isAncestor(frameId, layerId))) return null;
+  return { x: abs.x - origin.x, y: abs.y - origin.y, width: abs.width, height: abs.height };
 }
 
 export interface Connector {
