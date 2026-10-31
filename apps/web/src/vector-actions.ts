@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import { joinPenPaths, penGeometry, scalePoints, simplifyPenPoints, smoothPenPoints, translatePoints, type PenPoint } from "@canvylo/canvas-engine";
+import { joinPenPaths, penGeometry, scalePoints, simplifyPenPoints, smoothPenPoints, splitPenPoints, translatePoints, type PenPoint } from "@canvylo/canvas-engine";
 
 interface PenLayer {
   id: string;
@@ -88,4 +88,47 @@ export function joinSelection(doc: DesignDoc, ids: string[]): { ids: string[]; e
     return { ids: [a.id] };
   }
   return { ids, error: "Select one open path to close it, or two open paths in the same frame to join them" };
+}
+
+/** Figma's Delete and heal: remove one point of a pen path; its neighbours stay joined, so the path stays whole. */
+export function deletePointAndHeal(doc: DesignDoc, id: string, index: number): boolean {
+  const l = penLayers(doc, [id])[0];
+  if (!l || index < 0 || index >= l.points.length || l.points.length <= 2) return false;
+  doc.stopCapturing();
+  const ok = write(doc, l.id, l.x, l.y, l.points.filter((_, i) => i !== index), l.closed);
+  doc.stopCapturing();
+  return ok;
+}
+
+/** Figma's Split vector: cut a pen path at one point. Returns the layers that make up the result (the original, plus a new one for the second piece). */
+export function splitVectorAt(doc: DesignDoc, id: string, index: number): string[] | null {
+  const l = penLayers(doc, [id])[0];
+  const node = doc.getNode(id);
+  if (!l || !node || node.type !== "VECTOR") return null;
+  const pieces = splitPenPoints(l.points, l.closed, index);
+  if (!pieces) return null;
+  const order = doc.children(l.parentId).map((n) => n.id);
+  doc.stopCapturing();
+  write(doc, id, l.x, l.y, pieces[0]!, false);
+  const ids = [id];
+  if (pieces[1]) {
+    const geo = penGeometry(pieces[1], false)!;
+    const props = {
+      name: node.name,
+      x: l.x + geo.box.x,
+      y: l.y + geo.box.y,
+      width: geo.box.width,
+      height: geo.box.height,
+      viewBox: geo.viewBox,
+      markup: geo.markup,
+      penPoints: translatePoints(pieces[1], -geo.box.x, -geo.box.y),
+      penClosed: false,
+      fills: [],
+      strokes: (node as unknown as { strokes?: unknown[] }).strokes ?? [],
+      strokeWidth: (node as unknown as { strokeWidth?: number }).strokeWidth ?? 1,
+    };
+    ids.push(doc.createNode("VECTOR", { parentId: l.parentId, index: order.indexOf(id) + 1, props: props as never }));
+  }
+  doc.stopCapturing();
+  return ids;
 }

@@ -3,7 +3,7 @@ import { distributeEdges, packLayers, roundToPixel, tidyUp, type EdgeMode } from
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
 import { extractDefaults, saveDefaults } from "./defaults";
 import { exportFramesToPdf } from "./pdf-export";
-import { joinSelection, simplifySelection, smoothSelection } from "./vector-actions";
+import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, splitVectorAt } from "./vector-actions";
 import { booleanSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
@@ -316,6 +316,30 @@ export function buildCommands(): Command[] {
       run: () => {
         const out = smoothSelection(doc(), sel());
         if (out.error) state().showToast(out.error);
+      },
+    },
+    {
+      id: "vector-delete-heal",
+      label: "Delete and heal",
+      keywords: "vector point remove anchor",
+      run: () => {
+        const { editingPath, editingPoint } = state();
+        if (!editingPath || editingPoint === null) state().showToast("Edit a path (Enter) and click a point first");
+        else if (deletePointAndHeal(doc(), editingPath, editingPoint)) state().setEditingPoint(null);
+        else state().showToast("A path keeps at least two points");
+      },
+    },
+    {
+      id: "vector-split",
+      label: "Split vector",
+      keywords: "vector point cut path",
+      run: () => {
+        const { editingPath, editingPoint } = state();
+        if (!editingPath || editingPoint === null) return state().showToast("Edit a path (Enter) and click a point first");
+        const ids = splitVectorAt(doc(), editingPath, editingPoint);
+        if (!ids) return state().showToast("Pick a point inside an open path, or any point of a closed one");
+        state().setEditingPath(null);
+        state().select(ids);
       },
     },
     {

@@ -63,3 +63,21 @@ export function joinPenPaths(a: PenPoint[], b: PenPoint[]): PenPoint[] {
   const mid: PenPoint = { x: (joinA.x + joinB.x) / 2, y: (joinA.y + joinB.y) / 2, hx: joinB.hx, hy: joinB.hy };
   return [...left, mid, ...options.right.slice(1)];
 }
+
+/**
+ * Cut a path at one point (Figma's Split vector). An open path becomes two open paths that share the cut point; a closed path
+ * opens at the point and becomes one open path that runs all the way round. Returns the pieces, or null when there is nothing to cut.
+ */
+export function splitPenPoints(points: PenPoint[], closed: boolean, index: number): PenPoint[][] | null {
+  const n = points.length;
+  if (index < 0 || index >= n || n < 2) return null;
+  if (closed) {
+    const rotated = [...points.slice(index), ...points.slice(0, index)];
+    const start = rotated[0]!;
+    return [[...rotated, { ...start }]];
+  }
+  if (index === 0 || index === n - 1) return null;
+  const first = points.slice(0, index + 1).map((p, i, a) => (i === a.length - 1 ? { ...p, hx: 0, hy: 0 } : p));
+  const second = points.slice(index).map((p, i) => (i === 0 ? { ...p } : p));
+  return [first, second];
+}

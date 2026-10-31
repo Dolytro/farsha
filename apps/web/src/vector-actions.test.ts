@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
 import { penGeometry } from "@canvylo/canvas-engine";
-import { joinSelection, simplifySelection, smoothSelection } from "./vector-actions";
+import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, splitVectorAt } from "./vector-actions";
 
 const c = (x: number, y: number) => ({ x, y, hx: 0, hy: 0 });
 
@@ -55,5 +55,33 @@ describe("vector actions", () => {
     const r = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id });
     expect(simplifySelection(doc, [r]).error).toBeTruthy();
     expect(joinSelection(doc, [r]).error).toBeTruthy();
+  });
+});
+
+describe("point actions", () => {
+  it("delete and heal removes one point and keeps the path joined", () => {
+    const doc = new DesignDoc();
+    const id = path(doc, doc.pages()[0]!.id, 0, 0, [c(0, 0), c(10, 5), c(20, 0), c(30, 5)]);
+    expect(deletePointAndHeal(doc, id, 1)).toBe(true);
+    expect(pts(doc, id).penPoints).toHaveLength(3);
+    expect(deletePointAndHeal(doc, id, 9)).toBe(false);
+    const two = path(doc, doc.pages()[0]!.id, 0, 100, [c(0, 0), c(10, 0)]);
+    expect(deletePointAndHeal(doc, two, 0)).toBe(false);
+  });
+
+  it("split vector cuts an open path into two layers", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = path(doc, page, 0, 0, [c(0, 0), c(10, 0), c(20, 10), c(30, 10)]);
+    doc.stopCapturing();
+    const out = splitVectorAt(doc, id, 1)!;
+    expect(out).toHaveLength(2);
+    expect(pts(doc, out[0]!).penPoints).toHaveLength(2);
+    expect(pts(doc, out[1]!).penPoints).toHaveLength(3);
+    expect(doc.getNode(out[1]!)).toMatchObject({ x: 10, width: 20 });
+    expect(splitVectorAt(doc, id, 0)).toBeNull();
+    doc.undo();
+    expect(pts(doc, id).penPoints).toHaveLength(4);
+    expect(doc.children(page)).toHaveLength(1);
   });
 });
