@@ -16,6 +16,7 @@ import { fitText } from "./text-layout";
 import { setSection, wrapInSection } from "./section-actions";
 import { adjustText, patchText, setTextAlign, setTextCase, setTextVerticalAlign, textLayersIn, toggleTextStyle } from "./text-actions";
 import { safeUrl } from "./prototype";
+import { resizeToFit, setLockAspect, setSizing } from "./layout-actions";
 import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
 import { startFrame } from "./prototype";
@@ -239,6 +240,23 @@ export function buildCommands(): Command[] {
         void patchText(doc(), sel(), () => ({ textLink: url || null }), fitText);
       },
     },
+    { id: "layout-lock-aspect", label: "Lock aspect ratio", needsSelection: true, keywords: "proportions ratio", run: () => void setLockAspect(doc(), sel(), true) },
+    { id: "layout-unlock-aspect", label: "Unlock aspect ratio", needsSelection: true, keywords: "proportions ratio", run: () => void setLockAspect(doc(), sel(), false) },
+    { id: "layout-resize-to-fit", label: "Resize to fit", shortcut: `${MOD}${ALT}${SHIFT}R`, needsSelection: true, keywords: "frame fit contents", run: () => void (resizeToFit(doc(), sel()) || state().showToast("Select a frame (without auto layout) that has layers")) },
+    ...(
+      [
+        ["hug-width", "Set width to hug contents", "width", "HUG"],
+        ["hug-height", "Set height to hug contents", "height", "HUG"],
+        ["fill-width", "Set width to fill container", "width", "FILL"],
+        ["fill-height", "Set height to fill container", "height", "FILL"],
+      ] as const
+    ).map(([id, label, axis, mode]): Command => ({
+      id: `layout-${id}`,
+      label,
+      needsSelection: true,
+      keywords: "auto layout sizing",
+      run: () => void (setSizing(doc(), sel(), axis, mode) || state().showToast(mode === "HUG" ? "Select an auto layout frame" : "Select a layer inside an auto layout frame")),
+    })),
     { id: "text-align-right", label: "Align text right", shortcut: `${MOD}${ALT}R`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "RIGHT", fitText) },
     { id: "wrap-section", label: "Wrap in new section", shortcut: `${MOD}S`, needsSelection: true, keywords: "section group canvas area", run: () => state().select(wrapInSection(doc(), sel())) },
     { id: "convert-section", label: "Convert to section", needsSelection: true, keywords: "frame section", run: () => void setSection(doc(), sel(), true) },

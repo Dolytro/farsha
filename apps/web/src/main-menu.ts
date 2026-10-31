@@ -124,6 +124,7 @@ export function buildMainMenu(): MenuNode[] {
         item("rotate-180"),
         item("rotate-left"),
         item("rotate-right"),
+        sub("More layout options", list(item("layout-lock-aspect"), item("layout-unlock-aspect"), item("layout-resize-to-fit", undefined, true), item("layout-hug-width"), item("layout-hug-height"), item("layout-fill-width"), item("layout-fill-height")), true),
         item("flatten", undefined, true),
         item("outline-stroke"),
         sub(
