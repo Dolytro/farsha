@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { followInteraction, hotspotsIn, interactionsIn, safeUrl, startFrame, timedAndKeyIn, transitionAnimation } from "./prototype";
+import { followInteraction, hotspotsIn, interactionsIn, overlayTarget, safeUrl, startFrame, timedAndKeyIn, transitionAnimation } from "./prototype";
 
 function setup() {
   const doc = new DesignDoc();
@@ -55,5 +55,21 @@ describe("flow starting point", () => {
     expect(startFrame(doc, [home])).toBe(home);
     doc.setStyle(detail, { flowStart: null });
     expect(startFrame(doc, [])).toBe(home);
+  });
+});
+
+describe("overlays", () => {
+  it("an open overlay interaction shows another frame without navigating", () => {
+    const { doc, home, detail } = setup();
+    const open = { trigger: "ON_CLICK" as const, action: { type: "OPEN_OVERLAY" as const, targetId: detail } };
+    expect(overlayTarget(doc, home, open)).toBe(detail);
+    expect(followInteraction(doc, home, [], open)).toBeNull();
+    expect(overlayTarget(doc, detail, open)).toBeNull();
+    expect(overlayTarget(doc, home, { trigger: "ON_CLICK", action: { type: "OPEN_OVERLAY", targetId: "gone" } })).toBeNull();
+    expect(overlayTarget(doc, home, { trigger: "ON_CLICK", action: { type: "NAVIGATE", targetId: detail } })).toBeNull();
+  });
+  it("close overlay does nothing on its own", () => {
+    const { doc, home } = setup();
+    expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "CLOSE_OVERLAY" } })).toBeNull();
   });
 });

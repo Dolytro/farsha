@@ -119,18 +119,20 @@ export function PrototypePanel() {
                   className="field__select field__select--wide"
                   aria-label="Action"
                   value={it.action.type}
-                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : navigate() })}
+                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" ? { type: "OPEN_OVERLAY", targetId: defaultTarget ?? "" } : navigate() })}
                 >
                   <option value="NAVIGATE">Navigate to</option>
                   <option value="BACK">Back</option>
+                  <option value="OPEN_OVERLAY">Open overlay</option>
+                  <option value="CLOSE_OVERLAY">Close overlay</option>
                   <option value="OPEN_URL">Open link</option>
                 </Select>
-                {it.action.type === "NAVIGATE" && (
+                {(it.action.type === "NAVIGATE" || it.action.type === "OPEN_OVERLAY") && (
                   <Select
                     className="field__select field__select--wide"
                     aria-label="Destination"
                     value={it.action.targetId}
-                    onChange={(e) => patch({ action: { type: "NAVIGATE", targetId: e.target.value } })}
+                    onChange={(e) => patch({ action: { type: it.action.type === "OPEN_OVERLAY" ? "OPEN_OVERLAY" : "NAVIGATE", targetId: e.target.value } })}
                   >
                     {!frames.some((f) => f.id === (it.action as { targetId: string }).targetId) && <option value={it.action.targetId}>Missing frame</option>}
                     {frames.map((f) => (
@@ -146,7 +148,7 @@ export function PrototypePanel() {
                     <input className="field__input" type="url" aria-label="Link" value={it.action.url} onChange={(e) => patch({ action: { type: "OPEN_URL", url: e.target.value } })} />
                   </label>
                 )}
-                {it.action.type !== "OPEN_URL" && (
+                {(it.action.type === "NAVIGATE" || it.action.type === "BACK") && (
                   <div className="interaction__row">
                     <Select
                       className="field__select"

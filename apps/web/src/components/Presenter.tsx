@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Interaction } from "@canvylo/types";
 import { exportSvg } from "@canvylo/canvas-engine";
 import { canvasMeasure } from "../text-layout";
-import { followInteraction, hotspotsIn, safeUrl, timedAndKeyIn, transitionAnimation } from "../prototype";
+import { followInteraction, hotspotsIn, overlayTarget, safeUrl, timedAndKeyIn, transitionAnimation } from "../prototype";
 import { useEditor } from "../store";
 
 /** Full-screen prototype presentation: shows one frame at a time; layers with interactions react to clicks, hovering, time and keys. */
@@ -13,6 +13,7 @@ export function Presenter() {
   const doc = useEditor((s) => s.doc);
   const [current, setCurrent] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [overlay, setOverlay] = useState<string | null>(null);
   const [transition, setTransition] = useState<{ name: string; durationMs: number; n: number } | null>(null);
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
 
@@ -20,10 +21,13 @@ export function Presenter() {
     setCurrent(start);
     setHistory([]);
     setTransition(null);
+    setOverlay(null);
   }, [start]);
 
   const frame = useMemo(() => (start && current && doc.hasNode(current) ? exportSvg(doc, [current], { measure: canvasMeasure }) : null), [doc, current, start]);
   const spots = useMemo(() => (start && current && doc.hasNode(current) ? hotspotsIn(doc, current) : []), [doc, current, start]);
+  const overlayFrame = useMemo(() => (start && overlay && doc.hasNode(overlay) ? exportSvg(doc, [overlay], { measure: canvasMeasure }) : null), [doc, overlay, start]);
+  const overlaySpots = useMemo(() => (start && overlay && doc.hasNode(overlay) ? hotspotsIn(doc, overlay) : []), [doc, overlay, start]);
   const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start]);
 
   /** Run an interaction: open its address, or change frame with its transition. */
@@ -35,8 +39,18 @@ export function Presenter() {
       else showToast("This prototype link is not a web address");
       return;
     }
+    if (interaction.action.type === "CLOSE_OVERLAY") {
+      setOverlay(null);
+      return;
+    }
+    const toOpen = overlayTarget(doc, overlay ?? current, interaction);
+    if (toOpen) {
+      setOverlay(toOpen);
+      return;
+    }
     const next = followInteraction(doc, current, history, interaction);
     if (!next) return;
+    setOverlay(null);
     const anim = transitionAnimation(interaction.transition);
     setTransition(anim ? { ...anim, n: Date.now() } : null);
     setCurrent(next.frame);
@@ -49,7 +63,8 @@ export function Presenter() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        setPresenting(null);
+        if (overlay) setOverlay(null);
+        else setPresenting(null);
         return;
       }
       const bound = auto.find((a) => a.interaction.trigger === "ON_KEY" && a.interaction.key === e.key);
@@ -73,7 +88,7 @@ export function Presenter() {
     };
     // run reads current state; it is recreated with the frame, as are the key bindings
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [start, setPresenting, auto, current, history]);
+  }, [start, setPresenting, auto, current, history, overlay]);
 
   // After-delay interactions start when their frame appears.
   useEffect(() => {
@@ -108,6 +123,26 @@ export function Presenter() {
               onMouseEnter={h.interaction.trigger === "ON_HOVER" ? () => run(h.interaction) : undefined}
             />
           ))}
+          {overlayFrame && (
+            <div className="presenter__overlay" onClick={() => setOverlay(null)}>
+              <div
+                className="presenter__overlay-frame"
+                style={{ width: overlayFrame.width * scale, height: overlayFrame.height * scale }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="presenter__frame" style={{ width: overlayFrame.width, height: overlayFrame.height, transform: `scale(${scale})` }} dangerouslySetInnerHTML={{ __html: overlayFrame.svg }} />
+                {overlaySpots.map((h, i) => (
+                  <div
+                    key={`o-${h.id}-${i}`}
+                    className="presenter__hotspot"
+                    style={{ left: h.box.x * scale, top: h.box.y * scale, width: h.box.width * scale, height: h.box.height * scale }}
+                    onClick={h.interaction.trigger === "ON_CLICK" ? () => run(h.interaction) : undefined}
+                    onMouseEnter={h.interaction.trigger === "ON_HOVER" ? () => run(h.interaction) : undefined}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <p className="presenter__empty">This frame no longer exists.</p>
