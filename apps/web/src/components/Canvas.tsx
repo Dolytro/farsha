@@ -12,7 +12,8 @@ import { useEffect, useRef, useState, type PointerEvent, type ReactElement } fro
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
 import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
-import { placeImageFile } from "../place-image";
+import { placeMediaFile } from "../place-image";
+import { isVideoFile, videoUrl } from "../video";
 import { useEditor, type Tool } from "../store";
 import { canvasMeasure, fitText } from "../text-layout";
 import { nearestFrame } from "../actions";
@@ -366,10 +367,10 @@ export function Canvas() {
   };
 
   // Drop image files from the desktop or another tab onto the canvas.
-  const dropFiles = (e: React.DragEvent) => [...e.dataTransfer.files].filter(isImageFile);
+  const dropFiles = (e: React.DragEvent) => [...e.dataTransfer.files].filter((f) => isImageFile(f) || isVideoFile(f));
   const onDragOver = (e: React.DragEvent) => {
     if (viewer || devMode) return;
-    if ([...e.dataTransfer.items].some((i) => i.kind === "file" && i.type.startsWith("image/"))) {
+    if ([...e.dataTransfer.items].some((i) => i.kind === "file" && (i.type.startsWith("image/") || i.type.startsWith("video/")))) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
     }
@@ -383,7 +384,7 @@ export function Canvas() {
     const under = hitTest(doc, pageId, w.x, w.y);
     const frame = under?.type === "FRAME" ? under : undefined;
     const origin = frame ? (doc.absoluteBox(frame.id) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
-    files.forEach((file, i) => void placeImageFile(file, frame?.id ?? pageId, w.x - origin.x + i * 24, w.y - origin.y + i * 24));
+    files.forEach((file, i) => void placeMediaFile(file, frame?.id ?? pageId, w.x - origin.x + i * 24, w.y - origin.y + i * 24));
   };
 
   const onDoubleClick = (e: React.MouseEvent) => {
@@ -440,6 +441,21 @@ export function Canvas() {
     const { color } = fillOf(n);
     const transform = nodeTransform(n);
     const kids = renderChildren(doc.children(n.id));
+    const video = n.type === "RECTANGLE" ? videoUrl(doc, n.videoAssetId) : undefined;
+    if (video && n.type === "RECTANGLE") {
+      // a video layer shows the first frame; it plays when the prototype is previewed
+      return (
+        <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
+          {fxDefs(n)}
+          <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n, (id) => assetUrl(doc, id)) }} />
+          <foreignObject x={0} y={0} width={n.width} height={n.height} pointerEvents="none">
+            <video src={`${video}#t=0.1`} preload="metadata" muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", background: "#1e1e1e" }} />
+          </foreignObject>
+          <path d={`M${n.width / 2 - 10} ${n.height / 2 - 14}L${n.width / 2 + 14} ${n.height / 2}L${n.width / 2 - 10} ${n.height / 2 + 14}z`} fill="#fff" fillOpacity={0.85} pointerEvents="none" />
+          {kids}
+        </g>
+      );
+    }
     if (n.type === "ELLIPSE") {
       return (
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>

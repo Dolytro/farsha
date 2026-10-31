@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Interaction } from "@canvylo/types";
 import { exportSvg } from "@canvylo/canvas-engine";
 import { canvasMeasure } from "../text-layout";
-import { followInteraction, hotspotsIn, overlayTarget, safeUrl, stageLayout, timedAndKeyIn, transitionAnimation } from "../prototype";
+import { followInteraction, hotspotsIn, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
 import { frameAt, matchLayers, scratchCopy } from "../smart-animate";
+import { videoUrl } from "../video";
 import { useEditor } from "../store";
 
 /** Full-screen prototype presentation: shows one frame at a time; layers with interactions react to clicks, hovering, time and keys. */
@@ -35,6 +36,7 @@ export function Presenter() {
   const spots = useMemo(() => (start && current && doc.hasNode(current) ? hotspotsIn(doc, current) : []), [doc, current, start]);
   const overlayFrame = useMemo(() => (start && overlay && doc.hasNode(overlay) ? exportSvg(doc, [overlay], { measure: canvasMeasure }) : null), [doc, overlay, start]);
   const overlaySpots = useMemo(() => (start && overlay && doc.hasNode(overlay) ? hotspotsIn(doc, overlay) : []), [doc, overlay, start]);
+  const videos = useMemo(() => (start && current && doc.hasNode(current) ? videosIn(doc, current) : []), [doc, current, start]);
   const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start]);
 
   /** Smart animate: tween the paired layers of the next frame from where they were in this one. */
@@ -166,6 +168,12 @@ export function Presenter() {
           <div className="presenter__scroll" style={{ height: stageHeight, overflowY: scrolls ? "auto" : "hidden" }}>
           <div style={{ position: "relative", width: frame.width * scale, height: frame.height * scale }}>
           <div className="presenter__frame" style={{ width: frame.width, height: frame.height, transform: `scale(${scale})` }} dangerouslySetInnerHTML={{ __html: shown!.svg }} />
+          {videos.map((v) => {
+            const src = videoUrl(doc, v.assetId);
+            return src ? (
+              <video key={`video-${v.id}`} src={src} autoPlay muted loop playsInline controls style={{ position: "absolute", left: v.box.x * scale, top: v.box.y * scale, width: v.box.width * scale, height: v.box.height * scale, objectFit: "cover", background: "#000" }} />
+            ) : null;
+          })}
           {spots.map((h, i) => (
             <div
               key={`${h.id}-${i}`}
