@@ -60,3 +60,23 @@ export function toggleTextStyle(doc: DesignDoc, ids: string[], kind: TextToggle,
 export const setTextCase = (doc: DesignDoc, ids: string[], textCase: TextCase, refit?: Refit) => patchText(doc, ids, () => ({ textCase }), refit);
 export const setTextAlign = (doc: DesignDoc, ids: string[], textAlign: TextAlign, refit?: Refit) => patchText(doc, ids, () => ({ textAlign }), refit);
 export const setTextVerticalAlign = (doc: DesignDoc, ids: string[], textVerticalAlign: TextVerticalAlign) => patchText(doc, ids, () => ({ textVerticalAlign }));
+
+export type TextStep = "fontSize" | "fontWeight" | "lineHeight" | "letterSpacing";
+
+/** Figma's Text > Adjust: raise or lower the font size (1), weight (100), line height (1 px) or letter spacing (0.5) of every selected text layer. */
+export function adjustText(doc: DesignDoc, ids: string[], kind: TextStep, direction: 1 | -1, refit?: Refit): number {
+  return patchText(
+    doc,
+    ids,
+    (n) => {
+      if (kind === "fontSize") return { fontSize: Math.max(1, n.fontSize + direction) };
+      if (kind === "fontWeight") return { fontWeight: Math.min(900, Math.max(100, n.fontWeight + direction * 100)) };
+      if (kind === "lineHeight") {
+        const current = n.lineHeight === "AUTO" ? Math.round(n.fontSize * 1.2) : n.lineHeight;
+        return { lineHeight: Math.max(1, current + direction) };
+      }
+      return { letterSpacing: Math.round((n.letterSpacing + direction * 0.5) * 10) / 10 };
+    },
+    refit,
+  );
+}

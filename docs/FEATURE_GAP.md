@@ -250,10 +250,10 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Find next / previous | Ctrl+Shift+F / Ctrl+Shift+D | Enter / Shift+Enter inside Find |
 | Rename layer | Ctrl+R | ✅ same |
 | Find previous / next frame | Home / End | ✅ same |
-| Create link | Ctrl+Shift+U | field in the panel |
-| Bulleted / numbered list | Ctrl+Shift+8 / 7 | panel select |
-| Text align justified / top / middle / bottom | Ctrl+Alt+J, menu | no justified |
-| Increase / decrease font size, weight, line height, letter spacing, indentation | Ctrl+Shift+> / < , Ctrl+Alt+> / < , Alt+Shift+> / < , Alt+> / < , Ctrl+] / [ | none |
+| Create link | Ctrl+Shift+U | ✅ same (whole text) |
+| Bulleted / numbered list | Ctrl+Shift+8 / 7 | ✅ same |
+| Text align justified / top / middle / bottom | Ctrl+Alt+J, menu | ✅ same |
+| Increase / decrease font size, weight, line height, letter spacing (indentation not yet) | Ctrl+Shift+> / < , Ctrl+Alt+> / < , Alt+Shift+> / < , Alt+> / < , Ctrl+] / [ | ✅ same |
 | Zoom to previous / next frame | Shift+N / N | check |
 | Paste to replace | Ctrl+Shift+R | Ctrl+Alt+Shift+V (browser reserves Ctrl+Shift+R) |
 | Delete and heal | Shift+Backspace | menu only |

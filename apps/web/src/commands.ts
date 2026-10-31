@@ -14,7 +14,8 @@ import { deleteContents, hideOtherLayers, removeInteractions, removePaint, rotat
 import { newFile } from "./drive/session";
 import { fitText } from "./text-layout";
 import { setSection, wrapInSection } from "./section-actions";
-import { setTextAlign, setTextCase, toggleTextStyle } from "./text-actions";
+import { adjustText, patchText, setTextAlign, setTextCase, setTextVerticalAlign, textLayersIn, toggleTextStyle } from "./text-actions";
+import { safeUrl } from "./prototype";
 import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
 import { startFrame } from "./prototype";
@@ -191,6 +192,53 @@ export function buildCommands(): Command[] {
     { id: "text-case-title", label: "Title case", needsSelection: true, keywords: "text case capitalize", run: () => void setTextCase(doc(), sel(), "TITLE", fitText) },
     { id: "text-align-left", label: "Align text left", shortcut: `${MOD}${ALT}L`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "LEFT", fitText) },
     { id: "text-align-center", label: "Align text center", shortcut: `${MOD}${ALT}T`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "CENTER", fitText) },
+    { id: "text-align-justify", label: "Justify text", shortcut: `${MOD}${ALT}J`, needsSelection: true, keywords: "text alignment justified", run: () => void setTextAlign(doc(), sel(), "JUSTIFIED", fitText) },
+    { id: "text-valign-top", label: "Align text top", needsSelection: true, keywords: "text vertical alignment", run: () => void setTextVerticalAlign(doc(), sel(), "TOP") },
+    { id: "text-valign-middle", label: "Align text middle", needsSelection: true, keywords: "text vertical alignment", run: () => void setTextVerticalAlign(doc(), sel(), "CENTER") },
+    { id: "text-valign-bottom", label: "Align text bottom", needsSelection: true, keywords: "text vertical alignment", run: () => void setTextVerticalAlign(doc(), sel(), "BOTTOM") },
+    ...(
+      [
+        ["size", "fontSize", "font size", ">", "<", `${MOD}${SHIFT}`],
+        ["weight", "fontWeight", "font weight", ">", "<", `${MOD}${ALT}`],
+        ["leading", "lineHeight", "line height", ">", "<", `${ALT}${SHIFT}`],
+        ["tracking", "letterSpacing", "letter spacing", ">", "<", ALT],
+      ] as const
+    ).flatMap(([id, kind, label, up, down, prefix]): Command[] => [
+      { id: `text-${id}-up`, label: `Increase ${label}`, shortcut: `${prefix}${up}`, needsSelection: true, keywords: "text adjust bigger", run: () => void adjustText(doc(), sel(), kind, 1, fitText) },
+      { id: `text-${id}-down`, label: `Decrease ${label}`, shortcut: `${prefix}${down}`, needsSelection: true, keywords: "text adjust smaller", run: () => void adjustText(doc(), sel(), kind, -1, fitText) },
+    ]),
+    {
+      id: "text-list-bullet",
+      label: "Bulleted list",
+      shortcut: `${MOD}${SHIFT}8`,
+      needsSelection: true,
+      keywords: "text list bullets",
+      run: () => void patchText(doc(), sel(), (n) => ({ textList: n.textList === "BULLET" ? "NONE" : "BULLET" }), fitText),
+    },
+    {
+      id: "text-list-number",
+      label: "Numbered list",
+      shortcut: `${MOD}${SHIFT}7`,
+      needsSelection: true,
+      keywords: "text list numbers",
+      run: () => void patchText(doc(), sel(), (n) => ({ textList: n.textList === "NUMBER" ? "NONE" : "NUMBER" }), fitText),
+    },
+    {
+      id: "text-link",
+      label: "Create link",
+      shortcut: `${MOD}${SHIFT}U`,
+      needsSelection: true,
+      keywords: "text url hyperlink",
+      run: () => {
+        const layers = textLayersIn(doc(), sel());
+        if (!layers.length) return state().showToast("Select a text layer to link");
+        const raw = window.prompt("Web address for this text (leave empty to remove the link)", layers[0]!.textLink ?? "https://");
+        if (raw === null) return;
+        const url = raw.trim();
+        if (url && !safeUrl(url)) return state().showToast("The link must start with http:// or https://");
+        void patchText(doc(), sel(), () => ({ textLink: url || null }), fitText);
+      },
+    },
     { id: "text-align-right", label: "Align text right", shortcut: `${MOD}${ALT}R`, needsSelection: true, keywords: "text alignment", run: () => void setTextAlign(doc(), sel(), "RIGHT", fitText) },
     { id: "wrap-section", label: "Wrap in new section", shortcut: `${MOD}S`, needsSelection: true, keywords: "section group canvas area", run: () => state().select(wrapInSection(doc(), sel())) },
     { id: "convert-section", label: "Convert to section", needsSelection: true, keywords: "frame section", run: () => void setSection(doc(), sel(), true) },
