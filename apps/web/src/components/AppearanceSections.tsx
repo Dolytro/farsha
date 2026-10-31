@@ -7,10 +7,10 @@ import { Select } from "./Select";
 const LINE_END_LABEL: Record<LineEnd, string> = { NONE: "none", ARROW_LINES: "line arrow", ARROW_FILLED: "triangle arrow", CIRCLE: "circle", SQUARE: "square", DIAMOND: "diamond" };
 
 const ALIGN_LABEL: Record<StrokeAlign, string> = { INSIDE: "Inside", CENTER: "Center", OUTSIDE: "Outside" };
-const EFFECT_LABEL: Record<Effect["type"], string> = { DROP_SHADOW: "Drop shadow", INNER_SHADOW: "Inner shadow", LAYER_BLUR: "Layer blur" };
+const EFFECT_LABEL: Record<Effect["type"], string> = { DROP_SHADOW: "Drop shadow", INNER_SHADOW: "Inner shadow", LAYER_BLUR: "Layer blur", BACKGROUND_BLUR: "Background blur" };
 
 const newEffect = (type: Effect["type"]): Effect =>
-  type === "LAYER_BLUR"
+  type === "LAYER_BLUR" || type === "BACKGROUND_BLUR"
     ? { type, radius: 4, visible: true }
     : { type, x: 0, y: 4, blur: 4, color: "#000000", opacity: 0.25, visible: true };
 
@@ -206,7 +206,7 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
               −
             </button>
           </div>
-          {e.type === "LAYER_BLUR" ? (
+          {e.type === "LAYER_BLUR" || e.type === "BACKGROUND_BLUR" ? (
             <div className="props__grid">{numField(i, "B", "radius", e.radius, 0)}</div>
           ) : (
             <>

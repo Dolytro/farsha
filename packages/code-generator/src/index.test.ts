@@ -222,3 +222,11 @@ describe("individual stroke sides", () => {
     expect(declarations(doc.getNode(id)!)).toContainEqual(["border-width", "1px 0px 2px 0px"]);
   });
 });
+
+describe("background blur", () => {
+  it("emits backdrop-filter", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 10, height: 10, effects: [{ type: "BACKGROUND_BLUR", radius: 8, visible: true }] } as never });
+    expect(declarations(doc.getNode(id)!)).toContainEqual(["backdrop-filter", "blur(8px)"]);
+  });
+});

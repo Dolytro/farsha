@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
 import { exportSvg } from "./svg-export";
-import { shapeMarkup } from "./appearance";
+import { backgroundBlurOf, effectsFilter, shapeMarkup } from "./appearance";
 
 const solid = (color: string, opacity = 1) => [{ type: "SOLID" as const, color, opacity }];
 
@@ -336,5 +336,18 @@ describe("individual stroke sides", () => {
   });
   it("falls back to the normal stroke without sides", () => {
     expect(shapeMarkup(rect({}))).toContain('stroke-width="2"');
+  });
+});
+
+describe("background blur", () => {
+  const node = (effects: unknown[]) => ({ id: "r", type: "RECTANGLE", x: 0, y: 0, width: 10, height: 10, effects }) as never;
+  it("is read separately from the layer filter", () => {
+    expect(backgroundBlurOf(node([{ type: "BACKGROUND_BLUR", radius: 12, visible: true }]))).toBe(12);
+    expect(backgroundBlurOf(node([{ type: "BACKGROUND_BLUR", radius: 12, visible: false }]))).toBe(0);
+    expect(backgroundBlurOf(node([{ type: "LAYER_BLUR", radius: 5, visible: true }]))).toBe(0);
+  });
+  it("does not add a filter by itself", () => {
+    expect(effectsFilter(node([{ type: "BACKGROUND_BLUR", radius: 12, visible: true }]))).toBeNull();
+    expect(effectsFilter(node([{ type: "BACKGROUND_BLUR", radius: 12, visible: true }, { type: "LAYER_BLUR", radius: 4, visible: true }]))!.markup).toContain("feGaussianBlur");
   });
 });

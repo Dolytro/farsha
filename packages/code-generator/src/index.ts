@@ -60,11 +60,13 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   if (blendMode) d.push(["mix-blend-mode", blendMode]);
 
   const fx = (node.effects ?? []).filter((e) => e.visible);
-  const shadows = fx.flatMap((e) => (e.type === "LAYER_BLUR" ? [] : [`${e.type === "INNER_SHADOW" ? "inset " : ""}${px(e.x)} ${px(e.y)} ${px(e.blur)} ${toRgba(e.color, e.opacity)}`]));
+  const shadows = fx.flatMap((e) => ("radius" in e ? [] : [`${e.type === "INNER_SHADOW" ? "inset " : ""}${px(e.x)} ${px(e.y)} ${px(e.blur)} ${toRgba(e.color, e.opacity)}`]));
   const blur = fx.find((e) => e.type === "LAYER_BLUR");
+  const backdrop = fx.find((e) => e.type === "BACKGROUND_BLUR");
   const effectDecls = (): void => {
     if (shadows.length) d.push(["box-shadow", shadows.join(", ")]);
     if (blur && blur.type === "LAYER_BLUR") d.push(["filter", `blur(${px(blur.radius)})`]);
+    if (backdrop && backdrop.type === "BACKGROUND_BLUR") d.push(["backdrop-filter", `blur(${px(backdrop.radius)})`]);
   };
 
   if (node.type === "TEXT") {
