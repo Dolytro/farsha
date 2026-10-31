@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { deleteVersion, listVersions, restoreVersion, saveVersion, type VersionEntry } from "../versions";
+import { DesignDoc } from "@canvylo/design-core";
+import { compareDocs, hasChanges, type DocChanges } from "../compare";
 import { useEditor } from "../store";
 
 /** Version history: name and save the current state, or restore an earlier one. Versions live in this browser. */
@@ -8,12 +10,16 @@ export function VersionHistory() {
   const setOpen = useEditor((s) => s.setVersionsOpen);
   const [versions, setVersions] = useState<VersionEntry[] | null>(null);
   const [name, setName] = useState("");
+  const [diff, setDiff] = useState<{ id: string; name: string; changes: DocChanges } | null>(null);
+  const doc = useEditor((s) => s.doc);
+  const select = useEditor((s) => s.select);
 
   const refresh = () => listVersions().then(setVersions, () => setVersions([]));
   useEffect(() => {
     if (!open) return;
     setName("");
     setVersions(null);
+    setDiff(null);
     void refresh();
   }, [open]);
   useEffect(() => {
@@ -62,6 +68,9 @@ export function VersionHistory() {
                 <span className="dialog__name">{v.name}</span>
                 <span className="dialog__meta">{new Date(v.savedAt).toLocaleString()}</span>
               </div>
+              <button className="seg__btn" title="What changed since this version" onClick={() => setDiff({ id: v.id, name: v.name, changes: compareDocs(DesignDoc.fromState(v.bytes), doc) })}>
+                Compare
+              </button>
               <button
                 className="seg__btn"
                 onClick={() =>
@@ -78,6 +87,32 @@ export function VersionHistory() {
             </li>
           ))}
         </ul>
+        {diff && (
+          <div className="dialog__diff" aria-label="Changes">
+            <strong>Changes since “{diff.name}”</strong>
+            {!hasChanges(diff.changes) && <p className="dialog__note">Nothing has changed.</p>}
+            <ul className="dialog__list">
+              {diff.changes.added.map((c) => (
+                <li key={`a-${c.id}`} className="dialog__row">
+                  <button className="dialog__link" onClick={() => doc.hasNode(c.id) && select([c.id])}>＋ {c.name}</button>
+                  <span className="dialog__meta">added</span>
+                </li>
+              ))}
+              {diff.changes.removed.map((c) => (
+                <li key={`r-${c.id}`} className="dialog__row">
+                  <span>− {c.name}</span>
+                  <span className="dialog__meta">removed</span>
+                </li>
+              ))}
+              {diff.changes.changed.map((c) => (
+                <li key={`c-${c.id}`} className="dialog__row">
+                  <button className="dialog__link" onClick={() => doc.hasNode(c.id) && select([c.id])}>± {c.name}</button>
+                  <span className="dialog__meta">{c.fields.join(", ")}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <p className="dialog__note">Versions are kept in this browser only (the newest 30).</p>
       </div>
     </div>
