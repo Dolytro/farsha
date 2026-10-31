@@ -83,6 +83,9 @@ interface EditorState {
   pixelGrid: boolean;
   /** View > Outlines: draw every layer as a thin wireframe. */
   outlines: boolean;
+  /** View menu switches: slices, mask outlines, frame outlines, annotations and pixel preview. */
+  view: { slices: boolean; maskOutlines: boolean; frameOutlines: boolean; annotations: boolean; pixelPreview: boolean };
+  toggleView: (key: "slices" | "maskOutlines" | "frameOutlines" | "annotations" | "pixelPreview") => void;
   setOutlines: (on: boolean) => void;
   prefs: Prefs;
   prefsOpen: boolean;
@@ -186,6 +189,7 @@ export const useEditor = create<EditorState>((set) => ({
   collapseTick: 0,
   pixelGrid: false,
   outlines: false,
+  view: { slices: true, maskOutlines: false, frameOutlines: false, annotations: false, pixelPreview: false },
   prefs: readPrefs(),
   prefsOpen: false,
   uiHidden: false,
@@ -242,6 +246,7 @@ export const useEditor = create<EditorState>((set) => ({
   collapseLayers: () => set((s) => ({ collapseTick: s.collapseTick + 1 })),
   setPixelGrid: (pixelGrid) => set({ pixelGrid }),
   setOutlines: (outlines) => set({ outlines }),
+  toggleView: (key) => set((st) => ({ view: { ...st.view, [key]: !st.view[key] } })),
   setPrefs: (patch) =>
     set((s) => {
       const prefs = { ...s.prefs, ...patch };

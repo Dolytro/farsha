@@ -1133,3 +1133,8 @@ textarea:focus-visible {
     padding: 0;
   }
 }
+
+// View > Pixel preview: crisp edges, as the design would render at 1x.
+.canvas__pixel :is(rect, path, ellipse, polygon, circle, line, polyline) {
+  shape-rendering: crispEdges;
+}
