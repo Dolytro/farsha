@@ -5,7 +5,7 @@ PC can continue exactly where this one stopped. It covers what Farsha is, how th
 how the code is organised, how to run and test it, how it is deployed, what was decided and why, what is
 done, and what to build next.
 
-Last updated: 2026-10-29 (end of the long autonomous session; see section 11 for exactly where it stopped). Repo: https://github.com/Tanjir-Hasan/canvylo (branch `main`).
+Last updated: 2026-10-29 (end of the long autonomous session; see section 11 for exactly where it stopped). Repo: https://github.com/Tanjir-Hasan/farsha (branch `main`).
 Live site: https://canvylo.vercel.app
 
 ---
@@ -69,7 +69,7 @@ Out of scope for now: plugins, FigJam/Slides, AI features, enterprise features, 
 
 | Thing | Details |
 |---|---|
-| GitHub | `Tanjir-Hasan/canvylo`, branch `main`. The `gh` CLI was logged in on the old PC. |
+| GitHub | `Tanjir-Hasan/farsha`, branch `main`. The `gh` CLI was logged in on the old PC. |
 | Vercel | Project `canvylo` in team `tanjirhasans-projects` (Hobby). **Root Directory = `apps/web`**, "include source files outside root" on, framework Vite. Auto-deploys on every push to `main`. `apps/web/vercel.json` rewrites all paths to `index.html` (needed for `/v/<fileId>` links). |
 | Google Cloud | Project id `canvylo`, owned by the owner's `dev.tanjir@gmail.com` account (not the other Gmail account). Drive API enabled. Google Auth Platform: External app "Farsha", **In production**, scope `drive.file` (non-sensitive, no verification needed), home page / privacy / terms links point to the live site. OAuth client "Web client 1" (authorised JS origins: `http://localhost:5173`, `http://localhost:5174`, `https://canvylo.vercel.app`). API key "Farsha Drive key": restricted to Drive API and to those three origins as HTTP referrers. |
 | Env vars | `VITE_GOOGLE_CLIENT_ID` and `VITE_GOOGLE_API_KEY`. Set in Vercel (Production) and in `apps/web/.env.local` locally. Both end up in the browser bundle, so neither is a secret, but the key stays out of git. Find the values in Google Cloud Console → APIs & Services → Credentials. |
@@ -85,7 +85,7 @@ referrers, then redeploy (Vite bakes env vars in at build time).
 Prerequisites: Node 22+, git, a modern Chromium browser. Install pnpm 12: `npm install -g pnpm`.
 
 ```bash
-git clone https://github.com/Tanjir-Hasan/canvylo.git
+git clone https://github.com/Tanjir-Hasan/farsha.git
 cd farsha
 git config --global user.name  "Tanjir Hasan"
 git config --global user.email "121637939+Tanjir-Hasan@users.noreply.github.com"   # GitHub no-reply address
@@ -456,4 +456,4 @@ attribution, never put secrets in git or web forms. Reply in Banglish.
 
 ## Rename to Farsha
 
-The product was renamed from Canvylo to Farsha (packages `@farsha/*`, file extension `.farsha`; `.canvylo` files still open). Browser storage (IndexedDB, localStorage keys) and Drive files made under the old name are carried over by `apps/web/src/legacy.ts`. Still named canvylo because they are outside the code: the repo name `Tanjir-Hasan/canvylo` and the address canvylo.vercel.app. Renaming the GitHub repo, Vercel project and local folder are owner steps.
+The product was renamed from Canvylo to Farsha (packages `@farsha/*`, file extension `.farsha`, GitHub repo `Tanjir-Hasan/farsha`). There is no migration of old data: the Google Cloud project is replaced by a new one, so the IDs in `apps/web/.env.local` and Vercel must be replaced too. Still named canvylo until the owner renames them: the Vercel project and its address canvylo.vercel.app.
