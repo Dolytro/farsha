@@ -498,6 +498,7 @@ export interface StylePatch extends AutoLayoutProps {
   devNote?: string | null;
   flowStart?: boolean | null;
   lockAspect?: boolean | null;
+  videoAssetId?: string | null;
   overflowScroll?: 'NONE' | 'VERTICAL' | null;
   booleanOp?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE' | null;
   opacity?: number;
