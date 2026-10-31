@@ -90,7 +90,7 @@ export function DevPanel() {
           {[...fills.map((p) => ["Fill", p] as const), ...strokes.map((p) => ["Stroke", p] as const)].map(([label, p], i) => (
             <div key={`${label}-${i}`} className="fill-row dev__color">
               <span className="fill-row__swatch dev__swatch" style={{ background: paintCss(p) }} />
-              <span className="fill-row__hex">{p.type === "SOLID" ? p.color.toUpperCase() : p.type === "GRADIENT_RADIAL" ? "Radial" : p.type === "IMAGE" ? "Image" : "Linear"}</span>
+              <span className="fill-row__hex">{p.type === "SOLID" ? p.color.toUpperCase() : p.type === "GRADIENT_RADIAL" ? "Radial" : p.type === "GRADIENT_ANGULAR" ? "Angular" : p.type === "GRADIENT_DIAMOND" ? "Diamond" : p.type === "IMAGE" ? "Image" : "Linear"}</span>
               <span className="fill-row__opacity">{label}</span>
             </div>
           ))}

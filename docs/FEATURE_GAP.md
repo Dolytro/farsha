@@ -271,7 +271,7 @@ Design panel
 - Auto layout: Grid flow, min / max width and height, Resize to fit, "Hug" / "Fill" as commands
 - ✅ (done above) Position section flip and rotate buttons
 - Colour picker: custom picker with eyedropper, RGB / HSL / HSB / CSS modes, "On this page" colours, fill blend mode
-- Fills: Pattern, angular and diamond gradients, tile / crop image modes, image adjustments (exposure, contrast, saturation...), gradient handles on the canvas
+- Fills: ✅ angular and diamond gradients (drawn as wedges; CSS uses conic-gradient and a radial stand-in). Still missing: Pattern, tile / crop image modes, image adjustments (exposure, contrast, saturation...), gradient handles on the canvas
 - Strokes: stroke styles, miter angle, variable width and brush strokes
 - Effects: Noise, Texture, Glass, effect styles, shadow "show behind"
 - Typography: ✅ paragraph spacing, indent, truncate text (max lines). ✅ font picker with search, ~70 Google Fonts (downloaded from fonts.googleapis.com only when a file uses one; PNG export may use a stand-in font) and installed fonts (Chromium asks permission). Still missing: vertical trim, text decoration style, OpenType features and variable font axes, rich text size / colour / font per range
