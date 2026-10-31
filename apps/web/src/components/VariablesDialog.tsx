@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useEditor } from "../store";
 import { HexInput } from "./HexInput";
+import { fitText } from "../text-layout";
 
 /** Colour variables and their modes: one row per variable, one column per mode (for example Light and Dark). */
 export function VariablesDialog() {
@@ -9,6 +10,7 @@ export function VariablesDialog() {
   const doc = useEditor((s) => s.doc);
   useEditor((s) => s.version);
   const [renamingMode, setRenamingMode] = useState<string | null>(null);
+  const [tab, setTab] = useState<"color" | "text">("color");
 
   useEffect(() => {
     if (!open) return;
@@ -25,11 +27,13 @@ export function VariablesDialog() {
   if (!open) return null;
   const modes = doc.modes();
   const active = doc.activeModeId();
-  const variables = doc.colorVariables();
+  const variables = tab === "color" ? doc.colorVariables() : doc.textVariables();
   const run = (fn: () => void) => {
     try {
       doc.stopCapturing();
       fn();
+      // bound text layers got new characters: fit their boxes
+      for (const n of doc.descendants(doc.rootId)) if (n.type === "TEXT" && n.textVariableId) fitText(doc, n.id);
       doc.stopCapturing();
     } catch (err) {
       useEditor.getState().showToast(err instanceof Error ? err.message : "Couldn't do that");
@@ -43,6 +47,14 @@ export function VariablesDialog() {
           <strong>Variables</strong>
           <button className="icon-btn" aria-label="Close" onClick={() => setOpen(false)}>
             ✕
+          </button>
+        </div>
+        <div className="seg" role="tablist" aria-label="Variable type">
+          <button className={`seg__btn${tab === "color" ? " seg__btn--active" : ""}`} role="tab" aria-selected={tab === "color"} onClick={() => setTab("color")}>
+            Color
+          </button>
+          <button className={`seg__btn${tab === "text" ? " seg__btn--active" : ""}`} role="tab" aria-selected={tab === "text"} onClick={() => setTab("text")}>
+            Text
           </button>
         </div>
         <div className="vars">
@@ -81,12 +93,27 @@ export function VariablesDialog() {
               +
             </button>
           </div>
-          {variables.length === 0 && <p className="dialog__note">No variables yet. Add one, then bind a fill or stroke to it with the ◆ button.</p>}
+          {variables.length === 0 && <p className="dialog__note">{tab === "color" ? "No variables yet. Add one, then bind a fill or stroke to it with the ◆ button." : "No text variables yet. Add one, then pick it in the Variable field of a text layer."}</p>}
           {variables.map((v) => (
             <div className="vars__row" key={v.id} style={{ gridTemplateColumns: `minmax(120px, 1.4fr) repeat(${modes.length}, minmax(110px, 1fr)) 24px` }}>
-              <input className="dialog__input" aria-label="Variable name" defaultValue={v.name} key={v.name} onBlur={(e) => e.currentTarget.value !== v.name && run(() => doc.updateColorVariable(v.id, { name: e.currentTarget.value }))} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
+              <input className="dialog__input" aria-label="Variable name" defaultValue={v.name} key={v.name} onBlur={(e) => e.currentTarget.value !== v.name && run(() => (tab === "color" ? doc.updateColorVariable(v.id, { name: e.currentTarget.value }) : doc.updateTextVariable(v.id, { name: e.currentTarget.value })))} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
               {modes.map((m) => {
-                const value = v.values[m.id] ?? "#000000";
+                const value = v.values[m.id] ?? (tab === "color" ? "#000000" : "");
+                if (tab === "text") {
+                  return (
+                    <input
+                      className="dialog__input"
+                      key={`${m.id}-${value}`}
+                      aria-label={`Text in ${m.name}`}
+                      defaultValue={value}
+                      onBlur={(e) => e.currentTarget.value !== value && run(() => doc.updateTextVariable(v.id, { modeId: m.id, text: e.currentTarget.value }))}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === "Enter") e.currentTarget.blur();
+                      }}
+                    />
+                  );
+                }
                 return (
                   <span className="fill-row" key={m.id}>
                     <input className="fill-row__swatch" type="color" value={value} onChange={(e) => run(() => doc.updateColorVariable(v.id, { modeId: m.id, color: e.target.value }))} />
@@ -100,8 +127,8 @@ export function VariablesDialog() {
             </div>
           ))}
         </div>
-        <button className="props__button" onClick={() => run(() => void doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9"))}>
-          + Add color variable
+        <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9") : doc.createTextVariable(`Text ${variables.length + 1}`, "Text")))}>
+          {tab === "color" ? "+ Add color variable" : "+ Add text variable"}
         </button>
         <p className="dialog__note">The highlighted mode is the one shown on the canvas. Layers bound to a variable follow it.</p>
       </div>

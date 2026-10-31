@@ -17,7 +17,7 @@ Live site: https://canvylo.vercel.app
 - No backend: the site is static (Vercel). Designs are saved to the signed-in user's **own Google Drive**
   (`.canvylo` files, Yjs update bytes). Public view links read the Drive file with an API key.
 - The owner wants it to feel **exactly like Figma** so long-time Figma users are not confused.
-- Everything is on `main`, typecheck and all tests pass (490 tests at the time of writing: web 225, design-core 115, canvas-engine 126, code-generator 24).
+- Everything is on `main`, typecheck and all tests pass (510 tests at the time of writing: web 245, design-core 122, canvas-engine 141, code-generator 24).
 - Next up: the open items listed in section 11 ("Done in the night run" > Still open) and `docs/FEATURE_GAP.md`.
 
 **To continue on a new PC:** clone, install, create `apps/web/.env.local`, run the dev server (section 5).

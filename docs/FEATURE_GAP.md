@@ -231,5 +231,5 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | 12 | Layout grid is confusing, make it easy like Figma | ✅ + adds a 10 px grid like Figma, each type explains itself, fields are spelled out (Count, Gutter, Margin, Size) |
 | 13 | Right sidebar UX | owner will do |
 | 14 | Double click a layer to jump to it on the canvas | ✅ double click the icon or the row (double click the name still renames) |
-| 15 | Text (string) variables | open |
+| 15 | Text (string) variables | ✅ Variables dialog has Color and Text tabs (a text per mode); a text layer follows one through the Variable field of the Typography section. Number and boolean variables are not built |
 | 16 | Some options are cut off, make panels scrollable | ✅ main menu lists and submenus scroll and stay on screen, the right-click menu scrolls |

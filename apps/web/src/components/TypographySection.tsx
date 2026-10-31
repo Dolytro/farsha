@@ -156,6 +156,28 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           <option value="RTL">Right to left</option>
         </Select>
       </div>
+      <Select
+        className="field__select field__select--wide"
+        aria-label="Text variable"
+        value={node.textVariableId ?? ""}
+        onChange={(e) => {
+          try {
+            doc.stopCapturing();
+            doc.bindTextVariable(node.id, e.target.value || null);
+            fitText(doc, node.id);
+            doc.stopCapturing();
+          } catch {
+            /* the variable was removed meanwhile */
+          }
+        }}
+      >
+        <option value="">No variable</option>
+        {doc.textVariables().map((v) => (
+          <option key={v.id} value={v.id}>
+            {v.name}
+          </option>
+        ))}
+      </Select>
       <label className="field" title="Web address this text links to (opens when presenting)">
         <span className="field__label">Link</span>
         <input className="field__input" type="url" aria-label="Text link" placeholder="https://" value={node.textLink ?? ""} onChange={(e) => set({ textLink: e.target.value || null })} />
