@@ -146,7 +146,8 @@ export function Canvas() {
   };
 
   const onPointerDown = (e: PointerEvent) => {
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    // capture on the canvas itself: the element under the pointer can be re-rendered (and removed) while a drag is going on
+    (svgRef.current ?? (e.target as Element)).setPointerCapture?.(e.pointerId);
     setEditing(null);
     const w = world(e);
     if (e.button === 1 || spaceDown || tool === "hand") {
