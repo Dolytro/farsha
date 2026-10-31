@@ -1,6 +1,7 @@
 import { alignSelection, distributeSelection, type AlignMode } from "./align";
 import { distributeEdges, packLayers, roundToPixel, tidyUp, type EdgeMode } from "./arrange-actions";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
+import { joinSelection, simplifySelection, smoothSelection } from "./vector-actions";
 import { booleanSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
@@ -248,6 +249,38 @@ export function buildCommands(): Command[] {
     },
     { id: "prototype-tab", label: "Open Prototype tab", keywords: "interactions links", run: () => state().setPrototypeMode(true) },
     { id: "layout-grids", label: "Show / hide layout grids", shortcut: `${SHIFT}G`, needsSelection: true, keywords: "columns rows guides", run: () => void (toggleLayoutGrids(doc(), sel()) || state().showToast("Select a frame with a layout grid")) },
+    {
+      id: "vector-simplify",
+      label: "Simplify",
+      needsSelection: true,
+      keywords: "vector points reduce path",
+      run: () => {
+        const out = simplifySelection(doc(), sel());
+        if (out.error) state().showToast(out.error);
+      },
+    },
+    {
+      id: "vector-smooth-join",
+      label: "Smooth join",
+      needsSelection: true,
+      keywords: "vector points curve round",
+      run: () => {
+        const out = smoothSelection(doc(), sel());
+        if (out.error) state().showToast(out.error);
+      },
+    },
+    {
+      id: "vector-join",
+      label: "Join",
+      shortcut: `${MOD}J`,
+      needsSelection: true,
+      keywords: "vector close merge path ends",
+      run: () => {
+        const out = joinSelection(doc(), sel());
+        if (out.error) state().showToast(out.error);
+        else state().select(out.ids);
+      },
+    },
     {
       id: "edit-points",
       label: "Edit points of the pen path",

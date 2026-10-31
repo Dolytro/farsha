@@ -198,7 +198,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Text | Rich text: different styles inside one text layer, Create link, Bulleted / Numbered list, Text direction, Spell check, Text on path | ❌ |
 | Arrange | Align left / centers / right / top / middle / bottom (Alt+A H D W V S) | ✅ |
 | Arrange | Round to pixel, Tidy up (Ctrl+Alt+Shift+T), Pack horizontal / vertical, Distribute spacing (Alt+Shift+H / V), Distribute left / centers / right / top / middle / bottom | ✅ (Pack closes all gaps; Tidy up finds rows from the positions) |
-| Vector | Join selection (Ctrl+J), Smooth join, Delete and heal, Split vector, Simplify vector, Offset vector | ❌ |
+| Vector | Join (Ctrl+J: closes one open path or merges two), Smooth join (all points of the selected paths), Simplify ✅; Delete and heal, Split vector, Offset vector ❌ (need point multi-selection on the canvas) | ◐ |
 | Preferences | Theme, Nudge amount, keep tool, snapping, zoom options | ✅ (Color profile, Keyboard layout, Accessibility, Permissions: ❌ / browser-bound) |
 | Toolbar | Move, Hand, Frame, Rectangle, Line, Arrow, Ellipse, Polygon, Star, Pen, Text | ✅ |
 | Toolbar | Section (Shift+S), Scale tool (K: drag a corner, the layer and its text, strokes, radii, shadows and auto layout spacing scale together) | ✅ |
