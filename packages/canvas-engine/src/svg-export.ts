@@ -96,10 +96,28 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       }
       return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(n.height)}" viewBox="${esc(n.viewBox)}" overflow="visible">${n.markup}</svg></g>`;
     case "RECTANGLE":
+      if (n.isSlice) return "";
       return `<g transform="${transform}"${opacity}>${shapeMarkup(n, imageHref(doc))}${kids}</g>`;
     default:
       return `<g transform="${transform}"${opacity}>${kids}</g>`;
   }
+}
+
+/** A slice exports whatever the page shows inside its box, cropped to it. */
+function exportSlice(doc: DesignDoc, slice: DesignNode, bounds: Box, clipIds: string[]): SvgExport {
+  let top: DesignNode | undefined = slice;
+  while (top && top.parentId && doc.getNode(top.parentId)?.type !== "PAGE") top = doc.getNode(top.parentId);
+  const pageId = top?.parentId;
+  const body = (pageId ? doc.children(pageId) : [])
+    .filter((n) => n.visible)
+    .map((n) => {
+      const abs = doc.absoluteBox(n.id);
+      return abs ? `<g transform="translate(${num(abs.x - bounds.x - n.x)} ${num(abs.y - bounds.y - n.y)})">${render(doc, n, clipIds)}</g>` : "";
+    })
+    .join("");
+  const w = num(bounds.width);
+  const h = num(bounds.height);
+  return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" fill="none">${body}</svg>`, width: bounds.width, height: bounds.height };
 }
 
 /**
@@ -115,6 +133,8 @@ export function exportSvg(doc: DesignDoc, ids: string[], opts: { measure?: Measu
   if (!bounds || bounds.width <= 0 || bounds.height <= 0) return null;
 
   const clipIds: string[] = [];
+  const slice = nodes.length === 1 && nodes[0]!.type === "RECTANGLE" && nodes[0]!.isSlice ? nodes[0]! : undefined;
+  if (slice) return exportSlice(doc, slice, bounds, clipIds);
   const body = nodes
     .map((n) => {
       const abs = doc.absoluteBox(n.id)!;

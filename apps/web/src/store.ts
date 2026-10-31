@@ -23,7 +23,7 @@ function readTheme(): ThemePreference {
   }
 }
 
-export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star" | "pen" | "pencil" | "section" | "scale" | "comment";
+export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star" | "pen" | "pencil" | "section" | "slice" | "scale" | "comment";
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "needs-auth";
 export type LoadState = "ready" | "loading" | "error";
 
