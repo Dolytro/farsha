@@ -18,7 +18,7 @@ import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
 import { startFrame } from "./prototype";
 import { saveVersion } from "./versions";
-import { selectMatching, selectChildren, selectInverse, selectParent } from "./selection-nav";
+import { selectMatching, selectChildren, selectInverse, selectParent, selectSameAs } from "./selection-nav";
 import { useEditor, type Tool } from "./store";
 
 export interface Command {
@@ -69,6 +69,17 @@ export function buildCommands(): Command[] {
     { id: "select-none", label: "Select none", shortcut: "Esc", run: () => state().select([]) },
     { id: "select-all", label: "Select all", shortcut: `${MOD}A`, run: () => state().select(selectAllIn(doc(), sel(), state().pageId)) },
     { id: "select-inverse", label: "Select inverse", shortcut: `${MOD}${SHIFT}A`, needsSelection: true, run: () => state().select(selectInverse(doc(), sel(), state().pageId)) },
+    ...(
+      [
+        ["type", "Select all with the same type"],
+        ["fill", "Select all with the same fill"],
+        ["stroke", "Select all with the same stroke"],
+        ["font", "Select all with the same font"],
+        ["effect", "Select all with the same effects"],
+        ["opacity", "Select all with the same opacity"],
+        ["name", "Select all with the same name"],
+      ] as const
+    ).map(([facet, label]): Command => ({ id: `select-same-${facet}`, label, needsSelection: true, keywords: "edit find match", run: () => state().select(selectSameAs(doc(), sel(), state().pageId, facet)) })),
     { id: "select-matching", label: "Select all matching properties", shortcut: `${MOD}${ALT}A`, needsSelection: true, keywords: "same fill color font", run: () => state().select(selectMatching(doc(), sel(), state().pageId)) },
     { id: "select-children", label: "Select children", shortcut: "Enter", needsSelection: true, run: () => state().select(selectChildren(doc(), sel())) },
     { id: "select-parent", label: "Select parent", shortcut: `${SHIFT}Enter`, needsSelection: true, run: () => state().select(selectParent(doc(), sel(), state().pageId)) },
