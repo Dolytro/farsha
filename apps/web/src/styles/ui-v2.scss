@@ -541,6 +541,11 @@ textarea:focus-visible {
     top: calc(100% + 6px);
     left: 0;
     z-index: 90;
+
+    > .mainmenu__list {
+      max-height: calc(100vh - 64px);
+      overflow-y: auto;
+    }
   }
 
   &__list {
@@ -555,10 +560,10 @@ textarea:focus-visible {
     box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
 
     &--sub {
-      position: absolute;
-      top: -6px;
-      left: calc(100% + 2px);
+      position: fixed;
+      z-index: 95;
       min-width: 244px;
+      overflow-y: auto;
     }
   }
 
@@ -967,4 +972,10 @@ textarea:focus-visible {
     flex: 1;
     min-width: 0;
   }
+}
+
+// A long right-click menu scrolls instead of running off the window.
+.ctxmenu {
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
 }
