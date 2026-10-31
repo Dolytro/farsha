@@ -356,6 +356,35 @@ export function buildCommands(): Command[] {
       },
     },
     {
+      id: "text-on-path",
+      label: "Attach text to path",
+      needsSelection: true,
+      keywords: "text curve along path follow",
+      run: () => {
+        const nodes = sel().map((id) => doc().getNode(id));
+        const text = nodes.find((n) => n?.type === "TEXT");
+        const path = nodes.find((n) => n?.type === "VECTOR" && n.penPoints);
+        if (!text || !path) return state().showToast("Select a text layer and a pen path in the same frame");
+        if (text.parentId !== path.parentId) return state().showToast("The text and the path must be in the same frame");
+        doc().stopCapturing();
+        doc().setText(text.id, { textPathId: path.id, textAutoResize: "WIDTH_AND_HEIGHT" });
+        doc().stopCapturing();
+      },
+    },
+    {
+      id: "text-off-path",
+      label: "Detach text from path",
+      needsSelection: true,
+      keywords: "text curve path remove",
+      run: () => {
+        const ids = sel().filter((id) => doc().getNode(id)?.type === "TEXT");
+        if (!ids.length) return state().showToast("Select a text layer on a path");
+        doc().stopCapturing();
+        for (const id of ids) doc().setText(id, { textPathId: null });
+        doc().stopCapturing();
+      },
+    },
+    {
       id: "vector-join",
       label: "Join",
       shortcut: `${MOD}J`,

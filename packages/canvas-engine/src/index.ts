@@ -13,6 +13,7 @@ export * from "./shapes";
 export * from "./transform";
 export * from "./pen";
 export * from "./pencil";
+export * from "./text-path";
 export * from "./pen-ops";
 export * from "./mask";
 export * from "./layout-grid";
