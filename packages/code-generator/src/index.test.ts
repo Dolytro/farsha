@@ -230,3 +230,11 @@ describe("background blur", () => {
     expect(declarations(doc.getNode(id)!)).toContainEqual(["backdrop-filter", "blur(8px)"]);
   });
 });
+
+describe("shadow spread", () => {
+  it("puts the spread after the blur in box-shadow", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 10, height: 10, effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, spread: 2, color: "#000000", opacity: 0.25, visible: true }] } as never });
+    expect(declarations(doc.getNode(id)!).find(([p]) => p === "box-shadow")![1]).toBe("0px 4px 8px 2px rgba(0, 0, 0, 0.25)");
+  });
+});

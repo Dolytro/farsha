@@ -81,6 +81,8 @@ export interface ShadowEffect {
   x: number;
   y: number;
   blur: number;
+  /** Grows (positive) or shrinks (negative) the shadow shape before it is blurred. Missing means 0. */
+  spread?: number;
   /** CSS hex colour */
   color: string;
   opacity: number;

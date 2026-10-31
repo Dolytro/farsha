@@ -174,7 +174,7 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
     const old = effects[i]!;
     set(effects.map((e, j) => (j === i ? { ...newEffect(type), visible: old.visible } : e)));
   };
-  const numField = (i: number, label: string, key: "x" | "y" | "blur" | "radius", value: number, min?: number) => (
+  const numField = (i: number, label: string, key: "x" | "y" | "blur" | "radius" | "spread", value: number, min?: number) => (
     <label className="field">
       <span className="field__label">{label}</span>
       <input className="field__input" type="number" min={min} value={value} onChange={(e) => Number.isFinite(Number(e.target.value)) && patch(i, { [key]: Number(e.target.value) })} />
@@ -214,6 +214,7 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
                 {numField(i, "X", "x", e.x)}
                 {numField(i, "Y", "y", e.y)}
                 {numField(i, "B", "blur", e.blur, 0)}
+                {numField(i, "S", "spread", e.spread ?? 0)}
               </div>
               <div className="fill-row">
                 <input className="fill-row__swatch" type="color" value={e.color} onChange={(ev) => patch(i, { color: ev.target.value })} />
