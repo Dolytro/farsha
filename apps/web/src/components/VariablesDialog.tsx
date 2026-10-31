@@ -1,3 +1,4 @@
+import { ColorSwatch } from "./ColorSwatch";
 import { useEffect, useState } from "react";
 import { useEditor } from "../store";
 import { HexInput } from "./HexInput";
@@ -146,7 +147,7 @@ export function VariablesDialog() {
                 }
                 return (
                   <span className="fill-row" key={m.id}>
-                    <input className="fill-row__swatch" type="color" value={value} onChange={(e) => run(() => doc.updateColorVariable(v.id, { modeId: m.id, color: e.target.value }))} />
+                    <ColorSwatch value={value} onChange={(color) => run(() => doc.updateColorVariable(v.id, { modeId: m.id, color }))} />
                     <HexInput value={value} onChange={(color) => run(() => doc.updateColorVariable(v.id, { modeId: m.id, color }))} />
                   </span>
                 );

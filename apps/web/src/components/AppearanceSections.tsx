@@ -1,3 +1,4 @@
+import { ColorSwatch } from "./ColorSwatch";
 import type { DesignDoc } from "@canvylo/design-core";
 import { paintColor, type DesignNode, type Effect, type LineEnd, type Paint, type StrokeAlign, type StrokeCap, type StrokeJoin } from "@canvylo/types";
 import { HexInput } from "./HexInput";
@@ -42,7 +43,7 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
             <div className="fill-row fill-row--gap">
               {!bound && (
                 <>
-                  <input className="fill-row__swatch" type="color" value={paintColor(stroke)} onChange={(e) => replace({ type: "SOLID", color: e.target.value, opacity: stroke.opacity })} />
+                  <ColorSwatch value={paintColor(stroke)} onChange={(color) => replace({ type: "SOLID", color, opacity: stroke.opacity })} />
                   <HexInput value={paintColor(stroke)} onChange={(color) => replace({ type: "SOLID", color, opacity: stroke.opacity })} />
                   {stroke.type === "SOLID" && <VariableButton doc={doc} onPick={(variableId) => doc.bindPaintVariable(node.id, "strokes", i, variableId)} />}
                 </>
@@ -217,7 +218,7 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
                 {numField(i, "S", "spread", e.spread ?? 0)}
               </div>
               <div className="fill-row">
-                <input className="fill-row__swatch" type="color" value={e.color} onChange={(ev) => patch(i, { color: ev.target.value })} />
+                <ColorSwatch value={e.color} onChange={(color) => patch(i, { color })} />
                 <HexInput value={e.color} onChange={(color) => patch(i, { color })} />
                 <input
                   className="fill-row__pct"

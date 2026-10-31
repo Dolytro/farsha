@@ -1,3 +1,4 @@
+import { ColorSwatch } from "./ColorSwatch";
 import type { DesignDoc } from "@canvylo/design-core";
 import type { DesignNode, LayoutGrid } from "@canvylo/types";
 import { HexInput } from "./HexInput";
@@ -76,7 +77,7 @@ export function LayoutGridSection({ doc, node }: { doc: DesignDoc; node: DesignN
               </>
             )}
             <div className="fill-row">
-              <input className="fill-row__swatch" type="color" value={/^#[0-9a-fA-F]{6}$/.test(g.color) ? g.color : "#ff0000"} onChange={(e) => patch(i, { color: e.target.value })} />
+              <ColorSwatch value={/^#[0-9a-fA-F]{6}$/.test(g.color) ? g.color : "#ff0000"} onChange={(color) => patch(i, { color })} />
               <HexInput value={g.color} onChange={(color) => patch(i, { color })} />
               <input
                 className="fill-row__pct"

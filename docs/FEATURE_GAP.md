@@ -270,7 +270,7 @@ Design panel
 - ✅ Frame size presets (Phone, Tablet, Desktop, Presentation, Watch, Paper) in the Layout section
 - Auto layout: Grid flow, min / max width and height, Resize to fit, "Hug" / "Fill" as commands
 - ✅ (done above) Position section flip and rotate buttons
-- Colour picker: custom picker with eyedropper, RGB / HSL / HSB / CSS modes, "On this page" colours, fill blend mode
+- Colour picker: ✅ custom picker (square, hue, eyedropper where the browser has it, HEX / RGB / HSL, "On this page" colours). Still missing: HSB / CSS modes, fill blend mode, library colours
 - Fills: ✅ angular and diamond gradients (drawn as wedges; CSS uses conic-gradient and a radial stand-in). Still missing: Pattern, tile / crop image modes, image adjustments (exposure, contrast, saturation...), gradient handles on the canvas
 - Strokes: stroke styles, miter angle, variable width and brush strokes
 - Effects: Noise, Texture, Glass, effect styles, shadow "show behind"
