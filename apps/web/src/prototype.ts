@@ -37,9 +37,13 @@ export function interactionsIn(doc: DesignDoc, frameId: string, triggers: Intera
     if (!n.visible) continue;
     const abs = doc.absoluteBox(n.id);
     if (!abs) continue;
+    const box = { x: abs.x - origin.x, y: abs.y - origin.y, width: abs.width, height: abs.height };
     for (const interaction of n.interactions ?? []) {
-      if (triggers.includes(interaction.trigger)) out.push({ id: n.id, box: { x: abs.x - origin.x, y: abs.y - origin.y, width: abs.width, height: abs.height }, interaction });
+      if (triggers.includes(interaction.trigger)) out.push({ id: n.id, box, interaction });
     }
+    // a text link behaves like an On click, Open link interaction
+    const link = n.type === "TEXT" ? n.textLink : undefined;
+    if (link && triggers.includes("ON_CLICK")) out.push({ id: n.id, box, interaction: { trigger: "ON_CLICK", action: { type: "OPEN_URL", url: link } } });
   }
   return out;
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
 import { exportSvg } from "./svg-export";
 import { backgroundBlurOf, effectsFilter, shapeMarkup } from "./appearance";
-import { applyTextList, layoutText, textPlacement } from "./text";
+import { applyTextList, layoutText, textFontStyle, textPlacement } from "./text";
 
 const solid = (color: string, opacity = 1) => [{ type: "SOLID" as const, color, opacity }];
 
@@ -392,5 +392,13 @@ describe("text lists and direction", () => {
     const svg = exportSvg(doc, [id])!.svg;
     expect(svg).toContain('direction="rtl"');
     expect(svg).toContain("• مرحبا");
+  });
+});
+
+describe("text links", () => {
+  it("underline linked text unless it has its own decoration", () => {
+    expect(textFontStyle({ textLink: "https://x.dev" })).toEqual({ textDecoration: "underline" });
+    expect(textFontStyle({ textLink: "https://x.dev", textDecoration: "STRIKETHROUGH" })).toEqual({ textDecoration: "line-through" });
+    expect(textFontStyle({})).toEqual({});
   });
 });
