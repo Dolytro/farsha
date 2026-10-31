@@ -291,6 +291,14 @@ export function nearestFrame(doc: DesignDoc, under: DesignNode | undefined): Des
   return undefined;
 }
 
+/** The viewport moved so that the layer is in the middle of the canvas, keeping the zoom. */
+export function panToLayer(doc: DesignDoc, id: string, v: Viewport): Viewport | undefined {
+  const box = doc.absoluteBox(id);
+  if (!box) return undefined;
+  const { w, h } = canvasSize();
+  return { ...v, x: w / 2 - (box.x + box.width / 2) * v.zoom, y: h / 2 - (box.y + box.height / 2) * v.zoom };
+}
+
 export function adjacentFrame(doc: DesignDoc, pageId: string, current: string | undefined, direction: 1 | -1): string | undefined {
   const place = (id: string) => doc.absoluteBox(id) ?? { x: 0, y: 0, width: 0, height: 0 };
   const frames = topLevelFrames(doc, pageId)

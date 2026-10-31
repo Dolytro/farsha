@@ -246,10 +246,10 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Flatten | Alt+Shift+F | ✅ same |
 | Outline stroke | Ctrl+Alt+O | ✅ same |
 | Union / Subtract / Intersect / Exclude selection | Alt+Shift+U / S / I / E | ✅ same |
-| Open layers / libraries / design / prototype panel | Alt+1 / 2 / 8 / 9 | Alt+1 layers, Alt+2 properties |
+| Open layers / libraries / design / prototype panel | Alt+1 / 2 / 8 / 9 | ✅ same |
 | Find next / previous | Ctrl+Shift+F / Ctrl+Shift+D | Enter / Shift+Enter inside Find |
-| Rename layer | Ctrl+R | double click only |
-| Find previous / next frame | Home / End | none |
+| Rename layer | Ctrl+R | ✅ same |
+| Find previous / next frame | Home / End | ✅ same |
 | Create link | Ctrl+Shift+U | field in the panel |
 | Bulleted / numbered list | Ctrl+Shift+8 / 7 | panel select |
 | Text align justified / top / middle / bottom | Ctrl+Alt+J, menu | no justified |
