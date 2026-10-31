@@ -17,7 +17,7 @@ Live site: https://canvylo.vercel.app
 - No backend: the site is static (Vercel). Designs are saved to the signed-in user's **own Google Drive**
   (`.canvylo` files, Yjs update bytes). Public view links read the Drive file with an API key.
 - The owner wants it to feel **exactly like Figma** so long-time Figma users are not confused.
-- Everything is on `main`, typecheck and all tests pass (510 tests at the time of writing: web 245, design-core 122, canvas-engine 141, code-generator 24).
+- Everything is on `main`, typecheck and all tests pass (538 tests at the time of writing: web 251, design-core 122, canvas-engine 141, code-generator 24).
 - Next up: the open items listed in section 11 ("Done in the night run" > Still open) and `docs/FEATURE_GAP.md`.
 
 **To continue on a new PC:** clone, install, create `apps/web/.env.local`, run the dev server (section 5).
@@ -385,6 +385,14 @@ Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows
   `boolean.ts` gained `flattenShapes` / `outlineStrokeShape`, `appearance.ts` gained `smoothedRectPath`, per-side strokes
   and `backgroundBlurOf`. `DesignDoc` gained `patchNodes`, comments and `pageBackground` / `setPageBackground` (per page,
   stored in the `meta` map).
+- **Owner's QA report** (Google Doc "canvylo Report.", answered one by one, table in docs/FEATURE_GAP.md section 11): connector arrows and a
+  Preview button for prototypes, a drag no longer dies when the layer under the pointer is re-rendered (pointer capture is on the
+  canvas svg, `Canvas.tsx`), comments close on an outside click, collapse-all-layers button, double click a layer to go to it,
+  PDF in the Export section (`exportAs` in `pdf-export.ts`), lock proportions (`lockAspect`), auto layout picks row / column from the
+  overlap of the boxes (`guessDirection`), layout grid defaults like Figma, long menus scroll (submenus are `position: fixed`),
+  text variables (`ColorVariable.kind = "STRING"`, `bindTextVariable`, `textVariableId`), the Actions palette grouped by category
+  (`command-categories.ts`), video layers (`videoAssetId` on a rectangle, `video.ts`, MP4 / WebM up to 25 MB, plays in the
+  prototype). Items 4 (needs the screenshot) and 13 (owner) are still open.
 - **Still open** (all listed in FEATURE_GAP.md): rich text sizes, colours and fonts per run (bold, italic, underline and strikethrough per run exist: `TextRun`, `lineSegments`), Slots,
   (the selected point of a path being edited lives in the store as `editingPoint`; Delete
   and heal and Split vector already use it), Home / End frame stepping, Switch to Draw, Paste to
