@@ -562,6 +562,11 @@ textarea:focus-visible {
     }
   }
 
+  // Submenus anchor to their own row, not to the whole list.
+  &__list > li {
+    position: relative;
+  }
+
   &__divider {
     margin-top: 6px;
     padding-top: 6px;

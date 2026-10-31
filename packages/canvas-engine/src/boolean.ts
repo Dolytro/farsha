@@ -97,6 +97,30 @@ function pageOutline(doc: DesignDoc, n: DesignNode): Ring | null {
   });
 }
 
+/** Layers that can be outlined inside the given one (groups and frames are searched), bottom to top. */
+function outlinable(doc: DesignDoc, id: string): DesignNode[] {
+  const n = doc.getNode(id);
+  if (!n) return [];
+  if (n.type === "GROUP" || n.type === "FRAME") return doc.children(id).flatMap((c) => outlinable(doc, c.id));
+  return localOutline(n) ? [n] : [];
+}
+
+/** Merge layers into one set of outlines without combining them (Figma's Flatten). Groups and frames contribute their shapes. */
+export function flattenShapes(doc: DesignDoc, ids: string[]): BooleanResult | null {
+  const rings = ids
+    .flatMap((id) => outlinable(doc, id))
+    .map((n) => pageOutline(doc, n))
+    .filter((ring): ring is Ring => !!ring && ring.length > 2);
+  if (!rings.length) return null;
+  const xs = rings.flatMap((ring) => ring.map((p) => p[0]));
+  const ys = rings.flatMap((ring) => ring.map((p) => p[1]));
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  const box = { x, y, width: Math.max(1, Math.max(...xs) - x), height: Math.max(1, Math.max(...ys) - y) };
+  const d = rings.map((ring) => `M${ring.map((p) => `${r2(p[0] - x)} ${r2(p[1] - y)}`).join(" L")} Z`).join(" ");
+  return { rings, box, d };
+}
+
 /** Combine layers (listed bottom to top) with a boolean operation. Returns null when a layer cannot be outlined or the result is empty. */
 export function booleanShapes(doc: DesignDoc, ids: string[], op: BooleanOp): BooleanResult | null {
   const shapes: Shape[] = [];

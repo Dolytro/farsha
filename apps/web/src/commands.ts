@@ -1,7 +1,7 @@
 import { alignSelection, distributeSelection, type AlignMode } from "./align";
 import { distributeEdges, packLayers, roundToPixel, tidyUp, type EdgeMode } from "./arrange-actions";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
-import { booleanSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { booleanSelection, flattenSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
@@ -97,6 +97,18 @@ export function buildCommands(): Command[] {
         },
       }),
     ),
+    {
+      id: "flatten",
+      label: "Flatten selection",
+      shortcut: `${MOD}E`,
+      needsSelection: true,
+      keywords: "vector merge outline convert",
+      run: () => {
+        const out = flattenSelection(doc(), sel());
+        if (out.error) state().showToast(out.error);
+        else state().select(out.ids);
+      },
+    },
     { id: "text-bold", label: "Bold", shortcut: `${MOD}B`, needsSelection: true, keywords: "text weight", run: () => void toggleTextStyle(doc(), sel(), "bold", fitText) },
     { id: "text-italic", label: "Italic", shortcut: `${MOD}I`, needsSelection: true, keywords: "text style", run: () => void toggleTextStyle(doc(), sel(), "italic", fitText) },
     { id: "text-underline", label: "Underline", shortcut: `${MOD}U`, needsSelection: true, keywords: "text decoration", run: () => void toggleTextStyle(doc(), sel(), "underline", fitText) },
