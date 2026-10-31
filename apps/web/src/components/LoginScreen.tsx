@@ -18,7 +18,7 @@ export function LoginScreen({ onSkip }: { onSkip?: () => void }) {
     <main className="login">
       <div className="login__card">
         <div className="login__logo" aria-hidden="true">
-          C
+          F
         </div>
         <h1 className="login__title">Farsha</h1>
         <p className="login__tagline">Design, inspect and share. Free and open source.</p>
