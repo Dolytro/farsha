@@ -1,6 +1,7 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import { exportSvg } from "@canvylo/canvas-engine";
 import { canvasMeasure } from "./text-layout";
+import { exportLayers, type ExportFormat } from "./exporting";
 import { isSection, topLevelFrames } from "./section-actions";
 
 export interface PdfPage {
@@ -44,7 +45,11 @@ export function pdfPages(doc: DesignDoc, ids: string[]): PdfPage[] {
 
 /** Open the browser's print dialog with one page per frame. Returns how many pages were prepared (0 when there is nothing to export). */
 export function exportFramesToPdf(doc: DesignDoc, pageId: string, selection: string[], title: string): number {
-  const pages = pdfPages(doc, framesToExport(doc, pageId, selection));
+  return openPrintWindow(title, pdfPages(doc, framesToExport(doc, pageId, selection)));
+}
+
+/** Show pages in a hidden frame and open the print dialog. Returns the number of pages (0 when there is nothing to print). */
+function openPrintWindow(title: string, pages: PdfPage[]): number {
   if (!pages.length) return 0;
   const frame = document.createElement("iframe");
   frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
@@ -61,4 +66,14 @@ export function exportFramesToPdf(doc: DesignDoc, pageId: string, selection: str
     setTimeout(cleanup, 60000);
   }, 200);
   return pages.length;
+}
+
+/** The formats the Export section offers: the image formats and PDF. */
+export type ExportChoice = ExportFormat | "PDF";
+
+/** Export layers in the chosen format. PDF opens the print dialog with one page per layer (choose "Save as PDF"). Returns how many files or pages were made. */
+export async function exportAs(doc: DesignDoc, ids: string[], format: ExportChoice, scale: number, title: string): Promise<number> {
+  if (format !== "PDF") return exportLayers(doc, ids, format, scale);
+  const pages = pdfPages(doc, ids.filter((id) => doc.getNode(id)?.type !== "PAGE" && doc.getNode(id)?.type !== "DOCUMENT"));
+  return openPrintWindow(title, pages);
 }
