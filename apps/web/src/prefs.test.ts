@@ -42,3 +42,10 @@ describe("ui presets", () => {
     expect(parsePrefs(JSON.stringify({ preset: 5 })).preset).toBe("canvylo");
   });
 });
+
+describe("canvas preferences", () => {
+  it("default to the Figma behaviour and read booleans only", () => {
+    expect(parsePrefs(null)).toMatchObject({ hoverHighlight: true, showDimensions: true, rightDragPan: false });
+    expect(parsePrefs(JSON.stringify({ hoverHighlight: false, showDimensions: "no", rightDragPan: true }))).toMatchObject({ hoverHighlight: false, showDimensions: true, rightDragPan: true });
+  });
+});

@@ -27,6 +27,12 @@ export interface Prefs {
   snapping: boolean;
   /** Underline misspelled words while typing in a text layer (the browser's spell checker). */
   spellCheck: boolean;
+  /** Outline the layer under the pointer. */
+  hoverHighlight: boolean;
+  /** Show the width x height pill under the selection. */
+  showDimensions: boolean;
+  /** Dragging with the right mouse button pans the canvas (the context menu then opens on a plain right click only). */
+  rightDragPan: boolean;
   /** Arrow key nudge, and Shift + arrow nudge, in pixels. */
   nudge: number;
   bigNudge: number;
@@ -34,7 +40,7 @@ export interface Prefs {
 
 export const PREFS_KEY = "canvylo.prefs";
 
-export const DEFAULT_PREFS: Prefs = { preset: "canvylo", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, nudge: 1, bigNudge: 10 };
+export const DEFAULT_PREFS: Prefs = { preset: "canvylo", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, nudge: 1, bigNudge: 10 };
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
 const amount = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 && v <= 1000 ? v : fallback);
@@ -55,6 +61,9 @@ export function parsePrefs(text: string | null | undefined): Prefs {
     wheelZoom: bool(raw.wheelZoom, DEFAULT_PREFS.wheelZoom),
     snapping: bool(raw.snapping, DEFAULT_PREFS.snapping),
     spellCheck: bool(raw.spellCheck, DEFAULT_PREFS.spellCheck),
+    hoverHighlight: bool(raw.hoverHighlight, DEFAULT_PREFS.hoverHighlight),
+    showDimensions: bool(raw.showDimensions, DEFAULT_PREFS.showDimensions),
+    rightDragPan: bool(raw.rightDragPan, DEFAULT_PREFS.rightDragPan),
     nudge: amount(raw.nudge, DEFAULT_PREFS.nudge),
     bigNudge: amount(raw.bigNudge, DEFAULT_PREFS.bigNudge),
   };
