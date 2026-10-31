@@ -273,7 +273,7 @@ Design panel
 - Colour picker: ✅ custom picker (square, hue, eyedropper where the browser has it, HEX / RGB / HSL, "On this page" colours). Still missing: HSB / CSS modes, fill blend mode, library colours
 - Fills: ✅ angular and diamond gradients (drawn as wedges; CSS uses conic-gradient and a radial stand-in). Still missing: Pattern, tile / crop image modes, image adjustments (exposure, contrast, saturation...), gradient handles on the canvas
 - Strokes: stroke styles, miter angle, variable width and brush strokes
-- Effects: Noise, Texture, Glass, effect styles, shadow "show behind"
+- Effects: ✅ Noise, Texture, Glass (a blurred, lightly tinted backdrop; canvas and CSS, not in SVG/PNG export). Still missing: effect styles, shadow "show behind"
 - Typography: ✅ paragraph spacing, indent, truncate text (max lines). ✅ font picker with search, ~70 Google Fonts (downloaded from fonts.googleapis.com only when a file uses one; PNG export may use a stand-in font) and installed fonts (Chromium asks permission). Still missing: vertical trim, text decoration style, OpenType features and variable font axes, rich text size / colour / font per range
 - Export: ✅ several export settings per layer (scale, suffix, format incl. WebP and PDF) saved with the layer. Still missing: "contents only"
 - Styles for grids and strokes

@@ -8,10 +8,16 @@ import { Select } from "./Select";
 const LINE_END_LABEL: Record<LineEnd, string> = { NONE: "none", ARROW_LINES: "line arrow", ARROW_FILLED: "triangle arrow", CIRCLE: "circle", SQUARE: "square", DIAMOND: "diamond" };
 
 const ALIGN_LABEL: Record<StrokeAlign, string> = { INSIDE: "Inside", CENTER: "Center", OUTSIDE: "Outside" };
-const EFFECT_LABEL: Record<Effect["type"], string> = { DROP_SHADOW: "Drop shadow", INNER_SHADOW: "Inner shadow", LAYER_BLUR: "Layer blur", BACKGROUND_BLUR: "Background blur" };
+const EFFECT_LABEL: Record<Effect["type"], string> = { DROP_SHADOW: "Drop shadow", INNER_SHADOW: "Inner shadow", LAYER_BLUR: "Layer blur", BACKGROUND_BLUR: "Background blur", NOISE: "Noise", TEXTURE: "Texture", GLASS: "Glass" };
 
 const newEffect = (type: Effect["type"]): Effect =>
-  type === "LAYER_BLUR" || type === "BACKGROUND_BLUR"
+  type === "NOISE"
+    ? { type, size: 2, density: 0.5, opacity: 0.25, visible: true }
+    : type === "TEXTURE"
+      ? { type, size: 4, density: 0.5, visible: true }
+      : type === "GLASS"
+        ? { type, radius: 12, light: 0.3, visible: true }
+        : type === "LAYER_BLUR" || type === "BACKGROUND_BLUR"
     ? { type, radius: 4, visible: true }
     : { type, x: 0, y: 4, blur: 4, color: "#000000", opacity: 0.25, visible: true };
 
@@ -175,10 +181,10 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
     const old = effects[i]!;
     set(effects.map((e, j) => (j === i ? { ...newEffect(type), visible: old.visible } : e)));
   };
-  const numField = (i: number, label: string, key: "x" | "y" | "blur" | "radius" | "spread", value: number, min?: number) => (
+  const numField = (i: number, label: string, key: "x" | "y" | "blur" | "radius" | "spread" | "size" | "density" | "light" | "opacity", value: number, min?: number) => (
     <label className="field">
       <span className="field__label">{label}</span>
-      <input className="field__input" type="number" min={min} value={value} onChange={(e) => Number.isFinite(Number(e.target.value)) && patch(i, { [key]: Number(e.target.value) })} />
+      <input className="field__input" type="number" min={min} value={value} onChange={(e) => Number.isFinite(Number(e.target.value)) && patch(i, { [key]: key === "density" || key === "light" || key === "opacity" ? Math.min(1, Math.max(0, Number(e.target.value) / 100)) : Number(e.target.value) })} />
     </label>
   );
 
@@ -209,6 +215,22 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
           </div>
           {e.type === "LAYER_BLUR" || e.type === "BACKGROUND_BLUR" ? (
             <div className="props__grid">{numField(i, "B", "radius", e.radius, 0)}</div>
+          ) : e.type === "GLASS" ? (
+            <div className="props__grid">
+              {numField(i, "B", "radius", e.radius, 0)}
+              {numField(i, "L", "light", Math.round(e.light * 100))}
+            </div>
+          ) : e.type === "NOISE" ? (
+            <div className="props__grid">
+              {numField(i, "Size", "size", e.size, 0.5)}
+              {numField(i, "Den", "density", Math.round(e.density * 100))}
+              {numField(i, "Op", "opacity", Math.round(e.opacity * 100))}
+            </div>
+          ) : e.type === "TEXTURE" ? (
+            <div className="props__grid">
+              {numField(i, "Size", "size", e.size, 0.5)}
+              {numField(i, "Den", "density", Math.round(e.density * 100))}
+            </div>
           ) : (
             <>
               <div className="props__grid">
