@@ -202,11 +202,20 @@ export type InteractionAction =
   | { type: 'BACK' }
   | { type: 'OPEN_URL'; url: string }
   /** Show a frame on top of the current one, centred, with a dimmed backdrop (Figma's Open overlay). */
-  | { type: 'OPEN_OVERLAY'; targetId: string }
-  | { type: 'CLOSE_OVERLAY' };
+  | { type: 'OPEN_OVERLAY'; targetId: string; /** Dim the frame behind (default true). */ dim?: boolean; /** A click outside closes it (default true). */ closeOnOutside?: boolean; position?: OverlayPosition }
+  /** Replace the open overlay by another frame (opens it when none is open). */
+  | { type: 'SWAP_OVERLAY'; targetId: string; dim?: boolean; closeOnOutside?: boolean; position?: OverlayPosition }
+  | { type: 'CLOSE_OVERLAY' }
+  /** Scroll the frame so that a layer comes into view. */
+  | { type: 'SCROLL_TO'; targetId: string };
+
+export type OverlayPosition = 'CENTER' | 'TOP' | 'BOTTOM';
 
 /** What starts an interaction in a prototype (Figma: On click, While hovering, On drag, After delay, Key / gamepad). */
-export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'ON_DRAG' | 'AFTER_DELAY' | 'ON_KEY';
+export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'ON_DRAG' | 'ON_MOUSE_ENTER' | 'ON_MOUSE_LEAVE' | 'ON_MOUSE_DOWN' | 'ON_MOUSE_UP' | 'AFTER_DELAY' | 'ON_KEY';
+
+/** How a transition speeds up and slows down. */
+export type Easing = 'LINEAR' | 'EASE_IN' | 'EASE_OUT' | 'EASE_IN_OUT' | 'SPRING';
 
 /** How the next frame appears. */
 export type TransitionType = 'INSTANT' | 'SMART_ANIMATE' | 'DISSOLVE' | 'SLIDE_IN_LEFT' | 'SLIDE_IN_RIGHT' | 'SLIDE_IN_TOP' | 'SLIDE_IN_BOTTOM';
@@ -219,7 +228,7 @@ export interface Interaction {
   key?: string;
   action: InteractionAction;
   /** Missing means an instant change. */
-  transition?: { type: TransitionType; durationMs: number };
+  transition?: { type: TransitionType; durationMs: number; easing?: Easing };
 }
 
 /** Figma's Dev Mode status of a layer. */
@@ -381,7 +390,7 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   /** A section: a named area of the canvas that holds frames and layers but is not itself a screen (Figma's Section tool). */
   isSection?: boolean;
   /** Prototype: a frame taller than the window scrolls vertically while presenting (Figma's Vertical scrolling). */
-  overflowScroll?: 'NONE' | 'VERTICAL';
+  overflowScroll?: 'NONE' | 'VERTICAL' | 'HORIZONTAL' | 'BOTH';
   /** True for a main component: its layers are mirrored by every instance. */
   isComponent?: boolean;
   /** Set on an instance: id of the main component it follows. */
@@ -551,7 +560,7 @@ export interface StylePatch extends AutoLayoutProps {
   exportSettings?: ExportSetting[] | null;
   varBindings?: Record<string, string> | null;
   videoAssetId?: string | null;
-  overflowScroll?: 'NONE' | 'VERTICAL' | null;
+  overflowScroll?: 'NONE' | 'VERTICAL' | 'HORIZONTAL' | 'BOTH' | null;
   booleanOp?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE' | null;
   opacity?: number;
   visible?: boolean;

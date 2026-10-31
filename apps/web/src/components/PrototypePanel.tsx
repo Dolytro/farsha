@@ -1,11 +1,15 @@
-import type { Interaction, InteractionAction, InteractionTrigger, TransitionType } from "@canvylo/types";
-import { prototypeFrames, startFrame } from "../prototype";
+import type { Easing, Interaction, InteractionAction, InteractionTrigger, OverlayPosition, TransitionType } from "@canvylo/types";
+import { prototypeFrames, startFrame, topFrameOf } from "../prototype";
 import { useEditor } from "../store";
 import { Select } from "./Select";
 
 const TRIGGERS: [InteractionTrigger, string][] = [
   ["ON_CLICK", "On click"],
   ["ON_HOVER", "While hovering"],
+  ["ON_MOUSE_ENTER", "Mouse enter"],
+  ["ON_MOUSE_LEAVE", "Mouse leave"],
+  ["ON_MOUSE_DOWN", "Mouse down"],
+  ["ON_MOUSE_UP", "Mouse up"],
   ["ON_DRAG", "On drag"],
   ["AFTER_DELAY", "After delay"],
   ["ON_KEY", "Key press"],
@@ -19,6 +23,20 @@ const TRANSITIONS: [TransitionType, string][] = [
   ["SLIDE_IN_RIGHT", "Slide in from right"],
   ["SLIDE_IN_TOP", "Slide in from top"],
   ["SLIDE_IN_BOTTOM", "Slide in from bottom"],
+];
+
+const EASINGS: [Easing, string][] = [
+  ["EASE_IN_OUT", "Ease in and out"],
+  ["EASE_IN", "Ease in"],
+  ["EASE_OUT", "Ease out"],
+  ["LINEAR", "Linear"],
+  ["SPRING", "Spring"],
+];
+
+const POSITIONS: [OverlayPosition, string][] = [
+  ["CENTER", "Centre"],
+  ["TOP", "Top"],
+  ["BOTTOM", "Bottom"],
 ];
 
 const KEYS: [string, string][] = [
@@ -71,10 +89,17 @@ export function PrototypePanel() {
             <input type="checkbox" aria-label="Flow starting point" checked={!!node.flowStart} onChange={(e) => doc.setStyle(node.id, { flowStart: e.target.checked ? true : null })} />
             Flow starting point
           </label>
-          <label className="props__check">
-            <input type="checkbox" aria-label="Vertical scrolling" checked={node.type === "FRAME" && node.overflowScroll === "VERTICAL"} onChange={(e) => doc.setStyle(node.id, { overflowScroll: e.target.checked ? "VERTICAL" : null })} />
-            Vertical scrolling
-          </label>
+          <Select
+            className="field__select field__select--wide"
+            aria-label="Scrolling"
+            value={node.type === "FRAME" ? (node.overflowScroll ?? "NONE") : "NONE"}
+            onChange={(e) => doc.setStyle(node.id, { overflowScroll: e.target.value === "NONE" ? null : (e.target.value as "VERTICAL") })}
+          >
+            <option value="NONE">No scrolling</option>
+            <option value="VERTICAL">Vertical scrolling</option>
+            <option value="HORIZONTAL">Horizontal scrolling</option>
+            <option value="BOTH">Both</option>
+          </Select>
         </section>
       )}
       {!node || node.type === "PAGE" ? (
@@ -132,25 +157,55 @@ export function PrototypePanel() {
                   className="field__select field__select--wide"
                   aria-label="Action"
                   value={it.action.type}
-                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" ? { type: "OPEN_OVERLAY", targetId: defaultTarget ?? "" } : navigate() })}
+                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" || e.target.value === "SWAP_OVERLAY" ? { type: e.target.value, targetId: defaultTarget ?? "" } : e.target.value === "SCROLL_TO" ? { type: "SCROLL_TO", targetId: node?.id ?? "" } : navigate() })}
                 >
                   <option value="NAVIGATE">Navigate to</option>
                   <option value="BACK">Back</option>
                   <option value="OPEN_OVERLAY">Open overlay</option>
+                  <option value="SWAP_OVERLAY">Swap overlay</option>
                   <option value="CLOSE_OVERLAY">Close overlay</option>
+                  <option value="SCROLL_TO">Scroll to</option>
                   <option value="OPEN_URL">Open link</option>
                 </Select>
-                {(it.action.type === "NAVIGATE" || it.action.type === "OPEN_OVERLAY") && (
+                {(it.action.type === "NAVIGATE" || it.action.type === "OPEN_OVERLAY" || it.action.type === "SWAP_OVERLAY") && (
                   <Select
                     className="field__select field__select--wide"
                     aria-label="Destination"
                     value={it.action.targetId}
-                    onChange={(e) => patch({ action: { type: it.action.type === "OPEN_OVERLAY" ? "OPEN_OVERLAY" : "NAVIGATE", targetId: e.target.value } })}
+                    onChange={(e) => patch({ action: { ...it.action, type: it.action.type === "OPEN_OVERLAY" || it.action.type === "SWAP_OVERLAY" ? it.action.type : "NAVIGATE", targetId: e.target.value } as InteractionAction })}
                   >
                     {!frames.some((f) => f.id === (it.action as { targetId: string }).targetId) && <option value={it.action.targetId}>Missing frame</option>}
                     {frames.map((f) => (
                       <option key={f.id} value={f.id}>
                         {f.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+                {(it.action.type === "OPEN_OVERLAY" || it.action.type === "SWAP_OVERLAY") && (
+                  <>
+                    <Select className="field__select field__select--wide" aria-label="Overlay position" value={it.action.position ?? "CENTER"} onChange={(e) => patch({ action: { ...it.action, position: e.target.value as OverlayPosition } as InteractionAction })}>
+                      {POSITIONS.map(([v, label]) => (
+                        <option key={v} value={v}>
+                          Position: {label}
+                        </option>
+                      ))}
+                    </Select>
+                    <label className="props__check">
+                      <input type="checkbox" aria-label="Close when clicking outside" checked={it.action.closeOnOutside !== false} onChange={(e) => patch({ action: { ...it.action, closeOnOutside: e.target.checked } as InteractionAction })} />
+                      Close when clicking outside
+                    </label>
+                    <label className="props__check">
+                      <input type="checkbox" aria-label="Dim the background" checked={it.action.dim !== false} onChange={(e) => patch({ action: { ...it.action, dim: e.target.checked } as InteractionAction })} />
+                      Dim the background
+                    </label>
+                  </>
+                )}
+                {it.action.type === "SCROLL_TO" && (
+                  <Select className="field__select field__select--wide" aria-label="Scroll to layer" value={it.action.targetId} onChange={(e) => patch({ action: { type: "SCROLL_TO", targetId: e.target.value } })}>
+                    {[node!, ...doc.descendants(topFrameOf(doc, node!.id)?.id ?? node!.id)].filter((n, i, a) => a.findIndex((m) => m.id === n.id) === i).map((n) => (
+                      <option key={n.id} value={n.id}>
+                        {n.name}
                       </option>
                     ))}
                   </Select>
@@ -175,6 +230,15 @@ export function PrototypePanel() {
                         </option>
                       ))}
                     </Select>
+                    {it.transition && it.transition.type !== "INSTANT" && (
+                      <Select className="field__select" aria-label="Easing" value={it.transition.easing ?? "EASE_IN_OUT"} onChange={(e) => patch({ transition: { ...it.transition!, easing: e.target.value as Easing } })}>
+                        {EASINGS.map(([v, label]) => (
+                          <option key={v} value={v}>
+                            {label}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
                     {it.transition && (
                       <label className="field" title="Duration in milliseconds">
                         <span className="field__label">ms</span>
