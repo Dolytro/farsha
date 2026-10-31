@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { EXPORT_SCALES, exportFileName, exportLayers, type ExportFormat } from "../exporting";
+import { EXPORT_SCALES, exportFileName } from "../exporting";
+import { exportAs, type ExportChoice } from "../pdf-export";
 import { topLevelFrames } from "../section-actions";
 import { useEditor } from "../store";
 import { Select } from "./Select";
@@ -11,7 +12,7 @@ export function ExportDialog() {
   const doc = useEditor((s) => s.doc);
   const selection = useEditor((s) => s.selection);
   const pageId = useEditor((s) => s.pageId);
-  const [format, setFormat] = useState<ExportFormat>("PNG");
+  const [format, setFormat] = useState<ExportChoice>("PNG");
   const [scale, setScale] = useState(1);
   const [busy, setBusy] = useState(false);
 
@@ -35,7 +36,7 @@ export function ExportDialog() {
     const { showToast } = useEditor.getState();
     setBusy(true);
     try {
-      const n = await exportLayers(doc, layers.map((l) => l.id), format, scale);
+      const n = await exportAs(doc, layers.map((l) => l.id), format, scale, doc.getNode(layers[0]?.id ?? "")?.name ?? "Canvylo");
       showToast(n ? `Exported ${n} ${n === 1 ? "file" : "files"}` : "Nothing to export");
       setOpen(false);
     } catch (err) {
@@ -56,23 +57,24 @@ export function ExportDialog() {
         </div>
         <p className="dialog__note">{selection.length ? "The selected layers" : "Every frame on this page"} ({layers.length}). One file per layer.</p>
         <div className="props__grid">
-          <Select className="field__select" aria-label="Export scale" value={scale} disabled={format === "SVG"} onChange={(e) => setScale(Number(e.target.value))}>
+          <Select className="field__select" aria-label="Export scale" value={scale} disabled={format === "SVG" || format === "PDF"} onChange={(e) => setScale(Number(e.target.value))}>
             {EXPORT_SCALES.map((s) => (
               <option key={s} value={s}>
                 {s}x
               </option>
             ))}
           </Select>
-          <Select className="field__select" aria-label="Export format" value={format} onChange={(e) => setFormat(e.target.value as ExportFormat)}>
+          <Select className="field__select" aria-label="Export format" value={format} onChange={(e) => setFormat(e.target.value as ExportChoice)}>
             <option value="PNG">PNG</option>
             <option value="JPG">JPG</option>
             <option value="SVG">SVG</option>
+            <option value="PDF">PDF</option>
           </Select>
         </div>
         <ul className="dialog__list">
           {layers.slice(0, 12).map((l) => (
             <li className="dialog__row" key={l.id}>
-              <span className="dialog__name">{exportFileName(l.name, format, scale)}</span>
+              <span className="dialog__name">{format === "PDF" ? `${l.name}.pdf` : exportFileName(l.name, format, scale)}</span>
             </li>
           ))}
           {layers.length > 12 && <li className="dialog__note">…and {layers.length - 12} more</li>}

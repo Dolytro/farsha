@@ -222,7 +222,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | 3 | Add video | open |
 | 4 | "UX of this part" (picture only) | needs the owner's screenshot |
 | 5 | Auto layout over two frames ignores the spacing between them | open |
-| 6 | PDF download | open (Export frames to PDF exists in File; add PDF to the Export section) |
+| 6 | PDF download | ✅ PDF is a format in the Export section and the Export dialog (print dialog, "Save as PDF") |
 | 7 | Prototype did not seem to work | connector arrows on the canvas in the Prototype tab, a Preview button in the toolbar ✅ |
 | 8 | Collapse all layers in the sidebar | ✅ button beside the layer search (Alt+L) |
 | 9 | Clicking outside an open comment reply does not close it | ✅ |
