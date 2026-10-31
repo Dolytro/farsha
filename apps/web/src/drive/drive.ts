@@ -1,5 +1,4 @@
 import { API_KEY } from "./google";
-import { OLD_DRIVE_MARK } from "../legacy";
 
 const API = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
@@ -89,7 +88,7 @@ export async function renameFile(token: string, id: string, name: string): Promi
 }
 
 export async function listFiles(token: string): Promise<DriveFile[]> {
-  const q = encodeURIComponent("(appProperties has { key='farsha' and value='1' } or appProperties has { key='"+OLD_DRIVE_MARK+"' and value='1' }) and trashed=false");
+  const q = encodeURIComponent("appProperties has { key='farsha' and value='1' } and trashed=false");
   const res = await check(
     await fetch(`${API}/files?q=${q}&orderBy=modifiedTime desc&pageSize=50&fields=files(id,name,modifiedTime)`, { headers: auth(token) }),
   );

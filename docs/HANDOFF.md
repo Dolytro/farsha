@@ -456,4 +456,4 @@ attribution, never put secrets in git or web forms. Reply in Banglish.
 
 ## Rename to Farsha
 
-The product was renamed from Canvylo to Farsha (packages `@farsha/*`, file extension `.farsha`, GitHub repo `Dolytro/farsha`). Browser storage (IndexedDB, localStorage keys) and Drive files made under the old name are carried over by `apps/web/src/legacy.ts`; `.canvylo` files still open. Still named canvylo until the owner renames them: the Vercel project and its address canvylo.vercel.app.
+The product was renamed from Canvylo to Farsha (packages `@farsha/*`, file extension `.farsha`, GitHub repo `Dolytro/farsha`). There is no migration of data saved under the old name (nobody used it); an earlier version of the code with the migration is commit 24bdde4. The Google Cloud project is to be replaced by a new one, so the IDs in `apps/web/.env.local` and Vercel must be replaced too. Still named canvylo until the owner renames them: the Vercel project and canvylo.vercel.app.
