@@ -4,6 +4,7 @@ import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMa
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
+import { textPathData } from "./text-path";
 import { approxMeasure, layoutText, lineSegments, textPlacement, textFontStyle, verticalTextOffset, type Measure } from "./text";
 
 export interface SvgExport {
@@ -85,6 +86,13 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
           }),
         )
         .join("");
+      const pathD = textPathData(doc, n);
+      if (pathD) {
+        // text on a path: one line of characters that follows the curve, starting where the alignment says
+        const pid = `tp-${n.id.replace(/[^A-Za-z0-9_-]/g, "_")}`;
+        const offset = n.textAlign === "CENTER" ? ' startOffset="50%" text-anchor="middle"' : n.textAlign === "RIGHT" ? ' startOffset="100%" text-anchor="end"' : "";
+        return `<g transform="${transform}"${opacity}><defs><path id="${pid}" d="${pathD}" fill="none"/></defs><text${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs} xml:space="preserve"><textPath href="#${pid}"${offset}>${esc(lines.join(" "))}</textPath></text></g>`;
+      }
       return `<g transform="${transform}"${opacity}><text x="${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs} xml:space="preserve">${spans}</text></g>`;
     }
     case "FRAME": {

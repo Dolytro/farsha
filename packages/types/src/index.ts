@@ -420,6 +420,8 @@ export interface TextNode extends BaseNode {
   textLink?: string;
   /** Rich text: styles of parts of the characters, on top of the layer's own style. */
   runs?: TextRun[];
+  /** The pen path (a sibling vector) the text runs along (Figma's Text on path). */
+  textPathId?: string;
   /** Where the text sits inside a box taller than the text. Missing means top. */
   textVerticalAlign?: TextVerticalAlign;
   fills: Paint[];
@@ -515,6 +517,7 @@ export interface TextPatch {
   textDirection?: TextDirection;
   textLink?: string | null;
   runs?: TextRun[] | null;
+  textPathId?: string | null;
   textVerticalAlign?: TextVerticalAlign;
 }
 

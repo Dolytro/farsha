@@ -10,7 +10,7 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, textPathData, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -444,6 +444,23 @@ export function Canvas() {
     }
     if (n.type === "TEXT") {
       if (editing === n.id) return <g key={n.id} transform={transform} />;
+      const pathD = textPathData(doc, n);
+      if (pathD) {
+        const pid = `tp-${n.id.replace(/[^A-Za-z0-9_-]/g, "_")}`;
+        return (
+          <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
+            {fxDefs(n)}
+            <defs>
+              <path id={pid} d={pathD} fill="none" />
+            </defs>
+            <text letterSpacing={n.letterSpacing || undefined} fill={color} fontFamily={n.fontFamily} fontSize={n.fontSize} fontWeight={n.fontWeight} {...textFontStyle(n)} textAnchor={n.textAlign === "CENTER" ? "middle" : n.textAlign === "RIGHT" ? "end" : undefined}>
+              <textPath href={`#${pid}`} startOffset={n.textAlign === "CENTER" ? "50%" : n.textAlign === "RIGHT" ? "100%" : undefined}>
+                {layoutText(n, canvasMeasure).lines.join(" ")}
+              </textPath>
+            </text>
+          </g>
+        );
+      }
       return (
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}

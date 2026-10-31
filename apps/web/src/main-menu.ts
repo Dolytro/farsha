@@ -141,6 +141,8 @@ export function buildMainMenu(): MenuNode[] {
     {
       label: "Text",
       children: list(
+        item("text-on-path"),
+        item("text-off-path"),
         item("text-bold"),
         item("text-italic"),
         item("text-underline"),
