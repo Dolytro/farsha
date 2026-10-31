@@ -175,7 +175,7 @@ export type InteractionAction =
 export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'ON_DRAG' | 'AFTER_DELAY' | 'ON_KEY';
 
 /** How the next frame appears. */
-export type TransitionType = 'INSTANT' | 'DISSOLVE' | 'SLIDE_IN_LEFT' | 'SLIDE_IN_RIGHT' | 'SLIDE_IN_TOP' | 'SLIDE_IN_BOTTOM';
+export type TransitionType = 'INSTANT' | 'SMART_ANIMATE' | 'DISSOLVE' | 'SLIDE_IN_LEFT' | 'SLIDE_IN_RIGHT' | 'SLIDE_IN_TOP' | 'SLIDE_IN_BOTTOM';
 
 export interface Interaction {
   trigger: InteractionTrigger;

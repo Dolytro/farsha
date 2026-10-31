@@ -91,7 +91,7 @@ export function overlayTarget(doc: DesignDoc, current: string, interaction: Inte
 
 /** CSS keyframes name and duration for a transition (null for an instant change). */
 export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number } | null {
-  if (!t || t.type === "INSTANT") return null;
+  if (!t || t.type === "INSTANT" || t.type === "SMART_ANIMATE") return null;
   const name = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" }[t.type];
   return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)) };
 }
