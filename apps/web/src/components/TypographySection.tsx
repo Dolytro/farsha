@@ -4,6 +4,7 @@ import { useState } from "react";
 import { fitText } from "../text-layout";
 import { TextStyleMenu, TextStylePill } from "./TextStyleMenu";
 import { Select } from "./Select";
+import { FontPicker } from "./FontPicker";
 
 export const FONTS: { label: string; stack: string }[] = [
   { label: "Inter", stack: "Inter, system-ui, sans-serif" },
@@ -51,14 +52,7 @@ function FontControls({ value: node, onChange: set }: { value: FontValue; onChan
   const weightKnown = WEIGHTS.some(([w]) => w === node.fontWeight);
   return (
     <>
-      <Select className="field__select field__select--wide" value={known?.stack ?? node.fontFamily} onChange={(e) => set({ fontFamily: e.target.value })}>
-        {!known && <option value={node.fontFamily}>{firstFamily(node.fontFamily)}</option>}
-        {FONTS.map((f) => (
-          <option key={f.label} value={f.stack}>
-            {f.label}
-          </option>
-        ))}
-      </Select>
+      <FontPicker value={node.fontFamily} onPick={(fontFamily) => set({ fontFamily })} />
       <div className="props__grid props__grid--gap">
         <Select className="field__select" value={node.fontWeight} onChange={(e) => set({ fontWeight: Number(e.target.value) })}>
           {!weightKnown && <option value={node.fontWeight}>{node.fontWeight}</option>}
