@@ -214,3 +214,11 @@ describe("absolute children of auto layout in CSS", () => {
     expect(css).toContain("top: 9px");
   });
 });
+
+describe("individual stroke sides", () => {
+  it("emits border-width per side", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 10, height: 10, strokes: [{ type: "SOLID", color: "#000000", opacity: 1 }], strokeWidth: 1, strokeSides: [1, 0, 2, 0] } as never });
+    expect(declarations(doc.getNode(id)!)).toContainEqual(["border-width", "1px 0px 2px 0px"]);
+  });
+});

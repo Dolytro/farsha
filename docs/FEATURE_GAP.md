@@ -208,7 +208,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | ✅ (opacity keys, Alt+drag copies the selection in one undo step) |
 | Design panel | Page background colour, Selection colors ✅; Styles on a page, Export on a page ❌ | ◐ |
 | Design panel | Stroke dash and gap, caps, joins; arrowheads (line arrow, triangle, circle, square, diamond) on the start and end of a vector / line | ✅ |
-| Design panel | Corner smoothing ✅; per-side stroke weights, background blur ❌ | ◐ |
+| Design panel | Corner smoothing, per-side stroke weights (rectangles and frames, drawn inside the shape; CSS border-width) ✅; background blur ❌ | ◐ |
 | Prototype | Hover / drag / key triggers, overlays, scroll, transitions, flow starting points, device frames | ❌ |
 | Dev Mode | Ready-for-dev status, annotations, compare changes, variables in code | ❌ |
 | Collaboration | Live cursors, comment notifications and @mentions, branching, team libraries | ❌ needs a backend |
