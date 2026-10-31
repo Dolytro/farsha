@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { followInteraction, hotspotsIn, interactionsIn, safeUrl, timedAndKeyIn, transitionAnimation } from "./prototype";
+import { followInteraction, hotspotsIn, interactionsIn, safeUrl, startFrame, timedAndKeyIn, transitionAnimation } from "./prototype";
 
 function setup() {
   const doc = new DesignDoc();
@@ -43,5 +43,17 @@ describe("prototype triggers", () => {
     expect(transitionAnimation({ type: "INSTANT", durationMs: 300 })).toBeNull();
     expect(transitionAnimation({ type: "DISSOLVE", durationMs: 99999 })).toEqual({ name: "presenter-dissolve", durationMs: 5000 });
     expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 1 })).toEqual({ name: "presenter-slide-left", durationMs: 50 });
+  });
+});
+
+describe("flow starting point", () => {
+  it("is where Present starts when nothing is selected, but the selected frame wins", () => {
+    const { doc, home, detail } = setup();
+    expect(startFrame(doc, [])).toBe(home);
+    doc.setStyle(detail, { flowStart: true });
+    expect(startFrame(doc, [])).toBe(detail);
+    expect(startFrame(doc, [home])).toBe(home);
+    doc.setStyle(detail, { flowStart: null });
+    expect(startFrame(doc, [])).toBe(home);
   });
 });

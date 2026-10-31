@@ -56,6 +56,14 @@ export function PrototypePanel() {
           ▶ Present
         </button>
       </section>
+      {node && frames.some((f) => f.id === node.id) && (
+        <section className="props__section">
+          <label className="props__check">
+            <input type="checkbox" aria-label="Flow starting point" checked={!!node.flowStart} onChange={(e) => doc.setStyle(node.id, { flowStart: e.target.checked ? true : null })} />
+            Flow starting point
+          </label>
+        </section>
+      )}
       {!node || node.type === "PAGE" ? (
         <p className="props__empty">Select a layer to link it to a frame.</p>
       ) : (
