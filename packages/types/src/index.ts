@@ -160,12 +160,24 @@ export interface TextStyle {
 /** The text properties a text style controls. */
 export const TEXT_STYLE_KEYS = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing'] as const;
 
-/** What happens when someone clicks a layer in a prototype: go to a frame, or back to the previous one. */
-export type InteractionAction = { type: 'NAVIGATE'; targetId: string } | { type: 'BACK' };
+/** What an interaction does: go to a frame, back to the previous one, or open a web address. */
+export type InteractionAction = { type: 'NAVIGATE'; targetId: string } | { type: 'BACK' } | { type: 'OPEN_URL'; url: string };
+
+/** What starts an interaction in a prototype (Figma: On click, While hovering, After delay, Key / gamepad). */
+export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'AFTER_DELAY' | 'ON_KEY';
+
+/** How the next frame appears. */
+export type TransitionType = 'INSTANT' | 'DISSOLVE' | 'SLIDE_IN_LEFT' | 'SLIDE_IN_RIGHT' | 'SLIDE_IN_TOP' | 'SLIDE_IN_BOTTOM';
 
 export interface Interaction {
-  trigger: 'ON_CLICK';
+  trigger: InteractionTrigger;
+  /** AFTER_DELAY: milliseconds after the frame appears. */
+  delayMs?: number;
+  /** ON_KEY: the key, as KeyboardEvent.key (for example "ArrowRight", "Enter", "a"). */
+  key?: string;
   action: InteractionAction;
+  /** Missing means an instant change. */
+  transition?: { type: TransitionType; durationMs: number };
 }
 
 /** Figma's Dev Mode status of a layer. */

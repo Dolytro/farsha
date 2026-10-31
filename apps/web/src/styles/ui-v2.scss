@@ -836,3 +836,25 @@ textarea:focus-visible {
 .editor--no-left.editor--no-right {
   grid-template-columns: 1fr;
 }
+
+// Prototype transitions.
+@keyframes presenter-dissolve {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes presenter-slide-left {
+  from { transform: translateX(-100%); opacity: 0.4; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes presenter-slide-right {
+  from { transform: translateX(100%); opacity: 0.4; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes presenter-slide-top {
+  from { transform: translateY(-100%); opacity: 0.4; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes presenter-slide-bottom {
+  from { transform: translateY(100%); opacity: 0.4; }
+  to { transform: none; opacity: 1; }
+}
