@@ -4,7 +4,7 @@ import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
 import { extractDefaults, saveDefaults } from "./defaults";
 import { exportFramesToPdf } from "./pdf-export";
 import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, splitVectorAt } from "./vector-actions";
-import { booleanSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
@@ -340,6 +340,19 @@ export function buildCommands(): Command[] {
         if (!ids) return state().showToast("Pick a point inside an open path, or any point of a closed one");
         state().setEditingPath(null);
         state().select(ids);
+      },
+    },
+    {
+      id: "vector-offset",
+      label: "Offset vector…",
+      needsSelection: true,
+      keywords: "vector grow shrink expand contract path",
+      run: () => {
+        const raw = window.prompt("Offset distance in pixels (negative shrinks the shape)", "8");
+        if (raw === null) return;
+        const out = offsetSelection(doc(), sel(), Number(raw));
+        if (out.error) state().showToast(out.error);
+        else state().select(out.ids);
       },
     },
     {

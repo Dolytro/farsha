@@ -198,7 +198,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Text | Bulleted / Numbered list and Left to right / Right to left direction (whole layer; list markers are drawn without a hanging indent, CSS export has direction but no list markup) ✅; Link (whole text, underlined, opens when presenting) ✅; Rich text: different styles inside one text layer, Spell check, Text on path ❌ | ◐ |
 | Arrange | Align left / centers / right / top / middle / bottom (Alt+A H D W V S) | ✅ |
 | Arrange | Round to pixel, Tidy up (Ctrl+Alt+Shift+T), Pack horizontal / vertical, Distribute spacing (Alt+Shift+H / V), Distribute left / centers / right / top / middle / bottom | ✅ (Pack closes all gaps; Tidy up finds rows from the positions) |
-| Vector | Join (Ctrl+J: closes one open path or merges two), Smooth join (all points of the selected paths), Simplify, Delete and heal and Split vector (act on the point selected while editing a path; Enter edits) ✅; Offset vector ❌ | ◐ |
+| Vector | Join (Ctrl+J: closes one open path or merges two), Smooth join (all points of the selected paths), Simplify, Delete and heal and Split vector (act on the point selected while editing a path; Enter edits); Offset vector… (grow or shrink a closed shape by a distance, corners rounded) ✅ | ✅ |
 | Preferences | Theme, Nudge amount, keep tool, snapping, zoom options | ✅ (Color profile, Keyboard layout, Accessibility, Permissions: ❌ / browser-bound) |
 | Toolbar | Move, Hand, Frame, Rectangle, Line, Arrow, Ellipse, Polygon, Star, Pen, Text | ✅ |
 | Toolbar | Section (Shift+S), Scale tool (K: drag a corner, the layer and its text, strokes, radii, shadows and auto layout spacing scale together) | ✅ |
