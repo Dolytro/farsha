@@ -115,8 +115,10 @@ export function Properties() {
                 value={doc.pageBackground(pageId) ?? "#e5e5e5"}
                 onChange={(e) => doc.setPageBackground(pageId, e.target.value)}
               />
-              <span>Background</span>
-              <button className="props__button" onClick={() => doc.setPageBackground(pageId, undefined)}>Reset</button>
+              <span className="fill-row__hex">{(doc.pageBackground(pageId) ?? "#e5e5e5").slice(1).toUpperCase()}</span>
+              <button className="props__add" title="Reset page background" aria-label="Reset page background" onClick={() => doc.setPageBackground(pageId, undefined)}>
+                ↺
+              </button>
             </div>
           </section>
         )}

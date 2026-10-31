@@ -81,6 +81,9 @@ interface EditorState {
   /** Bumped by "Collapse layers"; the Layers panel collapses every container when it changes. */
   collapseTick: number;
   pixelGrid: boolean;
+  /** View > Outlines: draw every layer as a thin wireframe. */
+  outlines: boolean;
+  setOutlines: (on: boolean) => void;
   prefs: Prefs;
   prefsOpen: boolean;
   /** Figma's "Minimize UI": the side panels and toolbar are hidden so the canvas fills the window. */
@@ -168,6 +171,7 @@ export const useEditor = create<EditorState>((set) => ({
   exportOpen: false,
   collapseTick: 0,
   pixelGrid: false,
+  outlines: false,
   prefs: readPrefs(),
   prefsOpen: false,
   uiHidden: false,
@@ -217,6 +221,7 @@ export const useEditor = create<EditorState>((set) => ({
   setExportOpen: (exportOpen) => set({ exportOpen }),
   collapseLayers: () => set((s) => ({ collapseTick: s.collapseTick + 1 })),
   setPixelGrid: (pixelGrid) => set({ pixelGrid }),
+  setOutlines: (outlines) => set({ outlines }),
   setPrefs: (patch) =>
     set((s) => {
       const prefs = { ...s.prefs, ...patch };
