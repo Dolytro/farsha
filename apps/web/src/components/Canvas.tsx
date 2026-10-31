@@ -15,6 +15,7 @@ import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
 import { canvasMeasure, fitText } from "../text-layout";
+import { loadDefaults, withDefaults } from "../defaults";
 
 
 type Drag =
@@ -236,7 +237,7 @@ export function Canvas() {
     doc.stopCapturing();
     const id = doc.createNode(type, {
       parentId: parentFrame?.id ?? pageId,
-      props: {
+      props: withDefaults(type, {
         name: NAMES[tool],
         x: w.x - pb.x,
         y: w.y - pb.y,
@@ -247,7 +248,7 @@ export function Canvas() {
         ...(tool === "section" ? { isSection: true, clipsContent: false, fills: solid("#eceef2") } : {}),
         ...(type === "VECTOR" ? vectorStart(tool) : {}),
         ...(tool === "line" || tool === "arrow" ? { height: 0 } : {}),
-      },
+      }, tool === "section" || tool === "slice" ? null : loadDefaults()),
     });
     drag.current = tool === "line" || tool === "arrow" ? { kind: "line", id, wx: w.x, wy: w.y, px: pb.x, py: pb.y, arrow: tool === "arrow" } : { kind: "draw", id, wx: w.x, wy: w.y, px: pb.x, py: pb.y };
     select([id]);

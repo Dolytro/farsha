@@ -1,6 +1,7 @@
 import { alignSelection, distributeSelection, type AlignMode } from "./align";
 import { distributeEdges, packLayers, roundToPixel, tidyUp, type EdgeMode } from "./arrange-actions";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
+import { extractDefaults, saveDefaults } from "./defaults";
 import { exportFramesToPdf } from "./pdf-export";
 import { joinSelection, simplifySelection, smoothSelection } from "./vector-actions";
 import { booleanSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
@@ -80,6 +81,21 @@ export function buildCommands(): Command[] {
         ["name", "Select all with the same name"],
       ] as const
     ).map(([facet, label]): Command => ({ id: `select-same-${facet}`, label, needsSelection: true, keywords: "edit find match", run: () => state().select(selectSameAs(doc(), sel(), state().pageId, facet)) })),
+    {
+      id: "set-default-properties",
+      label: "Set default properties",
+      needsSelection: true,
+      keywords: "new shapes style fill stroke default",
+      run: () => {
+        const d = extractDefaults(doc().getNode(sel()[0] ?? ""));
+        if (!d) state().showToast("Select a rectangle, ellipse, frame or vector to copy its look");
+        else {
+          saveDefaults(d);
+          state().showToast("New shapes will start with this fill, stroke and corner radius");
+        }
+      },
+    },
+    { id: "reset-default-properties", label: "Reset default properties", keywords: "new shapes style default", run: () => (saveDefaults(null), state().showToast("New shapes start from the standard look")) },
     { id: "select-matching", label: "Select all matching properties", shortcut: `${MOD}${ALT}A`, needsSelection: true, keywords: "same fill color font", run: () => state().select(selectMatching(doc(), sel(), state().pageId)) },
     { id: "select-children", label: "Select children", shortcut: "Enter", needsSelection: true, run: () => state().select(selectChildren(doc(), sel())) },
     { id: "select-parent", label: "Select parent", shortcut: `${SHIFT}Enter`, needsSelection: true, run: () => state().select(selectParent(doc(), sel(), state().pageId)) },
