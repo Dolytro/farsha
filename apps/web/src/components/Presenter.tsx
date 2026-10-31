@@ -3,6 +3,7 @@ import type { Interaction } from "@canvylo/types";
 import { exportSvg } from "@canvylo/canvas-engine";
 import { canvasMeasure } from "../text-layout";
 import { followInteraction, hotspotsIn, overlayTarget, safeUrl, stageLayout, timedAndKeyIn, transitionAnimation } from "../prototype";
+import { frameAt, matchLayers, scratchCopy } from "../smart-animate";
 import { useEditor } from "../store";
 
 /** Full-screen prototype presentation: shows one frame at a time; layers with interactions react to clicks, hovering, time and keys. */
@@ -15,6 +16,8 @@ export function Presenter() {
   const [current, setCurrent] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const [overlay, setOverlay] = useState<string | null>(null);
+  const [tween, setTween] = useState<{ svg: string; width: number; height: number } | null>(null);
+  const tweenRun = useRef(0);
   const dragFrom = useRef<{ x: number; y: number } | null>(null);
   const [transition, setTransition] = useState<{ name: string; durationMs: number; n: number } | null>(null);
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
@@ -24,6 +27,8 @@ export function Presenter() {
     setHistory([]);
     setTransition(null);
     setOverlay(null);
+    tweenRun.current++;
+    setTween(null);
   }, [start]);
 
   const frame = useMemo(() => (start && current && doc.hasNode(current) ? exportSvg(doc, [current], { measure: canvasMeasure }) : null), [doc, current, start]);
@@ -31,6 +36,24 @@ export function Presenter() {
   const overlayFrame = useMemo(() => (start && overlay && doc.hasNode(overlay) ? exportSvg(doc, [overlay], { measure: canvasMeasure }) : null), [doc, overlay, start]);
   const overlaySpots = useMemo(() => (start && overlay && doc.hasNode(overlay) ? hotspotsIn(doc, overlay) : []), [doc, overlay, start]);
   const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start]);
+
+  /** Smart animate: tween the paired layers of the next frame from where they were in this one. */
+  const startTween = (from: string, to: string, durationMs: number) => {
+    const pairs = matchLayers(doc, from, to);
+    const run = ++tweenRun.current;
+    if (!pairs.length) return;
+    const scratch = scratchCopy(doc);
+    const total = Math.min(5000, Math.max(50, durationMs || 300));
+    const t0 = performance.now();
+    const step = (now: number) => {
+      if (tweenRun.current !== run) return;
+      const p = Math.min(1, (now - t0) / total);
+      setTween(p >= 1 ? null : frameAt(scratch, to, pairs, p));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    setTween(frameAt(scratch, to, pairs, 0));
+    requestAnimationFrame(step);
+  };
 
   /** Run an interaction: open its address, or change frame with its transition. */
   const run = (interaction: Interaction) => {
@@ -53,6 +76,9 @@ export function Presenter() {
     const next = followInteraction(doc, current, history, interaction);
     if (!next) return;
     setOverlay(null);
+    tweenRun.current++;
+    setTween(null);
+    if (interaction.transition?.type === "SMART_ANIMATE") startTween(current, next.frame, interaction.transition.durationMs);
     const anim = transitionAnimation(interaction.transition);
     setTransition(anim ? { ...anim, n: Date.now() } : null);
     setCurrent(next.frame);
@@ -123,6 +149,7 @@ export function Presenter() {
 
   const currentNode = current ? doc.getNode(current) : undefined;
   const scrolls = currentNode?.type === "FRAME" && currentNode.overflowScroll === "VERTICAL";
+  const shown = tween ?? frame;
   const { scale, stageHeight } = frame ? stageLayout(frame, size, scrolls) : { scale: 1, stageHeight: 0 };
 
   return (
@@ -138,7 +165,7 @@ export function Presenter() {
         >
           <div className="presenter__scroll" style={{ height: stageHeight, overflowY: scrolls ? "auto" : "hidden" }}>
           <div style={{ position: "relative", width: frame.width * scale, height: frame.height * scale }}>
-          <div className="presenter__frame" style={{ width: frame.width, height: frame.height, transform: `scale(${scale})` }} dangerouslySetInnerHTML={{ __html: frame.svg }} />
+          <div className="presenter__frame" style={{ width: frame.width, height: frame.height, transform: `scale(${scale})` }} dangerouslySetInnerHTML={{ __html: shown!.svg }} />
           {spots.map((h, i) => (
             <div
               key={`${h.id}-${i}`}

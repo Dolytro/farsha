@@ -13,6 +13,7 @@ const TRIGGERS: [InteractionTrigger, string][] = [
 
 const TRANSITIONS: [TransitionType, string][] = [
   ["INSTANT", "Instant"],
+  ["SMART_ANIMATE", "Smart animate"],
   ["DISSOLVE", "Dissolve"],
   ["SLIDE_IN_LEFT", "Slide in from left"],
   ["SLIDE_IN_RIGHT", "Slide in from right"],

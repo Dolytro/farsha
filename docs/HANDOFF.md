@@ -387,7 +387,7 @@ Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows
   stored in the `meta` map).
 - **Still open** (all listed in FEATURE_GAP.md): rich text inside one text layer (needs a runs model), text on path, Slots,
   live boolean groups (the selected point of a path being edited lives in the store as `editingPoint`; Delete
-  and heal and Split vector already use it), prototype smart animate, Home / End frame stepping, Switch to Draw, Paste to
+  and heal and Split vector already use it), Home / End frame stepping, Switch to Draw, Paste to
   replace on Ctrl+Shift+R (the browser reserves it), SVG / PNG export of background blur. Anything that needs a server
   (live cursors, mentions, branching, team libraries) is documented as such.
 - **Testing gotchas learned:** never trigger `window.print()` from a Playwright-driven headed browser without stubbing it (it
