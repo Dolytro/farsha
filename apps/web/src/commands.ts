@@ -1,6 +1,7 @@
 import { alignSelection, distributeSelection, type AlignMode } from "./align";
 import { distributeEdges, packLayers, roundToPixel, tidyUp, type EdgeMode } from "./arrange-actions";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
+import { exportFramesToPdf } from "./pdf-export";
 import { joinSelection, simplifySelection, smoothSelection } from "./vector-actions";
 import { booleanSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
@@ -49,6 +50,17 @@ export function buildCommands(): Command[] {
     { id: "redo", label: "Redo", shortcut: `${MOD}${SHIFT}Z`, run: () => doc().redo() },
     { id: "place-image", label: "Place image…", shortcut: `${MOD}${SHIFT}K`, keywords: "insert picture photo import", run: () => placeImagePicker() },
     { id: "export-dialog", label: "Export…", shortcut: `${MOD}${SHIFT}E`, keywords: "download png jpg svg", run: () => state().setExportOpen(true) },
+    {
+      id: "export-pdf",
+      label: "Export frames to PDF…",
+      keywords: "pdf print pages download",
+      run: () => {
+        const s = state();
+        const count = exportFramesToPdf(s.doc, s.pageId, s.selection, s.drive.fileName || "Canvylo");
+        if (!count) s.showToast("There are no frames to export");
+        else s.showToast(`Choose "Save as PDF" in the print window (${count} page${count === 1 ? "" : "s"})`);
+      },
+    },
     { id: "duplicate-file", label: "Duplicate file", keywords: "copy document", run: () => duplicateFile() },
     { id: "find", label: "Find…", shortcut: `${MOD}F`, keywords: "search layers text", run: () => state().setFindOpen(true) },
     { id: "find-replace", label: "Find and replace…", keywords: "search replace text", run: () => state().setFindOpen(true, true) },
