@@ -914,3 +914,45 @@ textarea:focus-visible {
   border-radius: 24px;
   border-width: 18px;
 }
+
+// Dev tab: nothing may push the panel wider than itself, so it stays usable on narrow windows.
+.props {
+  overflow-x: hidden;
+}
+
+.props__section,
+.dev > * {
+  min-width: 0;
+}
+
+.dev {
+  &__tabs {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  &__list {
+    grid-template-columns: auto minmax(0, 1fr);
+
+    dt,
+    dd {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__code {
+    overflow-x: auto;
+  }
+}
+
+.dev__list > div {
+  display: contents;
+}
+
+// Narrow windows: slimmer side panels leave the canvas more room.
+@media (max-width: 960px) {
+  :root {
+    --panel-w: 220px;
+  }
+}
