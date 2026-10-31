@@ -288,6 +288,8 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   cornerRadius: number;
   /** Per-corner radii [top-left, top-right, bottom-right, bottom-left]; overrides cornerRadius when set. */
   cornerRadii?: [number, number, number, number];
+  /** 0 to 1: how far the corner curve eases into the edge (Figma's corner smoothing; 0.6 is the iOS look). */
+  cornerSmoothing?: number;
   clipsContent: boolean;
   layoutGrids?: LayoutGrid[];
   /** A section: a named area of the canvas that holds frames and layers but is not itself a screen (Figma's Section tool). */
@@ -318,6 +320,7 @@ export interface RectangleNode extends BaseNode {
   strokeAlign?: StrokeAlign;
   cornerRadius: number;
   cornerRadii?: [number, number, number, number];
+  cornerSmoothing?: number;
 }
 
 export interface EllipseNode extends BaseNode {
@@ -408,6 +411,7 @@ export interface StylePatch extends AutoLayoutProps {
   flipY?: boolean;
   cornerRadius?: number;
   cornerRadii?: [number, number, number, number] | null;
+  cornerSmoothing?: number;
   opacity?: number;
   visible?: boolean;
   locked?: boolean;

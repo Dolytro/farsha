@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
 import { exportSvg } from "./svg-export";
+import { shapeMarkup } from "./appearance";
 
 const solid = (color: string, opacity = 1) => [{ type: "SOLID" as const, color, opacity }];
 
@@ -281,5 +282,22 @@ describe("advanced strokes", () => {
     expect(svg).toContain(`<marker id="mk-s-${id}"`);
     expect(svg).toContain(`marker-end="url(#mk-e-${id})"`);
     expect(svg).toContain('fill="#ff0000"');
+  });
+});
+
+describe("corner smoothing", () => {
+  const rect = (extra: object) => ({ id: "r", type: "RECTANGLE", x: 0, y: 0, width: 100, height: 100, cornerRadius: 20, fills: [{ type: "SOLID", color: "#ff0000", opacity: 1 }], strokes: [], strokeWidth: 0, ...extra }) as never;
+  it("draws a smooth path instead of a plain rounded rect, and starts the curve earlier", () => {
+    expect(shapeMarkup(rect({}))).toContain('rx="20"');
+    const smooth = shapeMarkup(rect({ cornerSmoothing: 0.6 }));
+    expect(smooth).toContain("<path");
+    expect(smooth).not.toContain("rx=");
+    expect(smooth).toContain("M32 0H68"); // 20 * 1.6 = 32 from each corner
+    expect(smooth).toContain("C");
+  });
+  it("caps the curve at half the shorter side and clamps bad values", () => {
+    expect(shapeMarkup(rect({ cornerRadius: 50, cornerSmoothing: 1 }))).toContain("M50 0H50");
+    expect(shapeMarkup(rect({ cornerSmoothing: 5 }))).toContain("M40 0H60");
+    expect(shapeMarkup(rect({ cornerSmoothing: -1 }))).toContain('rx="20"');
   });
 });
