@@ -10,6 +10,7 @@ export function Presenter() {
   const start = useEditor((s) => s.presenting);
   const setPresenting = useEditor((s) => s.setPresenting);
   const showToast = useEditor((s) => s.showToast);
+  const device = useEditor((s) => s.presentDevice);
   const doc = useEditor((s) => s.doc);
   const [current, setCurrent] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
@@ -130,7 +131,7 @@ export function Presenter() {
       {frame ? (
         <div
           key={transition?.n ?? 0}
-          className="presenter__stage"
+          className={`presenter__stage${device !== "none" ? ` presenter__stage--${device}` : ""}`}
           style={{ width: frame.width * scale, height: frame.height * scale, animation: transition ? `${transition.name} ${transition.durationMs}ms ease both` : undefined }}
         >
           <div className="presenter__frame" style={{ width: frame.width, height: frame.height, transform: `scale(${scale})` }} dangerouslySetInnerHTML={{ __html: frame.svg }} />
