@@ -23,7 +23,7 @@ user's own Google Drive and shared through Drive's "anyone with the link" permis
    Publish the app (**In production**); in "Testing" tokens expire after 7 days.
 3. **Credentials → OAuth client ID → Web application.** Authorized JavaScript origins:
    - `http://localhost:5173` (local development)
-   - your production URL, e.g. `https://canvylo.vercel.app`
+   - your production URL, e.g. `https://farsha.vercel.app`
 
    Vercel preview URLs change per deployment and are not covered; use the production URL.
 4. **Credentials → API key.** Restrict it to *HTTP referrers* (your production URL and
@@ -64,4 +64,4 @@ pnpm dev
 
 ## Live site
 
-Production: https://canvylo.vercel.app (Vercel project `canvylo`, root directory `apps/web`).
+Production: https://farsha.vercel.app (Vercel project `farsha`, root directory `apps/web`).

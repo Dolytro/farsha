@@ -19,7 +19,7 @@ describe("parseRoute", () => {
 
 describe("shareUrl", () => {
   it("round-trips through parseRoute", () => {
-    const url = new URL(shareUrl("https://canvylo.vercel.app", "1AbC_dEfGhIjKlMn", "inspect"));
+    const url = new URL(shareUrl("https://farsha.vercel.app", "1AbC_dEfGhIjKlMn", "inspect"));
     expect(parseRoute(url.pathname, url.search)).toEqual({ kind: "viewer", fileId: "1AbC_dEfGhIjKlMn", mode: "inspect" });
   });
 });
