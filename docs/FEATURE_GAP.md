@@ -262,14 +262,14 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 Menus and commands
 - Edit: Copy as text, CSS (all layers), animated SVG; Select all with same properties / text properties / instance / variant
 - View: Show slices, Annotations (Shift+Y), Pixel preview (Ctrl+Shift+P), Mask outlines, Frame outlines, Additional labels, Minimize left bar, Toggle variables panel, Find previous / next frame (Home / End), Switch to Draw
-- Object: More layout options (Suggest auto layout, Resize to fit, set width / height to hug or fill, lock / unlock aspect ratio as commands), Restore / Set default thumbnail, Main component (Push changes to main, Restore main component), Slots
+- ✅ Object > More layout options (Resize to fit, hug and fill width / height, lock and unlock aspect ratio; Suggest auto layout is the same as Add auto layout) and rotate / flip buttons in the Position section. Still missing in Object: Restore / Set default thumbnail, Main component (Push changes to main, Restore main component), Slots
 - Text: justified alignment, top / middle / bottom commands, Adjust (indent, font size / weight / line height / letter spacing steps), Title case + small caps
 - Preferences: Highlight layers on hover, Rename duplicated layers, Show dimensions on objects, Hide canvas UI during changes, Use smart quotes, Flip objects while resizing, Keyboard zooms into selection, Right-click and drag to pan, Use Ctrl+Alt+arrows to rotate, Color profile, Keyboard layout, Accessibility
 
 Design panel
 - ✅ Frame size presets (Phone, Tablet, Desktop, Presentation, Watch, Paper) in the Layout section
 - Auto layout: Grid flow, min / max width and height, Resize to fit, "Hug" / "Fill" as commands
-- Position section: flip horizontal / vertical and rotate buttons
+- ✅ (done above) Position section flip and rotate buttons
 - Colour picker: custom picker with eyedropper, RGB / HSL / HSB / CSS modes, "On this page" colours, fill blend mode
 - Fills: Pattern, angular and diamond gradients, tile / crop image modes, image adjustments (exposure, contrast, saturation...), gradient handles on the canvas
 - Strokes: stroke styles, miter angle, variable width and brush strokes

@@ -15,6 +15,8 @@ import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
 import { Select } from "./Select";
+import { flipSelection } from "../actions";
+import { rotateSelectionBy } from "../object-actions";
 import { FRAME_PRESETS, presetLabel, presetOf } from "../frame-presets";
 import { SelectionColors } from "./SelectionColors";
 import { LocalStyles } from "./LocalStyles";
@@ -168,6 +170,17 @@ export function Properties() {
           {num("x", "X")}
           {num("y", "Y")}
           {num("rotation", "°")}
+          <div className="props__flips" role="group" aria-label="Rotate and flip">
+            <button className="seg__btn" title="Rotate 90°" aria-label="Rotate 90 degrees" onClick={() => rotateSelectionBy(doc, [node.id], 90)}>
+              ⟳
+            </button>
+            <button className="seg__btn" title="Flip horizontal (Shift+H)" aria-label="Flip horizontal" onClick={() => flipSelection(doc, [node.id], "x")}>
+              ⇆
+            </button>
+            <button className="seg__btn" title="Flip vertical (Shift+V)" aria-label="Flip vertical" onClick={() => flipSelection(doc, [node.id], "y")}>
+              ⇅
+            </button>
+          </div>
         </div>
       </section>
 

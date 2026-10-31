@@ -1120,3 +1120,16 @@ textarea:focus-visible {
   place-items: center;
   width: 20px;
 }
+
+// Rotate and flip buttons next to the rotation field.
+.props__flips {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+
+  .seg__btn {
+    width: 30px;
+    height: var(--field-h);
+    padding: 0;
+  }
+}

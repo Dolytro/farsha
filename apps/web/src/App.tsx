@@ -459,6 +459,10 @@ export function App() {
           const v = zoomFit(doc, s.pageId, [frame]);
           if (v) s.setViewport(v);
         }
+      } else if (mod && e.altKey && e.shiftKey && e.code === "KeyR" && selection.length && !s.viewer) {
+        // Figma's "Resize to fit"
+        e.preventDefault();
+        buildCommands().find((c) => c.id === "layout-resize-to-fit")?.run();
       } else if (textShortcutCommand(e) && selection.length && !s.viewer) {
         // Text menu shortcuts: justify, link, lists and the Adjust steps
         e.preventDefault();
