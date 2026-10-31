@@ -118,10 +118,10 @@ export function buildCommands(): Command[] {
     { id: "use-as-mask", label: "Use as mask", shortcut: `${MOD}${ALT}M`, needsSelection: true, keywords: "clip", run: () => state().select(useAsMask(doc(), sel())) },
     ...(
       [
-        ["UNION", "Union selection", `${MOD}${ALT}U`],
-        ["SUBTRACT", "Subtract selection", ""],
-        ["INTERSECT", "Intersect selection", ""],
-        ["EXCLUDE", "Exclude selection", ""],
+        ["UNION", "Union selection", `${ALT}${SHIFT}U`],
+        ["SUBTRACT", "Subtract selection", `${ALT}${SHIFT}S`],
+        ["INTERSECT", "Intersect selection", `${ALT}${SHIFT}I`],
+        ["EXCLUDE", "Exclude selection", `${ALT}${SHIFT}E`],
       ] as const
     ).map(
       ([op, label, shortcut]): Command => ({
@@ -139,7 +139,7 @@ export function buildCommands(): Command[] {
     {
       id: "flatten",
       label: "Flatten selection",
-      shortcut: `${MOD}E`,
+      shortcut: `${ALT}${SHIFT}F`,
       needsSelection: true,
       keywords: "vector merge outline convert",
       run: () => {
@@ -151,7 +151,7 @@ export function buildCommands(): Command[] {
     {
       id: "outline-stroke",
       label: "Outline stroke",
-      shortcut: `${MOD}${SHIFT}O`,
+      shortcut: `${MOD}${ALT}O`,
       needsSelection: true,
       keywords: "stroke convert vector fill",
       run: () => {

@@ -340,22 +340,22 @@ export function App() {
         const out = joinSelection(doc, selection);
         if (out.error) s.showToast(out.error);
         else s.select(out.ids);
-      } else if (mod && e.shiftKey && !e.altKey && key === "o" && selection.length && !s.viewer) {
-        // Figma's "Outline stroke"
+      } else if (mod && e.altKey && !e.shiftKey && e.code === "KeyO" && selection.length && !s.viewer) {
+        // Figma's "Outline stroke" (Ctrl+Alt+O)
         e.preventDefault();
         const out = outlineStrokeSelection(doc, selection);
         if (out.error) s.showToast(out.error);
         else s.select(out.ids);
-      } else if (mod && !e.shiftKey && !e.altKey && key === "e" && selection.length && !s.viewer) {
-        // Figma's "Flatten selection"
+      } else if (e.altKey && e.shiftKey && !mod && e.code === "KeyF" && selection.length && !s.viewer) {
+        // Figma's "Flatten selection" (Alt+Shift+F)
         e.preventDefault();
         const out = flattenSelection(doc, selection);
         if (out.error) s.showToast(out.error);
         else s.select(out.ids);
-      } else if (mod && e.altKey && !e.shiftKey && key === "u" && selection.length > 1 && !s.viewer) {
-        // Figma's "Union selection"
+      } else if (e.altKey && e.shiftKey && !mod && ({ KeyU: "UNION", KeyS: "SUBTRACT", KeyI: "INTERSECT", KeyE: "EXCLUDE" } as const)[e.code as "KeyU"] && selection.length > 1 && !s.viewer) {
+        // Figma's Union / Subtract / Intersect / Exclude selection (Alt+Shift+U / S / I / E)
         e.preventDefault();
-        const out = booleanGroupSelection(doc, selection, "UNION");
+        const out = booleanGroupSelection(doc, selection, ({ KeyU: "UNION", KeyS: "SUBTRACT", KeyI: "INTERSECT", KeyE: "EXCLUDE" } as const)[e.code as "KeyU"]);
         if (out.error) s.showToast(out.error);
         else s.select(out.ids);
       } else if (mod && e.altKey && !e.shiftKey && key === "m" && selection.length && !s.viewer) {
