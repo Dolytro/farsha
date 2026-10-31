@@ -40,17 +40,24 @@ export function effectsFilter(n: DesignNode): { id: string; markup: string } | n
   });
   list.forEach((e, i) => {
     if (e.type === "DROP_SHADOW") {
+      const spread = Number.isFinite(e.spread) ? (e.spread as number) : 0;
+      const base = spread ? `m${i}` : "SourceAlpha";
+      if (spread) parts.push(`<feMorphology in="SourceAlpha" operator="${spread > 0 ? "dilate" : "erode"}" radius="${num(Math.abs(spread))}" result="m${i}"/>`);
       parts.push(
-        `<feGaussianBlur in="SourceAlpha" stdDeviation="${num(Math.max(0, e.blur) / 2)}" result="b${i}"/>`,
+        `<feGaussianBlur in="${base}" stdDeviation="${num(Math.max(0, e.blur) / 2)}" result="b${i}"/>`,
         `<feOffset in="b${i}" dx="${num(e.x)}" dy="${num(e.y)}" result="o${i}"/>`,
         `<feFlood flood-color="${hex(e.color)}" flood-opacity="${unit(e.opacity)}" result="c${i}"/>`,
         `<feComposite in="c${i}" in2="o${i}" operator="in" result="s${i}"/>`,
       );
       under.push(`s${i}`);
     } else if (e.type === "INNER_SHADOW") {
+      const spread = Number.isFinite(e.spread) ? (e.spread as number) : 0;
+      const base = spread ? `m${i}` : "SourceAlpha";
+      // an inner shadow's spread eats into the shape: the shadow starts where the shrunken shape ends
+      if (spread) parts.push(`<feMorphology in="SourceAlpha" operator="${spread > 0 ? "erode" : "dilate"}" radius="${num(Math.abs(spread))}" result="m${i}"/>`);
       parts.push(
         `<feFlood flood-color="${hex(e.color)}" flood-opacity="${unit(e.opacity)}" result="c${i}"/>`,
-        `<feComposite in="c${i}" in2="SourceAlpha" operator="out" result="i${i}"/>`,
+        `<feComposite in="c${i}" in2="${base}" operator="out" result="i${i}"/>`,
         `<feGaussianBlur in="i${i}" stdDeviation="${num(Math.max(0, e.blur) / 2)}" result="b${i}"/>`,
         `<feOffset in="b${i}" dx="${num(e.x)}" dy="${num(e.y)}" result="o${i}"/>`,
         `<feComposite in="o${i}" in2="SourceAlpha" operator="in" result="s${i}"/>`,

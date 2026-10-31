@@ -60,7 +60,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   if (blendMode) d.push(["mix-blend-mode", blendMode]);
 
   const fx = (node.effects ?? []).filter((e) => e.visible);
-  const shadows = fx.flatMap((e) => ("radius" in e ? [] : [`${e.type === "INNER_SHADOW" ? "inset " : ""}${px(e.x)} ${px(e.y)} ${px(e.blur)} ${toRgba(e.color, e.opacity)}`]));
+  const shadows = fx.flatMap((e) => ("radius" in e ? [] : [`${e.type === "INNER_SHADOW" ? "inset " : ""}${px(e.x)} ${px(e.y)} ${px(e.blur)}${e.spread ? ` ${px(e.spread)}` : ""} ${toRgba(e.color, e.opacity)}`]));
   const blur = fx.find((e) => e.type === "LAYER_BLUR");
   const backdrop = fx.find((e) => e.type === "BACKGROUND_BLUR");
   const effectDecls = (): void => {

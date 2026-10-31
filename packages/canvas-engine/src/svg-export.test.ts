@@ -351,3 +351,22 @@ describe("background blur", () => {
     expect(effectsFilter(node([{ type: "BACKGROUND_BLUR", radius: 12, visible: true }, { type: "LAYER_BLUR", radius: 4, visible: true }]))!.markup).toContain("feGaussianBlur");
   });
 });
+
+describe("shadow spread", () => {
+  const node = (effects: unknown[]) => ({ id: "r", type: "RECTANGLE", x: 0, y: 0, width: 10, height: 10, effects }) as never;
+  const drop = (spread?: number) => ({ type: "DROP_SHADOW", x: 0, y: 4, blur: 4, color: "#000000", opacity: 0.25, visible: true, ...(spread === undefined ? {} : { spread }) });
+  it("grows a drop shadow with a positive spread and shrinks it with a negative one", () => {
+    expect(effectsFilter(node([drop()]))!.markup).not.toContain("feMorphology");
+    expect(effectsFilter(node([drop(3)]))!.markup).toContain('operator="dilate" radius="3"');
+    expect(effectsFilter(node([drop(-2)]))!.markup).toContain('operator="erode" radius="2"');
+  });
+  it("spreads an inner shadow inwards", () => {
+    const inner = { type: "INNER_SHADOW", x: 0, y: 0, blur: 2, color: "#000000", opacity: 0.5, visible: true, spread: 2 };
+    const m = effectsFilter(node([inner]))!.markup;
+    expect(m).toContain('operator="erode" radius="2"');
+    expect(m).toContain('in2="m0"');
+  });
+  it("ignores a spread that is not a number", () => {
+    expect(effectsFilter(node([drop(Number.NaN)]))!.markup).not.toContain("feMorphology");
+  });
+});
