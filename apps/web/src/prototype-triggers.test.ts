@@ -94,3 +94,17 @@ describe("drag trigger", () => {
     expect(timedAndKeyIn(doc, home)).toEqual([]);
   });
 });
+
+describe("stage layout", () => {
+  it("fits a tall frame in the window, or fits its width and scrolls", async () => {
+    const { stageLayout } = await import("./prototype");
+    const tall = { width: 400, height: 2000 };
+    const fit = stageLayout(tall, { w: 1040, h: 840 }, false);
+    expect(fit.scale).toBeCloseTo(0.4);
+    expect(fit.stageHeight).toBeCloseTo(800);
+    const scroll = stageLayout(tall, { w: 1040, h: 840 }, true);
+    expect(scroll.scale).toBe(2.5);
+    expect(scroll.stageHeight).toBe(800);
+    expect(stageLayout({ width: 400, height: 300 }, { w: 1040, h: 840 }, true).stageHeight).toBe(750);
+  });
+});

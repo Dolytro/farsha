@@ -95,3 +95,11 @@ export function transitionAnimation(t: Interaction["transition"]): { name: strin
   const name = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" }[t.type];
   return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)) };
 }
+
+/** How big the prototype stage is in a window: fit the whole frame, or (vertical scrolling) fit the width and scroll the rest. */
+export function stageLayout(frame: { width: number; height: number }, win: { w: number; h: number }, scrolls: boolean): { scale: number; stageHeight: number } {
+  const maxW = Math.max(1, win.w - 40);
+  const maxH = Math.max(1, win.h - 40);
+  const scale = scrolls ? Math.min(maxW / frame.width, 4) : Math.min(maxW / frame.width, maxH / frame.height, 4);
+  return { scale, stageHeight: scrolls ? Math.min(frame.height * scale, maxH) : frame.height * scale };
+}
