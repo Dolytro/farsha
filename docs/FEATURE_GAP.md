@@ -210,5 +210,5 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Design panel | Stroke dash and gap, caps, joins; arrowheads (line arrow, triangle, circle, square, diamond) on the start and end of a vector / line | ✅ |
 | Design panel | Corner smoothing, per-side stroke weights (rectangles and frames, drawn inside the shape; CSS border-width), background blur (canvas + CSS, not in SVG export) ✅ | ✅ |
 | Prototype | Hover / drag / key triggers, overlays, scroll, transitions, flow starting points, device frames | ❌ |
-| Dev Mode | Ready-for-dev status, annotations, compare changes, variables in code | ❌ |
+| Dev Mode | Status (Ready for dev / Completed, shown on the frame label) and a developer annotation per layer, saved in the document ✅; compare changes, variables in code ❌ | ◐ |
 | Collaboration | Live cursors, comment notifications and @mentions, branching, team libraries | ❌ needs a backend |

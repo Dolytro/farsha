@@ -168,6 +168,9 @@ export interface Interaction {
   action: InteractionAction;
 }
 
+/** Figma's Dev Mode status of a layer. */
+export type DevStatus = 'READY' | 'COMPLETED';
+
 export interface BaseNode {
   id: string;
   type: NodeType;
@@ -185,6 +188,10 @@ export interface BaseNode {
   opacity: number;
   visible: boolean;
   locked: boolean;
+  /** Dev Mode: marks a layer as ready for development or completed. */
+  devStatus?: DevStatus;
+  /** Dev Mode: a note for developers. */
+  devNote?: string;
   /** Optional so documents saved before effects existed still load. */
   effects?: Effect[];
   /** Missing means NORMAL. */
@@ -425,6 +432,8 @@ export interface StylePatch extends AutoLayoutProps {
   cornerRadii?: [number, number, number, number] | null;
   cornerSmoothing?: number;
   strokeSides?: [number, number, number, number] | null;
+  devStatus?: DevStatus | null;
+  devNote?: string | null;
   opacity?: number;
   visible?: boolean;
   locked?: boolean;

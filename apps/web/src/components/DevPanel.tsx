@@ -2,6 +2,8 @@ import { useState } from "react";
 import { generateCode, paintCss, type Language } from "@canvylo/code-generator";
 import { useEditor } from "../store";
 import { ExportSection } from "./ExportSection";
+import { Select } from "./Select";
+import type { DevStatus } from "@canvylo/types";
 
 const LANGS: { id: Language; label: string }[] = [
   { id: "css", label: "CSS" },
@@ -39,6 +41,28 @@ export function DevPanel() {
   return (
     <div className="dev">
       <div className="props__name">{node.name}</div>
+
+      <section className="props__section">
+        <h3 className="props__heading">Status</h3>
+        <Select
+          className="field__select"
+          aria-label="Dev status"
+          value={node.devStatus ?? "NONE"}
+          onChange={(e) => doc.setStyle(node.id, { devStatus: e.target.value === "NONE" ? null : (e.target.value as DevStatus) })}
+        >
+          <option value="NONE">No status</option>
+          <option value="READY">Ready for dev</option>
+          <option value="COMPLETED">Completed</option>
+        </Select>
+        <textarea
+          className="field__input field__input--wide field__input--area"
+          rows={2}
+          aria-label="Annotation"
+          placeholder="Add an annotation for developers"
+          value={node.devNote ?? ""}
+          onChange={(e) => doc.setStyle(node.id, { devNote: e.target.value || null })}
+        />
+      </section>
 
       <section className="props__section">
         <h3 className="props__heading">Measurements</h3>
