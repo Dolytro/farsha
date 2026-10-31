@@ -1,11 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { buildMainMenu, type MenuNode } from "../main-menu";
 import { useEditor } from "../store";
 
 function Items({ nodes, onRun, depth = 0 }: { nodes: MenuNode[]; onRun: () => void; depth?: number }) {
   const [open, setOpen] = useState<number | null>(null);
+  const list = useRef<HTMLUListElement>(null);
+  // A submenu is placed on screen next to its row: it flips to the left near the right edge, slides up near the bottom, and scrolls when it is taller than the window.
+  useLayoutEffect(() => {
+    const ul = list.current;
+    const row = ul?.parentElement;
+    if (!depth || !ul || !row) return;
+    const r = row.getBoundingClientRect();
+    const margin = 8;
+    ul.style.maxHeight = `${window.innerHeight - margin * 2}px`;
+    const w = ul.offsetWidth;
+    const h = ul.offsetHeight;
+    const left = r.right + 2 + w > window.innerWidth - margin ? Math.max(margin, r.left - w - 2) : r.right + 2;
+    const top = Math.max(margin, Math.min(r.top - 6, window.innerHeight - h - margin));
+    ul.style.left = `${left}px`;
+    ul.style.top = `${top}px`;
+  });
   return (
-    <ul className={`mainmenu__list${depth ? " mainmenu__list--sub" : ""}`} role="menu">
+    <ul ref={list} className={`mainmenu__list${depth ? " mainmenu__list--sub" : ""}`} role="menu">
       {nodes.map((n, i) => (
         <li key={`${n.label}-${i}`} role="none" className={n.divider ? "mainmenu__divider" : undefined}>
           <button

@@ -232,4 +232,4 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | 13 | Right sidebar UX | owner will do |
 | 14 | Double click a layer to jump to it on the canvas | ✅ double click the icon or the row (double click the name still renames) |
 | 15 | Text (string) variables | open |
-| 16 | Some options are cut off, make panels scrollable | open |
+| 16 | Some options are cut off, make panels scrollable | ✅ main menu lists and submenus scroll and stay on screen, the right-click menu scrolls |
