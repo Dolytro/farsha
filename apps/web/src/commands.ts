@@ -501,6 +501,15 @@ export function buildCommands(): Command[] {
     { id: "eyedropper", label: "Pick color from the screen", shortcut: "I", keywords: "eyedropper sample color", run: () => pickColorFromScreen(doc(), sel(), state().showToast) },
     { id: "preferences", label: "Preferences", keywords: "settings keep tool snapping zoom nudge", run: () => state().setPrefsOpen(true) },
     { id: "outlines", label: "Show / hide outlines", shortcut: `${MOD}${SHIFT}Y`, keywords: "view wireframe outline mode", run: () => state().setOutlines(!state().outlines) },
+    ...(
+      [
+        ["slices", "Show slices", "", "export region"],
+        ["maskOutlines", "Show mask outlines", "", "mask clip outline"],
+        ["frameOutlines", "Show frame outlines", "", "frames boundaries"],
+        ["annotations", "Show annotations", `${SHIFT}Y`, "dev notes"],
+        ["pixelPreview", "Pixel preview", `${MOD}${SHIFT}P`, "crisp 1x rendering"],
+      ] as const
+    ).map(([key, label, shortcut, keywords]): Command => ({ id: `view-${key}`, label, shortcut: shortcut || undefined, keywords: `view ${keywords}`, run: () => state().toggleView(key) })),
     { id: "pixel-grid", label: "Show / hide pixel grid", shortcut: `${SHIFT}'`, keywords: "view pixels zoom", run: () => state().setPixelGrid(!state().pixelGrid) },
     ...UI_PRESETS.map((p): Command => ({ id: `preset-${p.id}`, label: `UI preset: ${p.label}`, keywords: "interface look density compact comfortable contrast figma", run: () => state().setPrefs({ preset: p.id }) })),
     {

@@ -82,6 +82,7 @@ export function Canvas() {
   const editingPath = useEditor((s) => s.editingPath);
   const pixelGrid = useEditor((s) => s.pixelGrid);
   const outlines = useEditor((s) => s.outlines);
+  const view = useEditor((s) => s.view);
   const prototypeMode = useEditor((s) => s.prototypeMode);
   const spellCheck = useEditor((s) => s.prefs.spellCheck);
   const hoverHighlight = useEditor((s) => s.prefs.hoverHighlight);
@@ -648,7 +649,7 @@ export function Canvas() {
         onDragOver={onDragOver}
         onDrop={onDrop}
       >
-        <g className={outlines ? "canvas__outlines" : undefined} transform={`translate(${viewport.x} ${viewport.y}) scale(${z})`}>
+        <g className={`${outlines ? "canvas__outlines" : ""}${view.pixelPreview ? " canvas__pixel" : ""}`.trim() || undefined} transform={`translate(${viewport.x} ${viewport.y}) scale(${z})`}>
           {renderChildren(doc.children(pageId))}
           {showPixelGrid(pixelGrid, z) && (() => {
             const r = svgRef.current?.getBoundingClientRect();
@@ -681,9 +682,43 @@ export function Canvas() {
             </g>
           )}
 
-          {doc
-            .descendants(pageId)
-            .filter((n) => n.type === "RECTANGLE" && n.isSlice && n.visible)
+          {view.frameOutlines &&
+            doc
+              .descendants(pageId)
+              .filter((n) => n.type === "FRAME" && n.visible)
+              .map((n) => {
+                const abs = doc.absoluteBox(n.id) ?? n;
+                return <rect key={`fo-${n.id}`} x={abs.x} y={abs.y} width={abs.width} height={abs.height} fill="none" stroke="#0d99ff" strokeOpacity={0.7} strokeWidth={1 / z} pointerEvents="none" />;
+              })}
+          {view.maskOutlines &&
+            doc
+              .descendants(pageId)
+              .filter((n) => n.isMask)
+              .map((n) => {
+                const abs = doc.absoluteBox(n.id) ?? n;
+                return <rect key={`mo-${n.id}`} x={abs.x} y={abs.y} width={abs.width} height={abs.height} fill="none" stroke="#9747ff" strokeWidth={1.5 / z} strokeDasharray={`${4 / z} ${3 / z}`} pointerEvents="none" />;
+              })}
+          {view.annotations &&
+            doc
+              .descendants(pageId)
+              .filter((n) => n.visible && !!n.devNote)
+              .map((n) => {
+                const abs = doc.absoluteBox(n.id) ?? n;
+                const label = n.devNote!.length > 40 ? `${n.devNote!.slice(0, 40)}…` : n.devNote!;
+                const w = (label.length * 6.2 + 16) / z;
+                return (
+                  <g key={`an-${n.id}`} pointerEvents="none" transform={`translate(${abs.x} ${abs.y - 24 / z})`}>
+                    <rect width={w} height={20 / z} rx={4 / z} fill="#fbbf24" />
+                    <text x={8 / z} y={14 / z} fontSize={11 / z} fill="#1f2937">
+                      {label}
+                    </text>
+                  </g>
+                );
+              })}
+          {view.slices &&
+            doc
+              .descendants(pageId)
+              .filter((n) => n.type === "RECTANGLE" && n.isSlice && n.visible)
             .map((n) => {
               const abs = doc.absoluteBox(n.id) ?? n;
               return <rect key={`slice-${n.id}`} x={abs.x} y={abs.y} width={abs.width} height={abs.height} fill="rgba(13,185,100,0.08)" stroke="#0db964" strokeWidth={1 / z} strokeDasharray={`${4 / z} ${3 / z}`} pointerEvents="none" />;

@@ -396,6 +396,14 @@ export function App() {
         // Figma's "Find previous / next frame"
         e.preventDefault();
         buildCommands().find((c) => c.id === (key === "home" ? "frame-find-prev" : "frame-find-next"))?.run();
+      } else if (e.shiftKey && !mod && !e.altKey && key === "y" && !s.viewer) {
+        // Figma's "Annotations"
+        e.preventDefault();
+        s.toggleView("annotations");
+      } else if (mod && e.shiftKey && !e.altKey && key === "p" && !s.viewer) {
+        // Figma's "Pixel preview"
+        e.preventDefault();
+        s.toggleView("pixelPreview");
       } else if (mod && e.shiftKey && !e.altKey && key === "y") {
         // Figma's "Outlines" (Ctrl+Y stays Redo here)
         e.preventDefault();
