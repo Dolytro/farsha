@@ -295,7 +295,7 @@ Dev Mode
 - Code Connect style mapping (a local mapping of components to snippets)
 
 Variables
-- Several collections, number and boolean variables, groups (a/b names), aliases, scopes
+- ✅ Number and boolean variables (Variables dialog tabs; the Variables section of the Design panel binds width, height, radius, opacity, gap, padding, font size, stroke weight, rotation and visibility; not yet browser-checked). Still missing: several collections, groups (a/b names), aliases, scopes
 - Bind variables to number properties (spacing, radius, size, opacity, font size) and to visibility
 - Explicit mode per frame, import and export as JSON
 

@@ -15,6 +15,7 @@ import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
 import { Select } from "./Select";
+import { VariableBindings } from "./VariableBindings";
 import { flipSelection } from "../actions";
 import { rotateSelectionBy } from "../object-actions";
 import { FRAME_PRESETS, presetLabel, presetOf } from "../frame-presets";
@@ -341,6 +342,8 @@ export function Properties() {
       {node.type === "TEXT" && <TypographySection doc={doc} node={node} />}
 
       <FillSection doc={doc} node={node} />
+
+      <VariableBindings doc={doc} node={node} />
 
       <VariantsSection doc={doc} node={node} />
       <ComponentPropsSection doc={doc} node={node} />

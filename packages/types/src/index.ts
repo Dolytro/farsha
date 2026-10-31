@@ -134,12 +134,16 @@ export interface VariableMode {
 }
 
 /** A named colour with one value per mode. Paints bound to it show the value of the active mode. */
+/** The properties a number variable can drive, and the boolean one. Opacity is in percent. */
+export const NUMBER_BINDABLE = ['width', 'height', 'cornerRadius', 'opacity', 'itemSpacing', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'fontSize', 'strokeWidth', 'rotation'] as const;
+export const BOOLEAN_BINDABLE = ['visible'] as const;
+
 export interface ColorVariable {
   id: string;
   name: string;
   /** 'STRING' makes it a text variable (its values are texts, not colours). Missing means a colour. */
-  kind?: 'COLOR' | 'STRING';
-  /** Hex colour per mode id (the text, for a text variable). */
+  kind?: 'COLOR' | 'STRING' | 'NUMBER' | 'BOOLEAN';
+  /** Hex colour per mode id (the text for a text variable, a number as text for a number variable, "true" or "false" for a boolean). */
   values: Record<string, string>;
 }
 
@@ -224,6 +228,8 @@ export interface BaseNode {
   devNote?: string;
   /** Prototype: this top-level frame is where a flow starts (Figma's flow starting point). */
   flowStart?: boolean;
+  /** Number and boolean variables bound to properties of this layer: property name to variable id. */
+  varBindings?: Record<string, string>;
   /** The export settings of this layer; none means PNG at 1x. */
   exportSettings?: ExportSetting[];
   /** Lock proportions: changing the width changes the height by the same factor, and the other way round. */
@@ -515,6 +521,7 @@ export interface StylePatch extends AutoLayoutProps {
   flowStart?: boolean | null;
   lockAspect?: boolean | null;
   exportSettings?: ExportSetting[] | null;
+  varBindings?: Record<string, string> | null;
   videoAssetId?: string | null;
   overflowScroll?: 'NONE' | 'VERTICAL' | null;
   booleanOp?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE' | null;

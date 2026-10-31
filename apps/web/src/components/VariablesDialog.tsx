@@ -10,7 +10,7 @@ export function VariablesDialog() {
   const doc = useEditor((s) => s.doc);
   useEditor((s) => s.version);
   const [renamingMode, setRenamingMode] = useState<string | null>(null);
-  const [tab, setTab] = useState<"color" | "text">("color");
+  const [tab, setTab] = useState<"color" | "text" | "number" | "boolean">("color");
 
   useEffect(() => {
     if (!open) return;
@@ -27,7 +27,7 @@ export function VariablesDialog() {
   if (!open) return null;
   const modes = doc.modes();
   const active = doc.activeModeId();
-  const variables = tab === "color" ? doc.colorVariables() : doc.textVariables();
+  const variables = tab === "color" ? doc.colorVariables() : tab === "text" ? doc.textVariables() : doc.valueVariables(tab === "number" ? "NUMBER" : "BOOLEAN");
   const run = (fn: () => void) => {
     try {
       doc.stopCapturing();
@@ -55,6 +55,12 @@ export function VariablesDialog() {
           </button>
           <button className={`seg__btn${tab === "text" ? " seg__btn--active" : ""}`} role="tab" aria-selected={tab === "text"} onClick={() => setTab("text")}>
             Text
+          </button>
+          <button className={`seg__btn${tab === "number" ? " seg__btn--active" : ""}`} role="tab" aria-selected={tab === "number"} onClick={() => setTab("number")}>
+            Number
+          </button>
+          <button className={`seg__btn${tab === "boolean" ? " seg__btn--active" : ""}`} role="tab" aria-selected={tab === "boolean"} onClick={() => setTab("boolean")}>
+            Boolean
           </button>
         </div>
         <div className="vars">
@@ -93,12 +99,36 @@ export function VariablesDialog() {
               +
             </button>
           </div>
-          {variables.length === 0 && <p className="dialog__note">{tab === "color" ? "No variables yet. Add one, then bind a fill or stroke to it with the ◆ button." : "No text variables yet. Add one, then pick it in the Variable field of a text layer."}</p>}
+          {variables.length === 0 && <p className="dialog__note">{tab === "color" ? "No variables yet. Add one, then bind a fill or stroke to it with the ◆ button." : tab === "text" ? "No text variables yet. Add one, then pick it in the Variable field of a text layer." : "None yet. Add one, then bind it to a property in the Variables section of the Design panel."}</p>}
           {variables.map((v) => (
             <div className="vars__row" key={v.id} style={{ gridTemplateColumns: `minmax(120px, 1.4fr) repeat(${modes.length}, minmax(110px, 1fr)) 24px` }}>
-              <input className="dialog__input" aria-label="Variable name" defaultValue={v.name} key={v.name} onBlur={(e) => e.currentTarget.value !== v.name && run(() => (tab === "color" ? doc.updateColorVariable(v.id, { name: e.currentTarget.value }) : doc.updateTextVariable(v.id, { name: e.currentTarget.value })))} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
+              <input className="dialog__input" aria-label="Variable name" defaultValue={v.name} key={v.name} onBlur={(e) => e.currentTarget.value !== v.name && run(() => (tab === "color" ? doc.updateColorVariable(v.id, { name: e.currentTarget.value }) : tab === "text" ? doc.updateTextVariable(v.id, { name: e.currentTarget.value }) : doc.updateValueVariable(v.id, { name: e.currentTarget.value })))} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
               {modes.map((m) => {
-                const value = v.values[m.id] ?? (tab === "color" ? "#000000" : "");
+                const value = v.values[m.id] ?? (tab === "color" ? "#000000" : tab === "number" ? "0" : tab === "boolean" ? "false" : "");
+                if (tab === "number") {
+                  return (
+                    <input
+                      className="dialog__input"
+                      type="number"
+                      key={`${m.id}-${value}`}
+                      aria-label={`Number in ${m.name}`}
+                      defaultValue={value}
+                      onBlur={(e) => e.currentTarget.value !== value && run(() => doc.updateValueVariable(v.id, { modeId: m.id, value: e.currentTarget.value }))}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === "Enter") e.currentTarget.blur();
+                      }}
+                    />
+                  );
+                }
+                if (tab === "boolean") {
+                  return (
+                    <label className="vars__bool" key={m.id}>
+                      <input type="checkbox" aria-label={`True in ${m.name}`} checked={value === "true"} onChange={(e) => run(() => doc.updateValueVariable(v.id, { modeId: m.id, value: String(e.target.checked) }))} />
+                      {value === "true" ? "True" : "False"}
+                    </label>
+                  );
+                }
                 if (tab === "text") {
                   return (
                     <input
@@ -127,8 +157,8 @@ export function VariablesDialog() {
             </div>
           ))}
         </div>
-        <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9") : doc.createTextVariable(`Text ${variables.length + 1}`, "Text")))}>
-          {tab === "color" ? "+ Add color variable" : "+ Add text variable"}
+        <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9") : tab === "text" ? doc.createTextVariable(`Text ${variables.length + 1}`, "Text") : doc.createValueVariable(tab === "number" ? "NUMBER" : "BOOLEAN", `${tab === "number" ? "Number" : "Boolean"} ${variables.length + 1}`, tab === "number" ? "0" : "true")))}>
+          {tab === "color" ? "+ Add color variable" : tab === "text" ? "+ Add text variable" : tab === "number" ? "+ Add number variable" : "+ Add boolean variable"}
         </button>
         <p className="dialog__note">The highlighted mode is the one shown on the canvas. Layers bound to a variable follow it.</p>
       </div>
