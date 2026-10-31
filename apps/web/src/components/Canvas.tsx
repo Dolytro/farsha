@@ -297,8 +297,10 @@ export function Canvas() {
       const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: true, fromCenter: e.altKey });
       doc.patchNodes(buildScaleUpdates(d.snapshot, next));
     } else if (d.kind === "resize") {
-      // Shift keeps the ratio, Alt resizes from the centre (Figma).
-      const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
+      // Shift keeps the ratio (so does a layer with locked proportions), Alt resizes from the centre (Figma).
+      const locked = !!doc.getNode(d.id)?.lockAspect;
+      const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey || locked, fromCenter: e.altKey });
+
       doc.resizeNode(d.id, next);
       const node = doc.getNode(d.id);
       if (node?.type === "TEXT") {
