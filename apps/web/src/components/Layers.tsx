@@ -263,7 +263,14 @@ export function Layers() {
         <CommentsList />
       ) : (
         <>
-          <input className="layers__search" type="search" placeholder="Search layers" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <div className="layers__tools">
+            <input className="layers__search" type="search" placeholder="Search layers" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <button className="icon-btn" title="Collapse all layers (Alt+L)" aria-label="Collapse all layers" onClick={() => useEditor.getState().collapseLayers()}>
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+                <path d="M4 5.5l4 3 4-3M4 10.5l4-3 4 3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
           <ul className="layers__list">{rows.map(renderRow)}</ul>
         </>
       )}

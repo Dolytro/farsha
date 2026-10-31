@@ -956,3 +956,15 @@ textarea:focus-visible {
     --panel-w: 220px;
   }
 }
+
+.layers__tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 8px 4px 0;
+
+  .layers__search {
+    flex: 1;
+    min-width: 0;
+  }
+}

@@ -224,7 +224,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | 5 | Auto layout over two frames ignores the spacing between them | open |
 | 6 | PDF download | open (Export frames to PDF exists in File; add PDF to the Export section) |
 | 7 | Prototype did not seem to work | connector arrows on the canvas in the Prototype tab, a Preview button in the toolbar ✅ |
-| 8 | Collapse all layers in the sidebar | open |
+| 8 | Collapse all layers in the sidebar | ✅ button beside the layer search (Alt+L) |
 | 9 | Clicking outside an open comment reply does not close it | ✅ |
 | 10 | Dragging a frame often does not create one | ✅ pointer capture now sits on the canvas, so a drag survives re-rendering and ends outside the canvas |
 | 11 | Preview option outside the Prototype tab | ✅ toolbar Preview button |
