@@ -60,3 +60,27 @@ export async function placeImageFile(file: Blob, parentId: string, cx: number, c
     showToast(err instanceof Error ? `Couldn't add the image: ${err.message}` : "Couldn't add the image");
   }
 }
+
+/** Fill type "Video": choose a video file and make the rectangle play it. */
+export function pickVideoForLayer(nodeId: string): void {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "video/mp4,video/webm";
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (file) void attachVideo(file, nodeId);
+  };
+  input.click();
+}
+
+async function attachVideo(file: Blob, nodeId: string): Promise<void> {
+  const { showToast, doc } = useEditor.getState();
+  try {
+    const video = await readVideo(file);
+    doc.stopCapturing();
+    doc.setStyle(nodeId, { videoAssetId: doc.addAsset(video.mime, video.bytes) });
+    doc.stopCapturing();
+  } catch (err) {
+    showToast(err instanceof Error ? `Couldn't add the video: ${err.message}` : "Couldn't add the video");
+  }
+}

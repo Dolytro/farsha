@@ -5,6 +5,7 @@ import { VariableButton, VariableChip } from "./VariableMenu";
 import { paintCss } from "@canvylo/code-generator";
 import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@canvylo/types";
 import { readImage } from "../images";
+import { pickVideoForLayer } from "../place-image";
 import { HexInput } from "./HexInput";
 import { useEditor } from "../store";
 import { Select } from "./Select";
@@ -56,6 +57,17 @@ export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
           )}
         </span>
       </h3>
+      {node.type === "RECTANGLE" && node.videoAssetId && (
+        <div className="fill-row fill-row--gap" title="This rectangle plays a video when you preview">
+          <span>▶ Video</span>
+          <button className="props__add" title="Replace the video" onClick={() => pickVideoForLayer(node.id)}>
+            ↻
+          </button>
+          <button className="props__add" title="Remove the video" onClick={() => doc.setStyle(node.id, { videoAssetId: null })}>
+            −
+          </button>
+        </div>
+      )}
       {style && <StylePill doc={doc} node={node} style={style} editing={editingStyle} setEditing={setEditingStyle} />}
       {(!style || editingStyle) &&
         fills.map((_, k) => fills.length - 1 - k).map((i) => (
@@ -78,12 +90,21 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
   return (
     <div className="fill-item">
       <div className="fill-item__head">
-        <Select className="field__select field__select--wide" value={paint.type} onChange={(e) => setPaint(convertPaint(paint, e.target.value as Kind))}>
+        <Select
+          className="field__select field__select--wide"
+          value={paint.type}
+          onChange={(e) => {
+            // Video is not a paint: it turns the rectangle into a video layer
+            if (e.target.value === "VIDEO") pickVideoForLayer(nodeId);
+            else setPaint(convertPaint(paint, e.target.value as Kind));
+          }}
+        >
           {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
             <option key={k} value={k}>
               {KIND_LABEL[k]}
             </option>
           ))}
+          {doc.getNode(nodeId)?.type === "RECTANGLE" && <option value="VIDEO">Video</option>}
         </Select>
         {bind && paint.type === "SOLID" && !paint.variableId && <VariableButton doc={doc} onPick={bind} />}
         <button className="props__add" title="Remove fill" onClick={remove}>
