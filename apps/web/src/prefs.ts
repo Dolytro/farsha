@@ -25,6 +25,8 @@ export interface Prefs {
   wheelZoom: boolean;
   /** Layers snap to other layers and guides while moving. */
   snapping: boolean;
+  /** Underline misspelled words while typing in a text layer (the browser's spell checker). */
+  spellCheck: boolean;
   /** Arrow key nudge, and Shift + arrow nudge, in pixels. */
   nudge: number;
   bigNudge: number;
@@ -32,7 +34,7 @@ export interface Prefs {
 
 export const PREFS_KEY = "canvylo.prefs";
 
-export const DEFAULT_PREFS: Prefs = { preset: "canvylo", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, nudge: 1, bigNudge: 10 };
+export const DEFAULT_PREFS: Prefs = { preset: "canvylo", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, nudge: 1, bigNudge: 10 };
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
 const amount = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 && v <= 1000 ? v : fallback);
@@ -52,6 +54,7 @@ export function parsePrefs(text: string | null | undefined): Prefs {
     invertZoom: bool(raw.invertZoom, DEFAULT_PREFS.invertZoom),
     wheelZoom: bool(raw.wheelZoom, DEFAULT_PREFS.wheelZoom),
     snapping: bool(raw.snapping, DEFAULT_PREFS.snapping),
+    spellCheck: bool(raw.spellCheck, DEFAULT_PREFS.spellCheck),
     nudge: amount(raw.nudge, DEFAULT_PREFS.nudge),
     bigNudge: amount(raw.bigNudge, DEFAULT_PREFS.bigNudge),
   };

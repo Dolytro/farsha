@@ -79,6 +79,7 @@ export function Canvas() {
   const editingPath = useEditor((s) => s.editingPath);
   const pixelGrid = useEditor((s) => s.pixelGrid);
   const outlines = useEditor((s) => s.outlines);
+  const spellCheck = useEditor((s) => s.prefs.spellCheck);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
@@ -749,7 +750,7 @@ export function Canvas() {
                 className="canvas__text-edit"
                 autoFocus
                 rows={1}
-                spellCheck={false}
+                spellCheck={spellCheck}
                 value={editNode.characters}
                 style={{ fontSize: editNode.fontSize, fontFamily: editNode.fontFamily, fontWeight: editNode.fontWeight, letterSpacing: editNode.letterSpacing, lineHeight: `${lineHeightPx(editNode)}px`, whiteSpace: (editNode.textAutoResize ?? "WIDTH_AND_HEIGHT") === "WIDTH_AND_HEIGHT" ? "pre" : "pre-wrap", textAlign: editNode.textAlign.toLowerCase() as "left", color: fillOf(editNode).color }}
                 onPointerDown={(e) => e.stopPropagation()}
