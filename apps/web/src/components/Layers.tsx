@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "
 import type { DesignNode } from "@canvylo/types";
 import { useEditor } from "../store";
 import { addPage, deletePage } from "../pages";
+import { zoomFit } from "../actions";
 import { isContainer, layerRows, moveLayers, type DropWhere, type LayerRow } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
@@ -117,7 +118,16 @@ export function Layers() {
           dragging.current = [];
           setDrop(null);
         }}
-        onDoubleClick={() => canEdit && setRenaming(n.id)}
+        onDoubleClick={(e) => {
+          // double click on the name renames (like Figma); anywhere else on the row takes the canvas to the layer
+          if ((e.target as Element).closest(".layers__name, input")) {
+            if (canEdit) setRenaming(n.id);
+            return;
+          }
+          select([n.id]);
+          const v = zoomFit(doc, pageId, [n.id]);
+          if (v) useEditor.getState().setViewport(v);
+        }}
         onClick={(e) => select(e.shiftKey ? (selection.includes(n.id) ? selection.filter((i) => i !== n.id) : [...selection, n.id]) : [n.id])}
       >
         <button

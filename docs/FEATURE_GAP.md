@@ -230,6 +230,6 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | 11 | Preview option outside the Prototype tab | ✅ toolbar Preview button |
 | 12 | Layout grid is confusing, make it easy like Figma | open |
 | 13 | Right sidebar UX | owner will do |
-| 14 | Double click a layer to jump to it on the canvas | open |
+| 14 | Double click a layer to jump to it on the canvas | ✅ double click the icon or the row (double click the name still renames) |
 | 15 | Text (string) variables | open |
 | 16 | Some options are cut off, make panels scrollable | open |
