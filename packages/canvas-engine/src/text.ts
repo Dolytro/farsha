@@ -1,4 +1,4 @@
-import type { TextCase, TextList, TextNode } from "@canvylo/types";
+import type { TextCase, TextList, TextNode, TextRun } from "@canvylo/types";
 
 export interface FontSpec {
   family: string;
@@ -14,6 +14,8 @@ export const approxMeasure: Measure = (text, f) => text.length * (f.size * 0.56 
 
 export interface TextLayout {
   lines: string[];
+  /** For every line, the index in `characters` of the line's first character (list markers count as sitting just before their paragraph). */
+  starts: number[];
   lineHeight: number;
   /** Widest line (what auto width resizes to). */
   width: number;
@@ -95,9 +97,131 @@ function wrapParagraph(text: string, maxWidth: number, width: (s: string) => num
 export function layoutText(n: TextLike, measure: Measure = approxMeasure): TextLayout {
   const font: FontSpec = { family: n.fontFamily, size: n.fontSize, weight: n.fontWeight, letterSpacing: n.letterSpacing };
   const w = (s: string) => measure(s, font);
-  const paragraphs = applyTextList(applyTextCase(n.characters, n.textCase).split("\n"), n.textList);
+  const original = applyTextCase(n.characters, n.textCase).split("\n");
+  const paragraphs = applyTextList(original, n.textList);
   const wrap = (n.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT";
-  const lines = wrap ? paragraphs.flatMap((p) => wrapParagraph(p, Math.max(1, n.width), w)) : paragraphs;
+  const lines: string[] = [];
+  const starts: number[] = [];
+  let offset = 0; // index in characters of the current paragraph's first character
+  paragraphs.forEach((p, pi) => {
+    const prefix = p.length - (original[pi] ?? "").length;
+    const pieces = wrap ? wrapParagraph(p, Math.max(1, n.width), w) : [p];
+    let pos = 0; // position inside the displayed paragraph
+    for (const piece of pieces) {
+      lines.push(piece);
+      starts.push(offset - prefix + pos);
+      pos += piece.length;
+      if (p[pos] === " ") pos += 1; // a space at a soft break is dropped
+    }
+    offset += (original[pi] ?? "").length + 1;
+  });
   const lineHeight = lineHeightPx(n);
-  return { lines, lineHeight, width: Math.max(0, ...lines.map(w)), height: lines.length * lineHeight };
+  return { lines, starts, lineHeight, width: Math.max(0, ...lines.map(w)), height: lines.length * lineHeight };
+}
+
+/** One piece of a line with the same style (rich text). */
+export interface TextSegment {
+  text: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
+}
+
+type Flag = "bold" | "italic" | "underline" | "strikethrough";
+type Flags = Record<Flag, boolean>;
+
+const noFlags = (): Flags => ({ bold: false, italic: false, underline: false, strikethrough: false });
+const flagKey = (f: Flags) => `${+f.bold}${+f.italic}${+f.underline}${+f.strikethrough}`;
+const withFlags = (f: Flags) => ({ ...(f.bold ? { bold: true } : {}), ...(f.italic ? { italic: true } : {}), ...(f.underline ? { underline: true } : {}), ...(f.strikethrough ? { strikethrough: true } : {}) });
+
+/** The style of every character: a flag is on wherever any run says so. */
+function flagsPerChar(runs: TextRun[] | undefined, length: number): Flags[] {
+  const per = Array.from({ length }, noFlags);
+  for (const r of runs ?? []) {
+    for (let i = Math.max(0, r.start); i < Math.min(length, r.end); i++) {
+      per[i]!.bold ||= !!r.bold;
+      per[i]!.italic ||= !!r.italic;
+      per[i]!.underline ||= !!r.underline;
+      per[i]!.strikethrough ||= !!r.strikethrough;
+    }
+  }
+  return per;
+}
+
+/**
+ * Cut a displayed line into pieces of equal style. `from` is the index in `characters` of the line's first character (see `TextLayout.starts`).
+ * Without runs the whole line is one plain segment.
+ */
+export function lineSegments(line: string, from: number, runs: TextRun[] | undefined): TextSegment[] {
+  if (!runs?.length || line === "") return [{ text: line }];
+  const flagAt = (i: number): Flags => {
+    const f = noFlags();
+    for (const r of runs) {
+      if (i < r.start || i >= r.end) continue;
+      f.bold ||= !!r.bold;
+      f.italic ||= !!r.italic;
+      f.underline ||= !!r.underline;
+      f.strikethrough ||= !!r.strikethrough;
+    }
+    return f;
+  };
+  const segments: TextSegment[] = [];
+  let curKey = "";
+  for (let j = 0; j < line.length; j++) {
+    const f = flagAt(from + j);
+    const k = flagKey(f);
+    if (segments.length && k === curKey) segments[segments.length - 1]!.text += line[j]!;
+    else {
+      curKey = k;
+      segments.push({ text: line[j]!, ...withFlags(f) });
+    }
+  }
+  return segments;
+}
+
+/** Is every character of [start, end) already set for this flag? (Decides whether the shortcut turns the style on or off.) */
+export function rangeHas(runs: TextRun[] | undefined, start: number, end: number, flag: Flag): boolean {
+  if (end <= start) return false;
+  const per = flagsPerChar(runs, end);
+  for (let i = start; i < end; i++) if (!per[i]![flag]) return false;
+  return true;
+}
+
+/** Turn a style on or off for [start, end). Runs are rebuilt as one run per stretch of equal style, so they never pile up. */
+export function setRangeStyle(runs: TextRun[] | undefined, length: number, start: number, end: number, flag: Flag, on: boolean): TextRun[] {
+  const s = Math.max(0, Math.min(start, end));
+  const e = Math.min(length, Math.max(start, end));
+  const per = flagsPerChar(runs, length);
+  for (let i = s; i < e; i++) per[i]![flag] = on;
+  const out: TextRun[] = [];
+  let open: TextRun | null = null;
+  let openKey = "";
+  for (let i = 0; i < length; i++) {
+    const k = flagKey(per[i]!);
+    if (open && k !== openKey) {
+      out.push(open);
+      open = null;
+    }
+    if (!open && k !== "0000") {
+      open = { start: i, end: i + 1, ...withFlags(per[i]!) };
+      openKey = k;
+    } else if (open) open.end = i + 1;
+  }
+  if (open) out.push(open);
+  return out;
+}
+
+/** Keep the runs on the right characters when the text is edited: what follows the changed part moves, runs inside it grow or shrink. */
+export function adjustRuns(runs: TextRun[] | undefined, oldText: string, newText: string): TextRun[] | undefined {
+  if (!runs?.length) return runs;
+  let prefix = 0;
+  while (prefix < oldText.length && prefix < newText.length && oldText[prefix] === newText[prefix]) prefix++;
+  let suffix = 0;
+  while (suffix < oldText.length - prefix && suffix < newText.length - prefix && oldText[oldText.length - 1 - suffix] === newText[newText.length - 1 - suffix]) suffix++;
+  const removedEnd = oldText.length - suffix; // old index where the unchanged tail starts
+  const delta = newText.length - oldText.length;
+  const insertedEnd = newText.length - suffix; // new index where the unchanged tail starts
+  const map = (i: number) => (i <= prefix ? i : i >= removedEnd ? i + delta : Math.min(insertedEnd, prefix + (i - prefix)));
+  return runs.map((r) => ({ ...r, start: map(r.start), end: map(r.end) })).filter((r) => r.end > r.start);
 }

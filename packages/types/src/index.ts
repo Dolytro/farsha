@@ -381,6 +381,16 @@ export type TextCase = 'NONE' | 'UPPER' | 'LOWER' | 'TITLE';
 export type TextList = 'NONE' | 'BULLET' | 'NUMBER';
 /** Writing direction; right to left text (Arabic, Hebrew) starts at the right edge. */
 export type TextDirection = 'LTR' | 'RTL';
+
+/** A styled stretch of a text layer's characters (rich text): start inclusive, end exclusive. Only what differs from the layer is set. */
+export interface TextRun {
+  start: number;
+  end: number;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
+}
 export type TextVerticalAlign = 'TOP' | 'CENTER' | 'BOTTOM';
 
 /** Figma's text resizing: auto width, auto height (wraps at the layer width) or a fixed box. Missing means auto width. */
@@ -408,6 +418,8 @@ export interface TextNode extends BaseNode {
   textDirection?: TextDirection;
   /** A web address the whole text links to (Figma's Create link). */
   textLink?: string;
+  /** Rich text: styles of parts of the characters, on top of the layer's own style. */
+  runs?: TextRun[];
   /** Where the text sits inside a box taller than the text. Missing means top. */
   textVerticalAlign?: TextVerticalAlign;
   fills: Paint[];
@@ -502,6 +514,7 @@ export interface TextPatch {
   textList?: TextList;
   textDirection?: TextDirection;
   textLink?: string | null;
+  runs?: TextRun[] | null;
   textVerticalAlign?: TextVerticalAlign;
 }
 

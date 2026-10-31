@@ -402,3 +402,18 @@ describe("text links", () => {
     expect(textFontStyle({})).toEqual({});
   });
 });
+
+describe("rich text export", () => {
+  it("draws styled stretches as their own tspans", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Hello world", width: 300, runs: [{ start: 6, end: 11, bold: true, underline: true }] } as never });
+    const svg = exportSvg(doc, [id])!.svg;
+    expect(svg).toContain('<tspan x="0" dy="0">Hello </tspan>');
+    expect(svg).toContain('<tspan font-weight="700" text-decoration="underline">world</tspan>');
+  });
+  it("leaves plain text as one tspan per line", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Hello", width: 300 } as never });
+    expect(exportSvg(doc, [id])!.svg).toContain('<tspan x="0" dy="0">Hello</tspan>');
+  });
+});

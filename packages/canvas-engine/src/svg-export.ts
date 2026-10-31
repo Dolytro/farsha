@@ -4,7 +4,7 @@ import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMa
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
-import { approxMeasure, layoutText, textPlacement, textFontStyle, verticalTextOffset, type Measure } from "./text";
+import { approxMeasure, layoutText, lineSegments, textPlacement, textFontStyle, verticalTextOffset, type Measure } from "./text";
 
 export interface SvgExport {
   svg: string;
@@ -72,10 +72,19 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       const place = textPlacement(n);
       const anchor = `${place.anchor === "start" && !place.rtl ? "" : ` text-anchor="${place.anchor}"`}${place.rtl ? ' direction="rtl" unicode-bidi="plaintext"' : ""}`;
       const x = place.x;
-      const { lines, lineHeight, height: textHeight } = layoutText(n, measure);
+      const { lines, starts, lineHeight, height: textHeight } = layoutText(n, measure);
       const style = textFontStyle(n);
       const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;
-      const spans = lines.map((l, i) => `<tspan x="${num(x)}" dy="${i ? num(lineHeight) : 0}">${esc(l)}</tspan>`).join("");
+      const spans = lines
+        .flatMap((l, i) =>
+          lineSegments(l, starts[i] ?? 0, n.runs).map((seg, j) => {
+            const deco = seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : "";
+            const look = `${seg.bold ? ' font-weight="700"' : ""}${seg.italic ? ' font-style="italic"' : ""}${deco ? ` text-decoration="${deco}"` : ""}`;
+            const pos = j === 0 ? ` x="${num(x)}" dy="${i ? num(lineHeight) : 0}"` : "";
+            return `<tspan${pos}${look}>${esc(seg.text)}</tspan>`;
+          }),
+        )
+        .join("");
       return `<g transform="${transform}"${opacity}><text x="${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs} xml:space="preserve">${spans}</text></g>`;
     }
     case "FRAME": {

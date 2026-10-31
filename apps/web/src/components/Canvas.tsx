@@ -10,7 +10,7 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -461,11 +461,23 @@ export function Canvas() {
             fontWeight={n.fontWeight}
             {...textFontStyle(n)}
           >
-            {layoutText(n, canvasMeasure).lines.map((line, i) => (
-              <tspan key={i} x={textPlacement(n).x} dy={i ? lineHeightPx(n) : 0}>
-                {line}
-              </tspan>
-            ))}
+            {(() => {
+              const layout = layoutText(n, canvasMeasure);
+              return layout.lines.flatMap((line, i) =>
+                lineSegments(line, layout.starts[i] ?? 0, n.runs).map((seg, j) => (
+                  <tspan
+                    key={`${i}-${j}`}
+                    x={j === 0 ? textPlacement(n).x : undefined}
+                    dy={j === 0 && i ? lineHeightPx(n) : undefined}
+                    fontWeight={seg.bold ? 700 : undefined}
+                    fontStyle={seg.italic ? "italic" : undefined}
+                    textDecoration={seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : undefined}
+                  >
+                    {seg.text}
+                  </tspan>
+                )),
+              );
+            })()}
           </text>
         </g>
       );
@@ -726,13 +738,27 @@ export function Canvas() {
                 onPointerDown={(e) => e.stopPropagation()}
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => {
-                  doc.setText(editNode.id, { characters: e.target.value });
+                  doc.setText(editNode.id, { characters: e.target.value, runs: adjustRuns(editNode.runs, editNode.characters, e.target.value) });
                   fitText(doc, editNode.id);
                 }}
                 onBlur={() => setEditing(null)}
                 onKeyDown={(e) => {
                   e.stopPropagation();
                   if (e.key === "Escape") setEditing(null); // Enter adds a new line, like Figma
+                  // Ctrl+B / I / U and Ctrl+Shift+X style only the selected characters (rich text); with nothing selected they do nothing
+                  const k = e.key.toLowerCase();
+                  const flag = !(e.ctrlKey || e.metaKey) || e.altKey ? undefined : !e.shiftKey ? ({ b: "bold", i: "italic", u: "underline" } as const)[k as "b"] : k === "x" ? "strikethrough" : undefined;
+                  if (flag) {
+                    e.preventDefault();
+                    const a = e.currentTarget.selectionStart;
+                    const b = e.currentTarget.selectionEnd;
+                    if (a === b) return;
+                    const on = !rangeHas(editNode.runs, a, b, flag);
+                    doc.stopCapturing();
+                    doc.setText(editNode.id, { runs: setRangeStyle(editNode.runs, editNode.characters.length, a, b, flag, on) });
+                    doc.stopCapturing();
+                    fitText(doc, editNode.id);
+                  }
                 }}
               />
             </foreignObject>
