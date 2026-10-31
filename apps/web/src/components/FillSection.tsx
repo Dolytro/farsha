@@ -1,3 +1,4 @@
+import { ColorSwatch } from "./ColorSwatch";
 import { useState } from "react";
 import type { DesignDoc } from "@canvylo/design-core";
 import { StyleMenu, StylePill } from "./StyleMenu";
@@ -117,7 +118,7 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
         <ImageFill doc={doc} nodeId={nodeId} paint={paint} setPaint={setPaint} />
       ) : paint.type === "SOLID" && paint.variableId && bind ? null : paint.type === "SOLID" ? (
         <div className="fill-row fill-row--gap">
-          <input className="fill-row__swatch" type="color" value={paint.color} onChange={(e) => setPaint({ ...paint, color: e.target.value })} />
+          <ColorSwatch value={paint.color} onChange={(color) => setPaint({ ...paint, color })} />
           <HexInput value={paint.color} onChange={(color) => setPaint({ ...paint, color })} />
           <input
             className="fill-row__pct"
@@ -150,7 +151,7 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
                   value={Math.round(s.position * 100)}
                   onChange={(e) => patch({ position: clamp01(Number(e.target.value) / 100) })}
                 />
-                <input className="fill-row__swatch" type="color" value={s.color} onChange={(e) => patch({ color: e.target.value })} />
+                <ColorSwatch value={s.color} onChange={(color) => patch({ color })} />
                 <HexInput value={s.color} onChange={(color) => patch({ color })} />
                 <input className="fill-row__pct" type="number" min={0} max={100} title="Stop opacity (%)" value={Math.round(s.opacity * 100)} onChange={(e) => patch({ opacity: clamp01(Number(e.target.value) / 100) })} />
                 <button

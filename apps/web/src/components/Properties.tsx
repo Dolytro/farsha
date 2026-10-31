@@ -15,6 +15,7 @@ import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
 import { Select } from "./Select";
+import { ColorSwatch } from "./ColorSwatch";
 import { VariableBindings } from "./VariableBindings";
 import { flipSelection } from "../actions";
 import { rotateSelectionBy } from "../object-actions";
@@ -113,13 +114,7 @@ export function Properties() {
           <section className="props__section">
             <h3 className="props__heading">Page</h3>
             <div className="fill-row fill-row--gap">
-              <input
-                className="fill-row__swatch"
-                type="color"
-                aria-label="Page background"
-                value={doc.pageBackground(pageId) ?? "#e5e5e5"}
-                onChange={(e) => doc.setPageBackground(pageId, e.target.value)}
-              />
+              <ColorSwatch label="Page background" value={doc.pageBackground(pageId) ?? "#e5e5e5"} onChange={(color) => doc.setPageBackground(pageId, color)} />
               <span className="fill-row__hex">{(doc.pageBackground(pageId) ?? "#e5e5e5").slice(1).toUpperCase()}</span>
               <button className="props__add" title="Reset page background" aria-label="Reset page background" onClick={() => doc.setPageBackground(pageId, undefined)}>
                 ↺
