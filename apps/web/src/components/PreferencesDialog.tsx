@@ -3,8 +3,9 @@ import { UI_PRESETS, type Prefs, type UiPreset } from "../prefs";
 import { Select } from "./Select";
 import { useEditor } from "../store";
 
-const SWITCHES: { key: keyof Pick<Prefs, "keepTool" | "invertZoom" | "wheelZoom" | "snapping">; label: string; hint: string }[] = [
+const SWITCHES: { key: keyof Pick<Prefs, "keepTool" | "invertZoom" | "wheelZoom" | "snapping" | "spellCheck">; label: string; hint: string }[] = [
   { key: "keepTool", label: "Keep tool selected after use", hint: "Stay on Rectangle, Ellipse, … after drawing a layer" },
+  { key: "spellCheck", label: "Check spelling in text", hint: "Underlines misspelled words while you type in a text layer" },
   { key: "snapping", label: "Snap to layers and guides", hint: "While moving layers (hold Ctrl to snap off for one move)" },
   { key: "wheelZoom", label: "Use scroll wheel to zoom", hint: "Instead of panning; hold Shift is not needed, Ctrl + wheel always zooms" },
   { key: "invertZoom", label: "Invert zoom direction", hint: "Scroll up to zoom out" },

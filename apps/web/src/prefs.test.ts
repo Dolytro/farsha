@@ -9,7 +9,7 @@ describe("parsePrefs", () => {
   });
   it("keeps valid values and replaces invalid ones one by one", () => {
     const p = parsePrefs(JSON.stringify({ keepTool: true, snapping: "yes", nudge: 2, bigNudge: -5, wheelZoom: true }));
-    expect(p).toMatchObject({ keepTool: true, snapping: true, nudge: 2, bigNudge: 10, wheelZoom: true, invertZoom: false });
+    expect(p).toMatchObject({ spellCheck: false, keepTool: true, snapping: true, nudge: 2, bigNudge: 10, wheelZoom: true, invertZoom: false });
   });
   it("rejects absurd nudge amounts", () => expect(parsePrefs(JSON.stringify({ nudge: 1e9 })).nudge).toBe(1));
 });
