@@ -16,6 +16,7 @@ import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
 import { Select } from "./Select";
 import { SelectionColors } from "./SelectionColors";
+import { LocalStyles } from "./LocalStyles";
 
 const BLEND_MODES: [BlendMode, string][] = [
   ["NORMAL", "Normal"],
@@ -122,6 +123,8 @@ export function Properties() {
             </div>
           </section>
         )}
+        {selection.length === 0 && !viewer && <LocalStyles />}
+        {selection.length === 0 && !viewer && <ExportSection doc={doc} ids={[]} pageId={pageId} />}
         {selection.length > 0 && !viewer && <SelectionColors />}
         <p className="props__empty">{selection.length > 1 ? `${selection.length} layers selected` : "Select a layer to edit its properties"}</p>
       </aside>

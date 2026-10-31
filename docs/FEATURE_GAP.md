@@ -206,7 +206,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Toolbar | Comment tool (C): click to drop a pin, thread with replies, resolve, delete, Comments tab, Shift+C shows / hides pins | ✅ local-first: comments are saved inside the document (Drive file, local copy, version history), not synced live |
 | Toolbar | Pencil (Shift+P), Slice (S, exports the area under it) ✅; Text on path ❌ | ◐ |
 | Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | ✅ (opacity keys, Alt+drag copies the selection in one undo step) |
-| Design panel | Page background colour, Selection colors ✅; Styles on a page, Export on a page ❌ | ◐ |
+| Design panel | Page background colour, Selection colors, Styles on a page (colour and text styles of the file), Export on a page (everything on the page as one PNG, JPG or SVG) | ✅ |
 | Design panel | Stroke dash and gap, caps, joins; arrowheads (line arrow, triangle, circle, square, diamond) on the start and end of a vector / line | ✅ |
 | Design panel | Corner smoothing, per-side stroke weights (rectangles and frames, drawn inside the shape; CSS border-width), background blur (canvas + CSS, not in SVG export) ✅ | ✅ |
 | Prototype | Triggers (On click, While hovering, On drag, After delay, Key press), Back, Open link (http and https only), transitions (instant, dissolve, slide in from any side, duration), flow starting point (Present starts there when nothing is selected), Open / Close overlay (centred on a dimmed backdrop; click outside or Esc closes), device frame while presenting (phone or tablet bezel) ✅; scroll, smart animate ❌ | ◐ |
