@@ -5,7 +5,15 @@ import { Select } from "./Select";
 
 const LABEL: Record<LayoutGrid["type"], string> = { COLUMNS: "Columns", ROWS: "Rows", GRID: "Grid" };
 
-const newGrid = (): LayoutGrid => ({ type: "COLUMNS", count: 4, gutter: 20, margin: 20, color: "#ff0000", opacity: 0.1, visible: true });
+// Like Figma, the first grid is a plain 10 px square grid; switch the type to get columns or rows.
+const newGrid = (): LayoutGrid => ({ type: "GRID", size: 10, color: "#ff0000", opacity: 0.1, visible: true });
+
+/** What a type means, in words. */
+const HINT: Record<LayoutGrid["type"], string> = {
+  GRID: "Square cells of the size below",
+  COLUMNS: "Vertical columns with gutters between them",
+  ROWS: "Horizontal rows with gutters between them",
+};
 
 /** Figma's Layout grid section of a frame: columns, rows or a square grid drawn over the frame as a guide. */
 export function LayoutGridSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
@@ -14,8 +22,8 @@ export function LayoutGridSection({ doc, node }: { doc: DesignDoc; node: DesignN
   const set = (next: LayoutGrid[]) => doc.setStyle(node.id, { layoutGrids: next });
   const patch = (i: number, p: Partial<LayoutGrid>) => set(grids.map((g, j) => (j === i ? { ...g, ...p } : g)));
   const field = (i: number, label: string, key: "count" | "gutter" | "margin" | "size", value: number | undefined, min: number, title: string) => (
-    <label className="field" title={title}>
-      <span className="field__label">{label}</span>
+    <label className="field field--row" title={title}>
+      <span className="field__label field__label--text">{label}</span>
       <input
         className="field__input"
         type="number"
@@ -34,10 +42,15 @@ export function LayoutGridSection({ doc, node }: { doc: DesignDoc; node: DesignN
           +
         </button>
       </h3>
+      {grids.length === 0 && <p className="props__hint">No layout grid yet. Click + to add a 10 px grid, then change its type to Columns or Rows. Shift+G shows or hides the grids.</p>}
       {grids.map((g, i) => (
         <div className="grid-item" key={i}>
           <div className="grid-item__head">
-            <Select className="field__select" aria-label="Grid type" value={g.type} onChange={(e) => patch(i, { type: e.target.value as LayoutGrid["type"], ...(e.target.value === "GRID" ? { size: g.size ?? 10 } : {}) })}>
+            <Select className="field__select" aria-label="Grid type" value={g.type} onChange={(e) => {
+                const type = e.target.value as LayoutGrid["type"];
+                // give the new type sensible numbers so it shows at once
+                patch(i, type === "GRID" ? { type, size: g.size ?? 10 } : { type, count: g.count ?? 4, gutter: g.gutter ?? 20, margin: g.margin ?? 0 });
+              }}>
               {(Object.keys(LABEL) as LayoutGrid["type"][]).map((t) => (
                 <option key={t} value={t}>
                   {LABEL[t]}
@@ -51,14 +64,15 @@ export function LayoutGridSection({ doc, node }: { doc: DesignDoc; node: DesignN
               −
             </button>
           </div>
-          <div className="props__grid props__grid--gap">
+          <p className="props__hint">{HINT[g.type]}</p>
+          <div className="props__stack">
             {g.type === "GRID" ? (
-              field(i, "Size", "size", g.size ?? 10, 2, "Cell size (px)")
+              field(i, "Size", "size", g.size ?? 10, 2, "Cell size in pixels")
             ) : (
               <>
-                {field(i, "#", "count", g.count ?? 4, 1, g.type === "COLUMNS" ? "Number of columns" : "Number of rows")}
-                {field(i, "G", "gutter", g.gutter ?? 20, 0, "Gutter (px)")}
-                {field(i, "M", "margin", g.margin ?? 0, 0, "Margin (px)")}
+                {field(i, "Count", "count", g.count ?? 4, 1, g.type === "COLUMNS" ? "Number of columns" : "Number of rows")}
+                {field(i, "Gutter", "gutter", g.gutter ?? 20, 0, "Space between columns or rows, in pixels")}
+                {field(i, "Margin", "margin", g.margin ?? 0, 0, "Space at both ends, in pixels")}
               </>
             )}
             <div className="fill-row">
