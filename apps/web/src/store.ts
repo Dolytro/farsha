@@ -102,6 +102,9 @@ interface EditorState {
   prototypeMode: boolean;
   /** Id of the frame the prototype presentation started from, or null when not presenting. */
   presenting: string | null;
+  /** Device bezel drawn around the prototype while presenting. */
+  presentDevice: "none" | "phone" | "tablet";
+  setPresentDevice: (d: "none" | "phone" | "tablet") => void;
   /** Layer being renamed in the layers panel (F2 / Ctrl+R / double-click). */
   renaming: string | null;
   setRenaming: (id: string | null) => void;
@@ -188,6 +191,7 @@ export const useEditor = create<EditorState>((set) => ({
   variablesOpen: false,
   prototypeMode: false,
   presenting: null,
+  presentDevice: "none",
   renaming: null,
   setRenaming: (renaming) => set({ renaming }),
   menu: null,
@@ -201,6 +205,7 @@ export const useEditor = create<EditorState>((set) => ({
   setDevMode: (devMode) => set((s) => (s.viewer ? s : { devMode, prototypeMode: false, tool: "select" })),
   setPrototypeMode: (on) => set((s) => (s.viewer ? s : { prototypeMode: on, devMode: on, tool: "select" })),
   setPresenting: (presenting) => set({ presenting }),
+  setPresentDevice: (presentDevice) => set({ presentDevice }),
   setTool: (tool) => set({ tool }),
   select: (selection) => set({ selection }),
   setPage: (id) =>

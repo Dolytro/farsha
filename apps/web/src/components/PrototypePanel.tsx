@@ -35,6 +35,8 @@ export function PrototypePanel() {
   const selection = useEditor((s) => s.selection);
   const setPresenting = useEditor((s) => s.setPresenting);
   const showToast = useEditor((s) => s.showToast);
+  const device = useEditor((s) => s.presentDevice);
+  const setDevice = useEditor((s) => s.setPresentDevice);
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
   const frames = prototypeFrames(doc);
@@ -56,6 +58,11 @@ export function PrototypePanel() {
         <button className="props__button props__button--primary" onClick={present} title="Present (Ctrl+Alt+Enter)">
           ▶ Present
         </button>
+        <Select className="field__select field__select--wide" aria-label="Device" value={device} onChange={(e) => setDevice(e.target.value as "none" | "phone" | "tablet")}>
+          <option value="none">No device frame</option>
+          <option value="phone">Phone frame</option>
+          <option value="tablet">Tablet frame</option>
+        </Select>
       </section>
       {node && frames.some((f) => f.id === node.id) && (
         <section className="props__section">

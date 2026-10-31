@@ -896,3 +896,21 @@ textarea:focus-visible {
     text-decoration: underline;
   }
 }
+
+// Prototype device frames: a dark bezel around the stage.
+.presenter__stage--phone,
+.presenter__stage--tablet {
+  box-sizing: content-box;
+  border: 12px solid #0b0b0d;
+  box-shadow: 0 0 0 2px #3a3a40, 0 16px 56px rgba(0, 0, 0, 0.55);
+}
+
+.presenter__stage--phone {
+  border-radius: 40px;
+  border-width: 14px 12px;
+}
+
+.presenter__stage--tablet {
+  border-radius: 24px;
+  border-width: 18px;
+}
