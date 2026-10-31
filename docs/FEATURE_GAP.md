@@ -243,9 +243,9 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 ### 12.1 Shortcuts that differ from Figma today (cheap fixes)
 | Command | Figma | Canvylo now |
 |---|---|---|
-| Flatten | Alt+Shift+F | Ctrl+E |
-| Outline stroke | Ctrl+Alt+O | Ctrl+Shift+O |
-| Union / Subtract / Intersect / Exclude selection | Alt+Shift+U / S / I / E | Ctrl+Alt+U (Union only) |
+| Flatten | Alt+Shift+F | ✅ same |
+| Outline stroke | Ctrl+Alt+O | ✅ same |
+| Union / Subtract / Intersect / Exclude selection | Alt+Shift+U / S / I / E | ✅ same |
 | Open layers / libraries / design / prototype panel | Alt+1 / 2 / 8 / 9 | Alt+1 layers, Alt+2 properties |
 | Find next / previous | Ctrl+Shift+F / Ctrl+Shift+D | Enter / Shift+Enter inside Find |
 | Rename layer | Ctrl+R | double click only |
