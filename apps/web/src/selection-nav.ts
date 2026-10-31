@@ -55,3 +55,37 @@ export function selectMatching(doc: DesignDoc, ids: string[], pageId: string): s
     .filter((n) => pickable(doc, n.id) && key(n) === wanted)
     .map((n) => n.id);
 }
+
+export type SameFacet = "type" | "fill" | "stroke" | "font" | "effect" | "opacity" | "name";
+
+/** Figma's "Select all with…": every unlocked, visible layer of the page that shares one property with the first selected layer. */
+export function selectSameAs(doc: DesignDoc, ids: string[], pageId: string, facet: SameFacet): string[] {
+  const first = ids[0] ? doc.getNode(ids[0]) : undefined;
+  if (!first) return ids;
+  const key = (n: NonNullable<ReturnType<DesignDoc["getNode"]>>): string => {
+    const any = n as unknown as Record<string, unknown>;
+    switch (facet) {
+      case "type":
+        return n.type;
+      case "fill":
+        return JSON.stringify(any.fills ?? null);
+      case "stroke":
+        return JSON.stringify([any.strokes ?? null, any.strokeWidth ?? null]);
+      case "font":
+        return n.type === "TEXT" ? JSON.stringify([any.fontFamily, any.fontSize, any.fontWeight]) : "";
+      case "effect":
+        return JSON.stringify(any.effects ?? null);
+      case "opacity":
+        return String(n.opacity);
+      case "name":
+        return n.name;
+    }
+  };
+  const wanted = key(first);
+  // a facet the first layer does not have (no font on a rectangle) selects nothing extra
+  if (facet === "font" && first.type !== "TEXT") return ids;
+  return doc
+    .descendants(pageId)
+    .filter((n) => pickable(doc, n.id) && key(n) === wanted)
+    .map((n) => n.id);
+}

@@ -64,6 +64,7 @@ export function buildMainMenu(): MenuNode[] {
         item("eyedropper", "Pick color"),
         item("select-all", undefined, true),
         item("select-matching", "Select matching layers"),
+        sub("Select all with", list(item("select-same-type", "Same type"), item("select-same-fill", "Same fill"), item("select-same-stroke", "Same stroke"), item("select-same-font", "Same font"), item("select-same-effect", "Same effects"), item("select-same-opacity", "Same opacity"), item("select-same-name", "Same name"))),
         item("select-none"),
         item("select-inverse"),
         item("select-children"),

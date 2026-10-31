@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
-import { selectMatching, selectChildren, selectInverse, selectParent, selectSibling } from "./selection-nav";
+import { selectMatching, selectChildren, selectInverse, selectParent, selectSameAs, selectSibling } from "./selection-nav";
 
 function setup() {
   const doc = new DesignDoc();
@@ -75,5 +75,33 @@ describe("selectMatching", () => {
     doc.setStyle(b, { locked: true });
     expect(selectMatching(doc, [a], page)).not.toContain(b);
     expect(selectMatching(doc, [], page)).toEqual([]);
+  });
+});
+
+describe("selectSameAs", () => {
+  const red = [{ type: "SOLID" as const, color: "#ff0000", opacity: 1 }];
+  const blue = [{ type: "SOLID" as const, color: "#0000ff", opacity: 1 }];
+  function setup() {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("RECTANGLE", { parentId: page, props: { name: "Card", fills: red, opacity: 0.5 } });
+    const b = doc.createNode("ELLIPSE", { parentId: page, props: { name: "Dot", fills: red } });
+    const c = doc.createNode("RECTANGLE", { parentId: page, props: { name: "Card", fills: blue } });
+    const t = doc.createNode("TEXT", { parentId: page, props: { fontSize: 20 } });
+    const t2 = doc.createNode("TEXT", { parentId: page, props: { fontSize: 20 } });
+    return { doc, page, a, b, c, t, t2 };
+  }
+  it("picks layers sharing the fill, type, name, opacity or font", () => {
+    const { doc, page, a, b, c, t, t2 } = setup();
+    expect(selectSameAs(doc, [a], page, "fill").sort()).toEqual([a, b].sort());
+    expect(selectSameAs(doc, [a], page, "type").sort()).toEqual([a, c].sort());
+    expect(selectSameAs(doc, [a], page, "name").sort()).toEqual([a, c].sort());
+    expect(selectSameAs(doc, [a], page, "opacity")).toEqual([a]);
+    expect(selectSameAs(doc, [t], page, "font").sort()).toEqual([t, t2].sort());
+  });
+  it("keeps the selection when the first layer has no such property", () => {
+    const { doc, page, a } = setup();
+    expect(selectSameAs(doc, [a], page, "font")).toEqual([a]);
+    expect(selectSameAs(doc, [], page, "fill")).toEqual([]);
   });
 });
