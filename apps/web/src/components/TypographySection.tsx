@@ -179,6 +179,26 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           </option>
         ))}
       </Select>
+      {(
+        [
+          ["Para. spacing", "paragraphSpacing", "Extra space between paragraphs, in pixels"],
+          ["Indent", "paragraphIndent", "Indent of the first line of every paragraph, in pixels"],
+          ["Max lines", "maxLines", "Show at most this many lines and end with … (0 shows all)"],
+        ] as const
+      ).map(([label, key, title]) => (
+        <label className="field field--row" key={key} title={title}>
+          <span className="field__label field__label--text">{label}</span>
+          <input
+            className="field__input"
+            type="number"
+            min={0}
+            step={key === "maxLines" ? 1 : 2}
+            aria-label={label}
+            value={node[key] ?? 0}
+            onChange={(e) => set({ [key]: Math.max(0, Number(e.target.value) || 0) })}
+          />
+        </label>
+      ))}
       <label className="field" title="Web address this text links to (opens when presenting)">
         <span className="field__label">Link</span>
         <input className="field__input" type="url" aria-label="Text link" placeholder="https://" value={node.textLink ?? ""} onChange={(e) => set({ textLink: e.target.value || null })} />

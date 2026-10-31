@@ -518,8 +518,8 @@ export function Canvas() {
                 lineSegments(line, layout.starts[i] ?? 0, n.runs).map((seg, j) => (
                   <tspan
                     key={`${i}-${j}`}
-                    x={j === 0 ? textPlacement(n).x : undefined}
-                    dy={j === 0 && i ? lineHeightPx(n) : undefined}
+                    x={j === 0 ? textPlacement(n).x + (textPlacement(n).anchor === "start" && !textPlacement(n).rtl ? layout.indent[i] ?? 0 : 0) : undefined}
+                    dy={j === 0 && i ? lineHeightPx(n) + (layout.lineGap[i] ?? 0) : undefined}
                     wordSpacing={layout.wordSpacing[i] || undefined}
                     fontWeight={seg.bold ? 700 : undefined}
                     fontStyle={seg.italic ? "italic" : undefined}

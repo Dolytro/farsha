@@ -14,6 +14,10 @@ export const approxMeasure: Measure = (text, f) => text.length * (f.size * 0.56 
 
 export interface TextLayout {
   lines: string[];
+  /** Extra space above each line (the paragraph spacing, on the first line of every paragraph after the first). */
+  lineGap: number[];
+  /** Indent of each line (the paragraph indent, on the first line of every paragraph). */
+  indent: number[];
   /** Extra space added to every word gap of a line so a justified line fills the box (0 for the last line of a paragraph and for other alignments). */
   wordSpacing: number[];
   /** For every line, the index in `characters` of the line's first character (list markers count as sitting just before their paragraph). */
@@ -25,7 +29,7 @@ export interface TextLayout {
   height: number;
 }
 
-type TextLike = Pick<TextNode, "characters" | "fontFamily" | "fontSize" | "fontWeight" | "letterSpacing" | "lineHeight" | "width"> & { textAutoResize?: TextNode["textAutoResize"]; textCase?: TextCase; textList?: TextList; textAlign?: string };
+type TextLike = Pick<TextNode, "characters" | "fontFamily" | "fontSize" | "fontWeight" | "letterSpacing" | "lineHeight" | "width"> & { textAutoResize?: TextNode["textAutoResize"]; textCase?: TextCase; textList?: TextList; textAlign?: string; paragraphSpacing?: number; paragraphIndent?: number; maxLines?: number };
 
 /** The characters as they are drawn: upper case, lower case or Title Case when the layer asks for it. */
 export function applyTextCase(text: string, mode: TextCase | undefined): string {
@@ -128,13 +132,38 @@ export function layoutText(n: TextLike, measure: Measure = approxMeasure): TextL
       lastOfParagraph.add(at - 1);
     });
   }
+  // paragraph spacing and first-line indent
+  const spacing = Math.max(0, Number.isFinite(n.paragraphSpacing) ? (n.paragraphSpacing as number) : 0);
+  const indentPx = Math.max(0, Number.isFinite(n.paragraphIndent) ? (n.paragraphIndent as number) : 0);
+  const lineGap: number[] = [];
+  const indent: number[] = [];
+  {
+    let at = 0;
+    paragraphs.forEach((p, pi) => {
+      const count = wrap ? wrapParagraph(p, Math.max(1, n.width), w).length : 1;
+      for (let k = 0; k < count; k++) {
+        lineGap.push(k === 0 && pi > 0 ? spacing : 0);
+        indent.push(k === 0 ? indentPx : 0);
+      }
+      at += count;
+    });
+  }
+  // truncation: keep the first maxLines lines and end the last with an ellipsis
+  const limit = Number.isFinite(n.maxLines) && (n.maxLines as number) > 0 ? Math.floor(n.maxLines as number) : 0;
+  if (limit && lines.length > limit) {
+    lines.length = limit;
+    starts.length = limit;
+    lineGap.length = limit;
+    indent.length = limit;
+    lines[limit - 1] = `${lines[limit - 1]!.replace(/\s+$/, "")}…`;
+  }
   const wordSpacing = lines.map((line, i) => {
     if (n.textAlign !== "JUSTIFIED" || !wrap || lastOfParagraph.has(i)) return 0;
     const gaps = line.split(" ").length - 1;
     const free = n.width - w(line);
     return gaps > 0 && free > 0 ? free / gaps : 0;
   });
-  return { lines, starts, wordSpacing, lineHeight, width: Math.max(0, ...lines.map(w)), height: lines.length * lineHeight };
+  return { lines, starts, wordSpacing, lineGap, indent, lineHeight, width: Math.max(0, ...lines.map((l, i) => w(l) + (indent[i] ?? 0))), height: lines.length * lineHeight + lineGap.reduce((a, b) => a + b, 0) };
 }
 
 /** One piece of a line with the same style (rich text). */

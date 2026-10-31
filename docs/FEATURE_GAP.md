@@ -274,7 +274,7 @@ Design panel
 - Fills: Pattern, angular and diamond gradients, tile / crop image modes, image adjustments (exposure, contrast, saturation...), gradient handles on the canvas
 - Strokes: stroke styles, miter angle, variable width and brush strokes
 - Effects: Noise, Texture, Glass, effect styles, shadow "show behind"
-- Typography: font search with Google fonts and local fonts, paragraph spacing, indent, truncate text (max lines), vertical trim, text decoration style, OpenType features and variable font axes, rich text size / colour / font per range
+- Typography: ✅ paragraph spacing, indent, truncate text (max lines). Still missing: font search with Google fonts and local fonts, vertical trim, text decoration style, OpenType features and variable font axes, rich text size / colour / font per range
 - Export: several export settings per layer, suffix, WebP, "contents only"
 - Styles for grids and strokes
 - Layers panel: filter by type, Rename shortcut, hover highlight
