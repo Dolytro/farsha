@@ -97,6 +97,9 @@ interface EditorState {
   versionsOpen: boolean;
   /** Id of the pen path whose points are being edited. */
   editingPath: string | null;
+  /** The selected anchor of the pen path being edited (Vector > Delete and heal / Split act on it). */
+  editingPoint: number | null;
+  setEditingPoint: (i: number | null) => void;
   variablesOpen: boolean;
   /** Prototype tab: a read-only canvas where layers get click interactions. Implies devMode. */
   prototypeMode: boolean;
@@ -188,6 +191,7 @@ export const useEditor = create<EditorState>((set) => ({
   theme: readTheme(),
   versionsOpen: false,
   editingPath: null,
+  editingPoint: null,
   variablesOpen: false,
   prototypeMode: false,
   presenting: null,
@@ -257,7 +261,8 @@ export const useEditor = create<EditorState>((set) => ({
     set({ theme });
   },
   setVersionsOpen: (versionsOpen) => set({ versionsOpen }),
-  setEditingPath: (editingPath) => set({ editingPath }),
+  setEditingPath: (editingPath) => set({ editingPath, editingPoint: null }),
+  setEditingPoint: (editingPoint) => set({ editingPoint }),
   setVariablesOpen: (variablesOpen) => set({ variablesOpen }),
   setDrive: (patch) => set((s) => ({ drive: { ...s.drive, ...patch } })),
   setLoad: (loadState, loadError = null) => set({ loadState, loadError }),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { joinPenPaths, simplifyPenPoints, smoothPenPoints } from "./pen-ops";
+import { joinPenPaths, simplifyPenPoints, smoothPenPoints, splitPenPoints } from "./pen-ops";
 
 const corner = (x: number, y: number) => ({ x, y, hx: 0, hy: 0 });
 
@@ -40,5 +40,24 @@ describe("joinPenPaths", () => {
     const b = [corner(30, 0), corner(10, 0)];
     const out = joinPenPaths(a, b);
     expect(out.map((p) => p.x)).toEqual([0, 10, 30]);
+  });
+});
+
+describe("splitPenPoints", () => {
+  const path = [corner(0, 0), corner(10, 0), corner(20, 0), corner(30, 0)];
+  it("cuts an open path in two at an inner point, sharing the cut point", () => {
+    const parts = splitPenPoints(path, false, 1)!;
+    expect(parts.map((p) => p.map((q) => q.x))).toEqual([[0, 10], [10, 20, 30]]);
+  });
+  it("opens a closed path at the point and runs all the way round", () => {
+    const parts = splitPenPoints(path, true, 2)!;
+    expect(parts).toHaveLength(1);
+    expect(parts[0]!.map((q) => q.x)).toEqual([20, 30, 0, 10, 20]);
+  });
+  it("refuses to cut at the ends of an open path or at a bad index", () => {
+    expect(splitPenPoints(path, false, 0)).toBeNull();
+    expect(splitPenPoints(path, false, 3)).toBeNull();
+    expect(splitPenPoints(path, false, 9)).toBeNull();
+    expect(splitPenPoints(path, true, -1)).toBeNull();
   });
 });
