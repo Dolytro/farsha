@@ -226,7 +226,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | 7 | Prototype did not seem to work | connector arrows on the canvas in the Prototype tab, a Preview button in the toolbar ✅ |
 | 8 | Collapse all layers in the sidebar | open |
 | 9 | Clicking outside an open comment reply does not close it | ✅ |
-| 10 | Dragging a frame often does not create one | open |
+| 10 | Dragging a frame often does not create one | ✅ pointer capture now sits on the canvas, so a drag survives re-rendering and ends outside the canvas |
 | 11 | Preview option outside the Prototype tab | ✅ toolbar Preview button |
 | 12 | Layout grid is confusing, make it easy like Figma | open |
 | 13 | Right sidebar UX | owner will do |
