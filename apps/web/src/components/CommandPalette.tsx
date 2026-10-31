@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { buildCommands } from "../commands";
 import { filterCommands } from "../command-filter";
 import { useEditor } from "../store";
+import { buildMainMenu } from "../main-menu";
+import { categoryMap, sortByCategory } from "../command-categories";
 
 /** Figma's "Actions" (Ctrl+/): search every command and run it, with its shortcut shown. */
 export function CommandPalette() {
@@ -15,7 +17,12 @@ export function CommandPalette() {
   const list = useRef<HTMLUListElement>(null);
 
   const commands = useMemo(() => (open ? buildCommands() : []), [open]);
-  const shown = useMemo(() => filterCommands(commands.filter((c) => hasSelection || !c.needsSelection), query), [commands, query, hasSelection]);
+  const categories = useMemo(() => (open ? categoryMap(buildMainMenu(), commands.map((c) => c.id)) : new Map<string, string>()), [open, commands]);
+  // With nothing typed the list is grouped by category; once you search, the best matches come first and each shows its category.
+  const shown = useMemo(() => {
+    const list = filterCommands(commands.filter((c) => hasSelection || !c.needsSelection), query);
+    return query.trim() ? list : sortByCategory(list, categories);
+  }, [commands, query, hasSelection, categories]);
 
   useEffect(() => {
     if (open) {
@@ -25,7 +32,7 @@ export function CommandPalette() {
   }, [open]);
   useEffect(() => setIndex(0), [query]);
   useEffect(() => {
-    list.current?.children[index]?.scrollIntoView({ block: "nearest" });
+    list.current?.querySelector(`[data-index="${index}"]`)?.scrollIntoView({ block: "nearest" });
   }, [index]);
 
   if (!open || viewer) return null;
@@ -65,8 +72,14 @@ export function CommandPalette() {
         <ul className="palette__list" ref={list} role="listbox">
           {shown.length === 0 && <li className="palette__empty">No matching actions</li>}
           {shown.map((c, i) => (
+            <Fragment key={c.id}>
+              {!query.trim() && (i === 0 || categories.get(shown[i - 1]!.id) !== categories.get(c.id)) && (
+                <li className="palette__group" role="presentation">
+                  {categories.get(c.id) ?? "Other"}
+                </li>
+              )}
             <li
-              key={c.id}
+              data-index={i}
               role="option"
               aria-selected={i === index}
               className={`palette__item${i === index ? " palette__item--active" : ""}`}
@@ -74,8 +87,10 @@ export function CommandPalette() {
               onClick={() => run(i)}
             >
               <span>{c.label}</span>
+              {query.trim() && <span className="palette__category">{categories.get(c.id) ?? "Other"}</span>}
               {c.shortcut && <kbd className="palette__key">{c.shortcut}</kbd>}
             </li>
+            </Fragment>
           ))}
         </ul>
       </div>

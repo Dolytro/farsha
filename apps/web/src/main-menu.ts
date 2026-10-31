@@ -2,6 +2,8 @@ import { buildCommands, type Command } from "./commands";
 import { useEditor } from "./store";
 
 export interface MenuNode {
+  /** The command this entry runs. */
+  id?: string;
   label: string;
   shortcut?: string;
   run?: () => void | Promise<void>;
@@ -22,7 +24,7 @@ export function buildMainMenu(): MenuNode[] {
   const item = (id: string, label?: string, divider = false): MenuNode | undefined => {
     const c = commands.get(id);
     if (!c) return undefined;
-    return { label: label ?? c.label, shortcut: c.shortcut, run: c.run, disabled: !!c.needsSelection && !hasSelection, divider };
+    return { id, label: label ?? c.label, shortcut: c.shortcut, run: c.run, disabled: !!c.needsSelection && !hasSelection, divider };
   };
   const list = (...nodes: (MenuNode | undefined)[]): MenuNode[] => nodes.filter((n): n is MenuNode => !!n);
   const sub = (label: string, children: MenuNode[], divider = false): MenuNode | undefined => (children.length ? { label, children, divider } : undefined);
