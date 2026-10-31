@@ -17,7 +17,7 @@ Live site: https://canvylo.vercel.app
 - No backend: the site is static (Vercel). Designs are saved to the signed-in user's **own Google Drive**
   (`.canvylo` files, Yjs update bytes). Public view links read the Drive file with an API key.
 - The owner wants it to feel **exactly like Figma** so long-time Figma users are not confused.
-- Everything is on `main`, typecheck and all tests pass (485 tests at the time of writing: web 223, design-core 115, canvas-engine 123, code-generator 24).
+- Everything is on `main`, typecheck and all tests pass (490 tests at the time of writing: web 225, design-core 115, canvas-engine 126, code-generator 24).
 - Next up: the open items listed in section 11 ("Done in the night run" > Still open) and `docs/FEATURE_GAP.md`.
 
 **To continue on a new PC:** clone, install, create `apps/web/.env.local`, run the dev server (section 5).
@@ -386,8 +386,8 @@ Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows
   and `backgroundBlurOf`. `DesignDoc` gained `patchNodes`, comments and `pageBackground` / `setPageBackground` (per page,
   stored in the `meta` map).
 - **Still open** (all listed in FEATURE_GAP.md): rich text inside one text layer (needs a runs model), text on path, Slots,
-  live boolean groups, Delete and heal / Split / Offset vector (need point multi-selection: lift the `selected` state of
-  `VectorEditLayer` into the store), prototype scroll and smart animate, Home / End frame stepping, Switch to Draw, Paste to
+  live boolean groups, Offset vector (the selected point of a path being edited lives in the store as `editingPoint`; Delete
+  and heal and Split vector already use it), prototype scroll and smart animate, Home / End frame stepping, Switch to Draw, Paste to
   replace on Ctrl+Shift+R (the browser reserves it), SVG / PNG export of background blur. Anything that needs a server
   (live cursors, mentions, branching, team libraries) is documented as such.
 - **Testing gotchas learned:** never trigger `window.print()` from a Playwright-driven headed browser without stubbing it (it
