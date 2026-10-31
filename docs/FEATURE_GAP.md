@@ -233,3 +233,88 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | 14 | Double click a layer to jump to it on the canvas | ✅ double click the icon or the row (double click the name still renames) |
 | 15 | Text (string) variables | ✅ Variables dialog has Color and Text tabs (a text per mode); a text layer follows one through the Variable field of the Typography section. Number and boolean variables are not built |
 | 16 | Some options are cut off, make panels scrollable | ✅ main menu lists and submenus scroll and stay on screen, the right-click menu scrolls |
+
+## 12. Deep Figma audit (2026-10-31, read from the owner's logged-in Figma, Free plan)
+
+How it was done: the live Figma editor (menus, toolbar flyouts, Design / Prototype panels, Type settings, colour picker, Frame presets, Variables page,
+Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). Nothing in the owner's files was changed. Pro-only screens
+(Dev Mode, shared libraries, branching, advanced prototyping) were read from Figma's own upgrade screen and the menus, not used.
+
+### 12.1 Shortcuts that differ from Figma today (cheap fixes)
+| Command | Figma | Canvylo now |
+|---|---|---|
+| Flatten | Alt+Shift+F | Ctrl+E |
+| Outline stroke | Ctrl+Alt+O | Ctrl+Shift+O |
+| Union / Subtract / Intersect / Exclude selection | Alt+Shift+U / S / I / E | Ctrl+Alt+U (Union only) |
+| Open layers / libraries / design / prototype panel | Alt+1 / 2 / 8 / 9 | Alt+1 layers, Alt+2 properties |
+| Find next / previous | Ctrl+Shift+F / Ctrl+Shift+D | Enter / Shift+Enter inside Find |
+| Rename layer | Ctrl+R | double click only |
+| Find previous / next frame | Home / End | none |
+| Create link | Ctrl+Shift+U | field in the panel |
+| Bulleted / numbered list | Ctrl+Shift+8 / 7 | panel select |
+| Text align justified / top / middle / bottom | Ctrl+Alt+J, menu | no justified |
+| Increase / decrease font size, weight, line height, letter spacing, indentation | Ctrl+Shift+> / < , Ctrl+Alt+> / < , Alt+Shift+> / < , Alt+> / < , Ctrl+] / [ | none |
+| Zoom to previous / next frame | Shift+N / N | check |
+| Paste to replace | Ctrl+Shift+R | Ctrl+Alt+Shift+V (browser reserves Ctrl+Shift+R) |
+| Delete and heal | Shift+Backspace | menu only |
+
+### 12.2 Missing, free to build (P1, most used by designers)
+Menus and commands
+- Edit: Copy as text, CSS (all layers), animated SVG; Select all with same properties / text properties / instance / variant
+- View: Show slices, Annotations (Shift+Y), Pixel preview (Ctrl+Shift+P), Mask outlines, Frame outlines, Additional labels, Minimize left bar, Toggle variables panel, Find previous / next frame (Home / End), Switch to Draw
+- Object: More layout options (Suggest auto layout, Resize to fit, set width / height to hug or fill, lock / unlock aspect ratio as commands), Restore / Set default thumbnail, Main component (Push changes to main, Restore main component), Slots
+- Text: justified alignment, top / middle / bottom commands, Adjust (indent, font size / weight / line height / letter spacing steps), Title case + small caps
+- Preferences: Highlight layers on hover, Rename duplicated layers, Show dimensions on objects, Hide canvas UI during changes, Use smart quotes, Flip objects while resizing, Keyboard zooms into selection, Right-click and drag to pan, Use Ctrl+Alt+arrows to rotate, Color profile, Keyboard layout, Accessibility
+
+Design panel
+- Frame presets in the header dropdown (Phone, Tablet, Desktop, Presentation, Watch, Paper sizes; Frame / Section / Group layout options)
+- Auto layout: Grid flow, min / max width and height, Resize to fit, "Hug" / "Fill" as commands
+- Position section: flip horizontal / vertical and rotate buttons
+- Colour picker: custom picker with eyedropper, RGB / HSL / HSB / CSS modes, "On this page" colours, fill blend mode
+- Fills: Pattern, angular and diamond gradients, tile / crop image modes, image adjustments (exposure, contrast, saturation...), gradient handles on the canvas
+- Strokes: stroke styles, miter angle, variable width and brush strokes
+- Effects: Noise, Texture, Glass, effect styles, shadow "show behind"
+- Typography: font search with Google fonts and local fonts, paragraph spacing, indent, truncate text (max lines), vertical trim, text decoration style, OpenType features and variable font axes, rich text size / colour / font per range
+- Export: several export settings per layer, suffix, WebP, "contents only"
+- Styles for grids and strokes
+- Layers panel: filter by type, Rename shortcut, hover highlight
+
+Prototype
+- Triggers: While pressing, Mouse enter / leave / down / up
+- Actions: Scroll to, Swap overlay, Set variable, Set variable mode, Conditional, Media controls
+- Overlay settings (position, dim, close on outside click)
+- Animations: Move in / out, Push, Slide out, easing curves and springs
+- Scrolling: horizontal and both, fixed (sticky) layers
+- Prototype settings: background, scale options, restart, hotspot hints, several named flows
+- Interactive components (variant switching on interaction)
+
+Dev Mode
+- Code for iOS (SwiftUI, UIKit) and Android (Compose, XML)
+- Box-model visual (border and padding) in Layer properties
+- Ready-for-dev list in the left panel, annotations shown on the canvas, dev resources links
+- Code Connect style mapping (a local mapping of components to snippets)
+
+Variables
+- Several collections, number and boolean variables, groups (a/b names), aliases, scopes
+- Bind variables to number properties (spacing, radius, size, opacity, font size) and to visibility
+- Explicit mode per frame, import and export as JSON
+
+Components
+- Instance swap (property and picker), nested instances, slots, component descriptions
+- Assets panel: search, drag onto the canvas, "Go to main component" from the panel
+
+Other
+- Plugins and widgets: a small sandboxed plugin API (large)
+- Figma Draw tools (brush, marker, highlighter) and the Switch to Draw mode
+- Import: PDF, Sketch, .fig (partial)
+- Autosave history entries (Figma saves versions by itself), named versions with descriptions
+
+### 12.3 Needs a server (cannot be free and offline, documented, not planned)
+Live cursors, observation mode, cursor chat, audio, comment notifications and @mentions, branching and merging, team and shared libraries,
+projects / teams / permissions / password-protected links, community publishing, org features (SSO, analytics).
+
+### 12.4 AI features (need an AI service; a "bring your own key" option could be added later)
+Agents, Actions (AI), Make / code layers, Build this with code, generate image, remove background, AI rename layers, translate, shaders and generative tools.
+
+### 12.5 Separate Figma products (not part of the editor)
+FigJam (whiteboard), Slides, Buzz, Sites. FigJam-like sticky notes and connectors or a Slides mode could be built later as new modes.
