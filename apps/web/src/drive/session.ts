@@ -46,7 +46,7 @@ export async function restoreSession(): Promise<void> {
 /** Rename the open file; a Drive file is renamed on Drive too (when signed in). */
 export async function renameCurrentFile(name: string): Promise<void> {
   const { drive, setDrive } = useEditor.getState();
-  const next = name.replace(/\.farsha$/i, "").trim();
+  const next = name.replace(/\.(farsha|canvylo)$/i, "").trim();
   if (!next || next === drive.fileName) return;
   setDrive({ fileName: next });
   const t = getToken();
@@ -70,7 +70,7 @@ export async function save(interactive = true): Promise<DriveFile | null> {
     setDrive({ status: "saving", error: null });
     const bytes = doc.encodeState();
     const file = drive.fileId ? await updateFile(t, drive.fileId, bytes) : await createFile(t, `${drive.fileName}.farsha`, bytes);
-    setDrive({ fileId: file.id, fileName: file.name.replace(/\.farsha$/, ""), status: "saved" });
+    setDrive({ fileId: file.id, fileName: file.name.replace(/\.(farsha|canvylo)$/, ""), status: "saved" });
     return file;
   } catch (e) {
     setDrive({ status: e instanceof DriveError && e.status === 401 ? "needs-auth" : "error", error: message(e) });
@@ -84,7 +84,7 @@ export async function openFile(id: string, name: string): Promise<void> {
     const t = await token(true);
     const doc = DesignDoc.fromState(await downloadFile(id, t));
     loadDoc(doc);
-    setDrive({ fileId: id, fileName: name.replace(/\.farsha$/, ""), status: "saved", error: null });
+    setDrive({ fileId: id, fileName: name.replace(/\.(farsha|canvylo)$/, ""), status: "saved", error: null });
   } catch (e) {
     setDrive({ error: message(e) });
   }
