@@ -31,7 +31,7 @@ export function duplicateFile(): void {
 export function openLocalFilePicker(): void {
   const input = document.createElement("input");
   input.type = "file";
-  input.accept = ".farsha,.canvylo";
+  input.accept = ".farsha";
   input.onchange = () => {
     const file = input.files?.[0];
     if (file) void openLocalFile(file);
@@ -46,7 +46,7 @@ export async function openLocalFile(file: File): Promise<boolean> {
     if (file.size > MAX_BYTES) throw new Error("The file is too large");
     const doc = DesignDoc.fromState(new Uint8Array(await file.arrayBuffer()));
     loadDoc(doc);
-    setDrive({ fileId: null, fileName: file.name.replace(/\.(farsha|canvylo)$/i, "") || "Untitled", status: "idle", error: null });
+    setDrive({ fileId: null, fileName: file.name.replace(/\.farsha$/i, "") || "Untitled", status: "idle", error: null });
     showToast(`Opened ${file.name}`);
     return true;
   } catch {
