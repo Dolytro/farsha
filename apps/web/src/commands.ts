@@ -136,6 +136,7 @@ export function buildCommands(): Command[] {
     { id: "convert-section", label: "Convert to section", needsSelection: true, keywords: "frame section", run: () => void setSection(doc(), sel(), true) },
     { id: "convert-frame", label: "Convert to frame", needsSelection: true, keywords: "frame section", run: () => void setSection(doc(), sel(), false) },
     tool("section", "Section", `${SHIFT}S`),
+    tool("slice", "Slice", "S"),
     tool("scale", "Scale", "K"),
     tool("comment", "Comment", "C"),
     { id: "comments-toggle", label: "Show / hide comments", shortcut: `${SHIFT}C`, keywords: "pins discussion", run: () => state().setCommentsVisible(!state().commentsVisible) },

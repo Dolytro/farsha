@@ -27,8 +27,8 @@ type Drag =
   | { kind: "line"; id: string; wx: number; wy: number; px: number; py: number; arrow: boolean }
   | { kind: "marquee"; wx: number; wy: number; additive: boolean; base: string[] };
 
-const CREATE: Partial<Record<Tool, NodeType>> = { section: "FRAME", frame: "FRAME", rect: "RECTANGLE", ellipse: "ELLIPSE", text: "TEXT", line: "VECTOR", arrow: "VECTOR", polygon: "VECTOR", star: "VECTOR" };
-const NAMES: Partial<Record<Tool, string>> = { section: "Section", frame: "Frame", rect: "Rectangle", ellipse: "Ellipse", text: "Text", line: "Line", arrow: "Arrow", polygon: "Polygon", star: "Star" };
+const CREATE: Partial<Record<Tool, NodeType>> = { section: "FRAME", slice: "RECTANGLE", frame: "FRAME", rect: "RECTANGLE", ellipse: "ELLIPSE", text: "TEXT", line: "VECTOR", arrow: "VECTOR", polygon: "VECTOR", star: "VECTOR" };
+const NAMES: Partial<Record<Tool, string>> = { section: "Section", slice: "Slice", frame: "Frame", rect: "Rectangle", ellipse: "Ellipse", text: "Text", line: "Line", arrow: "Arrow", polygon: "Polygon", star: "Star" };
 
 /** Starting geometry and paint of the vector tools: lines are stroked, polygons and stars are filled grey. */
 function vectorStart(tool: Tool): Record<string, unknown> {
@@ -231,6 +231,7 @@ export function Canvas() {
         width: 1,
         height: 1,
         ...(tool === "text" ? { fills: solid("#111111") } : {}),
+        ...(tool === "slice" ? { isSlice: true, fills: [], strokes: [], strokeWidth: 0 } : {}),
         ...(tool === "section" ? { isSection: true, clipsContent: false, fills: solid("#eceef2") } : {}),
         ...(type === "VECTOR" ? vectorStart(tool) : {}),
         ...(tool === "line" || tool === "arrow" ? { height: 0 } : {}),
@@ -570,6 +571,14 @@ export function Canvas() {
               </g>
             );
           })()}
+
+          {doc
+            .descendants(pageId)
+            .filter((n) => n.type === "RECTANGLE" && n.isSlice && n.visible)
+            .map((n) => {
+              const abs = doc.absoluteBox(n.id) ?? n;
+              return <rect key={`slice-${n.id}`} x={abs.x} y={abs.y} width={abs.width} height={abs.height} fill="rgba(13,185,100,0.08)" stroke="#0db964" strokeWidth={1 / z} strokeDasharray={`${4 / z} ${3 / z}`} pointerEvents="none" />;
+            })}
 
           {[...doc.children(pageId).filter((n) => n.type === "FRAME"), ...doc.children(pageId).filter((n) => n.type === "FRAME" && n.isSection).flatMap((s) => doc.children(s.id).filter((c) => c.type === "FRAME"))]
             .filter((n) => n.visible)

@@ -193,7 +193,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Object | Frame selection, Group, Ungroup, Use as mask, Add auto layout, Create component, Reset / Detach instance, Main component, order, Flip, Show / Hide, Lock / Unlock | ✅ |
 | Object | Ungroup with Ctrl+Backspace, Rotate 180° / 90° left / 90° right, Hide other layers, Collapse layers (Alt+L), Remove fill (Alt+/), Remove stroke (Shift+/), Swap fill and stroke (Shift+X), Remove interactions | ✅ (Delete contents ❌) |
 | Object | Wrap in new section (Ctrl+S), Convert to section / frame, Section tool (Shift+S): sections are bold-labelled folders on the canvas; frames inside them still count as screens | ✅ |
-| Object | Flatten (Ctrl+E), Outline stroke (Ctrl+Shift+O) ✅; Slice tool (S), Boolean groups (live), Slots ❌ | ◐ |
+| Object | Flatten (Ctrl+E), Outline stroke (Ctrl+Shift+O) ✅; Slice tool (S) ✅; Boolean groups (live), Slots ❌ | ◐ |
 | Text | Bold / Italic (Ctrl+B / I), Underline (Ctrl+U), Strikethrough (Ctrl+Shift+X), Alignment (Ctrl+Alt+L / T / R), Case, vertical alignment: whole-layer styles, Text menu and Typography panel | ✅ (formatting applies to the whole text layer) |
 | Text | Rich text: different styles inside one text layer, Create link, Bulleted / Numbered list, Text direction, Spell check, Text on path | ❌ |
 | Arrange | Align left / centers / right / top / middle / bottom (Alt+A H D W V S) | ✅ |
@@ -204,7 +204,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Toolbar | Section (Shift+S), Scale tool (K: drag a corner, the layer and its text, strokes, radii, shadows and auto layout spacing scale together) | ✅ |
 | Toolbar | Image… (Ctrl+Shift+K) | ✅ (video ❌) |
 | Toolbar | Comment tool (C): click to drop a pin, thread with replies, resolve, delete, Comments tab, Shift+C shows / hides pins | ✅ local-first: comments are saved inside the document (Drive file, local copy, version history), not synced live |
-| Toolbar | Pencil (Shift+P) ✅; Slice (S), Text on path ❌ | ◐ |
+| Toolbar | Pencil (Shift+P), Slice (S, exports the area under it) ✅; Text on path ❌ | ◐ |
 | Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | ✅ (opacity keys, Alt+drag copies the selection in one undo step) |
 | Design panel | Page background colour, Selection colors ✅; Styles on a page, Export on a page ❌ | ◐ |
 | Design panel | Stroke dash and gap, caps, joins; arrowheads (line arrow, triangle, circle, square, diamond) on the start and end of a vector / line | ✅ |

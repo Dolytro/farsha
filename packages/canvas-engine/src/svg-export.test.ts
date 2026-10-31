@@ -301,3 +301,26 @@ describe("corner smoothing", () => {
     expect(shapeMarkup(rect({ cornerSmoothing: -1 }))).toContain('rx="20"');
   });
 });
+
+describe("slices", () => {
+  function setup() {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { x: 100, y: 100, width: 200, height: 200, fills: [{ type: "SOLID", color: "#ff0000", opacity: 1 }] } });
+    const slice = doc.createNode("RECTANGLE", { parentId: page, props: { x: 150, y: 150, width: 80, height: 60, fills: [], strokes: [], strokeWidth: 0, isSlice: true } as never });
+    return { doc, frame, slice };
+  }
+  it("exports what is under the slice, cropped to its box", () => {
+    const { doc, slice } = setup();
+    const out = exportSvg(doc, [slice])!;
+    expect(out).toMatchObject({ width: 80, height: 60 });
+    expect(out.svg).toContain("#ff0000");
+    expect(out.svg).toContain("translate(-150 -150)");
+  });
+  it("is not drawn when something else is exported", () => {
+    const { doc, frame } = setup();
+    expect(exportSvg(doc, [frame])!.svg).not.toContain("slice");
+    const inside = doc.createNode("RECTANGLE", { parentId: frame, props: { width: 10, height: 10, isSlice: true } as never });
+    expect(exportSvg(doc, [frame])!.svg.match(/<g /g)!.length).toBeLessThan(exportSvg(doc, [frame, inside])!.svg.length);
+  });
+});

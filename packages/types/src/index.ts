@@ -321,6 +321,8 @@ export interface RectangleNode extends BaseNode {
   cornerRadius: number;
   cornerRadii?: [number, number, number, number];
   cornerSmoothing?: number;
+  /** A slice (Figma's Slice tool): an invisible export region that captures whatever is under it on the page. */
+  isSlice?: boolean;
 }
 
 export interface EllipseNode extends BaseNode {
