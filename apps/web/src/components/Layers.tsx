@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
-import type { DesignNode } from "@canvylo/types";
+import type { DesignNode } from "@farsha/types";
 import { useEditor } from "../store";
 import { addPage, deletePage } from "../pages";
 import { zoomFit } from "../actions";
@@ -186,7 +186,7 @@ export function Layers() {
       <header className="layers__header">
         {!viewer && <MainMenu />}
         {viewer ? (
-          <strong className="layers__brand">Canvylo</strong>
+          <strong className="layers__brand">Farsha</strong>
         ) : renamingFile ? (
           <RenameInput
             initial={drive.fileName}

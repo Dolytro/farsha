@@ -1,8 +1,8 @@
 /** Look of the interface: density, roundness, type size, accent colour and panel width (see styles/ui-v2.scss). */
-export type UiPreset = "canvylo" | "figma" | "compact" | "comfortable" | "contrast";
+export type UiPreset = "farsha" | "figma" | "compact" | "comfortable" | "contrast";
 
 export const UI_PRESETS: { id: UiPreset; label: string; description: string }[] = [
-  { id: "canvylo", label: "Canvylo", description: "Roomy and rounded, the default look" },
+  { id: "farsha", label: "Farsha", description: "Roomy and rounded, the default look" },
   { id: "figma", label: "Figma-like", description: "Tight rows and Figma's blue, for muscle memory" },
   { id: "compact", label: "Compact", description: "More on screen: small rows, narrow panels" },
   { id: "comfortable", label: "Comfortable", description: "Large rows and type, wide panels" },
@@ -10,7 +10,7 @@ export const UI_PRESETS: { id: UiPreset; label: string; description: string }[] 
 ];
 
 export function parsePreset(value: unknown): UiPreset {
-  return UI_PRESETS.some((p) => p.id === value) ? (value as UiPreset) : "canvylo";
+  return UI_PRESETS.some((p) => p.id === value) ? (value as UiPreset) : "farsha";
 }
 
 /** Preferences (Figma's Preferences menu): small switches that change how the editor behaves. */
@@ -40,7 +40,7 @@ export interface Prefs {
 
 export const PREFS_KEY = "canvylo.prefs";
 
-export const DEFAULT_PREFS: Prefs = { preset: "canvylo", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, nudge: 1, bigNudge: 10 };
+export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, nudge: 1, bigNudge: 10 };
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
 const amount = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 && v <= 1000 ? v : fallback);

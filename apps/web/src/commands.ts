@@ -60,7 +60,7 @@ export function buildCommands(): Command[] {
       keywords: "pdf print pages download",
       run: () => {
         const s = state();
-        const count = exportFramesToPdf(s.doc, s.pageId, s.selection, s.drive.fileName || "Canvylo");
+        const count = exportFramesToPdf(s.doc, s.pageId, s.selection, s.drive.fileName || "Farsha");
         if (!count) s.showToast("There are no frames to export");
         else s.showToast(`Choose "Save as PDF" in the print window (${count} page${count === 1 ? "" : "s"})`);
       },
@@ -69,7 +69,7 @@ export function buildCommands(): Command[] {
     { id: "find", label: "Find…", shortcut: `${MOD}F`, keywords: "search layers text", run: () => state().setFindOpen(true) },
     { id: "find-replace", label: "Find and replace…", keywords: "search replace text", run: () => state().setFindOpen(true, true) },
     { id: "new-file", label: "New file", keywords: "blank document", run: () => newFile() },
-    { id: "open-local", label: "Open local file…", keywords: "open canvylo", run: () => openLocalFilePicker() },
+    { id: "open-local", label: "Open local file…", keywords: "open farsha", run: () => openLocalFilePicker() },
     { id: "select-none", label: "Select none", shortcut: "Esc", run: () => state().select([]) },
     { id: "select-all", label: "Select all", shortcut: `${MOD}A`, run: () => state().select(selectAllIn(doc(), sel(), state().pageId)) },
     { id: "select-inverse", label: "Select inverse", shortcut: `${MOD}${SHIFT}A`, needsSelection: true, run: () => state().select(selectInverse(doc(), sel(), state().pageId)) },
@@ -626,7 +626,7 @@ export function buildCommands(): Command[] {
     ),
     { id: "save-version", label: "Save to version history", shortcut: `${MOD}${ALT}S`, keywords: "snapshot checkpoint", run: async () => void (await saveVersion("")) },
     { id: "show-versions", label: "Show version history", keywords: "restore snapshot", run: () => state().setVersionsOpen(true) },
-    { id: "save-local", label: "Save local copy", keywords: "download file .canvylo", run: saveLocalCopy },
+    { id: "save-local", label: "Save local copy", keywords: "download file .farsha", run: saveLocalCopy },
     { id: "share", label: "Share", keywords: "link", run: () => state().setShareOpen(true) },
   ];
 }

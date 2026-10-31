@@ -1,4 +1,4 @@
-import type { Box } from "@canvylo/types";
+import type { Box } from "@farsha/types";
 import type { Viewport } from "./viewport";
 
 /** Viewport that centres `box` in a `width` × `height` screen area (Figma Shift+1 / Shift+2). */

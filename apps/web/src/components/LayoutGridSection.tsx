@@ -1,6 +1,6 @@
 import { ColorSwatch } from "./ColorSwatch";
-import type { DesignDoc } from "@canvylo/design-core";
-import type { DesignNode, LayoutGrid } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { DesignNode, LayoutGrid } from "@farsha/types";
 import { HexInput } from "./HexInput";
 import { Select } from "./Select";
 

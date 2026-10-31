@@ -1,4 +1,4 @@
-import type { Box } from "@canvylo/types";
+import type { Box } from "@farsha/types";
 
 export type Handle = "n" | "s" | "e" | "w" | "nw" | "ne" | "sw" | "se";
 

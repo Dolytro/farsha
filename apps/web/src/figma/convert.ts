@@ -1,7 +1,7 @@
 import type { ClipNode } from "../clipboard";
 
 /**
- * Figma "NODE_CHANGES" message (decoded Kiwi) -> Canvylo layers.
+ * Figma "NODE_CHANGES" message (decoded Kiwi) -> Farsha layers.
  * Supported: frames, groups, rectangles, ellipses, text, and vector shapes (as VECTOR layers).
  * Not supported yet, so they degrade: auto layout (positions are already computed, so layouts still
  * look right), components / instances (become frames), images (grey placeholder), gradients (first
@@ -96,7 +96,7 @@ export function weightFromStyle(style: string | undefined): number {
   return WEIGHTS.find(([re]) => re.test(style))?.[1] ?? 400;
 }
 
-/** Position, size and rotation. Figma stores the rotated top-left corner; Canvylo rotates around the centre. */
+/** Position, size and rotation. Figma stores the rotated top-left corner; Farsha rotates around the centre. */
 function geometry(n: FigNode): { x: number; y: number; width: number; height: number; rotation: number } {
   const w = n.size?.x ?? 0;
   const h = n.size?.y ?? 0;
@@ -245,7 +245,7 @@ function convertNode(n: FigNode, kids: Map<string, FigNode[]>, blobs: Blobs): Cl
   return null; // slices, stickies, widgets, ...
 }
 
-/** Convert a decoded Figma message into top-level Canvylo layers (canvas coordinates preserved). */
+/** Convert a decoded Figma message into top-level Farsha layers (canvas coordinates preserved). */
 export function convertMessage(msg: Record<string, unknown>): ClipNode[] {
   const changes = (msg.nodeChanges as FigNode[] | undefined) ?? [];
   const blobs: Blobs = {};

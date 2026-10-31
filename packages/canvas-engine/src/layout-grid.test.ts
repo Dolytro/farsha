@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { LayoutGrid } from "@canvylo/types";
+import type { LayoutGrid } from "@farsha/types";
 import { gridRects, tracks } from "./layout-grid";
 
 const grid = (g: Partial<LayoutGrid>): LayoutGrid => ({ type: "COLUMNS", count: 4, gutter: 20, margin: 20, color: "#ff0000", opacity: 0.1, visible: true, ...g });

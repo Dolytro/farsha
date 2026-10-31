@@ -1,6 +1,6 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { exportSvg } from "@canvylo/canvas-engine";
-import type { ExportSetting, ExportSettingFormat } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import { exportSvg } from "@farsha/canvas-engine";
+import type { ExportSetting, ExportSettingFormat } from "@farsha/types";
 import { canvasMeasure } from "./text-layout";
 import { svgToPngBlob } from "./exporting";
 import { exportAs } from "./pdf-export";

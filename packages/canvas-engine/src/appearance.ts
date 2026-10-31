@@ -1,4 +1,4 @@
-import { paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd } from "@canvylo/types";
+import { paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd } from "@farsha/types";
 
 /**
  * SVG markup for strokes and effects, shared by the canvas and by SVG/PNG export.

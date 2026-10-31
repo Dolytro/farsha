@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { joinPenPaths, penGeometry, scalePoints, simplifyPenPoints, smoothPenPoints, splitPenPoints, translatePoints, type PenPoint } from "@canvylo/canvas-engine";
+import type { DesignDoc } from "@farsha/design-core";
+import { joinPenPaths, penGeometry, scalePoints, simplifyPenPoints, smoothPenPoints, splitPenPoints, translatePoints, type PenPoint } from "@farsha/canvas-engine";
 
 interface PenLayer {
   id: string;

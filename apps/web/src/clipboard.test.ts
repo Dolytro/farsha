@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { armPasteMode, copyNodes, duplicateNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
 
 function setup() {
@@ -69,10 +69,10 @@ describe("copy and paste", () => {
     expect(copyNodes(doc, [page])).toBeNull();
   });
 
-  it("ignores text that isn't a Canvylo payload", () => {
+  it("ignores text that isn't a Farsha payload", () => {
     expect(parseClip("hello")).toBeNull();
-    expect(parseClip("canvylo:{not json")).toBeNull();
-    expect(parseClip('canvylo:{"v":2,"nodes":[]}')).toBeNull();
+    expect(parseClip("farsha:{not json")).toBeNull();
+    expect(parseClip('farsha:{"v":2,"nodes":[]}')).toBeNull();
   });
 
   it("skips layers the target cannot hold", () => {

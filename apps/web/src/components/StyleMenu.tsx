@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { DesignDoc } from "@canvylo/design-core";
-import { paintColor, type DesignNode, type FillStyle } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import { paintColor, type DesignNode, type FillStyle } from "@farsha/types";
 
 const swatchOf = (s: FillStyle) => {
   const p = s.paints[s.paints.length - 1];

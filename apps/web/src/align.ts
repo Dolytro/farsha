@@ -1,6 +1,6 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { unionBox } from "@canvylo/canvas-engine";
-import type { Box } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import { unionBox } from "@farsha/canvas-engine";
+import type { Box } from "@farsha/types";
 
 export type AlignMode = "left" | "hcenter" | "right" | "top" | "vcenter" | "bottom";
 export type DistributeAxis = "horizontal" | "vertical";

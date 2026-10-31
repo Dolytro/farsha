@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { Paint } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { Paint } from "@farsha/types";
 
 /** Give every selected layer that has fills the picked colour as its top fill. Returns how many layers changed. */
 export function applyPickedColor(doc: DesignDoc, ids: string[], hex: string): number {

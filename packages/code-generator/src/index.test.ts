@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc, defaultsFor } from "@canvylo/design-core";
+import { DesignDoc, defaultsFor } from "@farsha/design-core";
 import { backgroundCss, declarations, generateCode, paintCss, tailwindClass, toRgba } from "./index";
 
 function setup() {

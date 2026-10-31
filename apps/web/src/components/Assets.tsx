@@ -1,4 +1,4 @@
-import { screenToWorld } from "@canvylo/canvas-engine";
+import { screenToWorld } from "@farsha/canvas-engine";
 import { useEditor } from "../store";
 
 /** Figma's Assets tab: every main component of the file; a click places an instance in the middle of the canvas. */

@@ -1,10 +1,10 @@
 import { ColorSwatch } from "./ColorSwatch";
 import { useState } from "react";
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 import { StyleMenu, StylePill } from "./StyleMenu";
 import { VariableButton, VariableChip } from "./VariableMenu";
-import { paintCss } from "@canvylo/code-generator";
-import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@canvylo/types";
+import { paintCss } from "@farsha/code-generator";
+import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@farsha/types";
 import { readImage } from "../images";
 import { pickVideoForLayer } from "../place-image";
 import { HexInput } from "./HexInput";

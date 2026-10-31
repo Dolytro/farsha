@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { deleteVersion, listVersions, restoreVersion, saveVersion, type VersionEntry } from "../versions";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { compareDocs, hasChanges, type DocChanges } from "../compare";
 import { useEditor } from "../store";
 

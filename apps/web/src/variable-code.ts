@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { DesignNode, Paint } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { DesignNode, Paint } from "@farsha/types";
 
 export interface VariableUse {
   id: string;

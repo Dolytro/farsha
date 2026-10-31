@@ -1,10 +1,10 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { DesignNode, NodeType } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { DesignNode, NodeType } from "@farsha/types";
 import { fitSize } from "./images";
 import { svgToClip } from "./svg-import";
 
-/** Prefix on the clipboard text so Canvylo can tell its own payload from ordinary text. */
-export const CLIP_PREFIX = "canvylo:";
+/** Prefix on the clipboard text so Farsha can tell its own payload from ordinary text. */
+export const CLIP_PREFIX = "farsha:";
 
 const PASTE_STEP = 16;
 const MAX_TEXT = 5000;

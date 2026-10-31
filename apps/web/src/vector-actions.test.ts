@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
-import { penGeometry } from "@canvylo/canvas-engine";
+import { DesignDoc } from "@farsha/design-core";
+import { penGeometry } from "@farsha/canvas-engine";
 import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, splitVectorAt } from "./vector-actions";
 
 const c = (x: number, y: number) => ({ x, y, hx: 0, hy: 0 });

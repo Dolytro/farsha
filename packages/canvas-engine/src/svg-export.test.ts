@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { exportSvg } from "./svg-export";
 import { backgroundBlurOf, effectsFilter, shapeMarkup } from "./appearance";
 import { applyTextList, layoutText, textFontStyle, textPlacement } from "./text";

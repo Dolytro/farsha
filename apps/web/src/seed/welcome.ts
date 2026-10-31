@@ -1,6 +1,6 @@
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 
-/** Default canvas for a fresh editor: a short tour of Canvylo itself. */
+/** Default canvas for a fresh editor: a short tour of Farsha itself. */
 
 const paint = (color: string) => [{ type: "SOLID" as const, color, opacity: 1 }];
 
@@ -36,11 +36,11 @@ function text(doc: DesignDoc, parent: string, x: number, y: number, characters: 
 }
 
 function welcomeFrame(doc: DesignDoc, page: string) {
-  const f = doc.createNode("FRAME", { parentId: page, props: { name: "Welcome to Canvylo", x: 0, y: 0, width: 1040, height: 640, fills: paint("#ffffff") } });
+  const f = doc.createNode("FRAME", { parentId: page, props: { name: "Welcome to Farsha", x: 0, y: 0, width: 1040, height: 640, fills: paint("#ffffff") } });
 
   rect(doc, f, "Logo mark", 64, 64, 44, 44, ACCENT, { r: 12 });
   text(doc, f, 64, 72, "C", 28, 700, "#ffffff", 44, "CENTER");
-  text(doc, f, 124, 74, "Canvylo", 24, 700, INK, 200);
+  text(doc, f, 124, 74, "Farsha", 24, 700, INK, 200);
 
   text(doc, f, 64, 150, "Design, inspect and share.", 56, 700, INK, 900);
   text(doc, f, 64, 232, "A free, open source design tool. Your files live in your own Google Drive.", 20, 400, MUTED, 900);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Easing, Interaction, OverlayPosition } from "@canvylo/types";
-import { exportSvg } from "@canvylo/canvas-engine";
+import type { Easing, Interaction, OverlayPosition } from "@farsha/types";
+import { exportSvg } from "@farsha/canvas-engine";
 import { canvasMeasure } from "../text-layout";
 import { easingFn, followInteraction, hotspotsIn, layerBoxIn, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
 import { frameAt, matchLayers, scratchCopy } from "../smart-animate";

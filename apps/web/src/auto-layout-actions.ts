@@ -1,6 +1,6 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { unionBox } from "@canvylo/canvas-engine";
-import type { Box, DesignNode, LayoutMode } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import { unionBox } from "@farsha/canvas-engine";
+import type { Box, DesignNode, LayoutMode } from "@farsha/types";
 
 const round = (v: number) => Math.round(v * 100) / 100;
 

@@ -1,7 +1,7 @@
-# Canvylo: handoff (read this first on a new machine)
+# Farsha: handoff (read this first on a new machine)
 
 This file is the full context of the work so far, so a new Claude Code session (or a person) on another
-PC can continue exactly where this one stopped. It covers what Canvylo is, how the owner likes to work,
+PC can continue exactly where this one stopped. It covers what Farsha is, how the owner likes to work,
 how the code is organised, how to run and test it, how it is deployed, what was decided and why, what is
 done, and what to build next.
 
@@ -12,10 +12,10 @@ Live site: https://canvylo.vercel.app
 
 ## 1. TL;DR
 
-- **Canvylo** is a free, open source, Figma-like design tool (UI/UX design, Dev Mode handoff, share links).
+- **Farsha** is a free, open source, Figma-like design tool (UI/UX design, Dev Mode handoff, share links).
 - Stack: React 19 + Vite + TypeScript, Zustand, SCSS (BEM), SVG renderer, Yjs document model, pnpm + Turborepo.
 - No backend: the site is static (Vercel). Designs are saved to the signed-in user's **own Google Drive**
-  (`.canvylo` files, Yjs update bytes). Public view links read the Drive file with an API key.
+  (`.farsha` files, Yjs update bytes). Public view links read the Drive file with an API key.
 - The owner wants it to feel **exactly like Figma** so long-time Figma users are not confused.
 - Everything is on `main`, typecheck and all tests pass (538 tests at the time of writing: web 251, design-core 122, canvas-engine 141, code-generator 24).
 - Next up: the open items listed in section 11 ("Done in the night run" > Still open) and `docs/FEATURE_GAP.md`.
@@ -32,7 +32,7 @@ These came directly from the owner (they write in Bengali + English, "Banglish";
 1. **One feature at a time.** Build it, run `pnpm typecheck` and `pnpm test`, test it in the real browser,
    fix every issue found, and only then commit and push. Never batch features into one push.
 2. **Figma parity.** Copy Figma's names, shortcuts, panel layout and click/drag behaviour. Check how Figma
-   does it first. Where Canvylo cannot match yet, record the difference in `docs/FEATURE_GAP.md`.
+   does it first. Where Farsha cannot match yet, record the difference in `docs/FEATURE_GAP.md`.
 3. **Commits have no Claude attribution.** No `Co-Authored-By`, no "Generated with" lines, no mention of
    Claude. Author is the owner's normal git identity (set it globally, section 5). Plain messages.
    This overrides any default attribution a tool suggests.
@@ -70,8 +70,8 @@ Out of scope for now: plugins, FigJam/Slides, AI features, enterprise features, 
 | Thing | Details |
 |---|---|
 | GitHub | `Dolytro/canvylo`, branch `main`. The `gh` CLI was logged in on the old PC. |
-| Vercel | Project `canvylo` in the project owner's team (Hobby). **Root Directory = `apps/web`**, "include source files outside root" on, framework Vite. Auto-deploys on every push to `main`. `apps/web/vercel.json` rewrites all paths to `index.html` (needed for `/v/<fileId>` links). |
-| Google Cloud | Project id `canvylo`, owned by the project owner's Google account. Drive API enabled. Google Auth Platform: External app "Canvylo", **In production**, scope `drive.file` (non-sensitive, no verification needed), home page / privacy / terms links point to the live site. OAuth client "Web client 1" (authorised JS origins: `http://localhost:5173`, `http://localhost:5174`, `https://canvylo.vercel.app`). API key "Canvylo Drive key": restricted to Drive API and to those three origins as HTTP referrers. |
+| Vercel | Project `farsha` in the project owner's team (Hobby). **Root Directory = `apps/web`**, "include source files outside root" on, framework Vite. Auto-deploys on every push to `main`. `apps/web/vercel.json` rewrites all paths to `index.html` (needed for `/v/<fileId>` links). |
+| Google Cloud | Project id `farsha`, owned by the project owner's Google account. Drive API enabled. Google Auth Platform: External app "Farsha", **In production**, scope `drive.file` (non-sensitive, no verification needed), home page / privacy / terms links point to the live site. OAuth client "Web client 1" (authorised JS origins: `http://localhost:5173`, `http://localhost:5174`, `https://canvylo.vercel.app`). API key "Farsha Drive key": restricted to Drive API and to those three origins as HTTP referrers. |
 | Env vars | `VITE_GOOGLE_CLIENT_ID` and `VITE_GOOGLE_API_KEY`. Set in Vercel (Production) and in `apps/web/.env.local` locally. Both end up in the browser bundle, so neither is a secret, but the key stays out of git. Find the values in Google Cloud Console → APIs & Services → Credentials. |
 | Public pages | `/privacy.html`, `/terms.html` (`apps/web/public`), required by the Google consent screen. |
 
@@ -86,12 +86,12 @@ Prerequisites: Node 22+, git, a modern Chromium browser. Install pnpm 12: `npm i
 
 ```bash
 git clone https://github.com/Dolytro/canvylo.git
-cd canvylo
+cd farsha
 git config --global user.name  "Dolytro"
 git config --global user.email "dolytro.contact@gmail.com"   # GitHub no-reply address
 pnpm install            # pnpm 12 needs the build approvals already in pnpm-workspace.yaml (allowBuilds)
 cp apps/web/.env.example apps/web/.env.local   # then fill in the two values (section 4)
-pnpm --filter @canvylo/web dev                  # http://localhost:5173
+pnpm --filter @farsha/web dev                  # http://localhost:5173
 ```
 
 Useful commands:
@@ -99,8 +99,8 @@ Useful commands:
 ```bash
 pnpm typecheck                         # all packages
 pnpm test                              # vitest in every package
-pnpm --filter @canvylo/web build       # production build (what Vercel runs)
-pnpm --filter @canvylo/web exec vite --port 5174 --strictPort   # a second dev server on an authorised origin
+pnpm --filter @farsha/web build       # production build (what Vercel runs)
+pnpm --filter @farsha/web exec vite --port 5174 --strictPort   # a second dev server on an authorised origin
 ```
 
 - The editor is behind Google sign-in. For local testing open `http://localhost:5173/?nologin`. That bypass
@@ -123,7 +123,7 @@ apps/
       components/     Canvas, Layers, Properties, DevPanel, Toolbar, ContextMenu, DriveMenu, ShareDialog, LoginScreen
       drive/          google.ts (sign-in), drive.ts (REST calls), session.ts (save/open/autosave/shared load)
       figma/          kiwi.ts (decoder), convert.ts (Figma nodes -> layers), paste.ts (clipboard HTML -> layers)
-      seed/           welcome.ts (default Canvylo welcome canvas)
+      seed/           welcome.ts (default Farsha welcome canvas)
       clipboard.ts    copy/cut/paste logic, paste variants, copy/paste properties, paste SVG/images/layers
       svg-import.ts   SVG text -> layers (allow-list sanitiser)
       images.ts, place-image.ts   image reading, downscaling, asset URLs, placing images
@@ -184,9 +184,9 @@ in event handlers.
 
 ### Clipboard (`App.tsx` + `clipboard.ts`)
 - Uses real `copy` / `cut` / `paste` **events** (no permission prompts, works across tabs).
-- Canvylo layers are copied as text `canvylo:{json}` (subtree props without ids). The paste event does not
+- Farsha layers are copied as text `farsha:{json}` (subtree props without ids). The paste event does not
   carry modifier keys, so a keydown handler "arms" the paste mode (`offset`, `over`, `replace`) first.
-- Paste priority: Canvylo payload, then Figma HTML, then SVG, then image file, then plain text.
+- Paste priority: Farsha payload, then Figma HTML, then SVG, then image file, then plain text.
 - Dev Mode: Ctrl+C copies the selected layer's CSS. Ctrl+Shift+C = Copy as PNG (async, toast shown).
 - Copy/paste properties (Ctrl+Alt+C / Ctrl+Alt+V) are kept in memory only, like Figma.
 
@@ -207,14 +207,14 @@ in event handlers.
   coordinate semantics and `fillGeometry` blobs were not seen in a real sample yet.
   Dependency: `fzstd` (pure JS zstd).
 - **Images** (`images.ts`): PNG/JPEG/WebP/GIF only; larger than 2048 px are scaled down and re-encoded;
-  stored inside the document (`assets` map) so the `.canvylo` file is self-contained. Rendering and SVG
+  stored inside the document (`assets` map) so the `.farsha` file is self-contained. Rendering and SVG
   export only accept those mime types.
 - **SVG export** (`canvas-engine/svg-export.ts`): used by Copy as SVG/PNG; embeds images as data URLs.
 
 ### Google Drive and sharing (`apps/web/src/drive/`)
 - Sign-in: Google Identity Services **token model** (popup, ~1 hour access token in `sessionStorage`).
   No client secret, no backend. Scope `drive.file` only, so the app sees only files it created.
-- Save: multipart upload of `doc.encodeState()` as `<name>.canvylo` with `appProperties.canvylo = 1`
+- Save: multipart upload of `doc.encodeState()` as `<name>.farsha` with `appProperties.farsha = 1`
   (used to list files). Autosave 2 s after a change once the file exists.
 - Share dialog: "Anyone with the link can view" adds a Drive `reader`/`anyone` permission. Links are
   `/v/<driveFileId>` (view only) and `/v/<id>?mode=inspect`.
@@ -322,7 +322,7 @@ new line (Esc leaves).
    `/terms.html`); pnpm 12 failed on Vercel until `allowBuilds` was added.
 6. Product decisions from the owner: login required for the editor; shared links public for viewing;
    Dev tools / Inspect only after Google sign-in; browser zoom must never scale the app; the default canvas
-   must be Canvylo's own welcome content (an earlier Envato/ThemeForest sample was removed).
+   must be Farsha's own welcome content (an earlier Envato/ThemeForest sample was removed).
 7. Wrote `docs/FEATURE_GAP.md` by reading Figma's live File/Edit/View/Object/Preferences menus.
 8. Built the whole copy/paste family one feature at a time (details in section 7), including a new VECTOR
    layer type, SVG paste, Figma paste and images.
@@ -347,7 +347,7 @@ font-size not growing the text box).
 
 Done in the autonomous run after that (2026-10-30, each pushed separately and listed in docs/FEATURE_GAP.md): components
 v1 + Assets tab, duplicate fix (Ctrl+D copies the subtree), Line / Arrow / Polygon / Star, multiple fills, editable hex,
-Export (PNG / JPG / SVG), selection navigation (Enter, Shift+Enter, Tab, inverse), flip, save / open local .canvylo files,
+Export (PNG / JPG / SVG), selection navigation (Enter, Shift+Enter, Tab, inverse), flip, save / open local .farsha files,
 file rename, colour styles and text styles, command palette (Ctrl+/), frame selection, fill container for auto layout
 children, zoom to next / previous frame, prototype v1 (click -> navigate, Present), version history (browser only),
 Pen tool. Later in the same run: mask (Ctrl+Alt+M), colour variables with modes, variants, multiple strokes, layout grids
@@ -385,7 +385,7 @@ Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows
   `boolean.ts` gained `flattenShapes` / `outlineStrokeShape`, `appearance.ts` gained `smoothedRectPath`, per-side strokes
   and `backgroundBlurOf`. `DesignDoc` gained `patchNodes`, comments and `pageBackground` / `setPageBackground` (per page,
   stored in the `meta` map).
-- **Owner's QA report** (Google Doc "canvylo Report.", answered one by one, table in docs/FEATURE_GAP.md section 11): connector arrows and a
+- **Owner's QA report** (Google Doc "farsha Report.", answered one by one, table in docs/FEATURE_GAP.md section 11): connector arrows and a
   Preview button for prototypes, a drag no longer dies when the layer under the pointer is re-rendered (pointer capture is on the
   canvas svg, `Canvas.tsx`), comments close on an outside click, collapse-all-layers button, double click a layer to go to it,
   PDF in the Export section (`exportAs` in `pdf-export.ts`), lock proportions (`lockAspect`), auto layout picks row / column from the
@@ -400,15 +400,15 @@ Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows
   (live cursors, mentions, branching, team libraries) is documented as such.
 - **Testing gotchas learned:** never trigger `window.print()` from a Playwright-driven headed browser without stubbing it (it
   opens a native dialog and the MCP server hangs); `apps/web` vitest has no DOM, so anything importing the Zustand store or
-  `commands.ts` cannot be unit-tested there (test the pure module instead); `indexedDB.deleteDatabase("canvylo")` plus a
-  reload gives a clean canvas, which still contains the "Welcome to Canvylo" and "Shortcuts" frames, so draw test layers in
+  `commands.ts` cannot be unit-tested there (test the pure module instead); `indexedDB.deleteDatabase("farsha")` plus a
+  reload gives a clean canvas, which still contains the "Welcome to Farsha" and "Shortcuts" frames, so draw test layers in
   empty space (a frame drawn on top of them becomes a nested frame, not a top-level one).
 
 Where the session stopped (before the night run): everything above is committed and pushed to `main`, typecheck and all tests pass. Nothing is
 half-done in the working tree. Each feature was tested in the real browser with Playwright (dev server on 5173, `?nologin`);
 real Google sign-in, Drive rename and the Vercel look of the newest commits were not re-checked. Tip: the working copy is
 restored from IndexedDB, so wait about 1.5 s after loading before driving the page, and reset it with
-`indexedDB.deleteDatabase("canvylo")` for a clean test.
+`indexedDB.deleteDatabase("farsha")` for a clean test.
 
 Suggested order (each is one feature = build, test, fix, push):
 1. **Components round 2** (variants done: `addVariant`, `swapInstanceVariant`, `componentSetId` / `variantProps`): instance-swap component properties, nested instances, instance swap, overrides kept when copying an instance. (Round 1, main +
@@ -422,11 +422,11 @@ Suggested order (each is one feature = build, test, fix, push):
 Also still unchecked in a real browser: layers panel drag-reorder / reparent (only unit-tested), real Google sign-in
 and Drive from the new autosave path.
 
-Working copy persistence: `apps/web/src/local-persist.ts` saves the open document to IndexedDB (database `canvylo`,
+Working copy persistence: `apps/web/src/local-persist.ts` saves the open document to IndexedDB (database `farsha`,
 key `current`) 0.8 s after every change and on tab hide, and restores it on load, so a reload never loses work even
 when it was never saved to Drive (Drive file id and name are restored too, so Drive autosave resumes). While testing
 in the browser the editor therefore starts from your last session, not from the welcome canvas: run
-`indexedDB.deleteDatabase("canvylo")` and reload to reset it.
+`indexedDB.deleteDatabase("farsha")` and reload to reset it.
 
 Browser testing tips added: the Vite watcher on Windows sometimes serves stale modules, so `touch` the changed
 files and reload with a new query string. Synthetic pointer events must go to the `<svg>` (the handlers live there,
@@ -437,7 +437,7 @@ Known gaps and risks to keep in mind:
 - Vectors from SVG cover the whole viewBox (no tight bounding box); SVG / Figma paste still flatten gradients.
 - Text wrapping in exports without a measurer uses an estimate, so lines can differ slightly from the canvas.
 - The IndexedDB working copy is per browser; moving to another PC needs a Drive save first.
-- The `.canvylo` file grows with images (stored inline); fine for now, revisit with Drive assets.
+- The `.farsha` file grows with images (stored inline); fine for now, revisit with Drive assets.
 - Access tokens last about an hour; the user must click to re-authorise.
 - Figma paste: groups and `fillGeometry` blobs only validated by unit tests, not by a real sample.
 - There is no CSP header on the Vercel site yet; consider adding one.
@@ -453,3 +453,7 @@ drag-reorder in the layers panel, then start the next feature from section 11 of
 Rules: one feature at a time (build, test, fix, push), copy Figma exactly, commits without any Claude
 attribution, never put secrets in git or web forms. Reply in Banglish.
 ```
+
+## Rename to Farsha
+
+The product was renamed from Canvylo to Farsha (packages `@farsha/*`, file extension `.farsha`; `.canvylo` files still open). Kept on purpose so that nothing saved is lost: the IndexedDB name `canvylo`, the localStorage keys `canvylo.*`, the Drive `appProperties` key `canvylo`, the repo name `Dolytro/canvylo` and the address canvylo.vercel.app. Renaming the GitHub repo, Vercel project and local folder are owner steps.

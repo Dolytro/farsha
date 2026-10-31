@@ -1,4 +1,4 @@
-import type { DesignNode } from "@canvylo/types";
+import type { DesignNode } from "@farsha/types";
 
 const r = (v: number) => String(Math.round(v * 100) / 100);
 

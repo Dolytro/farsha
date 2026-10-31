@@ -1,6 +1,6 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { DesignNode } from "@canvylo/types";
-import { unionBox } from "@canvylo/canvas-engine";
+import type { DesignDoc } from "@farsha/design-core";
+import type { DesignNode } from "@farsha/types";
+import { unionBox } from "@farsha/canvas-engine";
 
 export const isSection = (n: DesignNode | undefined): boolean => n?.type === "FRAME" && !!n.isSection;
 

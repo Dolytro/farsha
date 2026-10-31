@@ -1,4 +1,4 @@
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 
 /** "Page 2", "Page 3"...: the first number not already used. */
 export function nextPageName(doc: DesignDoc): string {

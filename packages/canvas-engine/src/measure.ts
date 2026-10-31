@@ -1,4 +1,4 @@
-import type { Box } from "@canvylo/types";
+import type { Box } from "@farsha/types";
 
 /** A distance line between two boxes, in page coordinates. */
 export interface Measurement {

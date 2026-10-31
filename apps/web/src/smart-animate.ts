@@ -1,6 +1,6 @@
-import { DesignDoc } from "@canvylo/design-core";
-import { exportSvg } from "@canvylo/canvas-engine";
-import type { DesignNode } from "@canvylo/types";
+import { DesignDoc } from "@farsha/design-core";
+import { exportSvg } from "@farsha/canvas-engine";
+import type { DesignNode } from "@farsha/types";
 import { canvasMeasure } from "./text-layout";
 
 export interface LayerPair {

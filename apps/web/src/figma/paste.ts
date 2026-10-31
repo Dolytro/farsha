@@ -46,7 +46,7 @@ export function readArchive(bytes: Uint8Array): Uint8Array[] {
   return chunks;
 }
 
-/** Decode the Figma clipboard HTML into top-level Canvylo layers (canvas coordinates). */
+/** Decode the Figma clipboard HTML into top-level Farsha layers (canvas coordinates). */
 export async function figmaToClips(html: string): Promise<ClipNode[]> {
   const m = /\(figma\)([A-Za-z0-9+/=]+)\(\/figma\)/.exec(html);
   if (!m || m[1]!.length > MAX_CLIPBOARD) throw new Error("No Figma layers on the clipboard");

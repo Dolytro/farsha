@@ -1,7 +1,7 @@
 import type { ClipNode } from "./clipboard";
 
 /**
- * SVG text -> Canvylo layers. The SVG is parsed by a small tolerant reader (no DOM, no scripts):
+ * SVG text -> Farsha layers. The SVG is parsed by a small tolerant reader (no DOM, no scripts):
  * rect, circle, ellipse and text become native layers; path, polygon, polyline and line become VECTOR
  * layers whose markup is rebuilt from an allow-list of attributes. Everything else is dropped.
  */

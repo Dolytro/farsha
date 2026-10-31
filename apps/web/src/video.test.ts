@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { isVideoFile, MAX_VIDEO_BYTES, videoProblem } from "./video";
 import { videosIn } from "./prototype";
 

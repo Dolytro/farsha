@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@farsha/types";
 import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";

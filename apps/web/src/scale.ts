@@ -1,4 +1,4 @@
-import type { DesignNode } from "@canvylo/types";
+import type { DesignNode } from "@farsha/types";
 
 /** Properties to write per layer id. */
 export type ScaleUpdates = Record<string, Record<string, unknown>>;

@@ -1,5 +1,5 @@
 import { useRef, useState, type RefObject } from "react";
-import { hitTest, penGeometry, pencilToPenPoints, screenToWorld, translatePoints, type Viewport } from "@canvylo/canvas-engine";
+import { hitTest, penGeometry, pencilToPenPoints, screenToWorld, translatePoints, type Viewport } from "@farsha/canvas-engine";
 import { useEditor } from "../store";
 
 const ACCENT = "#0d99ff";

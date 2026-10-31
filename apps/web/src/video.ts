@@ -1,4 +1,4 @@
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 
 /** Only these video formats are stored or played; a shared file can't smuggle in another type. */
 export const VIDEO_TYPES = new Set(["video/mp4", "video/webm"]);

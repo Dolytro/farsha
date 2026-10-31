@@ -1,5 +1,5 @@
 {
-  "name": "@canvylo/web",
+  "name": "@farsha/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,11 +10,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@canvylo/canvas-engine": "workspace:*",
-    "@canvylo/code-generator": "workspace:*",
-    "@canvylo/design-core": "workspace:*",
-    "@canvylo/types": "workspace:*",
-    "@canvylo/ui": "workspace:*",
+    "@farsha/canvas-engine": "workspace:*",
+    "@farsha/code-generator": "workspace:*",
+    "@farsha/design-core": "workspace:*",
+    "@farsha/types": "workspace:*",
+    "@farsha/ui": "workspace:*",
     "fzstd": "^0.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

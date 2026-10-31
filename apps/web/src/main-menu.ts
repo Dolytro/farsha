@@ -196,7 +196,7 @@ export function buildMainMenu(): MenuNode[] {
       label: "Preferences",
       children: list(
         sub("Theme", list(item("theme-light", "Light"), item("theme-dark", "Dark"), item("theme-system", "System"))),
-        sub("Interface preset", list(item("preset-canvylo", "Canvylo"), item("preset-figma", "Figma-like"), item("preset-compact", "Compact"), item("preset-comfortable", "Comfortable"), item("preset-contrast", "High contrast"))),
+        sub("Interface preset", list(item("preset-farsha", "Farsha"), item("preset-figma", "Figma-like"), item("preset-compact", "Compact"), item("preset-comfortable", "Comfortable"), item("preset-contrast", "High contrast"))),
         item("preferences", "Preferences…", true),
         item("show-variables", "Variables…"),
       ),

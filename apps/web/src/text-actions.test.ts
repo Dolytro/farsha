@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
-import { applyTextCase, layoutText, textFontStyle, verticalTextOffset } from "@canvylo/canvas-engine";
+import { DesignDoc } from "@farsha/design-core";
+import { applyTextCase, layoutText, textFontStyle, verticalTextOffset } from "@farsha/canvas-engine";
 import { setTextCase, setTextVerticalAlign, textLayersIn, toggleTextStyle } from "./text-actions";
 
 function setup() {

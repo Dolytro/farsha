@@ -1,4 +1,4 @@
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { debounced } from "./debounce";
 import { useEditor } from "./store";
 

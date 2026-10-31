@@ -1,4 +1,4 @@
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 
 const pickable = (doc: DesignDoc, id: string) => {
   const n = doc.getNode(id);

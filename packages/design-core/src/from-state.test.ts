@@ -15,9 +15,9 @@ describe("DesignDoc.fromState", () => {
     expect(copy.children(page).map((n) => n.id)).toEqual([rect]);
   });
 
-  it("rejects bytes that are not a Canvylo document", () => {
+  it("rejects bytes that are not a Farsha document", () => {
     const other = new Y.Doc();
     other.getMap("something").set("a", 1);
-    expect(() => DesignDoc.fromState(Y.encodeStateAsUpdate(other))).toThrow("Not a Canvylo file");
+    expect(() => DesignDoc.fromState(Y.encodeStateAsUpdate(other))).toThrow("Not a Farsha file");
   });
 });

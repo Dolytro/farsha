@@ -1,16 +1,16 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
+import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
 
 /** Transaction origin for user edits; only these are undoable. */
-export const LOCAL_ORIGIN = 'canvylo:local';
-const INIT_ORIGIN = 'canvylo:init';
+export const LOCAL_ORIGIN = 'farsha:local';
+const INIT_ORIGIN = 'farsha:init';
 /** Asset writes are not part of undo history: undoing a paste removes the layer, not the stored bytes. */
-const ASSET_ORIGIN = 'canvylo:asset';
+const ASSET_ORIGIN = 'farsha:asset';
 
 export interface StoredAsset {
   mime: string;
@@ -673,9 +673,9 @@ export class DesignDoc {
   /** Rebuild a document from bytes produced by `encodeState()`. */
   static fromState(update: Uint8Array): DesignDoc {
     const ydoc = new Y.Doc();
-    Y.applyUpdate(ydoc, update, 'canvylo:remote');
+    Y.applyUpdate(ydoc, update, 'farsha:remote');
     const doc = new DesignDoc(ydoc, { init: false });
-    if (!doc.rootId) throw new Error('Not a Canvylo file');
+    if (!doc.rootId) throw new Error('Not a Farsha file');
     return doc;
   }
 
@@ -683,7 +683,7 @@ export class DesignDoc {
     this.ydoc.transact(() => {
       const rootId = nanoid();
       this.meta.set('rootId', rootId);
-      this.putNode({ ...defaultsFor('DOCUMENT'), id: rootId, parentId: null, orderKey: 'a0', name: 'Canvylo file' });
+      this.putNode({ ...defaultsFor('DOCUMENT'), id: rootId, parentId: null, orderKey: 'a0', name: 'Farsha file' });
       const pageId = nanoid();
       this.putNode({ ...defaultsFor('PAGE'), id: pageId, parentId: rootId, orderKey: 'a0', name: 'Page 1' });
     }, INIT_ORIGIN);
@@ -1316,7 +1316,7 @@ export class DesignDoc {
   }
 
   applyUpdate(update: Uint8Array): void {
-    Y.applyUpdate(this.ydoc, update, 'canvylo:remote');
+    Y.applyUpdate(this.ydoc, update, 'farsha:remote');
   }
 
   // ---------- internals ----------

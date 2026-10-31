@@ -1,6 +1,6 @@
 import { useState, type ReactElement } from "react";
-import type { DesignDoc } from "@canvylo/design-core";
-import type { DesignNode, LayoutAlign, LayoutMode, LayoutSizing } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { DesignNode, LayoutAlign, LayoutMode, LayoutSizing } from "@farsha/types";
 import { addAutoLayout, removeAutoLayout } from "../auto-layout-actions";
 import { Select } from "./Select";
 

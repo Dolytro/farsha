@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { generateCode, paintCss, type Language } from "@canvylo/code-generator";
+import { generateCode, paintCss, type Language } from "@farsha/code-generator";
 import { useEditor } from "../store";
 import { ExportSection } from "./ExportSection";
 import { Select } from "./Select";
 import { cssVariableBlock, variablesUsed } from "../variable-code";
-import type { DevStatus } from "@canvylo/types";
+import type { DevStatus } from "@farsha/types";
 
 const LANGS: { id: Language; label: string }[] = [
   { id: "css", label: "CSS" },

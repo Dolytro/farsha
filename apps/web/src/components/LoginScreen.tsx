@@ -20,7 +20,7 @@ export function LoginScreen({ onSkip }: { onSkip?: () => void }) {
         <div className="login__logo" aria-hidden="true">
           C
         </div>
-        <h1 className="login__title">Canvylo</h1>
+        <h1 className="login__title">Farsha</h1>
         <p className="login__tagline">Design, inspect and share. Free and open source.</p>
 
         {driveConfigured ? (
@@ -39,7 +39,7 @@ export function LoginScreen({ onSkip }: { onSkip?: () => void }) {
         )}
 
         {error && <p className="login__note login__note--error">{error}</p>}
-        <p className="login__note">Your designs are saved to your own Google Drive. Canvylo can only see files it creates.</p>
+        <p className="login__note">Your designs are saved to your own Google Drive. Farsha can only see files it creates.</p>
         <p className="login__note">Have a shared link? Open it directly. Viewing needs no sign-in.</p>
       </div>
     </main>

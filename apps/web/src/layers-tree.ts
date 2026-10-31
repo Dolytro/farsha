@@ -1,4 +1,4 @@
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 import { topLevelOf } from "./clipboard";
 
 export type DropWhere = "before" | "after" | "inside";

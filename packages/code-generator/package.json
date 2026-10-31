@@ -1,5 +1,5 @@
 {
-  "name": "@canvylo/code-generator",
+  "name": "@farsha/code-generator",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,9 +10,9 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@canvylo/types": "workspace:*"
+    "@farsha/types": "workspace:*"
   },
   "devDependencies": {
-    "@canvylo/design-core": "workspace:*"
+    "@farsha/design-core": "workspace:*"
   }
 }

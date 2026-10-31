@@ -1,4 +1,4 @@
-import type { Box } from "@canvylo/types";
+import type { Box } from "@farsha/types";
 
 export interface Guide {
   x1: number;

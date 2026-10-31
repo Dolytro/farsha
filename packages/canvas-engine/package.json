@@ -1,5 +1,5 @@
 {
-  "name": "@canvylo/canvas-engine",
+  "name": "@farsha/canvas-engine",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,8 +10,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@canvylo/design-core": "workspace:*",
-    "@canvylo/types": "workspace:*",
+    "@farsha/design-core": "workspace:*",
+    "@farsha/types": "workspace:*",
     "polygon-clipping": "^0.15.7"
   }
 }

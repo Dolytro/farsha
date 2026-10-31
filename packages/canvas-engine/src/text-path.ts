@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { DesignNode } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { DesignNode } from "@farsha/types";
 import { penPathData, scalePoints } from "./pen";
 
 /**

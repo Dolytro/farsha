@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 import { useEditor } from "../store";
 
 /** The "Apply variable" button next to a solid colour: pick a colour variable to bind the colour to. */

@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { ComponentProperty, DesignNode } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { ComponentProperty, DesignNode } from "@farsha/types";
 import { useEditor } from "../store";
 import { Select } from "./Select";
 

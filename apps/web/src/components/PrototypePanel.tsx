@@ -1,4 +1,4 @@
-import type { Easing, Interaction, InteractionAction, InteractionTrigger, OverlayPosition, TransitionType } from "@canvylo/types";
+import type { Easing, Interaction, InteractionAction, InteractionTrigger, OverlayPosition, TransitionType } from "@farsha/types";
 import { prototypeFrames, startFrame, topFrameOf } from "../prototype";
 import { useEditor } from "../store";
 import { Select } from "./Select";

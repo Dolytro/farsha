@@ -1,4 +1,4 @@
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 import type { Viewport } from "./viewport";
 
 /** Replaceable rendering backend. SVG first; Canvas/WebGL can implement this later. */

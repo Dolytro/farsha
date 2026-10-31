@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Paint } from '@canvylo/types';
+import type { Paint } from '@farsha/types';
 import { DesignDoc } from './design-doc';
 
 const red: Paint[] = [{ type: 'SOLID', color: '#ff0000', opacity: 1 }];

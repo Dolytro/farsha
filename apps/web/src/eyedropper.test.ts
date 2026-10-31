@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { applyPickedColor } from "./eyedropper";
 
 const fillsOf = (doc: DesignDoc, id: string) => (doc.getNode(id) as unknown as { fills: { color: string; opacity: number }[] }).fills;

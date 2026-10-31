@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { DesignDoc } from "@canvylo/design-core";
-import type { DesignNode, TextNode, TextStyle } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { DesignNode, TextNode, TextStyle } from "@farsha/types";
 import { fitText } from "../text-layout";
 
 const describe = (s: TextStyle) => `${Math.round(s.fontSize)} / ${s.fontWeight}`;

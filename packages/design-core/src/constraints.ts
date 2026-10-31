@@ -1,4 +1,4 @@
-import type { Box, Constraint } from '@canvylo/types';
+import type { Box, Constraint } from '@farsha/types';
 
 export interface ChildConstraints {
   constraintH?: Constraint;
