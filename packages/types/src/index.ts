@@ -375,6 +375,10 @@ export interface EllipseNode extends BaseNode {
 export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT';
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH';
 export type TextCase = 'NONE' | 'UPPER' | 'LOWER' | 'TITLE';
+/** Every paragraph of a text layer starts with a bullet or a running number. */
+export type TextList = 'NONE' | 'BULLET' | 'NUMBER';
+/** Writing direction; right to left text (Arabic, Hebrew) starts at the right edge. */
+export type TextDirection = 'LTR' | 'RTL';
 export type TextVerticalAlign = 'TOP' | 'CENTER' | 'BOTTOM';
 
 /** Figma's text resizing: auto width, auto height (wraps at the layer width) or a fixed box. Missing means auto width. */
@@ -396,6 +400,10 @@ export interface TextNode extends BaseNode {
   textDecoration?: TextDecoration;
   /** Upper case, lower case or Title Case display of the characters. Missing means as typed. */
   textCase?: TextCase;
+  /** Bulleted or numbered list of the paragraphs. Missing means a plain paragraph. */
+  textList?: TextList;
+  /** Missing means left to right. */
+  textDirection?: TextDirection;
   /** Where the text sits inside a box taller than the text. Missing means top. */
   textVerticalAlign?: TextVerticalAlign;
   fills: Paint[];
@@ -486,6 +494,8 @@ export interface TextPatch {
   italic?: boolean;
   textDecoration?: TextDecoration;
   textCase?: TextCase;
+  textList?: TextList;
+  textDirection?: TextDirection;
   textVerticalAlign?: TextVerticalAlign;
 }
 

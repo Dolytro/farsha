@@ -4,7 +4,7 @@ import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMa
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
-import { approxMeasure, layoutText, textFontStyle, verticalTextOffset, type Measure } from "./text";
+import { approxMeasure, layoutText, textPlacement, textFontStyle, verticalTextOffset, type Measure } from "./text";
 
 export interface SvgExport {
   svg: string;
@@ -69,8 +69,9 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     case "ELLIPSE":
       return `<g transform="${transform}"${opacity}>${shapeMarkup(n, imageHref(doc))}${kids}</g>`;
     case "TEXT": {
-      const anchor = n.textAlign === "CENTER" ? ' text-anchor="middle"' : n.textAlign === "RIGHT" ? ' text-anchor="end"' : "";
-      const x = n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0;
+      const place = textPlacement(n);
+      const anchor = `${place.anchor === "start" && !place.rtl ? "" : ` text-anchor="${place.anchor}"`}${place.rtl ? ' direction="rtl" unicode-bidi="plaintext"' : ""}`;
+      const x = place.x;
       const { lines, lineHeight, height: textHeight } = layoutText(n, measure);
       const style = textFontStyle(n);
       const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;

@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import type { TextAlign, TextAutoResize, TextCase, TextNode, TextVerticalAlign } from "@canvylo/types";
+import type { TextAlign, TextAutoResize, TextCase, TextDirection, TextList, TextNode, TextVerticalAlign } from "@canvylo/types";
 import { useState } from "react";
 import { fitText } from "../text-layout";
 import { TextStyleMenu, TextStylePill } from "./TextStyleMenu";
@@ -143,6 +143,17 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           <option value="TOP">Align top</option>
           <option value="CENTER">Align middle</option>
           <option value="BOTTOM">Align bottom</option>
+        </Select>
+      </div>
+      <div className="props__grid props__grid--gap">
+        <Select className="field__select" aria-label="List style" value={node.textList ?? "NONE"} onChange={(e) => set({ textList: e.target.value as TextList })}>
+          <option value="NONE">No list</option>
+          <option value="BULLET">Bulleted list</option>
+          <option value="NUMBER">Numbered list</option>
+        </Select>
+        <Select className="field__select" aria-label="Text direction" value={node.textDirection ?? "LTR"} onChange={(e) => set({ textDirection: e.target.value as TextDirection })}>
+          <option value="LTR">Left to right</option>
+          <option value="RTL">Right to left</option>
         </Select>
       </div>
       <div className="seg">

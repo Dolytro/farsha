@@ -1,4 +1,4 @@
-import type { TextCase, TextNode } from "@canvylo/types";
+import type { TextCase, TextList, TextNode } from "@canvylo/types";
 
 export interface FontSpec {
   family: string;
@@ -21,7 +21,7 @@ export interface TextLayout {
   height: number;
 }
 
-type TextLike = Pick<TextNode, "characters" | "fontFamily" | "fontSize" | "fontWeight" | "letterSpacing" | "lineHeight" | "width"> & { textAutoResize?: TextNode["textAutoResize"]; textCase?: TextCase };
+type TextLike = Pick<TextNode, "characters" | "fontFamily" | "fontSize" | "fontWeight" | "letterSpacing" | "lineHeight" | "width"> & { textAutoResize?: TextNode["textAutoResize"]; textCase?: TextCase; textList?: TextList };
 
 /** The characters as they are drawn: upper case, lower case or Title Case when the layer asks for it. */
 export function applyTextCase(text: string, mode: TextCase | undefined): string {
@@ -29,6 +29,22 @@ export function applyTextCase(text: string, mode: TextCase | undefined): string 
   if (mode === "LOWER") return text.toLowerCase();
   if (mode === "TITLE") return text.toLowerCase().replace(/(^|[\s\-_/(])(\p{L})/gu, (_, sep: string, ch: string) => sep + ch.toUpperCase());
   return text;
+}
+
+/** Paragraphs with their list marker: "• " for a bulleted list, "1. ", "2. " … for a numbered one. */
+export function applyTextList(paragraphs: string[], mode: TextList | undefined): string[] {
+  if (mode === "BULLET") return paragraphs.map((p) => `• ${p}`);
+  if (mode === "NUMBER") return paragraphs.map((p, i) => `${i + 1}. ${p}`);
+  return paragraphs;
+}
+
+/** Where the lines of a text layer start and how they are anchored (SVG `x`, `text-anchor`, `direction`). In right to left text "start" is the right edge. */
+export function textPlacement(n: { width: number; textAlign?: string; textDirection?: string }): { x: number; anchor: "start" | "middle" | "end"; rtl: boolean } {
+  const rtl = n.textDirection === "RTL";
+  if (n.textAlign === "CENTER") return { x: n.width / 2, anchor: "middle", rtl };
+  const right = n.textAlign === "RIGHT";
+  if (rtl) return right ? { x: n.width, anchor: "start", rtl } : { x: 0, anchor: "end", rtl };
+  return right ? { x: n.width, anchor: "end", rtl } : { x: 0, anchor: "start", rtl };
 }
 
 /** SVG `font-style` / `text-decoration` values of a text layer (undefined when plain). */
@@ -79,7 +95,7 @@ function wrapParagraph(text: string, maxWidth: number, width: (s: string) => num
 export function layoutText(n: TextLike, measure: Measure = approxMeasure): TextLayout {
   const font: FontSpec = { family: n.fontFamily, size: n.fontSize, weight: n.fontWeight, letterSpacing: n.letterSpacing };
   const w = (s: string) => measure(s, font);
-  const paragraphs = applyTextCase(n.characters, n.textCase).split("\n");
+  const paragraphs = applyTextList(applyTextCase(n.characters, n.textCase).split("\n"), n.textList);
   const wrap = (n.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT";
   const lines = wrap ? paragraphs.flatMap((p) => wrapParagraph(p, Math.max(1, n.width), w)) : paragraphs;
   const lineHeight = lineHeightPx(n);

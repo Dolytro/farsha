@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@canvylo/design-core";
 import { exportSvg } from "./svg-export";
 import { backgroundBlurOf, effectsFilter, shapeMarkup } from "./appearance";
+import { applyTextList, layoutText, textPlacement } from "./text";
 
 const solid = (color: string, opacity = 1) => [{ type: "SOLID" as const, color, opacity }];
 
@@ -368,5 +369,28 @@ describe("shadow spread", () => {
   });
   it("ignores a spread that is not a number", () => {
     expect(effectsFilter(node([drop(Number.NaN)]))!.markup).not.toContain("feMorphology");
+  });
+});
+
+describe("text lists and direction", () => {
+  const textNode = (extra: object) => ({ id: "t", type: "TEXT", x: 0, y: 0, width: 200, height: 40, rotation: 0, opacity: 1, visible: true, characters: "One\nTwo", fontFamily: "Inter", fontSize: 16, fontWeight: 400, lineHeight: "AUTO", letterSpacing: 0, textAlign: "LEFT", fills: [{ type: "SOLID", color: "#000000", opacity: 1 }], ...extra }) as never;
+  it("adds bullets and running numbers to every paragraph", () => {
+    expect(applyTextList(["a", "b"], "BULLET")).toEqual(["• a", "• b"]);
+    expect(applyTextList(["a", "b"], "NUMBER")).toEqual(["1. a", "2. b"]);
+    expect(applyTextList(["a", "b"], undefined)).toEqual(["a", "b"]);
+    expect(layoutText(textNode({ textList: "NUMBER" })).lines).toEqual(["1. One", "2. Two"]);
+  });
+  it("places right to left text from the right edge", () => {
+    expect(textPlacement({ width: 200, textAlign: "LEFT" })).toEqual({ x: 0, anchor: "start", rtl: false });
+    expect(textPlacement({ width: 200, textAlign: "LEFT", textDirection: "RTL" })).toEqual({ x: 0, anchor: "end", rtl: true });
+    expect(textPlacement({ width: 200, textAlign: "RIGHT", textDirection: "RTL" })).toEqual({ x: 200, anchor: "start", rtl: true });
+    expect(textPlacement({ width: 200, textAlign: "CENTER", textDirection: "RTL" })).toEqual({ x: 100, anchor: "middle", rtl: true });
+  });
+  it("exports the direction and the list markers", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "مرحبا", width: 200, textDirection: "RTL", textList: "BULLET" } as never });
+    const svg = exportSvg(doc, [id])!.svg;
+    expect(svg).toContain('direction="rtl"');
+    expect(svg).toContain("• مرحبا");
   });
 });
