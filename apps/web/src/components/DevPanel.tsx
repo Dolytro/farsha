@@ -3,6 +3,7 @@ import { generateCode, paintCss, type Language } from "@canvylo/code-generator";
 import { useEditor } from "../store";
 import { ExportSection } from "./ExportSection";
 import { Select } from "./Select";
+import { cssVariableBlock, variablesUsed } from "../variable-code";
 import type { DevStatus } from "@canvylo/types";
 
 const LANGS: { id: Language; label: string }[] = [
@@ -35,6 +36,7 @@ export function DevPanel() {
     }
   };
 
+  const uses = variablesUsed(doc, node);
   const fills = "fills" in node ? (node.fills ?? []) : [];
   const strokes = "strokes" in node ? (node.strokes ?? []) : [];
 
@@ -92,6 +94,21 @@ export function DevPanel() {
               <span className="fill-row__opacity">{label}</span>
             </div>
           ))}
+        </section>
+      )}
+
+      {uses.length > 0 && (
+        <section className="props__section">
+          <h3 className="props__heading">Variables</h3>
+          <dl className="dev__list">
+            {uses.map((u) => (
+              <div key={`${u.id}-${u.role}`} style={{ display: "contents" }}>
+                <dt title={u.role}>{u.name}</dt>
+                <dd>{u.cssName}</dd>
+              </div>
+            ))}
+          </dl>
+          <pre className="dev__code"><code>{cssVariableBlock(uses)}</code></pre>
         </section>
       )}
 
