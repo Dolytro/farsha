@@ -73,3 +73,31 @@ describe("justified text", () => {
     expect(layoutText({ ...base, textAlign: "JUSTIFIED", textAutoResize: "WIDTH_AND_HEIGHT" }).wordSpacing.every((v) => v === 0)).toBe(true);
   });
 });
+
+describe("paragraph spacing, indent and truncation", () => {
+  const base = { characters: "one\ntwo\nthree", fontFamily: "Inter", fontSize: 16, fontWeight: 400, letterSpacing: 0, lineHeight: 20, width: 300 };
+  it("adds space before every paragraph but the first, and indents each paragraph's first line", () => {
+    const l = layoutText({ ...base, paragraphSpacing: 8, paragraphIndent: 12 });
+    expect(l.lineGap).toEqual([0, 8, 8]);
+    expect(l.indent).toEqual([12, 12, 12]);
+    expect(l.height).toBe(3 * 20 + 16);
+  });
+  it("does nothing for missing or bad values", () => {
+    const l = layoutText({ ...base, paragraphSpacing: Number.NaN, paragraphIndent: -5 });
+    expect(l.lineGap).toEqual([0, 0, 0]);
+    expect(l.indent).toEqual([0, 0, 0]);
+    expect(l.height).toBe(60);
+  });
+  it("keeps the first lines and ends the last with an ellipsis", () => {
+    const l = layoutText({ ...base, maxLines: 2 });
+    expect(l.lines).toEqual(["one", "two…"]);
+    expect(l.height).toBe(40);
+    expect(layoutText({ ...base, maxLines: 5 }).lines).toHaveLength(3);
+    expect(layoutText({ ...base, maxLines: 0 }).lines).toHaveLength(3);
+  });
+  it("wrapped text is cut after the limit", () => {
+    const l = layoutText({ ...base, characters: "aaa bbb ccc ddd eee fff", width: 40, textAutoResize: "HEIGHT", maxLines: 2 });
+    expect(l.lines).toHaveLength(2);
+    expect(l.lines[1]!.endsWith("…")).toBe(true);
+  });
+});

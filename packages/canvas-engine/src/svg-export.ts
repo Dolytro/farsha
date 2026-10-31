@@ -74,7 +74,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       const place = textPlacement(n);
       const anchor = `${place.anchor === "start" && !place.rtl ? "" : ` text-anchor="${place.anchor}"`}${place.rtl ? ' direction="rtl" unicode-bidi="plaintext"' : ""}`;
       const x = place.x;
-      const { lines, starts, wordSpacing, lineHeight, height: textHeight } = layoutText(n, measure);
+      const { lines, starts, wordSpacing, lineGap, indent, lineHeight, height: textHeight } = layoutText(n, measure);
       const style = textFontStyle(n);
       const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;
       const spans = lines
@@ -82,7 +82,8 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
           lineSegments(l, starts[i] ?? 0, n.runs).map((seg, j) => {
             const deco = seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : "";
             const look = `${seg.bold ? ' font-weight="700"' : ""}${seg.italic ? ' font-style="italic"' : ""}${deco ? ` text-decoration="${deco}"` : ""}`;
-            const pos = j === 0 ? ` x="${num(x)}" dy="${i ? num(lineHeight) : 0}"${wordSpacing[i] ? ` word-spacing="${num(wordSpacing[i]!)}"` : ""}` : "";
+            const startX = x + (place.anchor === "start" && !place.rtl ? indent[i] ?? 0 : 0);
+            const pos = j === 0 ? ` x="${num(startX)}" dy="${i ? num(lineHeight + (lineGap[i] ?? 0)) : 0}"${wordSpacing[i] ? ` word-spacing="${num(wordSpacing[i]!)}"` : ""}` : "";
             return `<tspan${pos}${look}>${esc(seg.text)}</tspan>`;
           }),
         )

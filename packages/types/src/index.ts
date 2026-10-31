@@ -426,6 +426,12 @@ export interface TextNode extends BaseNode {
   textCase?: TextCase;
   /** Bulleted or numbered list of the paragraphs. Missing means a plain paragraph. */
   textList?: TextList;
+  /** Extra space in pixels between paragraphs. */
+  paragraphSpacing?: number;
+  /** Indent in pixels of the first line of every paragraph. */
+  paragraphIndent?: number;
+  /** Show at most this many lines and end the last one with an ellipsis (0 or missing: show all). */
+  maxLines?: number;
   /** Missing means left to right. */
   textDirection?: TextDirection;
   /** A web address the whole text links to (Figma's Create link). */
@@ -531,6 +537,9 @@ export interface TextPatch {
   textDecoration?: TextDecoration;
   textCase?: TextCase;
   textList?: TextList;
+  paragraphSpacing?: number;
+  paragraphIndent?: number;
+  maxLines?: number;
   textDirection?: TextDirection;
   textLink?: string | null;
   runs?: TextRun[] | null;

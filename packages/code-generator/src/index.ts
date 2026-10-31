@@ -86,6 +86,8 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     }
     d.push(["text-align", node.textAlign === "JUSTIFIED" ? "justify" : node.textAlign.toLowerCase()]);
     if (node.textDirection === "RTL") d.push(["direction", "rtl"]);
+    if (node.paragraphIndent) d.push(["text-indent", px(node.paragraphIndent)]);
+    if (node.maxLines && node.maxLines > 0) d.push(["display", "-webkit-box"], ["-webkit-line-clamp", String(node.maxLines)], ["-webkit-box-orient", "vertical"], ["overflow", "hidden"]);
     if (node.characters.includes("\n") || (node.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT") d.push(["white-space", "pre-wrap"]);
     effectDecls();
     return d;
