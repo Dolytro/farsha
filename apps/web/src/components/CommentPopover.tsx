@@ -40,6 +40,18 @@ export function CommentPopover() {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [active, setActive]);
 
+  // A click anywhere else (not on this box and not on a pin) closes the thread.
+  useEffect(() => {
+    if (!active) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (t?.closest?.(".comment, [data-comment]")) return;
+      setActive(null);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    return () => window.removeEventListener("pointerdown", onDown, true);
+  }, [active, setActive]);
+
   if (!active) return null;
   const thread = "id" in active ? doc.getComment(active.id) : undefined;
   if ("id" in active && !thread) return null;
