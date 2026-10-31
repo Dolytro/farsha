@@ -15,6 +15,7 @@ import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
 import { Select } from "./Select";
+import { FRAME_PRESETS, presetLabel, presetOf } from "../frame-presets";
 import { SelectionColors } from "./SelectionColors";
 import { LocalStyles } from "./LocalStyles";
 
@@ -174,6 +175,24 @@ export function Properties() {
 
       <section className="props__section">
         <h3 className="props__heading">Layout</h3>
+        {node.type === "FRAME" && !node.isSection && (
+          <Select
+            className="field__select field__select--wide field--gap"
+            aria-label="Frame size preset"
+            value={String(FRAME_PRESETS.indexOf(presetOf(node.width, node.height) as never))}
+            onChange={(e) => {
+              const p = FRAME_PRESETS[Number(e.target.value)];
+              if (p) doc.resizeNode(node.id, { width: p.width, height: p.height });
+            }}
+          >
+            <option value="-1">Custom size</option>
+            {FRAME_PRESETS.map((p, i) => (
+              <option key={i} value={String(i)}>
+                {presetLabel(p)}
+              </option>
+            ))}
+          </Select>
+        )}
         <div className="props__grid">
           {num("width", "W")}
           {num("height", "H")}
