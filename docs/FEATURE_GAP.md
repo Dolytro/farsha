@@ -267,7 +267,7 @@ Menus and commands
 - Preferences: Highlight layers on hover, Rename duplicated layers, Show dimensions on objects, Hide canvas UI during changes, Use smart quotes, Flip objects while resizing, Keyboard zooms into selection, Right-click and drag to pan, Use Ctrl+Alt+arrows to rotate, Color profile, Keyboard layout, Accessibility
 
 Design panel
-- Frame presets in the header dropdown (Phone, Tablet, Desktop, Presentation, Watch, Paper sizes; Frame / Section / Group layout options)
+- ✅ Frame size presets (Phone, Tablet, Desktop, Presentation, Watch, Paper) in the Layout section
 - Auto layout: Grid flow, min / max width and height, Resize to fit, "Hug" / "Fill" as commands
 - Position section: flip horizontal / vertical and rotate buttons
 - Colour picker: custom picker with eyedropper, RGB / HSL / HSB / CSS modes, "On this page" colours, fill blend mode
