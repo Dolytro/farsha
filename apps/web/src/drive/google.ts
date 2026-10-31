@@ -8,7 +8,7 @@ export const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY as string | undefined
 
 /** drive.file: the app can only see files it created or the user explicitly opened with it. */
 const SCOPE = "https://www.googleapis.com/auth/drive.file";
-const STORAGE_KEY = "canvylo.drive.token";
+const STORAGE_KEY = "farsha.drive.token";
 
 export const driveConfigured = Boolean(CLIENT_ID && API_KEY);
 

@@ -9,7 +9,7 @@ export interface ShapeDefaults {
   opacity?: number;
 }
 
-const KEY = "canvylo.shape-defaults";
+const KEY = "farsha.shape-defaults";
 
 /** The defaults a layer would set: only what it has. Text and groups have nothing to give. */
 export function extractDefaults(n: DesignNode | undefined): ShapeDefaults | null {

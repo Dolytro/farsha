@@ -1,6 +1,6 @@
 export type ThemePreference = "light" | "dark" | "system";
 
-export const THEME_KEY = "canvylo.theme";
+export const THEME_KEY = "farsha.theme";
 
 /** The theme to draw: an explicit choice, or the system setting when the preference is "system". */
 export function resolveTheme(preference: ThemePreference, systemDark: boolean): "light" | "dark" {
