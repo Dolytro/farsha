@@ -85,6 +85,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
       d.push(["display", "flex"], ["align-items", node.textVerticalAlign === "CENTER" ? "center" : "flex-end"]);
     }
     d.push(["text-align", node.textAlign.toLowerCase()]);
+    if (node.textDirection === "RTL") d.push(["direction", "rtl"]);
     if (node.characters.includes("\n") || (node.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT") d.push(["white-space", "pre-wrap"]);
     effectDecls();
     return d;

@@ -10,7 +10,7 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -449,8 +449,10 @@ export function Canvas() {
           {fxDefs(n)}
           <text
             xmlSpace="preserve"
-            x={n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0}
-            textAnchor={n.textAlign === "CENTER" ? "middle" : n.textAlign === "RIGHT" ? "end" : "start"}
+            x={textPlacement(n).x}
+            textAnchor={textPlacement(n).anchor}
+            direction={textPlacement(n).rtl ? "rtl" : undefined}
+            unicodeBidi={textPlacement(n).rtl ? "plaintext" : undefined}
             y={textBaseline(n) + verticalTextOffset(n, layoutText(n, canvasMeasure).height)}
             letterSpacing={n.letterSpacing || undefined}
             fill={color}
@@ -460,7 +462,7 @@ export function Canvas() {
             {...textFontStyle(n)}
           >
             {layoutText(n, canvasMeasure).lines.map((line, i) => (
-              <tspan key={i} x={n.textAlign === "CENTER" ? n.width / 2 : n.textAlign === "RIGHT" ? n.width : 0} dy={i ? lineHeightPx(n) : 0}>
+              <tspan key={i} x={textPlacement(n).x} dy={i ? lineHeightPx(n) : 0}>
                 {line}
               </tspan>
             ))}
