@@ -228,7 +228,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | 9 | Clicking outside an open comment reply does not close it | ✅ |
 | 10 | Dragging a frame often does not create one | ✅ pointer capture now sits on the canvas, so a drag survives re-rendering and ends outside the canvas |
 | 11 | Preview option outside the Prototype tab | ✅ toolbar Preview button |
-| 12 | Layout grid is confusing, make it easy like Figma | open |
+| 12 | Layout grid is confusing, make it easy like Figma | ✅ + adds a 10 px grid like Figma, each type explains itself, fields are spelled out (Count, Gutter, Margin, Size) |
 | 13 | Right sidebar UX | owner will do |
 | 14 | Double click a layer to jump to it on the canvas | ✅ double click the icon or the row (double click the name still renames) |
 | 15 | Text (string) variables | open |

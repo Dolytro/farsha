@@ -979,3 +979,33 @@ textarea:focus-visible {
   max-height: calc(100vh - 16px);
   overflow-y: auto;
 }
+
+// Layout grid and similar: one labelled field per row, with the label spelled out.
+.props__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.field--row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+
+  .field__label--text {
+    width: auto;
+    padding-left: 8px;
+    color: var(--c-muted);
+  }
+}
+
+.field--row {
+  height: var(--field-h);
+  border-radius: var(--radius);
+  background: var(--c-input);
+
+  .field__input {
+    background: transparent;
+  }
+}
