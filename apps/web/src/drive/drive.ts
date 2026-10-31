@@ -3,7 +3,7 @@ import { API_KEY } from "./google";
 const API = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
 
-/** Marks files created by Canvylo so they can be listed (drive.file only sees these anyway). */
+/** Marks files created by Farsha so they can be listed (drive.file only sees these anyway). */
 const APP_PROP = { canvylo: "1" };
 
 export class DriveError extends Error {
@@ -48,7 +48,7 @@ export async function getUser(token: string): Promise<DriveUser> {
 }
 
 export async function createFile(token: string, name: string, bytes: Uint8Array): Promise<DriveFile> {
-  const boundary = `canvylo${Math.random().toString(36).slice(2)}`;
+  const boundary = `farsha${Math.random().toString(36).slice(2)}`;
   const meta = { name, mimeType: "application/octet-stream", appProperties: APP_PROP };
   const body = new Blob([
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n`,

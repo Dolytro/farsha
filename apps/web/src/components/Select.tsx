@@ -43,7 +43,7 @@ const GAP = 6;
 const MAX_HEIGHT = 320;
 
 /**
- * Canvylo's dropdown: a button that opens a roomy list with a check mark on the current value. It replaces the native select
+ * Farsha's dropdown: a button that opens a roomy list with a check mark on the current value. It replaces the native select
  * and accepts the same <option> children. Keyboard: arrows, Enter, Esc, and typing to jump to an option.
  */
 export function Select({ value, onChange, children, className = "", title, disabled, "aria-label": ariaLabel }: SelectProps) {

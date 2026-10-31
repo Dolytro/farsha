@@ -1,4 +1,4 @@
-# Canvylo vs Figma: feature gap
+# Farsha vs Figma: feature gap
 
 Status: ✅ done · 🟡 partial · ❌ missing. Priority: **P1** (needed to design real screens), **P2** (daily convenience), **P3** (later / optional).
 
@@ -37,7 +37,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Copy as SVG / CSS / PNG from the right-click menu | ✅ | |
 | Paste SVG (shapes, text and paths become layers; no gradients or transforms beyond translate) | ✅ | |
 | Paste layers copied in Figma (frames, text, shapes, vectors; no auto layout, components, images, effects) | 🟡 | |
-| Paste images from the clipboard, drag and drop image files (PNG / JPEG / WebP / GIF; stored inside the .canvylo file) | ✅ | |
+| Paste images from the clipboard, drag and drop image files (PNG / JPEG / WebP / GIF; stored inside the .farsha file) | ✅ | |
 | Image fills on shapes, crop, replace image | ❌ | P1 |
 | Select all (Ctrl+A) | ✅ | |
 | Select inverse (Ctrl+Shift+A), select all matching (Ctrl+Alt+A) | ✅ | Select none is Esc. Matching = same type, fills, strokes (and font for text) |
@@ -121,7 +121,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Save / open / autosave (Google Drive), new file | ✅ | |
 | Rename the file (click the name at the top of the left panel) | 🟡 | Local name and the Drive file name (Drive rename not tested with a real account). Missing: rename from the Home screen |
 | Home / recent files / folders / trash | ❌ | P2 |
-| Save local copy (.canvylo download), open local file | ✅ | In the cloud menu, works without signing in. Missing: Duplicate file, drag a .canvylo onto the canvas |
+| Save local copy (.farsha download), open local file | ✅ | In the cloud menu, works without signing in. Missing: Duplicate file, drag a .farsha onto the canvas |
 | Export all (File → Export, Ctrl+Shift+E), export frames to PDF (menu) | ❌ | P2 |
 | Import SVG / images / drag and drop files | ❌ | P1 |
 | Version history, restore | 🟡 | Save a named version (Ctrl+Alt+S, Actions, cloud menu → Version history), list, restore (the current state is saved first), delete; newest 30 kept in this browser per file. Missing: automatic versions, versions on Drive (shared across devices), visual compare |
@@ -140,7 +140,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 
 ## 10. Preferences (Figma → Preferences menu) (menu)
 
-| Setting | Canvylo |
+| Setting | Farsha |
 |---|---|
 | Keep tool selected after use | ✅ |
 | Use alternate zoom handling | ❌ |
@@ -178,7 +178,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 ## 10. Figma menu audit (read from the live Figma editor, 2026-10-31)
 
 Source: the main menu (File, Edit, View, Object, Text, Arrange, Vector, Preferences), the toolbar dropdowns and the Design panel of an empty Figma file.
-Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or the Actions palette. Status here is kept up to date as items are built (✅ done · ❌ missing).
+Farsha had **no menu bar at all**; everything was a shortcut, a right-click or the Actions palette. Status here is kept up to date as items are built (✅ done · ❌ missing).
 
 | Area | Figma item | Status |
 |---|---|---|
@@ -213,7 +213,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Dev Mode | Status (Ready for dev / Completed, shown on the frame label) and a developer annotation per layer, saved in the document; Variables used by a layer (name, CSS custom property and a :root block with every mode) ✅; Compare changes (Version history > Compare lists added, removed and changed layers since a saved version, with the properties that differ) ✅ | ✅ |
 | Collaboration | Live cursors, comment notifications and @mentions, branching, team libraries | ❌ needs a backend |
 
-## 11. QA report (owner's Google Doc "canvylo Report.", 2026-10-31)
+## 11. QA report (owner's Google Doc "farsha Report.", 2026-10-31)
 
 | # | Issue | Status |
 |---|-------|--------|
@@ -241,7 +241,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 (Dev Mode, shared libraries, branching, advanced prototyping) were read from Figma's own upgrade screen and the menus, not used.
 
 ### 12.1 Shortcuts that differ from Figma today (cheap fixes)
-| Command | Figma | Canvylo now |
+| Command | Figma | Farsha now |
 |---|---|---|
 | Flatten | Alt+Shift+F | ✅ same |
 | Outline stroke | Ctrl+Alt+O | ✅ same |

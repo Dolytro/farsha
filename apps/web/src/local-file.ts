@@ -1,10 +1,10 @@
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { localFileName } from "./file-name";
 import { useEditor } from "./store";
 
 const MAX_BYTES = 200 * 1024 * 1024;
 
-/** Download the open document as a .canvylo file (the same bytes Drive stores). */
+/** Download the open document as a .farsha file (the same bytes Drive stores). */
 export function saveLocalCopy(): void {
   const { doc, drive } = useEditor.getState();
   const url = URL.createObjectURL(new Blob([doc.encodeState() as BlobPart], { type: "application/octet-stream" }));
@@ -27,11 +27,11 @@ export function duplicateFile(): void {
   showToast("Duplicated the file");
 }
 
-/** Ask for a .canvylo file with a file picker, then open it. */
+/** Ask for a .farsha file with a file picker, then open it. */
 export function openLocalFilePicker(): void {
   const input = document.createElement("input");
   input.type = "file";
-  input.accept = ".canvylo";
+  input.accept = ".farsha,.canvylo";
   input.onchange = () => {
     const file = input.files?.[0];
     if (file) void openLocalFile(file);
@@ -39,18 +39,18 @@ export function openLocalFilePicker(): void {
   input.click();
 }
 
-/** Open a .canvylo file chosen from disk. The result is a separate working copy that is not linked to Drive. */
+/** Open a .farsha file chosen from disk. The result is a separate working copy that is not linked to Drive. */
 export async function openLocalFile(file: File): Promise<boolean> {
   const { loadDoc, setDrive, showToast } = useEditor.getState();
   try {
     if (file.size > MAX_BYTES) throw new Error("The file is too large");
     const doc = DesignDoc.fromState(new Uint8Array(await file.arrayBuffer()));
     loadDoc(doc);
-    setDrive({ fileId: null, fileName: file.name.replace(/\.canvylo$/i, "") || "Untitled", status: "idle", error: null });
+    setDrive({ fileId: null, fileName: file.name.replace(/\.(farsha|canvylo)$/i, "") || "Untitled", status: "idle", error: null });
     showToast(`Opened ${file.name}`);
     return true;
   } catch {
-    showToast("That isn't a Canvylo file");
+    showToast("That isn't a Farsha file");
     return false;
   }
 }

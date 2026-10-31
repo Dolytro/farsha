@@ -1,10 +1,10 @@
 import { useState } from "react";
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 import { EXPORT_SCALES } from "../exporting";
 import { exportAs, type ExportChoice } from "../pdf-export";
 import { exportPage, pageLayerIds } from "../page-export";
 import { SETTING_FORMATS, SETTING_SCALES, exportWithSettings, newSetting } from "../export-settings";
-import type { ExportSetting, ExportSettingFormat } from "@canvylo/types";
+import type { ExportSetting, ExportSettingFormat } from "@farsha/types";
 import { useEditor } from "../store";
 import { Select } from "./Select";
 
@@ -82,7 +82,7 @@ export function ExportSection({ doc, ids, pageId }: { doc: DesignDoc; ids: strin
     const { showToast } = useEditor.getState();
     setBusy(true);
     try {
-      const n = pageId && format !== "PDF" ? await exportPage(doc, pageId, format, scale) : await exportAs(doc, pageId ? pageLayerIds(doc, pageId) : ids, format, scale, label ?? "Canvylo");
+      const n = pageId && format !== "PDF" ? await exportPage(doc, pageId, format, scale) : await exportAs(doc, pageId ? pageLayerIds(doc, pageId) : ids, format, scale, label ?? "Farsha");
       showToast(n ? (format === "PDF" ? `Choose "Save as PDF" in the print window (${n} page${n === 1 ? "" : "s"})` : `Exported ${n} ${n === 1 ? "file" : "files"}`) : "Nothing to export");
     } catch (err) {
       showToast(err instanceof Error ? `Couldn't export: ${err.message}` : "Couldn't export");

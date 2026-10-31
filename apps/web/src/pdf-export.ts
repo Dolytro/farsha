@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { exportSvg } from "@canvylo/canvas-engine";
+import type { DesignDoc } from "@farsha/design-core";
+import { exportSvg } from "@farsha/canvas-engine";
 import { canvasMeasure } from "./text-layout";
 import { exportLayers, type ExportFormat } from "./exporting";
 import { isSection, topLevelFrames } from "./section-actions";

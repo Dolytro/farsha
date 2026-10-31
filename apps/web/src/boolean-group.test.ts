@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
-import { booleanGroupVector, exportSvg } from "@canvylo/canvas-engine";
+import { DesignDoc } from "@farsha/design-core";
+import { booleanGroupVector, exportSvg } from "@farsha/canvas-engine";
 import { booleanGroupSelection, flattenSelection } from "./actions";
 
 const red = [{ type: "SOLID" as const, color: "#ff0000", opacity: 1 }];

@@ -1,5 +1,5 @@
 {
-  "name": "@canvylo/ui",
+  "name": "@farsha/ui",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@canvylo/types": "workspace:*",
+    "@farsha/types": "workspace:*",
     "react": "^19.3.1",
     "sass": "^1.106.1"
   },

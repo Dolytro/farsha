@@ -1,4 +1,4 @@
-# Canvylo — Full Product & Architecture Plan
+# Farsha — Full Product & Architecture Plan
 
 > **Revision notes (v1.1):** Fastify chosen over NestJS. Yjs document is the single source of truth; undo/redo uses `Y.UndoManager`. Child ordering uses fractional indexes (`parentId` + `orderKey`), not `children: string[]`. IDs are nanoid. Renderer must stay abstracted (SVG first, hot paths may move to Canvas). Text rendering gets its own spike in Phase 1. A small vertical-slice milestone (Section 50a) precedes the full MVP. PDF export runs server-side in `apps/worker` (headless render).
 
@@ -1774,7 +1774,7 @@ These are the core product areas. Advanced features remain deliberately outside 
 
 | Topic | Decision |
 |---|---|
-| Name | Canvylo |
+| Name | Farsha |
 | Backend | Fastify |
 | Source of truth | Yjs `Y.Doc`; React/Zustand hold only ephemeral UI state (tool, selection, viewport) |
 | Undo/redo | `Y.UndoManager` |

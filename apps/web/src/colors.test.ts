@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { replaceSelectionColor, selectionColors } from "./colors";
 
 const solid = (color: string) => [{ type: "SOLID" as const, color, opacity: 1 }];

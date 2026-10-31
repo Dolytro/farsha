@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { outlineStrokeSelection } from "./actions";
 
 const red = [{ type: "SOLID" as const, color: "#ff0000", opacity: 1 }];

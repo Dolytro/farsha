@@ -1,6 +1,6 @@
-# Deploying Canvylo (Vercel + Google Drive)
+# Deploying Farsha (Vercel + Google Drive)
 
-Canvylo needs no server or database. The app is static; designs are saved to the signed-in
+Farsha needs no server or database. The app is static; designs are saved to the signed-in
 user's own Google Drive and shared through Drive's "anyone with the link" permission.
 
 ## Vercel
@@ -41,7 +41,7 @@ pnpm dev
 
 ## How sharing works
 
-- *Save to Drive* creates `<name>.canvylo` (a Yjs document) in the user's Drive.
+- *Save to Drive* creates `<name>.farsha` (a Yjs document) in the user's Drive.
 - *Share → Anyone with the link can view* adds a `reader`/`anyone` permission to that file.
 - The link `/v/<fileId>` (optionally `?mode=inspect` for Dev Mode and code) downloads the file
   with the API key and opens it read-only.
@@ -64,4 +64,4 @@ pnpm dev
 
 ## Live site
 
-Production: https://canvylo.vercel.app (Vercel project `canvylo`, root directory `apps/web`).
+Production: https://canvylo.vercel.app (Vercel project `farsha`, root directory `apps/web`).

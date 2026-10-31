@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { TextAlign, TextAutoResize, TextCase, TextDirection, TextList, TextNode, TextVerticalAlign } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { TextAlign, TextAutoResize, TextCase, TextDirection, TextList, TextNode, TextVerticalAlign } from "@farsha/types";
 import { useState } from "react";
 import { fitText } from "../text-layout";
 import { TextStyleMenu, TextStylePill } from "./TextStyleMenu";

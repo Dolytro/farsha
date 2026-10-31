@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { DesignDoc } from "@canvylo/design-core";
-import type { Viewport } from "@canvylo/canvas-engine";
+import { DesignDoc } from "@farsha/design-core";
+import type { Viewport } from "@farsha/canvas-engine";
 import type { DriveUser } from "./drive/drive";
 import { parseRoute, type ViewerMode } from "./route";
 import { seedWelcome } from "./seed/welcome";

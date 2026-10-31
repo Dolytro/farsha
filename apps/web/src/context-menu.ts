@@ -31,7 +31,7 @@ const MOD = /Mac|iPhone|iPad/.test(typeof navigator === "undefined" ? "" : navig
 const ALT = MOD === "⌘" ? "⌥" : "Alt+";
 const SHIFT = MOD === "⌘" ? "⇧" : "Shift+";
 
-/** Figma's right-click menu, trimmed to what Canvylo can do. Returns [] when no menu should open. */
+/** Figma's right-click menu, trimmed to what Farsha can do. Returns [] when no menu should open. */
 export function buildMenu(c: MenuContext): MenuItem[] {
   if (c.readOnlyViewer) return [];
   if (c.devMode) return c.selectionCount ? [{ action: "copy-css", label: "Copy as CSS", shortcut: `${MOD}C` }] : [];

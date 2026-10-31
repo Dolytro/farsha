@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { TextAlign, TextCase, TextNode, TextPatch, TextVerticalAlign } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { TextAlign, TextCase, TextNode, TextPatch, TextVerticalAlign } from "@farsha/types";
 
 export type Refit = (doc: DesignDoc, id: string) => void;
 

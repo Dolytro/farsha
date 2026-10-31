@@ -1,4 +1,4 @@
-import { cssBlendMode, paintColor, type DesignNode, type Paint } from "@canvylo/types";
+import { cssBlendMode, paintColor, type DesignNode, type Paint } from "@farsha/types";
 
 export type Language = "css" | "html" | "react" | "tailwind";
 export type Decl = [prop: string, value: string];

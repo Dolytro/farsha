@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { distributeEdges, packLayers, roundToPixel, tidyUp } from "./arrange-actions";
 
 function boxes(specs: [number, number, number, number][]) {

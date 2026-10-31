@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { Box, DesignNode } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { Box, DesignNode } from "@farsha/types";
 
 export type Bounds = Box;
 

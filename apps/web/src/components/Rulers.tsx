@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { rulerTicks, unionBox } from "@canvylo/canvas-engine";
-import type { Box, RulerGuide } from "@canvylo/types";
+import { rulerTicks, unionBox } from "@farsha/canvas-engine";
+import type { Box, RulerGuide } from "@farsha/types";
 import { useEditor } from "../store";
 
 const SIZE = 20;

@@ -30,16 +30,16 @@ describe("wheel strength", () => {
 });
 
 describe("ui presets", () => {
-  it("defaults to canvylo and rejects unknown presets", async () => {
+  it("defaults to farsha and rejects unknown presets", async () => {
     const { parsePreset, UI_PRESETS } = await import("./prefs");
-    expect(parsePreset(undefined)).toBe("canvylo");
-    expect(parsePreset("neon")).toBe("canvylo");
+    expect(parsePreset(undefined)).toBe("farsha");
+    expect(parsePreset("neon")).toBe("farsha");
     expect(parsePreset("compact")).toBe("compact");
-    expect(UI_PRESETS.map((p) => p.id)).toEqual(["canvylo", "figma", "compact", "comfortable", "contrast"]);
+    expect(UI_PRESETS.map((p) => p.id)).toEqual(["farsha", "figma", "compact", "comfortable", "contrast"]);
   });
   it("is saved with the other preferences", () => {
     expect(parsePrefs(JSON.stringify({ preset: "contrast" })).preset).toBe("contrast");
-    expect(parsePrefs(JSON.stringify({ preset: 5 })).preset).toBe("canvylo");
+    expect(parsePrefs(JSON.stringify({ preset: 5 })).preset).toBe("farsha");
   });
 });
 

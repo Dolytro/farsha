@@ -1,6 +1,6 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { booleanShapes, flattenShapes, offsetShape, outlineStrokeShape, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@canvylo/canvas-engine";
-import type { Box, DesignNode } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import { booleanShapes, flattenShapes, offsetShape, outlineStrokeShape, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@farsha/canvas-engine";
+import type { Box, DesignNode } from "@farsha/types";
 import { isSection, topLevelFrames } from "./section-actions";
 
 /** Group selected siblings under a new GROUP (Ctrl+G). Returns the new selection. */

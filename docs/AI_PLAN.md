@@ -6,9 +6,9 @@ Owner decision (2026-10-31): the AI features of Figma are planned for later. Not
 Agents, Actions (AI), Make / code layers, Build this with code, generate image, remove background, AI rename layers, translate text,
 shaders and other generative tools.
 
-## Ideas for Canvylo (all optional, off by default)
+## Ideas for Farsha (all optional, off by default)
 - **Bring your own key:** the person pastes their own API key in Preferences; it stays in the browser (localStorage), is never sent to a
-  Canvylo server (there is none) and never goes into a saved document or git.
+  Farsha server (there is none) and never goes into a saved document or git.
 - **Rename layers** from their content and type (smallest, safest first step).
 - **Describe to design:** text prompt to a frame with auto layout, built from the existing node types.
 - **Generate image** into an image fill.
@@ -19,4 +19,4 @@ shaders and other generative tools.
 ## Rules
 - No key, no AI UI beyond a short "add a key in Preferences" hint.
 - Show the exact text that will be sent before sending selected content.
-- Free to use means the user pays their own provider; Canvylo adds no paid tier.
+- Free to use means the user pays their own provider; Farsha adds no paid tier.

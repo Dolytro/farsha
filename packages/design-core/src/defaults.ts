@@ -1,4 +1,4 @@
-import type { DesignNode, NodeType, Paint } from '@canvylo/types';
+import type { DesignNode, NodeType, Paint } from '@farsha/types';
 
 const solid = (color: string): Paint => ({ type: 'SOLID', color, opacity: 1 });
 

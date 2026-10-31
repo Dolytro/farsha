@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
-import { layoutText } from "@canvylo/canvas-engine";
+import { DesignDoc } from "@farsha/design-core";
+import { layoutText } from "@farsha/canvas-engine";
 import { adjustText } from "./text-actions";
 import { textShortcutCommand } from "./text-shortcuts";
 

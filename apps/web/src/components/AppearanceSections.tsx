@@ -1,6 +1,6 @@
 import { ColorSwatch } from "./ColorSwatch";
-import type { DesignDoc } from "@canvylo/design-core";
-import { paintColor, type DesignNode, type Effect, type LineEnd, type Paint, type StrokeAlign, type StrokeCap, type StrokeJoin } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import { paintColor, type DesignNode, type Effect, type LineEnd, type Paint, type StrokeAlign, type StrokeCap, type StrokeJoin } from "@farsha/types";
 import { HexInput } from "./HexInput";
 import { VariableButton, VariableChip } from "./VariableMenu";
 import { Select } from "./Select";

@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { Constraint, DesignNode } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { Constraint, DesignNode } from "@farsha/types";
 import { Select } from "./Select";
 
 const HORIZONTAL: [Constraint, string][] = [

@@ -1,4 +1,4 @@
-import type { LayoutGrid } from "@canvylo/types";
+import type { LayoutGrid } from "@farsha/types";
 
 export interface GridRect {
   x: number;

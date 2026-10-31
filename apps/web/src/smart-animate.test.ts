@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { easeInOut, frameAt, matchLayers, scratchCopy } from "./smart-animate";
 
 function setup() {

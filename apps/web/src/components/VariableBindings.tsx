@@ -1,5 +1,5 @@
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, type DesignNode } from "@canvylo/types";
-import type { DesignDoc } from "@canvylo/design-core";
+import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, type DesignNode } from "@farsha/types";
+import type { DesignDoc } from "@farsha/design-core";
 import { Select } from "./Select";
 
 const LABEL: Record<string, string> = {

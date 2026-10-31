@@ -1,5 +1,5 @@
 {
-  "name": "@canvylo/design-core",
+  "name": "@farsha/design-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@canvylo/types": "workspace:*",
+    "@farsha/types": "workspace:*",
     "fractional-indexing": "^4.0.0",
     "nanoid": "^6.0.2",
     "yjs": "^13.6.33"

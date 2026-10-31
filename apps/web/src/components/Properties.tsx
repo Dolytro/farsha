@@ -1,4 +1,4 @@
-import type { BlendMode } from "@canvylo/types";
+import type { BlendMode } from "@farsha/types";
 import { useEditor } from "../store";
 import { connect } from "../drive/session";
 import { DevPanel } from "./DevPanel";

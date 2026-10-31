@@ -1,4 +1,4 @@
-import type { TextCase, TextList, TextNode, TextRun } from "@canvylo/types";
+import type { TextCase, TextList, TextNode, TextRun } from "@farsha/types";
 
 export interface FontSpec {
   family: string;

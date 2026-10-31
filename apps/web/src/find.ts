@@ -1,4 +1,4 @@
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 
 export interface FindOptions {
   matchCase?: boolean;

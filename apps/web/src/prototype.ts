@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import type { Box, DesignNode, Easing, Interaction } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { Box, DesignNode, Easing, Interaction } from "@farsha/types";
 import { topLevelFrames } from "./section-actions";
 
 /** Top-level frames of every page: the screens a prototype can navigate between. */

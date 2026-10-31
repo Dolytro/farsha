@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { generateCode } from "@canvylo/code-generator";
+import type { DesignDoc } from "@farsha/design-core";
+import { generateCode } from "@farsha/code-generator";
 import { textLayersIn } from "./text-actions";
 
 /** The words of every text layer in the selection (also inside frames and groups), one layer per line, top to bottom. */

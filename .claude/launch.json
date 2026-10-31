@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "canvylo-web",
+      "name": "farsha-web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@canvylo/web", "dev"],
+      "runtimeArgs": ["--filter", "@farsha/web", "dev"],
       "port": 5173
     }
   ]

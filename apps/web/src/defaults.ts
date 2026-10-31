@@ -1,4 +1,4 @@
-import type { DesignNode, Paint } from "@canvylo/types";
+import type { DesignNode, Paint } from "@farsha/types";
 
 /** Figma's "Set default properties": the look new shapes start with. */
 export interface ShapeDefaults {

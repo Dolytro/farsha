@@ -1,4 +1,4 @@
-import type { DesignDoc } from "@canvylo/design-core";
+import type { DesignDoc } from "@farsha/design-core";
 
 const MAX_EDGE = 2048;
 const MAX_BYTES = 25_000_000;

@@ -1,4 +1,4 @@
-import type { AutoLayoutProps } from '@canvylo/types';
+import type { AutoLayoutProps } from '@farsha/types';
 
 export interface LayoutChild {
   id: string;

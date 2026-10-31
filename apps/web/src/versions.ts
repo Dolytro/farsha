@@ -1,4 +1,4 @@
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { readKey, writeKey } from "./local-persist";
 import { useEditor } from "./store";
 import { addVersionTo, type VersionEntry } from "./version-list";

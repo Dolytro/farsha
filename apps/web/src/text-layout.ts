@@ -1,5 +1,5 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { layoutText, type Measure } from "@canvylo/canvas-engine";
+import type { DesignDoc } from "@farsha/design-core";
+import { layoutText, type Measure } from "@farsha/canvas-engine";
 
 let ctx: CanvasRenderingContext2D | null | undefined;
 

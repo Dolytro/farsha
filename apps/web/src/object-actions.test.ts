@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DesignDoc } from "@canvylo/design-core";
+import { DesignDoc } from "@farsha/design-core";
 import { hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
 
 const red = [{ type: "SOLID" as const, color: "#ff0000", opacity: 1 }];
@@ -92,7 +92,7 @@ describe("remove interactions and opacity keys", () => {
 
 describe("deleteContents", () => {
   it("empties frames and groups but keeps them, in one undo step", async () => {
-    const { DesignDoc } = await import("@canvylo/design-core");
+    const { DesignDoc } = await import("@farsha/design-core");
     const { deleteContents } = await import("./object-actions");
     const doc = new DesignDoc();
     const page = doc.pages()[0]!.id;

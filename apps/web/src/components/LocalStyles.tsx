@@ -1,4 +1,4 @@
-import { paintColor } from "@canvylo/types";
+import { paintColor } from "@farsha/types";
 import { useEditor } from "../store";
 
 /** Figma's "Styles" list on the page panel: every colour and text style of the file. */

@@ -1,6 +1,6 @@
-import type { DesignDoc } from "@canvylo/design-core";
-import { unionBox } from "@canvylo/canvas-engine";
-import type { DesignNode } from "@canvylo/types";
+import type { DesignDoc } from "@farsha/design-core";
+import { unionBox } from "@farsha/canvas-engine";
+import type { DesignNode } from "@farsha/types";
 
 const real = (doc: DesignDoc, ids: string[]): DesignNode[] => ids.map((id) => doc.getNode(id)).filter((n): n is DesignNode => !!n && !!n.parentId && n.type !== "PAGE" && n.type !== "DOCUMENT");
 

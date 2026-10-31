@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { insertPointAt, nearestOnPath, penGeometry, removePointAt, scalePoints, screenToWorld, translatePoints, type PenPoint, type Viewport } from "@canvylo/canvas-engine";
+import { insertPointAt, nearestOnPath, penGeometry, removePointAt, scalePoints, screenToWorld, translatePoints, type PenPoint, type Viewport } from "@farsha/canvas-engine";
 import { useEditor } from "../store";
 
 const ACCENT = "#0d99ff";

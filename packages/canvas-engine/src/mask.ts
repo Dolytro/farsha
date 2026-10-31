@@ -1,4 +1,4 @@
-import type { DesignNode } from "@canvylo/types";
+import type { DesignNode } from "@farsha/types";
 import { shapeGeometry } from "./appearance";
 import { nodeTransform } from "./transform";
 

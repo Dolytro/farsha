@@ -51,7 +51,7 @@ export function DriveMenu() {
           <input
             ref={picker}
             type="file"
-            accept=".canvylo"
+            accept=".farsha,.canvylo"
             hidden
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -123,7 +123,7 @@ export function DriveMenu() {
               <div className="drive__files">
                 {listError && <p className="drive__note">{listError}</p>}
                 {!listError && files === null && <p className="drive__note">Loading…</p>}
-                {files?.length === 0 && <p className="drive__note">No Canvylo files yet.</p>}
+                {files?.length === 0 && <p className="drive__note">No Farsha files yet.</p>}
                 {files?.map((f) => (
                   <button
                     key={f.id}
@@ -133,7 +133,7 @@ export function DriveMenu() {
                       void openFile(f.id, f.name);
                     }}
                   >
-                    {f.name.replace(/\.canvylo$/, "")}
+                    {f.name.replace(/\.(farsha|canvylo)$/, "")}
                   </button>
                 ))}
               </div>

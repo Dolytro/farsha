@@ -36,7 +36,7 @@ export function ExportDialog() {
     const { showToast } = useEditor.getState();
     setBusy(true);
     try {
-      const n = await exportAs(doc, layers.map((l) => l.id), format, scale, doc.getNode(layers[0]?.id ?? "")?.name ?? "Canvylo");
+      const n = await exportAs(doc, layers.map((l) => l.id), format, scale, doc.getNode(layers[0]?.id ?? "")?.name ?? "Farsha");
       showToast(n ? `Exported ${n} ${n === 1 ? "file" : "files"}` : "Nothing to export");
       setOpen(false);
     } catch (err) {
