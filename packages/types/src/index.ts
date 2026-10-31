@@ -372,6 +372,8 @@ export interface RectangleNode extends BaseNode {
   cornerRadii?: [number, number, number, number];
   cornerSmoothing?: number;
   strokeSides?: [number, number, number, number];
+  /** A video layer: the stored video asset this rectangle plays (MP4 or WebM). */
+  videoAssetId?: string;
   /** A slice (Figma's Slice tool): an invisible export region that captures whatever is under it on the page. */
   isSlice?: boolean;
 }

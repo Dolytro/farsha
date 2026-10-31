@@ -135,3 +135,23 @@ export function connectorPath(c: Connector): string {
   const dir = c.to.x >= c.from.x ? 1 : -1;
   return `M${c.from.x} ${c.from.y} C${c.from.x + dx * dir} ${c.from.y} ${c.to.x - dx * dir} ${c.to.y} ${c.to.x} ${c.to.y}`;
 }
+
+export interface VideoSpot {
+  id: string;
+  assetId: string;
+  /** Position and size relative to the frame. */
+  box: Box;
+}
+
+/** The video layers inside a frame (visible ones), for the prototype to play. */
+export function videosIn(doc: DesignDoc, frameId: string): VideoSpot[] {
+  const origin = doc.absoluteBox(frameId);
+  if (!origin) return [];
+  const out: VideoSpot[] = [];
+  for (const n of doc.descendants(frameId)) {
+    if (!n.visible || n.type !== "RECTANGLE" || !n.videoAssetId) continue;
+    const abs = doc.absoluteBox(n.id);
+    if (abs) out.push({ id: n.id, assetId: n.videoAssetId, box: { x: abs.x - origin.x, y: abs.y - origin.y, width: abs.width, height: abs.height } });
+  }
+  return out;
+}

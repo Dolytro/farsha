@@ -202,7 +202,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Preferences | Theme, Nudge amount, keep tool, snapping, zoom options | ✅ (Color profile, Keyboard layout, Accessibility, Permissions: ❌ / browser-bound) |
 | Toolbar | Move, Hand, Frame, Rectangle, Line, Arrow, Ellipse, Polygon, Star, Pen, Text | ✅ |
 | Toolbar | Section (Shift+S), Scale tool (K: drag a corner, the layer and its text, strokes, radii, shadows and auto layout spacing scale together) | ✅ |
-| Toolbar | Image… (Ctrl+Shift+K) | ✅ (video ❌) |
+| Toolbar | Image or video… (Ctrl+Shift+K) | ✅ |
 | Toolbar | Comment tool (C): click to drop a pin, thread with replies, resolve, delete, Comments tab, Shift+C shows / hides pins | ✅ local-first: comments are saved inside the document (Drive file, local copy, version history), not synced live |
 | Toolbar | Pencil (Shift+P), Slice (S, exports the area under it), Text on path (Text menu) | ✅ |
 | Canvas | Alt+drag to duplicate, number keys set opacity (1 = 10% … 0 = 100%), rotate handles | ✅ (opacity keys, Alt+drag copies the selection in one undo step) |
@@ -219,7 +219,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 |---|-------|--------|
 | 1 | Sort the menu by category | ✅ the Actions palette (Ctrl+/) lists commands under File, Edit, View, Object, Text, Arrange, Vector, Tools, Preferences, Other; a search shows each result's category (the main menu was already grouped). Tell me if you meant a different menu |
 | 2 | Aspect ratio lock icon beside width / height | ✅ lock button next to W and H (also keeps the ratio when dragging a handle) |
-| 3 | Add video | open |
+| 3 | Add video | ✅ Place image… (Ctrl+Shift+K), drag and drop: MP4 and WebM up to 25 MB become a video layer that shows its first frame and plays when previewed; not in SVG/PNG/PDF export |
 | 4 | "UX of this part" (picture only) | needs the owner's screenshot |
 | 5 | Auto layout over two frames ignores the spacing between them | ✅ the direction is now chosen from how the frames sit (side by side = row), so a tall frame next to a short one keeps its gap |
 | 6 | PDF download | ✅ PDF is a format in the Export section and the Export dialog (print dialog, "Save as PDF") |
