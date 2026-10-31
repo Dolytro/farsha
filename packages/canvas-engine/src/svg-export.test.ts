@@ -417,3 +417,28 @@ describe("rich text export", () => {
     expect(exportSvg(doc, [id])!.svg).toContain('<tspan x="0" dy="0">Hello</tspan>');
   });
 });
+
+describe("angular and diamond gradients", () => {
+  const stops = [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }];
+  const rect = (fill: object) => ({ id: "g", type: "RECTANGLE", x: 0, y: 0, width: 100, height: 60, cornerRadius: 0, fills: [fill], strokes: [], strokeWidth: 0 }) as never;
+  it("blends colour and opacity between stops", async () => {
+    const { gradientAt } = await import("./appearance");
+    expect(gradientAt(stops, 0).color).toBe("#ff0000");
+    expect(gradientAt(stops, 1).color).toBe("#0000ff");
+    expect(gradientAt(stops, 0.5).color).toBe("#800080");
+    expect(gradientAt([{ position: 0, color: "#000000", opacity: 0 }, { position: 1, color: "#000000", opacity: 1 }], 0.5).opacity).toBeCloseTo(0.5);
+    expect(gradientAt([], 0.3)).toEqual({ color: "#000000", opacity: 1 });
+  });
+  it("draws an angular gradient as wedges clipped to the shape", () => {
+    const out = shapeMarkup(rect({ type: "GRADIENT_ANGULAR", stops, angle: 0, opacity: 1 }));
+    expect(out).toContain('<clipPath id="sg-gf-g-0">');
+    expect(out.match(/<path d="M50 30L/g)!.length).toBe(144);
+    expect(out).toMatch(/fill="#f[de]0/);
+  });
+  it("draws a diamond gradient as nested diamonds on an edge colour", () => {
+    const out = shapeMarkup(rect({ type: "GRADIENT_DIAMOND", stops, angle: 0, opacity: 0.5 }));
+    expect(out).toContain('<rect width="100" height="60" fill="#0000ff"');
+    expect(out.match(/<path d="M/g)!.length).toBe(64);
+    expect(out).toContain('opacity="0.5"');
+  });
+});

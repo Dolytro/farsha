@@ -47,9 +47,9 @@ export interface GradientStop {
 }
 
 export interface GradientPaint {
-  type: 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL';
+  type: 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | 'GRADIENT_DIAMOND';
   stops: GradientStop[];
-  /** Degrees; 0 = left to right, 90 = top to bottom. Ignored by radial gradients. */
+  /** Degrees; 0 = left to right, 90 = top to bottom. For an angular gradient where the sweep starts. Ignored by radial and diamond gradients. */
   angle: number;
   opacity: number;
 }

@@ -11,7 +11,7 @@ import { useEditor } from "../store";
 import { Select } from "./Select";
 
 type Kind = Paint["type"];
-const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial", IMAGE: "Image" };
+const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial", GRADIENT_ANGULAR: "Angular", GRADIENT_DIAMOND: "Diamond", IMAGE: "Image" };
 const SCALE_LABEL: Record<ImageScaleMode, string> = { FILL: "Fill", FIT: "Fit", STRETCH: "Stretch" };
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -21,7 +21,7 @@ export function convertPaint(p: Paint, kind: Kind): Paint {
   if (p.type === kind) return p;
   if (kind === "SOLID") return { type: "SOLID", color: p.type === "IMAGE" ? "#d9d9d9" : paintColor(p), opacity: p.opacity };
   if (kind === "IMAGE") return { type: "IMAGE", assetId: null, scaleMode: "FILL", opacity: p.opacity };
-  if (p.type === "GRADIENT_LINEAR" || p.type === "GRADIENT_RADIAL") return { ...p, type: kind };
+  if (p.type.startsWith("GRADIENT")) return { ...(p as GradientPaint), type: kind } as Paint;
   const color = p.type === "SOLID" ? p.color : "#d9d9d9";
   return {
     type: kind,
@@ -131,7 +131,7 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
       ) : (
         <>
           <div className="gradient-bar" style={{ background: paintCss({ ...paint, type: "GRADIENT_LINEAR", angle: 0 }) }} />
-          {paint.type === "GRADIENT_LINEAR" && (
+          {(paint.type === "GRADIENT_LINEAR" || paint.type === "GRADIENT_ANGULAR") && (
             <label className="field field--gap" title="Angle (0 = left to right, 90 = top to bottom)">
               <span className="field__label">∠</span>
               <input className="field__input" type="number" value={paint.angle} onChange={(e) => Number.isFinite(Number(e.target.value)) && setPaint({ ...paint, angle: Number(e.target.value) })} />

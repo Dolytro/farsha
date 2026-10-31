@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc, defaultsFor } from "@canvylo/design-core";
-import { backgroundCss, declarations, generateCode, tailwindClass, toRgba } from "./index";
+import { backgroundCss, declarations, generateCode, paintCss, tailwindClass, toRgba } from "./index";
 
 function setup() {
   const doc = new DesignDoc();
@@ -236,5 +236,13 @@ describe("shadow spread", () => {
     const doc = new DesignDoc();
     const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 10, height: 10, effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, spread: 2, color: "#000000", opacity: 0.25, visible: true }] } as never });
     expect(declarations(doc.getNode(id)!).find(([p]) => p === "box-shadow")![1]).toBe("0px 4px 8px 2px rgba(0, 0, 0, 0.25)");
+  });
+});
+
+describe("angular and diamond gradient css", () => {
+  it("uses conic-gradient and a radial stand-in", () => {
+    const stops = [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }];
+    expect(paintCss({ type: "GRADIENT_ANGULAR", stops, angle: 0, opacity: 1 })).toMatch(/^conic-gradient\(from 90deg, /);
+    expect(paintCss({ type: "GRADIENT_DIAMOND", stops, angle: 0, opacity: 1 })).toMatch(/^radial-gradient\(closest-side, /);
   });
 });

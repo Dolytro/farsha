@@ -136,6 +136,9 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
         fillDef = `<pattern id="${gradientId}" patternUnits="userSpaceOnUse" width="${num(n.width)}" height="${num(n.height)}"><image href="${href.replace(/"/g, "&quot;")}" width="${num(n.width)}" height="${num(n.height)}" preserveAspectRatio="${par}"/></pattern>`;
         fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
       } else fillAttrs = ' fill="#e5e5e5"';
+    } else if (fill.type === "GRADIENT_ANGULAR" || fill.type === "GRADIENT_DIAMOND") {
+      out += steppedGradient(gradientId, fill, n.width, n.height, geometry(n, ""));
+      return;
     } else {
       fillDef = gradientDef(gradientId, fill);
       fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
@@ -190,6 +193,61 @@ export function textBaseline(n: { fontSize: number; lineHeight: number | "AUTO" 
 /** `letter-spacing` attribute text for a TEXT layer ("" when there is none). */
 export function letterSpacingAttr(n: { letterSpacing: number }): string {
   return n.letterSpacing && Number.isFinite(n.letterSpacing) ? ` letter-spacing="${num(n.letterSpacing)}"` : "";
+}
+
+/** Colour and opacity of a gradient at `t` (0..1), blended between the two stops around it. */
+export function gradientAt(stops: { position: number; color: string; opacity: number }[], t: number): { color: string; opacity: number } {
+  const list = [...stops].sort((a, b) => a.position - b.position);
+  if (!list.length) return { color: "#000000", opacity: 1 };
+  if (t <= list[0]!.position) return { color: hex(list[0]!.color), opacity: Number(unit(list[0]!.opacity)) };
+  const last = list[list.length - 1]!;
+  if (t >= last.position) return { color: hex(last.color), opacity: Number(unit(last.opacity)) };
+  const i = list.findIndex((s) => s.position >= t);
+  const a = list[i - 1]!;
+  const b = list[i]!;
+  const k = b.position === a.position ? 0 : (t - a.position) / (b.position - a.position);
+  const rgb = (c: string) => {
+    const h = hex(c).slice(1);
+    const full = h.length <= 4 ? h.split("").map((x) => x + x).join("") : h;
+    return [0, 2, 4].map((o) => parseInt(full.slice(o, o + 2), 16));
+  };
+  const ca = rgb(a.color);
+  const cb = rgb(b.color);
+  const mix = ca.map((v, n) => Math.round(v + (cb[n]! - v) * k));
+  return { color: `#${mix.map((v) => v.toString(16).padStart(2, "0")).join("")}`, opacity: Number(unit(a.opacity)) + (Number(unit(b.opacity)) - Number(unit(a.opacity))) * k };
+}
+
+/**
+ * Angular (conic) and diamond gradients have no SVG element, so they are drawn as many thin wedges or nested diamonds
+ * clipped to the shape. `geometryMarkup` is the outline of the layer; the result is a self-contained group.
+ */
+export function steppedGradient(id: string, p: GradientPaint, w: number, h: number, geometryMarkup: string): string {
+  const cx = w / 2;
+  const cy = h / 2;
+  const parts: string[] = [];
+  if (p.type === "GRADIENT_ANGULAR") {
+    const steps = 144;
+    const radius = Math.hypot(w, h);
+    const start = ((Number.isFinite(p.angle) ? p.angle : 0) * Math.PI) / 180;
+    for (let i = 0; i < steps; i++) {
+      const a0 = start + (i / steps) * Math.PI * 2;
+      const a1 = start + ((i + 1.4) / steps) * Math.PI * 2; // a little overlap hides hairlines between wedges
+      const c = gradientAt(p.stops, (i + 0.5) / steps);
+      parts.push(`<path d="M${num(cx)} ${num(cy)}L${num(cx + Math.cos(a0) * radius)} ${num(cy + Math.sin(a0) * radius)}L${num(cx + Math.cos(a1) * radius)} ${num(cy + Math.sin(a1) * radius)}Z" fill="${c.color}" fill-opacity="${num(c.opacity)}"/>`);
+    }
+  } else {
+    const steps = 64;
+    for (let i = steps; i >= 1; i--) {
+      const s = i / steps;
+      const c = gradientAt(p.stops, s);
+      parts.push(`<path d="M${num(cx - cx * s)} ${num(cy)}L${num(cx)} ${num(cy - cy * s)}L${num(cx + cx * s)} ${num(cy)}L${num(cx)} ${num(cy + cy * s)}Z" fill="${c.color}" fill-opacity="${num(c.opacity)}"/>`);
+    }
+    // outside the diamond, the colour of the last stop fills the corners
+    const edge = gradientAt(p.stops, 1);
+    parts.unshift(`<rect width="${num(w)}" height="${num(h)}" fill="${edge.color}" fill-opacity="${num(edge.opacity)}"/>`);
+  }
+  const clip = `sg-${id}`;
+  return `<clipPath id="${clip}">${geometryMarkup}</clipPath><g clip-path="url(#${clip})" opacity="${unit(p.opacity)}">${parts.join("")}</g>`;
 }
 
 /** `<linearGradient>` / `<radialGradient>` for a gradient fill, in bounding-box units. */

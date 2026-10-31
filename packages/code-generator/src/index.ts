@@ -22,6 +22,8 @@ export function paintCss(p: Paint): string {
     .sort((a, b) => a.position - b.position)
     .map((s) => `${toRgba(s.color, s.opacity * p.opacity)} ${Math.round(s.position * 100)}%`)
     .join(", ");
+  if (p.type === "GRADIENT_ANGULAR") return `conic-gradient(from ${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
+  if (p.type === "GRADIENT_DIAMOND") return `radial-gradient(closest-side, ${stops})`; // CSS has no diamond gradient
   return p.type === "GRADIENT_RADIAL" ? `radial-gradient(circle, ${stops})` : `linear-gradient(${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
 }
 
