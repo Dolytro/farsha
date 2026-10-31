@@ -17,7 +17,7 @@ Live site: https://canvylo.vercel.app
 - No backend: the site is static (Vercel). Designs are saved to the signed-in user's **own Google Drive**
   (`.canvylo` files, Yjs update bytes). Public view links read the Drive file with an API key.
 - The owner wants it to feel **exactly like Figma** so long-time Figma users are not confused.
-- Everything is on `main`, typecheck and all tests pass (460 tests at the time of writing: web 206, design-core 115, canvas-engine 116, code-generator 23).
+- Everything is on `main`, typecheck and all tests pass (485 tests at the time of writing: web 223, design-core 115, canvas-engine 123, code-generator 24).
 - Next up: the open items listed in section 11 ("Done in the night run" > Still open) and `docs/FEATURE_GAP.md`.
 
 **To continue on a new PC:** clone, install, create `apps/web/.env.local`, run the dev server (section 5).
@@ -377,17 +377,19 @@ Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows
   Export dialog and Place image, advanced strokes (dash, caps, joins, arrowheads, per-side weights), corner smoothing,
   background blur (canvas + CSS only), page background, Selection colors, Flatten (Ctrl+E), Outline stroke (Ctrl+Shift+O),
   Pencil (Shift+P), Slice (S, export crops the page to the slice box), View > Outlines (Ctrl+Shift+Y) and Panels (Alt+1 / Alt+2),
-  Delete contents, Export frames to PDF (browser print dialog), Dev Mode status + annotations, Prototype triggers
-  (hover, after delay, key), Open link, transitions and flow starting point.
+  Delete contents, Export frames to PDF (browser print dialog), Dev Mode status + annotations + variables as CSS custom
+  properties, Compare changes (Version history), Prototype triggers (hover, drag, after delay, key), Open link, overlays,
+  transitions, flow starting point and device frames, shadow spread, text lists / direction / link, Edit > Select all with
+  and Set default properties, Styles and Export on the page panel.
 - **Engine additions** (`packages/canvas-engine`): `pencil.ts` (RDP simplify + Catmull-Rom handles), `pen-ops.ts`,
   `boolean.ts` gained `flattenShapes` / `outlineStrokeShape`, `appearance.ts` gained `smoothedRectPath`, per-side strokes
   and `backgroundBlurOf`. `DesignDoc` gained `patchNodes`, comments and `pageBackground` / `setPageBackground` (per page,
   stored in the `meta` map).
-- **Still open** (all listed in FEATURE_GAP.md): rich text inside one text layer, text on path, Slots, live boolean groups,
-  Delete and heal / Split / Offset vector (need point multi-selection), prototype drag trigger / overlays / scroll /
-  smart animate / device frames, Dev Mode compare changes and variables in code, Edit > Set default properties and
-  Select all with, shadow spread. Anything that needs a server (live cursors, mentions, branching, team libraries) is
-  documented as such.
+- **Still open** (all listed in FEATURE_GAP.md): rich text inside one text layer (needs a runs model), text on path, Slots,
+  live boolean groups, Delete and heal / Split / Offset vector (need point multi-selection: lift the `selected` state of
+  `VectorEditLayer` into the store), prototype scroll and smart animate, Home / End frame stepping, Switch to Draw, Paste to
+  replace on Ctrl+Shift+R (the browser reserves it), SVG / PNG export of background blur. Anything that needs a server
+  (live cursors, mentions, branching, team libraries) is documented as such.
 - **Testing gotchas learned:** never trigger `window.print()` from a Playwright-driven headed browser without stubbing it (it
   opens a native dialog and the MCP server hangs); `apps/web` vitest has no DOM, so anything importing the Zustand store or
   `commands.ts` cannot be unit-tested there (test the pure module instead); `indexedDB.deleteDatabase("canvylo")` plus a
