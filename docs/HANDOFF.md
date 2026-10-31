@@ -17,8 +17,8 @@ Live site: https://canvylo.vercel.app
 - No backend: the site is static (Vercel). Designs are saved to the signed-in user's **own Google Drive**
   (`.canvylo` files, Yjs update bytes). Public view links read the Drive file with an API key.
 - The owner wants it to feel **exactly like Figma** so long-time Figma users are not confused.
-- Everything is on `main`, typecheck and all tests pass (about 356 tests at the time of writing: web 128, design-core 107, canvas-engine 93, code-generator 21).
-- Next up: **Components** (main component + instances), then styles / variables. See section 11 and `docs/FEATURE_GAP.md`.
+- Everything is on `main`, typecheck and all tests pass (460 tests at the time of writing: web 206, design-core 115, canvas-engine 116, code-generator 23).
+- Next up: the open items listed in section 11 ("Done in the night run" > Still open) and `docs/FEATURE_GAP.md`.
 
 **To continue on a new PC:** clone, install, create `apps/web/.env.local`, run the dev server (section 5).
 Then tell Claude Code: "Read docs/HANDOFF.md and CLAUDE.md, then continue with the next feature."
@@ -355,7 +355,46 @@ Pen tool. Later in the same run: mask (Ctrl+Alt+M), colour variables with modes,
 light / dark / system theme, rotate handles, Dev Mode export, Dev CSS for fill container, per-side padding, auto layout
 wrap and absolute position.
 
-Where the session stopped: everything above is committed and pushed to `main`, typecheck and all tests pass. Nothing is
+Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows in docs/FEATURE_GAP.md section 10):
+
+- **UI v2 (Part A):** every native `<select>` is now the shared `components/Select.tsx` (custom dropdown: roomy rows,
+  check mark, keyboard, flips near the window edge, dark theme; its closed state only stops propagation for
+  ArrowUp / ArrowDown / Enter / Space so shortcuts keep working). `styles/ui-v2.scss` (imported after app.scss in
+  `main.tsx`) holds the design tokens (`--field-h`, `--row-h`, `--radius`, `--panel-w`, `--c-*`), the interface presets
+  (`:root[data-ui="figma|compact|comfortable|contrast"]`, stored in localStorage via `prefs.ts`, picked in Preferences,
+  the command palette and the main menu) and the refined panel, dialog, menu and toolbar styles.
+- **Main menu** (hamburger, `components/MainMenu.tsx` + `main-menu.ts`): File, Edit, View, Object, Text, Arrange, Vector,
+  Preferences. It is built from command ids (`item("id")` silently skips commands that do not exist), so adding a command
+  to `commands.ts` and naming it in `main-menu.ts` is all it takes. Submenus anchor to their own row (`.mainmenu__list > li`
+  is `position: relative`).
+- **Commands:** `buildCommands()` in `commands.ts` is the single registry (palette, menu, shortcuts text). Keyboard handling
+  still lives in the `App.tsx` keydown chain, where the ORDER of the branches matters (for example Shift+S Section and
+  Shift+P Pencil are before the plain-key `KEYS` map).
+- **Object / Arrange / Text actions:** `object-actions.ts`, `arrange-actions.ts`, `text-actions.ts`, `section-actions.ts`,
+  `scale.ts` (Scale tool K), `find.ts` (Ctrl+F), `colors.ts` (Selection colors), `vector-actions.ts` (Join, Smooth join,
+  Simplify), `pdf-export.ts` (print-ready HTML, one named `@page` per frame), each with a `.test.ts`.
+- **Features:** Sections, Scale tool, Find / Find and replace, Comments (stored in the document, `ASSET_ORIGIN`, not undoable),
+  Export dialog and Place image, advanced strokes (dash, caps, joins, arrowheads, per-side weights), corner smoothing,
+  background blur (canvas + CSS only), page background, Selection colors, Flatten (Ctrl+E), Outline stroke (Ctrl+Shift+O),
+  Pencil (Shift+P), Slice (S, export crops the page to the slice box), View > Outlines (Ctrl+Shift+Y) and Panels (Alt+1 / Alt+2),
+  Delete contents, Export frames to PDF (browser print dialog), Dev Mode status + annotations, Prototype triggers
+  (hover, after delay, key), Open link, transitions and flow starting point.
+- **Engine additions** (`packages/canvas-engine`): `pencil.ts` (RDP simplify + Catmull-Rom handles), `pen-ops.ts`,
+  `boolean.ts` gained `flattenShapes` / `outlineStrokeShape`, `appearance.ts` gained `smoothedRectPath`, per-side strokes
+  and `backgroundBlurOf`. `DesignDoc` gained `patchNodes`, comments and `pageBackground` / `setPageBackground` (per page,
+  stored in the `meta` map).
+- **Still open** (all listed in FEATURE_GAP.md): rich text inside one text layer, text on path, Slots, live boolean groups,
+  Delete and heal / Split / Offset vector (need point multi-selection), prototype drag trigger / overlays / scroll /
+  smart animate / device frames, Dev Mode compare changes and variables in code, Edit > Set default properties and
+  Select all with, shadow spread. Anything that needs a server (live cursors, mentions, branching, team libraries) is
+  documented as such.
+- **Testing gotchas learned:** never trigger `window.print()` from a Playwright-driven headed browser without stubbing it (it
+  opens a native dialog and the MCP server hangs); `apps/web` vitest has no DOM, so anything importing the Zustand store or
+  `commands.ts` cannot be unit-tested there (test the pure module instead); `indexedDB.deleteDatabase("canvylo")` plus a
+  reload gives a clean canvas, which still contains the "Welcome to Canvylo" and "Shortcuts" frames, so draw test layers in
+  empty space (a frame drawn on top of them becomes a nested frame, not a top-level one).
+
+Where the session stopped (before the night run): everything above is committed and pushed to `main`, typecheck and all tests pass. Nothing is
 half-done in the working tree. Each feature was tested in the real browser with Playwright (dev server on 5173, `?nologin`);
 real Google sign-in, Drive rename and the Vercel look of the newest commits were not re-checked. Tip: the working copy is
 restored from IndexedDB, so wait about 1.5 s after loading before driving the page, and reset it with
