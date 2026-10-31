@@ -1,7 +1,32 @@
-import type { Interaction } from "@canvylo/types";
+import type { Interaction, InteractionAction, InteractionTrigger, TransitionType } from "@canvylo/types";
 import { prototypeFrames, startFrame } from "../prototype";
 import { useEditor } from "../store";
 import { Select } from "./Select";
+
+const TRIGGERS: [InteractionTrigger, string][] = [
+  ["ON_CLICK", "On click"],
+  ["ON_HOVER", "While hovering"],
+  ["AFTER_DELAY", "After delay"],
+  ["ON_KEY", "Key press"],
+];
+
+const TRANSITIONS: [TransitionType, string][] = [
+  ["INSTANT", "Instant"],
+  ["DISSOLVE", "Dissolve"],
+  ["SLIDE_IN_LEFT", "Slide in from left"],
+  ["SLIDE_IN_RIGHT", "Slide in from right"],
+  ["SLIDE_IN_TOP", "Slide in from top"],
+  ["SLIDE_IN_BOTTOM", "Slide in from bottom"],
+];
+
+const KEYS: [string, string][] = [
+  ["ArrowLeft", "Arrow left"],
+  ["ArrowRight", "Arrow right"],
+  ["ArrowUp", "Arrow up"],
+  ["ArrowDown", "Arrow down"],
+  ["Enter", "Enter"],
+  [" ", "Space"],
+];
 
 /** The Prototype tab: interactions of the selected layer, and the Present button. */
 export function PrototypePanel() {
@@ -22,6 +47,7 @@ export function PrototypePanel() {
   const interactions = node?.interactions ?? [];
   const set = (next: Interaction[]) => node && doc.setStyle(node.id, { interactions: next });
   const defaultTarget = frames.find((f) => f.id !== node?.id)?.id;
+  const navigate = (): InteractionAction => ({ type: "NAVIGATE", targetId: defaultTarget ?? "" });
 
   return (
     <>
@@ -36,41 +62,67 @@ export function PrototypePanel() {
         <section className="props__section">
           <h3 className="props__heading props__heading--row">
             Interactions
-            <button
-              className="props__add"
-              title="Add interaction"
-              disabled={!defaultTarget}
-              onClick={() => defaultTarget && set([...interactions, { trigger: "ON_CLICK", action: { type: "NAVIGATE", targetId: defaultTarget } }])}
-            >
+            <button className="props__add" title="Add interaction" disabled={!defaultTarget} onClick={() => defaultTarget && set([...interactions, { trigger: "ON_CLICK", action: navigate() }])}>
               +
             </button>
           </h3>
           {interactions.length === 0 && <p className="props__hint">{frames.length < 2 ? "Create at least two frames to link them." : "On click, navigate to a frame."}</p>}
           {interactions.map((it, i) => {
             const replace = (next: Interaction) => set(interactions.map((x, j) => (j === i ? next : x)));
+            const patch = (p: Partial<Interaction>) => replace({ ...it, ...p });
             return (
               <div className="interaction" key={i}>
-                <span className="interaction__trigger">On click</span>
                 <div className="interaction__row">
                   <Select
                     className="field__select"
-                    aria-label="Action"
-                    value={it.action.type}
-                    onChange={(e) => replace({ trigger: "ON_CLICK", action: e.target.value === "BACK" ? { type: "BACK" } : { type: "NAVIGATE", targetId: defaultTarget ?? "" } })}
+                    aria-label="Trigger"
+                    value={it.trigger}
+                    onChange={(e) => {
+                      const trigger = e.target.value as InteractionTrigger;
+                      patch({ trigger, delayMs: trigger === "AFTER_DELAY" ? (it.delayMs ?? 1000) : undefined, key: trigger === "ON_KEY" ? (it.key ?? "ArrowRight") : undefined });
+                    }}
                   >
-                    <option value="NAVIGATE">Navigate to</option>
-                    <option value="BACK">Back</option>
+                    {TRIGGERS.map(([v, label]) => (
+                      <option key={v} value={v}>
+                        {label}
+                      </option>
+                    ))}
                   </Select>
                   <button className="props__add" title="Remove interaction" onClick={() => set(interactions.filter((_, j) => j !== i))}>
                     −
                   </button>
                 </div>
+                {it.trigger === "AFTER_DELAY" && (
+                  <label className="field" title="Milliseconds after the frame appears">
+                    <span className="field__label">ms</span>
+                    <input className="field__input" type="number" min={0} step={100} aria-label="Delay" value={it.delayMs ?? 1000} onChange={(e) => patch({ delayMs: Math.max(0, Number(e.target.value) || 0) })} />
+                  </label>
+                )}
+                {it.trigger === "ON_KEY" && (
+                  <Select className="field__select field__select--wide" aria-label="Key" value={it.key ?? "ArrowRight"} onChange={(e) => patch({ key: e.target.value })}>
+                    {KEYS.map(([v, label]) => (
+                      <option key={v} value={v}>
+                        {label}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+                <Select
+                  className="field__select field__select--wide"
+                  aria-label="Action"
+                  value={it.action.type}
+                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : navigate() })}
+                >
+                  <option value="NAVIGATE">Navigate to</option>
+                  <option value="BACK">Back</option>
+                  <option value="OPEN_URL">Open link</option>
+                </Select>
                 {it.action.type === "NAVIGATE" && (
                   <Select
                     className="field__select field__select--wide"
                     aria-label="Destination"
                     value={it.action.targetId}
-                    onChange={(e) => replace({ trigger: "ON_CLICK", action: { type: "NAVIGATE", targetId: e.target.value } })}
+                    onChange={(e) => patch({ action: { type: "NAVIGATE", targetId: e.target.value } })}
                   >
                     {!frames.some((f) => f.id === (it.action as { targetId: string }).targetId) && <option value={it.action.targetId}>Missing frame</option>}
                     {frames.map((f) => (
@@ -79,6 +131,42 @@ export function PrototypePanel() {
                       </option>
                     ))}
                   </Select>
+                )}
+                {it.action.type === "OPEN_URL" && (
+                  <label className="field">
+                    <span className="field__label">URL</span>
+                    <input className="field__input" type="url" aria-label="Link" value={it.action.url} onChange={(e) => patch({ action: { type: "OPEN_URL", url: e.target.value } })} />
+                  </label>
+                )}
+                {it.action.type !== "OPEN_URL" && (
+                  <div className="interaction__row">
+                    <Select
+                      className="field__select"
+                      aria-label="Animation"
+                      value={it.transition?.type ?? "INSTANT"}
+                      onChange={(e) => patch({ transition: e.target.value === "INSTANT" ? undefined : { type: e.target.value as TransitionType, durationMs: it.transition?.durationMs ?? 300 } })}
+                    >
+                      {TRANSITIONS.map(([v, label]) => (
+                        <option key={v} value={v}>
+                          {label}
+                        </option>
+                      ))}
+                    </Select>
+                    {it.transition && (
+                      <label className="field" title="Duration in milliseconds">
+                        <span className="field__label">ms</span>
+                        <input
+                          className="field__input"
+                          type="number"
+                          min={50}
+                          step={50}
+                          aria-label="Duration"
+                          value={it.transition.durationMs}
+                          onChange={(e) => patch({ transition: { type: it.transition!.type, durationMs: Math.max(50, Number(e.target.value) || 300) } })}
+                        />
+                      </label>
+                    )}
+                  </div>
                 )}
               </div>
             );

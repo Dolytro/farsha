@@ -27,22 +27,46 @@ export interface Hotspot {
   interaction: Interaction;
 }
 
-/** Clickable areas inside a frame, relative to the frame; layers drawn later (on top) come last. */
-export function hotspotsIn(doc: DesignDoc, frameId: string): Hotspot[] {
+/** Interactions of the layers of a frame with the given triggers, with the layer's box relative to the frame. Hidden layers are skipped. */
+export function interactionsIn(doc: DesignDoc, frameId: string, triggers: Interaction["trigger"][]): Hotspot[] {
   const origin = doc.absoluteBox(frameId);
   if (!origin) return [];
   const out: Hotspot[] = [];
   for (const n of [doc.getNode(frameId)!, ...doc.descendants(frameId)]) {
-    const interaction = n.visible ? n.interactions?.find((i) => i.trigger === "ON_CLICK") : undefined;
-    const abs = interaction ? doc.absoluteBox(n.id) : undefined;
-    if (interaction && abs) out.push({ id: n.id, box: { x: abs.x - origin.x, y: abs.y - origin.y, width: abs.width, height: abs.height }, interaction });
+    if (!n.visible) continue;
+    const abs = doc.absoluteBox(n.id);
+    if (!abs) continue;
+    for (const interaction of n.interactions ?? []) {
+      if (triggers.includes(interaction.trigger)) out.push({ id: n.id, box: { x: abs.x - origin.x, y: abs.y - origin.y, width: abs.width, height: abs.height }, interaction });
+    }
   }
   return out;
 }
 
-/** Where a click leads: the next frame and the new history, or null when the click does nothing. */
+/** Clickable and hoverable areas inside a frame, relative to the frame; layers drawn later (on top) come last. */
+export function hotspotsIn(doc: DesignDoc, frameId: string): Hotspot[] {
+  return interactionsIn(doc, frameId, ["ON_CLICK", "ON_HOVER"]);
+}
+
+/** Interactions that start by themselves after a delay, or when a key is pressed. */
+export function timedAndKeyIn(doc: DesignDoc, frameId: string): Hotspot[] {
+  return interactionsIn(doc, frameId, ["AFTER_DELAY", "ON_KEY"]);
+}
+
+/** Only web addresses may be opened from a prototype. */
+export function safeUrl(url: string): string | null {
+  try {
+    const u = new URL(url.trim());
+    return u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Where an interaction leads: the next frame and the new history, or null when it does nothing (or only opens a web address). */
 export function followInteraction(doc: DesignDoc, current: string, history: string[], interaction: Interaction): { frame: string; history: string[] } | null {
   const action = interaction.action;
+  if (action.type === "OPEN_URL") return null;
   if (action.type === "BACK") {
     const prev = history[history.length - 1];
     return prev ? { frame: prev, history: history.slice(0, -1) } : null;
@@ -50,4 +74,11 @@ export function followInteraction(doc: DesignDoc, current: string, history: stri
   const target = doc.getNode(action.targetId);
   if (target?.type !== "FRAME" || action.targetId === current) return null;
   return { frame: action.targetId, history: [...history, current] };
+}
+
+/** CSS keyframes name and duration for a transition (null for an instant change). */
+export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number } | null {
+  if (!t || t.type === "INSTANT") return null;
+  const name = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" }[t.type];
+  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)) };
 }
