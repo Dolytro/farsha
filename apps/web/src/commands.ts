@@ -192,6 +192,7 @@ export function buildCommands(): Command[] {
     tool("polygon", "Polygon", ""),
     tool("star", "Star", ""),
     tool("pen", "Pen", "P"),
+    tool("pencil", "Pencil", `${SHIFT}P`),
     tool("text", "Text", "T"),
     {
       id: "zoom-fit",

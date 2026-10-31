@@ -500,6 +500,9 @@ export function App() {
       } else if (e.shiftKey && !mod && !e.altKey && key === "l") {
         // Figma's Arrow tool
         s.setTool("arrow");
+      } else if (e.shiftKey && !mod && !e.altKey && key === "p") {
+        // Figma's Pencil tool
+        s.setTool("pencil");
       } else if (!mod && KEYS[key]) {
         s.setTool(KEYS[key]!);
       }
