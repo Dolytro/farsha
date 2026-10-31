@@ -85,3 +85,12 @@ describe("text links", () => {
     expect(hotspotsIn(doc, home).some((h) => h.id === t)).toBe(false);
   });
 });
+
+describe("drag trigger", () => {
+  it("is listed with the clickable areas", () => {
+    const { doc, home, detail, button } = setup();
+    doc.setStyle(button, { interactions: [{ trigger: "ON_DRAG", action: { type: "NAVIGATE", targetId: detail } }] });
+    expect(hotspotsIn(doc, home).map((h) => h.interaction.trigger)).toEqual(["ON_DRAG"]);
+    expect(timedAndKeyIn(doc, home)).toEqual([]);
+  });
+});

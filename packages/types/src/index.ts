@@ -171,8 +171,8 @@ export type InteractionAction =
   | { type: 'OPEN_OVERLAY'; targetId: string }
   | { type: 'CLOSE_OVERLAY' };
 
-/** What starts an interaction in a prototype (Figma: On click, While hovering, After delay, Key / gamepad). */
-export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'AFTER_DELAY' | 'ON_KEY';
+/** What starts an interaction in a prototype (Figma: On click, While hovering, On drag, After delay, Key / gamepad). */
+export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'ON_DRAG' | 'AFTER_DELAY' | 'ON_KEY';
 
 /** How the next frame appears. */
 export type TransitionType = 'INSTANT' | 'DISSOLVE' | 'SLIDE_IN_LEFT' | 'SLIDE_IN_RIGHT' | 'SLIDE_IN_TOP' | 'SLIDE_IN_BOTTOM';
