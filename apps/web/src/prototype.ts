@@ -103,3 +103,35 @@ export function stageLayout(frame: { width: number; height: number }, win: { w: 
   const scale = scrolls ? Math.min(maxW / frame.width, 4) : Math.min(maxW / frame.width, maxH / frame.height, 4);
   return { scale, stageHeight: scrolls ? Math.min(frame.height * scale, maxH) : frame.height * scale };
 }
+
+export interface Connector {
+  /** The layer that carries the interaction. */
+  id: string;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
+
+/** Arrows for the Prototype tab: from every layer with a Navigate or Open overlay interaction (page coordinates) to the left edge of its destination frame. */
+export function connectorsIn(doc: DesignDoc, pageId: string): Connector[] {
+  const out: Connector[] = [];
+  for (const n of doc.descendants(pageId)) {
+    if (!n.visible) continue;
+    for (const it of n.interactions ?? []) {
+      if (it.action.type !== "NAVIGATE" && it.action.type !== "OPEN_OVERLAY") continue;
+      const target = doc.getNode(it.action.targetId);
+      const from = doc.absoluteBox(n.id);
+      const to = target?.type === "FRAME" ? doc.absoluteBox(target.id) : undefined;
+      if (!from || !to || target!.id === n.id) continue;
+      const toLeft = to.x >= from.x + from.width;
+      out.push({ id: n.id, from: { x: from.x + from.width, y: from.y + from.height / 2 }, to: { x: toLeft ? to.x : to.x + to.width, y: to.y + Math.min(to.height / 2, 60) } });
+    }
+  }
+  return out;
+}
+
+/** A smooth curve between two points that leaves sideways and arrives sideways (SVG path data). */
+export function connectorPath(c: Connector): string {
+  const dx = Math.max(40, Math.abs(c.to.x - c.from.x) / 2);
+  const dir = c.to.x >= c.from.x ? 1 : -1;
+  return `M${c.from.x} ${c.from.y} C${c.from.x + dx * dir} ${c.from.y} ${c.to.x - dx * dir} ${c.to.y} ${c.to.x} ${c.to.y}`;
+}

@@ -108,3 +108,26 @@ describe("stage layout", () => {
     expect(stageLayout({ width: 400, height: 300 }, { w: 1040, h: 840 }, true).stageHeight).toBe(750);
   });
 });
+
+describe("connectors", () => {
+  it("draws an arrow from a layer to the frame it navigates to, and skips other actions", async () => {
+    const { connectorsIn, connectorPath } = await import("./prototype");
+    const { doc, home, detail, button } = setup();
+    const page = doc.pages()[0]!.id;
+    doc.setStyle(button, { interactions: [{ trigger: "ON_CLICK", action: { type: "NAVIGATE", targetId: detail } }, { trigger: "ON_CLICK", action: { type: "OPEN_URL", url: "https://x.dev" } }] });
+    const list = connectorsIn(doc, page);
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ id: button, from: { x: 120, y: 50 }, to: { x: 400, y: 60 } });
+    expect(connectorPath(list[0]!)).toMatch(/^M120 50 C/);
+    expect(home).toBeTruthy();
+  });
+  it("ignores hidden layers and missing frames", async () => {
+    const { connectorsIn } = await import("./prototype");
+    const { doc, detail, button } = setup();
+    const page = doc.pages()[0]!.id;
+    doc.setStyle(button, { interactions: [{ trigger: "ON_CLICK", action: { type: "NAVIGATE", targetId: "gone" } }] });
+    expect(connectorsIn(doc, page)).toEqual([]);
+    doc.setStyle(button, { interactions: [{ trigger: "ON_CLICK", action: { type: "NAVIGATE", targetId: detail } }], visible: false });
+    expect(connectorsIn(doc, page)).toEqual([]);
+  });
+});

@@ -212,3 +212,24 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Prototype | Triggers (On click, While hovering, On drag, After delay, Key press), Back, Open link (http and https only), transitions (instant, dissolve, slide in from any side, duration), flow starting point (Present starts there when nothing is selected), Open / Close overlay (centred on a dimmed backdrop; click outside or Esc closes), device frame while presenting (phone or tablet bezel) ✅, vertical scrolling for tall frames, Smart animate (layers with the same name and type in both frames move, resize and fade between the two; text content and colours do not tween) ✅ | ✅ |
 | Dev Mode | Status (Ready for dev / Completed, shown on the frame label) and a developer annotation per layer, saved in the document; Variables used by a layer (name, CSS custom property and a :root block with every mode) ✅; Compare changes (Version history > Compare lists added, removed and changed layers since a saved version, with the properties that differ) ✅ | ✅ |
 | Collaboration | Live cursors, comment notifications and @mentions, branching, team libraries | ❌ needs a backend |
+
+## 11. QA report (owner's Google Doc "canvylo Report.", 2026-10-31)
+
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Sort the menu by category | open |
+| 2 | Aspect ratio lock icon beside width / height | open |
+| 3 | Add video | open |
+| 4 | "UX of this part" (picture only) | needs the owner's screenshot |
+| 5 | Auto layout over two frames ignores the spacing between them | open |
+| 6 | PDF download | open (Export frames to PDF exists in File; add PDF to the Export section) |
+| 7 | Prototype did not seem to work | connector arrows on the canvas in the Prototype tab, a Preview button in the toolbar ✅ |
+| 8 | Collapse all layers in the sidebar | open |
+| 9 | Clicking outside an open comment reply does not close it | open |
+| 10 | Dragging a frame often does not create one | open |
+| 11 | Preview option outside the Prototype tab | ✅ toolbar Preview button |
+| 12 | Layout grid is confusing, make it easy like Figma | open |
+| 13 | Right sidebar UX | owner will do |
+| 14 | Double click a layer to jump to it on the canvas | open |
+| 15 | Text (string) variables | open |
+| 16 | Some options are cut off, make panels scrollable | open |
