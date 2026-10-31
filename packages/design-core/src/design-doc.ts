@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
+import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@canvylo/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -156,7 +156,7 @@ export class DesignDoc {
 
   /** Paints bound to a colour variable take its value in the active mode; a deleted variable just leaves the colour as it was. */
   private syncVariables(): void {
-    if (!this.variableMap.size && ![...this.nodes.values()].some((m) => this.hasBoundPaint(m) || !!m.get('textVariableId'))) return;
+    if (!this.variableMap.size && ![...this.nodes.values()].some((m) => this.hasBoundPaint(m) || !!m.get('textVariableId') || !!m.get('varBindings'))) return;
     this.syncing = true;
     try {
       const mode = this.activeModeId();
@@ -184,6 +184,7 @@ export class DesignDoc {
             const next = resolve(map.get(key));
             if (next) map.set(key, next);
           }
+          if (map.get('varBindings')) this.applyBindings(map.get('id') as string);
           const textVar = map.get('textVariableId') as string | undefined;
           if (textVar) {
             const v = this.variableMap.get(textVar);
@@ -1043,7 +1044,7 @@ export class DesignDoc {
       if (!this.modeMap.size) this.modeMap.set('default', { id: 'default', name: 'Mode 1', order: 0 });
       const order = Math.max(-1, ...[...this.modeMap.values()].map((m) => m.order)) + 1;
       this.modeMap.set(id, { id, name: name.trim() || `Mode ${order + 1}`, order });
-      for (const v of this.variableMap.values()) this.variableMap.set(v.id, { ...v, values: { ...v.values, [id]: v.values[base] ?? Object.values(v.values)[0] ?? (v.kind === 'STRING' ? '' : '#000000') } });
+      for (const v of this.variableMap.values()) this.variableMap.set(v.id, { ...v, values: { ...v.values, [id]: v.values[base] ?? Object.values(v.values)[0] ?? (v.kind === 'STRING' ? '' : v.kind === 'NUMBER' ? '0' : v.kind === 'BOOLEAN' ? 'false' : '#000000') } });
     });
     return id;
   }
@@ -1068,7 +1069,67 @@ export class DesignDoc {
   }
 
   colorVariables(): ColorVariable[] {
-    return [...this.variableMap.values()].filter((v) => v.kind !== 'STRING').sort((a, b) => a.name.localeCompare(b.name));
+    return [...this.variableMap.values()].filter((v) => !v.kind || v.kind === 'COLOR').sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Number and boolean variables. */
+  valueVariables(kind: 'NUMBER' | 'BOOLEAN'): ColorVariable[] {
+    return [...this.variableMap.values()].filter((v) => v.kind === kind).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  createValueVariable(kind: 'NUMBER' | 'BOOLEAN', name: string, value: string): string {
+    const id = nanoid();
+    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || (kind === 'NUMBER' ? 'Number' : 'Boolean'), kind, values: Object.fromEntries(this.modes().map((m) => [m.id, value])) }));
+    return id;
+  }
+
+  /** Change the name of a number or boolean variable, or its value in one mode. */
+  updateValueVariable(id: string, patch: { name?: string; modeId?: string; value?: string }): void {
+    const v = this.variableMap.get(id);
+    if (!v || (v.kind !== 'NUMBER' && v.kind !== 'BOOLEAN')) throw new Error('Variable not found');
+    if (patch.value !== undefined && v.kind === 'NUMBER' && !Number.isFinite(Number(patch.value))) throw new Error('A number variable needs a number');
+    this.transact(() =>
+      this.variableMap.set(id, {
+        ...v,
+        ...(patch.name?.trim() ? { name: patch.name.trim() } : {}),
+        values: patch.value !== undefined && patch.modeId ? { ...v.values, [patch.modeId]: v.kind === 'BOOLEAN' ? String(patch.value === 'true') : String(Number(patch.value)) } : v.values,
+      }),
+    );
+  }
+
+  /** Make a property of a layer follow a number or boolean variable (or pass null to keep the value it has now and detach). */
+  bindProperty(nodeId: string, prop: string, variableId: string | null): void {
+    const node = this.requireNode(nodeId) as unknown as Record<string, unknown>;
+    const bindings = { ...((node.varBindings as Record<string, string> | undefined) ?? {}) };
+    if (variableId === null) delete bindings[prop];
+    else {
+      const v = this.variableMap.get(variableId);
+      const numeric = (NUMBER_BINDABLE as readonly string[]).includes(prop);
+      const boolean = (BOOLEAN_BINDABLE as readonly string[]).includes(prop);
+      if (!v || !(numeric ? v.kind === 'NUMBER' : boolean ? v.kind === 'BOOLEAN' : false)) throw new Error('That variable cannot drive this property');
+      bindings[prop] = variableId;
+    }
+    this.setProps(nodeId, { varBindings: Object.keys(bindings).length ? bindings : null });
+    this.transact(() => this.applyBindings(nodeId));
+  }
+
+  /** Write the values of the bound variables (active mode) into the properties of one layer. */
+  private applyBindings(nodeId: string): void {
+    const map = this.nodes.get(nodeId);
+    const bindings = map?.get('varBindings') as Record<string, string> | undefined | null;
+    if (!map || !bindings) return;
+    const mode = this.activeModeId();
+    const kept: Record<string, string> = {};
+    for (const [prop, varId] of Object.entries(bindings)) {
+      const v = this.variableMap.get(varId);
+      if (!v) continue; // a deleted variable just releases the property
+      kept[prop] = varId;
+      const raw = v.values[mode] ?? Object.values(v.values)[0] ?? '';
+      const next = v.kind === 'BOOLEAN' ? raw === 'true' : Number(raw);
+      if (typeof next === 'number' && !Number.isFinite(next)) continue;
+      if (map.get(prop) !== next) map.set(prop, next);
+    }
+    if (Object.keys(kept).length !== Object.keys(bindings).length) map.set('varBindings', Object.keys(kept).length ? kept : null);
   }
 
   /** Text variables: a text per mode that text layers can follow. */
@@ -1147,7 +1208,7 @@ export class DesignDoc {
       next = rest;
     } else {
       const v = this.variableMap.get(variableId);
-      if (!v || v.kind === 'STRING') throw new Error('Variable not found');
+      if (!v || (v.kind && v.kind !== 'COLOR')) throw new Error('Variable not found');
       next = { ...paint, variableId, color: v.values[this.activeModeId()] ?? paint.color };
     }
     this.setStyle(nodeId, { [key]: (paints as Paint[]).map((p, i) => (i === index ? next : p)) } as StylePatch);
