@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@canvylo/design-core";
-import { booleanShapes, flattenShapes, outlineStrokeShape, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@canvylo/canvas-engine";
+import { booleanShapes, flattenShapes, offsetShape, outlineStrokeShape, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@canvylo/canvas-engine";
 import type { Box } from "@canvylo/types";
 import { isSection, topLevelFrames } from "./section-actions";
 
@@ -288,4 +288,42 @@ export function useAsMask(doc: DesignDoc, ids: string[]): string[] {
   if (group && doc.getNode(group)?.type === "GROUP" && bottom) doc.setStyle(bottom.id, { isMask: true });
   doc.stopCapturing();
   return group ? [group] : ids;
+}
+
+/** Figma's Offset path: replace each selected shape by a vector grown (positive) or shrunk (negative) by `distance` pixels. */
+export function offsetSelection(doc: DesignDoc, ids: string[], distance: number): { ids: string[]; error?: string } {
+  if (!Number.isFinite(distance) || distance === 0) return { ids, error: "Enter a distance other than 0" };
+  const made: string[] = [];
+  doc.stopCapturing();
+  for (const id of ids) {
+    const n = doc.getNode(id);
+    if (!n?.parentId) continue;
+    const result = offsetShape(doc, id, distance);
+    if (!result) continue;
+    const parentId = n.parentId;
+    const origin = parentId === doc.rootId || doc.getNode(parentId)?.type === "PAGE" ? { x: 0, y: 0 } : (doc.absoluteBox(parentId) ?? { x: 0, y: 0 });
+    const index = doc.children(parentId).findIndex((c) => c.id === id);
+    const src = n as unknown as { fills?: unknown; strokes?: unknown; strokeWidth?: number };
+    made.push(
+      doc.createNode("VECTOR", {
+        parentId,
+        index,
+        props: {
+          name: n.name,
+          x: result.box.x - origin.x,
+          y: result.box.y - origin.y,
+          width: result.box.width,
+          height: result.box.height,
+          viewBox: `0 0 ${result.box.width} ${result.box.height}`,
+          markup: `<path d="${result.d}" fill-rule="evenodd" vector-effect="non-scaling-stroke"/>`,
+          fills: Array.isArray(src.fills) ? src.fills : [{ type: "SOLID", color: "#d9d9d9", opacity: 1 }],
+          strokes: Array.isArray(src.strokes) ? src.strokes : [],
+          strokeWidth: src.strokeWidth ?? 1,
+        },
+      }),
+    );
+    doc.deleteNode(id);
+  }
+  doc.stopCapturing();
+  return made.length ? { ids: made } : { ids, error: "Offset works on closed shapes: rectangles, ellipses, polygons, stars and closed pen paths" };
 }

@@ -174,7 +174,7 @@ export function buildMainMenu(): MenuNode[] {
     },
     {
       label: "Vector",
-      children: list(item("edit-points"), item("vector-join"), item("vector-smooth-join"), item("vector-delete-heal"), item("vector-split"), item("vector-simplify")),
+      children: list(item("edit-points"), item("vector-join"), item("vector-smooth-join"), item("vector-delete-heal"), item("vector-split"), item("vector-simplify"), item("vector-offset")),
     },
     {
       label: "Preferences",
