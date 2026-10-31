@@ -67,7 +67,7 @@ export function safeUrl(url: string): string | null {
 /** Where an interaction leads: the next frame and the new history, or null when it does nothing (or only opens a web address). */
 export function followInteraction(doc: DesignDoc, current: string, history: string[], interaction: Interaction): { frame: string; history: string[] } | null {
   const action = interaction.action;
-  if (action.type === "OPEN_URL") return null;
+  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "CLOSE_OVERLAY") return null;
   if (action.type === "BACK") {
     const prev = history[history.length - 1];
     return prev ? { frame: prev, history: history.slice(0, -1) } : null;
@@ -75,6 +75,14 @@ export function followInteraction(doc: DesignDoc, current: string, history: stri
   const target = doc.getNode(action.targetId);
   if (target?.type !== "FRAME" || action.targetId === current) return null;
   return { frame: action.targetId, history: [...history, current] };
+}
+
+/** The frame an Open overlay interaction shows, when it still exists and is not the frame already on screen. */
+export function overlayTarget(doc: DesignDoc, current: string, interaction: Interaction): string | null {
+  const action = interaction.action;
+  if (action.type !== "OPEN_OVERLAY") return null;
+  const target = doc.getNode(action.targetId);
+  return target?.type === "FRAME" && action.targetId !== current ? action.targetId : null;
 }
 
 /** CSS keyframes name and duration for a transition (null for an instant change). */

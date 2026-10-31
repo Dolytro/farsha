@@ -163,7 +163,13 @@ export interface TextStyle {
 export const TEXT_STYLE_KEYS = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing'] as const;
 
 /** What an interaction does: go to a frame, back to the previous one, or open a web address. */
-export type InteractionAction = { type: 'NAVIGATE'; targetId: string } | { type: 'BACK' } | { type: 'OPEN_URL'; url: string };
+export type InteractionAction =
+  | { type: 'NAVIGATE'; targetId: string }
+  | { type: 'BACK' }
+  | { type: 'OPEN_URL'; url: string }
+  /** Show a frame on top of the current one, centred, with a dimmed backdrop (Figma's Open overlay). */
+  | { type: 'OPEN_OVERLAY'; targetId: string }
+  | { type: 'CLOSE_OVERLAY' };
 
 /** What starts an interaction in a prototype (Figma: On click, While hovering, After delay, Key / gamepad). */
 export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'AFTER_DELAY' | 'ON_KEY';
