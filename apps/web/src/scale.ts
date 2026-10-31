@@ -39,7 +39,7 @@ export function buildScaleUpdates(nodes: DesignNode[], target: { x: number; y: n
     }
     if (Array.isArray(any.cornerRadii)) props.cornerRadii = (any.cornerRadii as number[]).map((v) => r2(v * f));
     if (n.effects?.length) {
-      props.effects = n.effects.map((e) => (e.type === "LAYER_BLUR" ? { ...e, radius: r2(e.radius * f) } : { ...e, x: r2(e.x * f), y: r2(e.y * f), blur: r2(e.blur * f) }));
+      props.effects = n.effects.map((e) => ("radius" in e ? { ...e, radius: r2(e.radius * f) } : { ...e, x: r2(e.x * f), y: r2(e.y * f), blur: r2(e.blur * f) }));
     }
     out[n.id] = props;
   }

@@ -18,8 +18,14 @@ export function effectsOf(n: DesignNode): Effect[] {
 }
 
 /** The `<filter>` that draws a layer's shadows and blur, or null when it has none. */
+/** Radius of the visible background blur of a layer (0 when it has none). */
+export function backgroundBlurOf(n: DesignNode): number {
+  const e = effectsOf(n).find((x) => x.type === "BACKGROUND_BLUR");
+  return e && e.type === "BACKGROUND_BLUR" && Number.isFinite(e.radius) ? Math.max(0, e.radius) : 0;
+}
+
 export function effectsFilter(n: DesignNode): { id: string; markup: string } | null {
-  const list = effectsOf(n);
+  const list = effectsOf(n).filter((e) => e.type !== "BACKGROUND_BLUR");
   if (!list.length) return null;
   const id = `fx-${safeId(n.id)}`;
   const parts: string[] = [];

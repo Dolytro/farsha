@@ -10,7 +10,7 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
@@ -55,7 +55,18 @@ const fxUrl = (n: DesignNode) => {
 };
 const fxDefs = (n: DesignNode) => {
   const fx = effectsFilter(n);
-  return fx ? <defs dangerouslySetInnerHTML={{ __html: fx.markup }} /> : null;
+  const blur = backgroundBlurOf(n);
+  const radii = cornerRadiiOf(n);
+  return (
+    <>
+      {fx ? <defs dangerouslySetInnerHTML={{ __html: fx.markup }} /> : null}
+      {blur > 0 && n.width > 0 && n.height > 0 && (
+        <foreignObject x={0} y={0} width={n.width} height={n.height} pointerEvents="none">
+          <div style={{ width: "100%", height: "100%", backdropFilter: `blur(${blur}px)`, WebkitBackdropFilter: `blur(${blur}px)`, borderRadius: n.type === "ELLIPSE" ? "50%" : radii ? radii.map((r) => `${r}px`).join(" ") : 0 }} />
+        </foreignObject>
+      )}
+    </>
+  );
 };
 
 const intersects = (a: Box, b: Box) =>

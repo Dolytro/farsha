@@ -93,7 +93,14 @@ export interface BlurEffect {
   visible: boolean;
 }
 
-export type Effect = ShadowEffect | BlurEffect;
+/** Blurs what is behind the layer (Figma's Background blur). */
+export interface BackgroundBlurEffect {
+  type: 'BACKGROUND_BLUR';
+  radius: number;
+  visible: boolean;
+}
+
+export type Effect = ShadowEffect | BlurEffect | BackgroundBlurEffect;
 
 /** One message of a comment thread. */
 export interface CommentReply {
