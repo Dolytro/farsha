@@ -16,6 +16,7 @@ import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
 import { canvasMeasure, fitText } from "../text-layout";
 import { nearestFrame } from "../actions";
+import { connectorPath, connectorsIn } from "../prototype";
 import { loadDefaults, withDefaults } from "../defaults";
 
 
@@ -80,6 +81,7 @@ export function Canvas() {
   const editingPath = useEditor((s) => s.editingPath);
   const pixelGrid = useEditor((s) => s.pixelGrid);
   const outlines = useEditor((s) => s.outlines);
+  const prototypeMode = useEditor((s) => s.prototypeMode);
   const spellCheck = useEditor((s) => s.prefs.spellCheck);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
@@ -632,6 +634,22 @@ export function Canvas() {
               </g>
             );
           })()}
+
+          {prototypeMode && !viewer && (
+            <g pointerEvents="none">
+              <defs>
+                <marker id="proto-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+                  <path d="M0 0L8 4L0 8z" fill="#7a5af8" />
+                </marker>
+              </defs>
+              {connectorsIn(doc, pageId).map((c, i) => (
+                <g key={`conn-${c.id}-${i}`}>
+                  <circle cx={c.from.x} cy={c.from.y} r={4 / z} fill="#7a5af8" />
+                  <path d={connectorPath(c)} fill="none" stroke="#7a5af8" strokeWidth={1.5 / z} markerEnd="url(#proto-arrow)" />
+                </g>
+              ))}
+            </g>
+          )}
 
           {doc
             .descendants(pageId)

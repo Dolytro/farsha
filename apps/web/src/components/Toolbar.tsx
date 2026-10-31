@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { startFrame } from "../prototype";
 import { useEditor, type Tool } from "../store";
 
 const icon = (d: ReactElement) => (
@@ -32,9 +33,16 @@ const DESIGN_ICON = icon(
     <path d="M6 2.5v11M6 7h8" />
   </>,
 );
+const PLAY_ICON = icon(<path d="M5 3.2v9.6L13 8z" />);
 const DEV_ICON = icon(<path d="M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5M9 3.5l-2 9" />);
 
 export function Toolbar() {
+  const present = () => {
+    const s = useEditor.getState();
+    const frame = startFrame(s.doc, s.selection);
+    if (frame) s.setPresenting(frame);
+    else s.showToast("Add a frame to preview");
+  };
   const { tool, setTool, devMode, setDevMode, prototypeMode, viewer } = useEditor();
   return (
     <div className="toolbar" role="toolbar" aria-label="Tools">
@@ -72,6 +80,13 @@ export function Toolbar() {
           {DEV_ICON}
         </button>
       </div>}
+      {!viewer && (
+        <div className="toolbar__group toolbar__group--modes">
+          <button className="toolbar__btn" title="Preview the prototype (Ctrl+Alt+Enter)" aria-label="Preview" onClick={() => present()}>
+            {PLAY_ICON}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
