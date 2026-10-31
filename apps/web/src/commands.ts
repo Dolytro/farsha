@@ -16,6 +16,7 @@ import { fitText } from "./text-layout";
 import { setSection, wrapInSection } from "./section-actions";
 import { adjustText, patchText, setTextAlign, setTextCase, setTextVerticalAlign, textLayersIn, toggleTextStyle } from "./text-actions";
 import { safeUrl } from "./prototype";
+import { copyAsCssAll, copyAsText } from "./copy-as";
 import { resizeToFit, setLockAspect, setSizing } from "./layout-actions";
 import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
@@ -78,6 +79,9 @@ export function buildCommands(): Command[] {
         ["fill", "Select all with the same fill"],
         ["stroke", "Select all with the same stroke"],
         ["font", "Select all with the same font"],
+        ["textProps", "Select all with the same text properties"],
+        ["instance", "Select all with the same instance"],
+        ["variant", "Select all with the same variant"],
         ["effect", "Select all with the same effects"],
         ["opacity", "Select all with the same opacity"],
         ["name", "Select all with the same name"],
@@ -555,6 +559,20 @@ export function buildCommands(): Command[] {
       needsSelection: true,
       keywords: "code",
       run: async () => state().showToast((await copyAsCss(doc(), sel())) ? "Copied as CSS" : "Select a layer first"),
+    },
+    {
+      id: "copy-text",
+      label: "Copy as text",
+      needsSelection: true,
+      keywords: "words content",
+      run: async () => state().showToast((await copyAsText(doc(), sel())) ? "Copied the text" : "There is no text in the selection"),
+    },
+    {
+      id: "copy-css-all",
+      label: "Copy as CSS (all layers)",
+      needsSelection: true,
+      keywords: "code every layer",
+      run: async () => state().showToast((await copyAsCssAll(doc(), sel())) ? "Copied CSS of all layers" : "Select a layer first"),
     },
     {
       id: "copy-svg",
