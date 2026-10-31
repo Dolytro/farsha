@@ -102,7 +102,35 @@ export interface BackgroundBlurEffect {
   visible: boolean;
 }
 
-export type Effect = ShadowEffect | BlurEffect | BackgroundBlurEffect;
+/** Grain over the layer's shape (Figma's Noise effect). Size is the grain size in pixels, density 0..1. */
+export interface NoiseEffect {
+  type: 'NOISE';
+  size: number;
+  density: number;
+  opacity: number;
+  visible: boolean;
+}
+
+/** Soft mottling over the layer's shape (Figma's Texture effect). */
+export interface TextureEffect {
+  type: 'TEXTURE';
+  size: number;
+  /** 0..1 strength. */
+  density: number;
+  visible: boolean;
+}
+
+/** Frosted glass: blurs what is behind the layer and adds a light tint (Figma's Glass effect). */
+export interface GlassEffect {
+  type: 'GLASS';
+  /** Blur radius of the backdrop. */
+  radius: number;
+  /** 0..1 amount of white tint. */
+  light: number;
+  visible: boolean;
+}
+
+export type Effect = ShadowEffect | BlurEffect | BackgroundBlurEffect | NoiseEffect | TextureEffect | GlassEffect;
 
 /** One message of a comment thread. */
 export interface CommentReply {

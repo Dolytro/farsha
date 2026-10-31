@@ -10,7 +10,7 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
 import { isVideoFile, videoUrl } from "../video";
@@ -66,7 +66,7 @@ const fxDefs = (n: DesignNode) => {
       {fx ? <defs dangerouslySetInnerHTML={{ __html: fx.markup }} /> : null}
       {blur > 0 && n.width > 0 && n.height > 0 && (
         <foreignObject x={0} y={0} width={n.width} height={n.height} pointerEvents="none">
-          <div style={{ width: "100%", height: "100%", backdropFilter: `blur(${blur}px)`, WebkitBackdropFilter: `blur(${blur}px)`, borderRadius: n.type === "ELLIPSE" ? "50%" : radii ? radii.map((r) => `${r}px`).join(" ") : 0 }} />
+          <div style={{ width: "100%", height: "100%", backdropFilter: `blur(${blur}px)`, WebkitBackdropFilter: `blur(${blur}px)`, background: glassLightOf(n) ? `rgba(255,255,255,${glassLightOf(n) * 0.35})` : undefined, boxShadow: glassLightOf(n) ? "inset 0 0 0 1px rgba(255,255,255,0.35)" : undefined, borderRadius: n.type === "ELLIPSE" ? "50%" : radii ? radii.map((r) => `${r}px`).join(" ") : 0 }} />
         </foreignObject>
       )}
     </>

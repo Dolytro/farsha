@@ -18,14 +18,20 @@ export function effectsOf(n: DesignNode): Effect[] {
 }
 
 /** The `<filter>` that draws a layer's shadows and blur, or null when it has none. */
-/** Radius of the visible background blur of a layer (0 when it has none). */
+/** Radius of the visible background blur of a layer (0 when it has none); a glass effect blurs the background too. */
 export function backgroundBlurOf(n: DesignNode): number {
-  const e = effectsOf(n).find((x) => x.type === "BACKGROUND_BLUR");
-  return e && e.type === "BACKGROUND_BLUR" && Number.isFinite(e.radius) ? Math.max(0, e.radius) : 0;
+  const e = effectsOf(n).find((x) => x.type === "BACKGROUND_BLUR" || x.type === "GLASS");
+  return e && (e.type === "BACKGROUND_BLUR" || e.type === "GLASS") && Number.isFinite(e.radius) ? Math.max(0, e.radius) : 0;
+}
+
+/** White tint of a visible glass effect, 0..1 (0 when there is none). */
+export function glassLightOf(n: DesignNode): number {
+  const e = effectsOf(n).find((x) => x.type === "GLASS");
+  return e && e.type === "GLASS" && Number.isFinite(e.light) ? Math.min(1, Math.max(0, e.light)) : 0;
 }
 
 export function effectsFilter(n: DesignNode): { id: string; markup: string } | null {
-  const list = effectsOf(n).filter((e) => e.type !== "BACKGROUND_BLUR");
+  const list = effectsOf(n).filter((e) => e.type !== "BACKGROUND_BLUR" && e.type !== "GLASS");
   if (!list.length) return null;
   const id = `fx-${safeId(n.id)}`;
   const parts: string[] = [];
@@ -63,6 +69,21 @@ export function effectsFilter(n: DesignNode): { id: string; markup: string } | n
         `<feComposite in="o${i}" in2="SourceAlpha" operator="in" result="s${i}"/>`,
       );
       over.push(`s${i}`);
+    }
+  });
+  // grain and mottling are drawn over the shape, only where the shape is
+  list.forEach((e, i) => {
+    if (e.type === "NOISE" || e.type === "TEXTURE") {
+      const size = Math.max(0.5, Number.isFinite(e.size) ? e.size : 2);
+      const density = Math.min(1, Math.max(0, Number.isFinite(e.density) ? e.density : 0.5));
+      const strength = e.type === "NOISE" ? density * Math.min(1, Math.max(0, Number.isFinite(e.opacity) ? e.opacity : 0.25)) * 2 : density * 0.5;
+      const freq = e.type === "NOISE" ? 1 / size : 0.4 / size;
+      parts.push(
+        `<feTurbulence type="fractalNoise" baseFrequency="${num(freq)}" numOctaves="${e.type === "NOISE" ? 2 : 4}" seed="${i + 1}" result="t${i}"/>`,
+        `<feColorMatrix in="t${i}" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2 ${num(1 + strength)}" result="g${i}"/>`,
+        `<feComposite in="g${i}" in2="SourceAlpha" operator="in" result="n${i}"/>`,
+      );
+      over.push(`n${i}`);
     }
   });
   const merge = [...under.reverse(), source, ...over].map((r) => `<feMergeNode in="${r}"/>`).join("");

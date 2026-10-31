@@ -442,3 +442,29 @@ describe("angular and diamond gradients", () => {
     expect(out).toContain('opacity="0.5"');
   });
 });
+
+describe("noise, texture and glass effects", () => {
+  const node = (effects: unknown[]) => ({ id: "r", type: "RECTANGLE", x: 0, y: 0, width: 10, height: 10, effects }) as never;
+  it("noise and texture add turbulence limited to the shape, merged over it", async () => {
+    const { glassLightOf } = await import("./appearance");
+    const noise = effectsFilter(node([{ type: "NOISE", size: 2, density: 0.5, opacity: 0.25, visible: true }]))!.markup;
+    expect(noise).toContain("feTurbulence");
+    expect(noise).toContain('baseFrequency="0.5"');
+    expect(noise).toContain('operator="in"');
+    expect(noise).toMatch(/<feMerge>.*n0.*<\/feMerge>/);
+    const tex = effectsFilter(node([{ type: "TEXTURE", size: 4, density: 0.5, visible: true }]))!.markup;
+    expect(tex).toContain('numOctaves="4"');
+    expect(effectsFilter(node([{ type: "NOISE", size: 2, density: 0.5, opacity: 0.25, visible: false }]))).toBeNull();
+    expect(glassLightOf(node([{ type: "GLASS", radius: 8, light: 2, visible: true }]))).toBe(1);
+    expect(glassLightOf(node([]))).toBe(0);
+  });
+  it("glass blurs the background and adds no filter of its own", () => {
+    const g = node([{ type: "GLASS", radius: 14, light: 0.3, visible: true }]);
+    expect(backgroundBlurOf(g)).toBe(14);
+    expect(effectsFilter(g)).toBeNull();
+  });
+  it("survives bad numbers", () => {
+    const m = effectsFilter(node([{ type: "NOISE", size: Number.NaN, density: Number.NaN, opacity: Number.NaN, visible: true }]))!.markup;
+    expect(m).not.toContain("NaN");
+  });
+});
