@@ -135,7 +135,9 @@ export function Properties() {
     if (!Number.isFinite(value)) return;
     if (k === "rotation") doc.rotateNode(node.id, value);
     else {
-      doc.resizeNode(node.id, { [k]: value });
+      // with the proportions locked, the other side follows by the same factor
+      const ratio = node.lockAspect && (k === "width" || k === "height") ? (k === "width" ? node.height / (node.width || 1) : node.width / (node.height || 1)) : null;
+      doc.resizeNode(node.id, ratio === null ? { [k]: value } : k === "width" ? { width: value, height: Math.round(value * ratio * 100) / 100 } : { height: value, width: Math.round(value * ratio * 100) / 100 });
       if (node.type === "TEXT" && (k === "width" || k === "height")) {
         // Same rule as dragging a handle: height gives a fixed box, width gives auto height.
         if (k === "height") doc.setText(node.id, { textAutoResize: "NONE" });
@@ -175,6 +177,21 @@ export function Properties() {
         <div className="props__grid">
           {num("width", "W")}
           {num("height", "H")}
+          <button
+            className={`seg__btn props__ratio${node.lockAspect ? " seg__btn--active" : ""}`}
+            title={node.lockAspect ? "Unlock proportions" : "Lock proportions"}
+            aria-label="Lock proportions"
+            aria-pressed={!!node.lockAspect}
+            onClick={() => doc.setStyle(node.id, { lockAspect: node.lockAspect ? null : true })}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+              {node.lockAspect ? (
+                <path d="M6.5 9.5l3-3M5 11a2.5 2.5 0 010-3.5L6.5 6M11 5a2.5 2.5 0 010 3.5L9.5 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              ) : (
+                <path d="M5 11a2.5 2.5 0 010-3.5L6.5 6M11 5a2.5 2.5 0 010 3.5L9.5 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              )}
+            </svg>
+          </button>
         </div>
       </section>
 

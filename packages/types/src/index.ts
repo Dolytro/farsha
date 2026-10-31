@@ -214,6 +214,8 @@ export interface BaseNode {
   devNote?: string;
   /** Prototype: this top-level frame is where a flow starts (Figma's flow starting point). */
   flowStart?: boolean;
+  /** Lock proportions: changing the width changes the height by the same factor, and the other way round. */
+  lockAspect?: boolean;
   /** Optional so documents saved before effects existed still load. */
   effects?: Effect[];
   /** Missing means NORMAL. */
@@ -489,6 +491,7 @@ export interface StylePatch extends AutoLayoutProps {
   devStatus?: DevStatus | null;
   devNote?: string | null;
   flowStart?: boolean | null;
+  lockAspect?: boolean | null;
   overflowScroll?: 'NONE' | 'VERTICAL' | null;
   booleanOp?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE' | null;
   opacity?: number;

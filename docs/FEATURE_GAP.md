@@ -218,7 +218,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | # | Issue | Status |
 |---|-------|--------|
 | 1 | Sort the menu by category | open |
-| 2 | Aspect ratio lock icon beside width / height | open |
+| 2 | Aspect ratio lock icon beside width / height | ✅ lock button next to W and H (also keeps the ratio when dragging a handle) |
 | 3 | Add video | open |
 | 4 | "UX of this part" (picture only) | needs the owner's screenshot |
 | 5 | Auto layout over two frames ignores the spacing between them | open |
