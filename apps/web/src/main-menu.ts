@@ -82,6 +82,7 @@ export function buildMainMenu(): MenuNode[] {
         item("frame--1", "Zoom to previous frame"),
         item("comments-toggle", "Show / hide comments", true),
         item("outlines"),
+        sub("Panels", list(item("panel-left"), item("panel-right"))),
         item("pixel-grid"),
         item("rulers"),
         item("layout-grids"),

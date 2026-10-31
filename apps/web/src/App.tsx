@@ -74,6 +74,8 @@ const KEYS: Record<string, Tool> = { s: "slice", v: "select", h: "hand", f: "fra
 export function App() {
   const theme = useEditor((s) => s.theme);
   const uiHidden = useEditor((s) => s.uiHidden);
+  const hideLeft = useEditor((s) => s.hideLeftPanel);
+  const hideRight = useEditor((s) => s.hideRightPanel);
   const preset = useEditor((s) => s.prefs.preset);
   // The interface preset is a data attribute that the stylesheet reads (density, roundness, accent, panel width).
   useEffect(() => {
@@ -379,6 +381,11 @@ export function App() {
       } else if (mod && key === "z") {
         e.preventDefault();
         e.shiftKey ? doc.redo() : doc.undo();
+      } else if (e.altKey && !mod && !e.shiftKey && (e.code === "Digit1" || e.code === "Digit2")) {
+        // View > Panels: Alt+1 layers panel, Alt+2 properties panel
+        e.preventDefault();
+        if (e.code === "Digit1") s.setHideLeftPanel(!s.hideLeftPanel);
+        else s.setHideRightPanel(!s.hideRightPanel);
       } else if (mod && e.shiftKey && !e.altKey && key === "y") {
         // Figma's "Outlines" (Ctrl+Y stays Redo here)
         e.preventDefault();
@@ -529,7 +536,7 @@ export function App() {
   }
 
   return (
-    <div className={`editor${uiHidden ? " editor--minimal" : ""}`}>
+    <div className={`editor${uiHidden ? " editor--minimal" : ""}${hideLeft ? " editor--no-left" : ""}${hideRight ? " editor--no-right" : ""}`}>
       <Layers />
       <div className="workspace">
         <Canvas />

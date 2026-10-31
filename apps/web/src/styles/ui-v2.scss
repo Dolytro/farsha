@@ -815,3 +815,24 @@ textarea:focus-visible {
 .canvas__outlines foreignObject {
   display: none;
 }
+
+// View > Panels: each side panel can be hidden on its own.
+.editor--no-left {
+  grid-template-columns: 1fr var(--panel-w);
+
+  > .layers {
+    display: none;
+  }
+}
+
+.editor--no-right {
+  grid-template-columns: var(--panel-w) 1fr;
+
+  > .props {
+    display: none;
+  }
+}
+
+.editor--no-left.editor--no-right {
+  grid-template-columns: 1fr;
+}

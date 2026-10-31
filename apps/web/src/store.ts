@@ -88,6 +88,11 @@ interface EditorState {
   prefsOpen: boolean;
   /** Figma's "Minimize UI": the side panels and toolbar are hidden so the canvas fills the window. */
   uiHidden: boolean;
+  /** View > Panels: hide the left (layers) or right (properties) panel on its own. */
+  hideLeftPanel: boolean;
+  hideRightPanel: boolean;
+  setHideLeftPanel: (on: boolean) => void;
+  setHideRightPanel: (on: boolean) => void;
   theme: ThemePreference;
   versionsOpen: boolean;
   /** Id of the pen path whose points are being edited. */
@@ -175,6 +180,8 @@ export const useEditor = create<EditorState>((set) => ({
   prefs: readPrefs(),
   prefsOpen: false,
   uiHidden: false,
+  hideLeftPanel: false,
+  hideRightPanel: false,
   theme: readTheme(),
   versionsOpen: false,
   editingPath: null,
@@ -234,6 +241,8 @@ export const useEditor = create<EditorState>((set) => ({
     }),
   setPrefsOpen: (prefsOpen) => set({ prefsOpen }),
   setUiHidden: (uiHidden) => set({ uiHidden }),
+  setHideLeftPanel: (hideLeftPanel) => set({ hideLeftPanel }),
+  setHideRightPanel: (hideRightPanel) => set({ hideRightPanel }),
   setTheme: (theme) => {
     try {
       localStorage.setItem(THEME_KEY, theme);
