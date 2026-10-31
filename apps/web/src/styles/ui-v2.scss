@@ -1138,3 +1138,104 @@ textarea:focus-visible {
 .canvas__pixel :is(rect, path, ellipse, polygon, circle, line, polyline) {
   shape-rendering: crispEdges;
 }
+
+// Font picker
+.fontpick {
+  position: relative;
+  min-width: 0;
+
+  &__button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+  }
+
+  &__current {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__pop {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 70;
+    width: 260px;
+    max-width: calc(100vw - 24px);
+    padding: 6px;
+    border-radius: calc(var(--radius) + 6px);
+    background: var(--c-panel, #fff);
+    color: var(--c-text);
+    box-shadow: var(--shadow-pop);
+  }
+
+  &__search {
+    width: 100%;
+    height: var(--field-h);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--radius);
+    background: var(--c-input);
+    color: inherit;
+    font: inherit;
+    outline: none;
+  }
+
+  &__list {
+    max-height: 280px;
+    margin: 6px 0 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  &__group {
+    padding: 8px 8px 2px;
+    color: var(--c-muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__item {
+    display: block;
+    width: 100%;
+    min-height: 30px;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: calc(var(--radius) - 1px);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &--active {
+      background: var(--c-accent);
+      color: #fff;
+    }
+  }
+
+  &__more {
+    width: 100%;
+    margin-top: 6px;
+    padding: 6px;
+    border: 0;
+    border-top: 1px solid var(--c-border);
+    background: none;
+    color: var(--c-accent);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  &__note {
+    margin: 6px 4px 0;
+    color: var(--c-muted);
+    font-size: 11px;
+  }
+}

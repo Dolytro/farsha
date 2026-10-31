@@ -29,6 +29,7 @@ import { PreferencesDialog } from "./components/PreferencesDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
 import { buildCommands } from "./commands";
+import { firstFamily, isGoogleFont, loadGoogleFont } from "./fonts";
 import { textShortcutCommand } from "./text-shortcuts";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
@@ -76,6 +77,18 @@ const KEYS: Record<string, Tool> = { s: "slice", v: "select", h: "hand", f: "fra
 export function App() {
   const theme = useEditor((s) => s.theme);
   const uiHidden = useEditor((s) => s.uiHidden);
+  const version = useEditor((s) => s.version);
+  const docRef = useEditor((s) => s.doc);
+  // Google fonts used by the file are loaded when it opens or changes
+  useEffect(() => {
+    const families = new Set<string>();
+    for (const n of docRef.descendants(docRef.rootId)) if (n.type === "TEXT" && isGoogleFont(n.fontFamily)) families.add(firstFamily(n.fontFamily));
+    for (const family of families) {
+      void loadGoogleFont(family).then((ok) => ok && useEditor.setState((s) => ({ version: s.version + 1 })));
+    }
+    // load each family once; later edits that add a new family run this again
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docRef, Math.floor(version / 50)]);
   const hideLeft = useEditor((s) => s.hideLeftPanel);
   const hideRight = useEditor((s) => s.hideRightPanel);
   const preset = useEditor((s) => s.prefs.preset);
