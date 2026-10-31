@@ -193,6 +193,14 @@ export interface Interaction {
 /** Figma's Dev Mode status of a layer. */
 export type DevStatus = 'READY' | 'COMPLETED';
 
+/** One way a layer is exported: format, scale and a file name suffix (Figma's export settings). */
+export type ExportSettingFormat = 'PNG' | 'JPG' | 'WEBP' | 'SVG' | 'PDF';
+export interface ExportSetting {
+  format: ExportSettingFormat;
+  scale: number;
+  suffix: string;
+}
+
 export interface BaseNode {
   id: string;
   type: NodeType;
@@ -216,6 +224,8 @@ export interface BaseNode {
   devNote?: string;
   /** Prototype: this top-level frame is where a flow starts (Figma's flow starting point). */
   flowStart?: boolean;
+  /** The export settings of this layer; none means PNG at 1x. */
+  exportSettings?: ExportSetting[];
   /** Lock proportions: changing the width changes the height by the same factor, and the other way round. */
   lockAspect?: boolean;
   /** Optional so documents saved before effects existed still load. */
@@ -504,6 +514,7 @@ export interface StylePatch extends AutoLayoutProps {
   devNote?: string | null;
   flowStart?: boolean | null;
   lockAspect?: boolean | null;
+  exportSettings?: ExportSetting[] | null;
   videoAssetId?: string | null;
   overflowScroll?: 'NONE' | 'VERTICAL' | null;
   booleanOp?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE' | null;
