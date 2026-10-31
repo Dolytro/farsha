@@ -56,7 +56,7 @@ export function selectMatching(doc: DesignDoc, ids: string[], pageId: string): s
     .map((n) => n.id);
 }
 
-export type SameFacet = "type" | "fill" | "stroke" | "font" | "effect" | "opacity" | "name";
+export type SameFacet = "type" | "fill" | "stroke" | "font" | "textProps" | "instance" | "variant" | "effect" | "opacity" | "name";
 
 /** Figma's "Select all with…": every unlocked, visible layer of the page that shares one property with the first selected layer. */
 export function selectSameAs(doc: DesignDoc, ids: string[], pageId: string, facet: SameFacet): string[] {
@@ -73,6 +73,15 @@ export function selectSameAs(doc: DesignDoc, ids: string[], pageId: string, face
         return JSON.stringify([any.strokes ?? null, any.strokeWidth ?? null]);
       case "font":
         return n.type === "TEXT" ? JSON.stringify([any.fontFamily, any.fontSize, any.fontWeight]) : "";
+      case "textProps":
+        // every text setting except the words themselves
+        return n.type === "TEXT"
+          ? JSON.stringify([any.fontFamily, any.fontSize, any.fontWeight, any.lineHeight, any.letterSpacing, any.textAlign, any.textVerticalAlign, any.textCase, any.textDecoration, any.italic, any.textList, any.textDirection])
+          : "";
+      case "instance":
+        return typeof any.componentId === "string" ? any.componentId : "";
+      case "variant":
+        return any.variantProps ? JSON.stringify(Object.entries(any.variantProps as Record<string, string>).sort()) : "";
       case "effect":
         return JSON.stringify(any.effects ?? null);
       case "opacity":
@@ -83,7 +92,9 @@ export function selectSameAs(doc: DesignDoc, ids: string[], pageId: string, face
   };
   const wanted = key(first);
   // a facet the first layer does not have (no font on a rectangle) selects nothing extra
-  if (facet === "font" && first.type !== "TEXT") return ids;
+  if ((facet === "font" || facet === "textProps") && first.type !== "TEXT") return ids;
+  // an instance or variant facet the first layer does not have selects nothing else
+  if ((facet === "instance" || facet === "variant") && wanted === "") return ids;
   return doc
     .descendants(pageId)
     .filter((n) => pickable(doc, n.id) && key(n) === wanted)

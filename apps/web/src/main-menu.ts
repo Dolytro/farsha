@@ -54,7 +54,7 @@ export function buildMainMenu(): MenuNode[] {
       children: list(
         item("undo"),
         item("redo"),
-        sub("Copy as", list(item("copy-css", "Copy as CSS"), item("copy-svg", "Copy as SVG"), item("copy-png", "Copy as PNG")), true),
+        sub("Copy as", list(item("copy-text", "Copy as text"), item("copy-css", "Copy as CSS"), item("copy-css-all", "Copy as CSS (all layers)"), item("copy-svg", "Copy as SVG"), item("copy-png", "Copy as PNG")), true),
         item("paste-over", "Paste over selection"),
         item("paste-replace", "Paste to replace"),
         item("duplicate", undefined, true),
@@ -68,7 +68,7 @@ export function buildMainMenu(): MenuNode[] {
         item("select-matching", "Select matching layers"),
         item("set-default-properties", undefined, true),
         item("reset-default-properties"),
-        sub("Select all with", list(item("select-same-type", "Same type"), item("select-same-fill", "Same fill"), item("select-same-stroke", "Same stroke"), item("select-same-font", "Same font"), item("select-same-effect", "Same effects"), item("select-same-opacity", "Same opacity"), item("select-same-name", "Same name"))),
+        sub("Select all with", list(item("select-same-type", "Same type"), item("select-same-fill", "Same fill"), item("select-same-stroke", "Same stroke"), item("select-same-font", "Same font"), item("select-same-textProps", "Same text properties"), item("select-same-instance", "Same instance"), item("select-same-variant", "Same variant"), item("select-same-effect", "Same effects"), item("select-same-opacity", "Same opacity"), item("select-same-name", "Same name"))),
         item("select-none"),
         item("select-inverse"),
         item("select-children"),

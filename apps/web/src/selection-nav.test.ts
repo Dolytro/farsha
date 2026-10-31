@@ -105,3 +105,23 @@ describe("selectSameAs", () => {
     expect(selectSameAs(doc, [], page, "fill")).toEqual([]);
   });
 });
+
+describe("selectSameAs: text properties, instance and variant", () => {
+  it("matches text settings but not the words, and instances and variants of one component", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("TEXT", { parentId: page, props: { characters: "One", fontSize: 20, fontWeight: 700 } });
+    const b = doc.createNode("TEXT", { parentId: page, props: { characters: "Two", fontSize: 20, fontWeight: 700 } });
+    const c = doc.createNode("TEXT", { parentId: page, props: { characters: "Three", fontSize: 20, fontWeight: 400 } });
+    expect(selectSameAs(doc, [a], page, "textProps").sort()).toEqual([a, b].sort());
+    expect(selectSameAs(doc, [a], page, "font").sort()).toEqual([a, b].sort());
+    expect(c).toBeTruthy();
+    const main = doc.createNode("FRAME", { parentId: page, props: { width: 50, height: 50 } });
+    doc.createComponent([main]);
+    const i1 = doc.createInstance(main, page, 100, 0);
+    const i2 = doc.createInstance(main, page, 200, 0);
+    expect(selectSameAs(doc, [i1], page, "instance").sort()).toEqual([i1, i2].sort());
+    expect(selectSameAs(doc, [a], page, "instance")).toEqual([a]);
+    expect(selectSameAs(doc, [a], page, "variant")).toEqual([a]);
+  });
+});
