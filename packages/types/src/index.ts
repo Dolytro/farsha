@@ -404,6 +404,8 @@ export interface TextNode extends BaseNode {
   textList?: TextList;
   /** Missing means left to right. */
   textDirection?: TextDirection;
+  /** A web address the whole text links to (Figma's Create link). */
+  textLink?: string;
   /** Where the text sits inside a box taller than the text. Missing means top. */
   textVerticalAlign?: TextVerticalAlign;
   fills: Paint[];
@@ -496,6 +498,7 @@ export interface TextPatch {
   textCase?: TextCase;
   textList?: TextList;
   textDirection?: TextDirection;
+  textLink?: string | null;
   textVerticalAlign?: TextVerticalAlign;
 }
 

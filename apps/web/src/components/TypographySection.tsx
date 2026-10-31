@@ -156,6 +156,10 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           <option value="RTL">Right to left</option>
         </Select>
       </div>
+      <label className="field" title="Web address this text links to (opens when presenting)">
+        <span className="field__label">Link</span>
+        <input className="field__input" type="url" aria-label="Text link" placeholder="https://" value={node.textLink ?? ""} onChange={(e) => set({ textLink: e.target.value || null })} />
+      </label>
       <div className="seg">
         {RESIZE.map(([mode, label, title]) => (
           <button key={mode} className={`seg__btn${(node.textAutoResize ?? "WIDTH_AND_HEIGHT") === mode ? " seg__btn--active" : ""}`} title={title} onClick={() => set({ textAutoResize: mode })}>

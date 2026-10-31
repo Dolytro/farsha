@@ -73,3 +73,15 @@ describe("overlays", () => {
     expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "CLOSE_OVERLAY" } })).toBeNull();
   });
 });
+
+describe("text links", () => {
+  it("a linked text layer opens its address on click", () => {
+    const { doc, home } = setup();
+    const t = doc.createNode("TEXT", { parentId: home, props: { x: 10, y: 100, width: 80, height: 20, textLink: "https://example.com" } as never });
+    const spot = hotspotsIn(doc, home).find((h) => h.id === t)!;
+    expect(spot.interaction).toEqual({ trigger: "ON_CLICK", action: { type: "OPEN_URL", url: "https://example.com" } });
+    expect(spot.box).toMatchObject({ x: 10, y: 100, width: 80, height: 20 });
+    doc.setText(t, { textLink: null });
+    expect(hotspotsIn(doc, home).some((h) => h.id === t)).toBe(false);
+  });
+});

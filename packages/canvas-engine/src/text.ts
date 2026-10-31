@@ -48,8 +48,8 @@ export function textPlacement(n: { width: number; textAlign?: string; textDirect
 }
 
 /** SVG `font-style` / `text-decoration` values of a text layer (undefined when plain). */
-export function textFontStyle(n: { italic?: boolean; textDecoration?: string }): { fontStyle?: "italic"; textDecoration?: "underline" | "line-through" } {
-  return { ...(n.italic ? { fontStyle: "italic" as const } : {}), ...(n.textDecoration === "UNDERLINE" ? { textDecoration: "underline" as const } : n.textDecoration === "STRIKETHROUGH" ? { textDecoration: "line-through" as const } : {}) };
+export function textFontStyle(n: { italic?: boolean; textDecoration?: string; textLink?: string }): { fontStyle?: "italic"; textDecoration?: "underline" | "line-through" } {
+  return { ...(n.italic ? { fontStyle: "italic" as const } : {}), ...(n.textDecoration === "UNDERLINE" || (n.textLink && !n.textDecoration) ? { textDecoration: "underline" as const } : n.textDecoration === "STRIKETHROUGH" ? { textDecoration: "line-through" as const } : {}) };
 }
 
 /** How far the text moves down inside a box taller than the text (Figma's vertical alignment). */
