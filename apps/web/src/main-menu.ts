@@ -132,6 +132,7 @@ export function buildMainMenu(): MenuNode[] {
         item("remove-stroke"),
         item("swap-fill-stroke"),
         item("remove-interactions"),
+        item("delete-contents"),
       ),
     },
     {

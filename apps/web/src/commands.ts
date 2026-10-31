@@ -9,7 +9,7 @@ import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
 import { duplicateFile, openLocalFilePicker, saveLocalCopy } from "./local-file";
 import { placeImagePicker } from "./place-image";
-import { hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, swapFillAndStroke } from "./object-actions";
+import { deleteContents, hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, swapFillAndStroke } from "./object-actions";
 import { newFile } from "./drive/session";
 import { fitText } from "./text-layout";
 import { setSection, wrapInSection } from "./section-actions";
@@ -161,6 +161,16 @@ export function buildCommands(): Command[] {
     { id: "swap-fill-stroke", label: "Swap fill and stroke", shortcut: `${SHIFT}X`, needsSelection: true, run: () => void swapFillAndStroke(doc(), sel()) },
     { id: "hide-others", label: "Hide other layers", needsSelection: true, keywords: "isolate focus", run: () => void hideOtherLayers(doc(), sel(), state().pageId) },
     { id: "collapse-layers", label: "Collapse layers", shortcut: `${ALT}L`, keywords: "fold layers panel", run: () => state().collapseLayers() },
+    {
+      id: "delete-contents",
+      label: "Delete contents",
+      needsSelection: true,
+      keywords: "empty clear frame children",
+      run: () => {
+        if (!deleteContents(doc(), sel())) state().showToast("Select a frame or group that has layers inside");
+        else state().select(sel().filter((id) => doc().hasNode(id)));
+      },
+    },
     { id: "remove-interactions", label: "Remove interactions", needsSelection: true, keywords: "prototype links", run: () => void removeInteractions(doc(), sel()) },
     { id: "ungroup", label: "Ungroup", shortcut: `${MOD}${SHIFT}G`, needsSelection: true, run: () => state().select(ungroupSelection(doc(), sel())) },
     { id: "front", label: "Bring to front", shortcut: `${MOD}]`, needsSelection: true, keywords: "order z", run: () => reorderSelection(doc(), sel(), Infinity) },

@@ -103,3 +103,14 @@ export function setOpacityFromKey(doc: DesignDoc, ids: string[], digit: string):
   doc.stopCapturing();
   return nodes.length;
 }
+
+/** Figma's Delete contents: remove everything inside the selected frames, groups and sections but keep them. Returns how many layers were deleted. */
+export function deleteContents(doc: DesignDoc, ids: string[]): number {
+  const targets = real(doc, ids).filter((n) => n.type === "FRAME" || n.type === "GROUP");
+  const kids = targets.flatMap((n) => doc.children(n.id).map((c) => c.id));
+  if (!kids.length) return 0;
+  doc.stopCapturing();
+  for (const id of kids) if (doc.hasNode(id)) doc.deleteNode(id);
+  doc.stopCapturing();
+  return kids.length;
+}
