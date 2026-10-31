@@ -217,7 +217,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 
 | # | Issue | Status |
 |---|-------|--------|
-| 1 | Sort the menu by category | ✅ the Actions palette (Ctrl+/) lists commands under File, Edit, View, Object, Text, Arrange, Vector, Tools, Preferences, Other; a search shows each result's category (the main menu was already grouped). Tell me if you meant a different menu |
+| 1 | Sort the menu by category (picture: the bottom toolbar) | ✅ the toolbar is grouped like Figma: Move / Hand / Scale, Frame / Section / Slice, Rectangle / Line / Arrow / Ellipse / Polygon / Star, Pen / Pencil, Text, Comment; each group shows the tool used last and an arrow opens the rest. The Actions palette is grouped by category too |
 | 2 | Aspect ratio lock icon beside width / height | ✅ lock button next to W and H (also keeps the ratio when dragging a handle) |
 | 3 | Add video | ✅ Fill type > Video on a rectangle, Place image… (Ctrl+Shift+K), drag and drop: MP4 and WebM up to 25 MB become a video layer that shows its first frame and plays when previewed; not in SVG/PNG/PDF export |
 | 4 | "UX of this part" (picture: corner radius, smoothing, independent corners) | ✅ one row for opacity, radius and the independent-corners button; corner icons; Smoothing labelled |

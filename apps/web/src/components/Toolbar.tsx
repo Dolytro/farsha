@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { startFrame } from "../prototype";
 import { useEditor, type Tool } from "../store";
 
@@ -36,6 +36,98 @@ const DESIGN_ICON = icon(
 const PLAY_ICON = icon(<path d="M5 3.2v9.6L13 8z" />);
 const DEV_ICON = icon(<path d="M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5M9 3.5l-2 9" />);
 
+/** The tools, grouped like Figma's toolbar: each group shows the tool you used last and opens a menu with the others. */
+export const TOOL_GROUPS: { id: string; label: string; tools: Tool[] }[] = [
+  { id: "move", label: "Move", tools: ["select", "hand", "scale"] },
+  { id: "region", label: "Region", tools: ["frame", "section", "slice"] },
+  { id: "shape", label: "Shapes", tools: ["rect", "line", "arrow", "ellipse", "polygon", "star"] },
+  { id: "draw", label: "Draw", tools: ["pen", "pencil"] },
+  { id: "text", label: "Text", tools: ["text"] },
+  { id: "comment", label: "Comments", tools: ["comment"] },
+];
+
+function ToolGroups({ tool, setTool, devMode }: { tool: Tool; setTool: (t: Tool) => void; devMode: boolean }) {
+  const [last, setLast] = useState<Record<string, Tool>>({});
+  const [open, setOpen] = useState<string | null>(null);
+  const root = useRef<HTMLDivElement>(null);
+
+  // the group that owns the active tool shows it
+  useEffect(() => {
+    const g = TOOL_GROUPS.find((x) => x.tools.includes(tool));
+    if (g) setLast((l) => (l[g.id] === tool ? l : { ...l, [g.id]: tool }));
+  }, [tool]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpen(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(null);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }, [open]);
+
+  return (
+    <div className="toolbar__group" ref={root}>
+      {TOOL_GROUPS.map((g) => {
+        const tools = g.tools.map((id) => TOOLS.find((t) => t.id === id)!).filter((t) => !devMode || !t.design);
+        if (!tools.length) return null;
+        const shown = tools.find((t) => t.id === (g.tools.includes(tool) ? tool : last[g.id])) ?? tools[0]!;
+        const active = g.tools.includes(tool);
+        return (
+          <div className="toolbar__split" key={g.id}>
+            <button
+              className={`toolbar__btn${active ? " toolbar__btn--active" : ""}`}
+              onClick={() => {
+                setTool(shown.id);
+                setOpen(null);
+              }}
+              title={shown.key ? `${shown.label} — ${shown.key}` : shown.label}
+              aria-label={shown.label}
+              aria-pressed={active}
+            >
+              {shown.icon}
+            </button>
+            {tools.length > 1 && (
+              <button className="toolbar__more" aria-label={`${g.label} tools`} aria-expanded={open === g.id} aria-haspopup="menu" title={`${g.label} tools`} onClick={() => setOpen(open === g.id ? null : g.id)}>
+                <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden>
+                  <path d="M1.5 5.5L4 3l2.5 2.5" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+            {open === g.id && (
+              <ul className="toolbar__menu" role="menu" aria-label={g.label}>
+                {tools.map((t) => (
+                  <li key={t.id} role="none">
+                    <button
+                      role="menuitem"
+                      className={`toolbar__menuitem${tool === t.id ? " toolbar__menuitem--active" : ""}`}
+                      onClick={() => {
+                        setTool(t.id);
+                        setOpen(null);
+                      }}
+                    >
+                      <span className="toolbar__menuicon">{t.icon}</span>
+                      <span>{t.label}</span>
+                      {t.key && <kbd>{t.key}</kbd>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Toolbar() {
   const present = () => {
     const s = useEditor.getState();
@@ -46,20 +138,7 @@ export function Toolbar() {
   const { tool, setTool, devMode, setDevMode, prototypeMode, viewer } = useEditor();
   return (
     <div className="toolbar" role="toolbar" aria-label="Tools">
-      <div className="toolbar__group">
-        {TOOLS.filter((t) => !devMode || !t.design).map((t) => (
-          <button
-            key={t.id}
-            className={`toolbar__btn${tool === t.id ? " toolbar__btn--active" : ""}`}
-            onClick={() => setTool(t.id)}
-            title={t.key ? `${t.label} — ${t.key}` : t.label}
-            aria-label={t.label}
-            aria-pressed={tool === t.id}
-          >
-            {t.icon}
-          </button>
-        ))}
-      </div>
+      <ToolGroups tool={tool} setTool={setTool} devMode={devMode} />
       {!viewer && <div className="toolbar__group toolbar__group--modes">
         <button
           className={`toolbar__btn toolbar__btn--mode${devMode ? "" : " toolbar__btn--on"}`}

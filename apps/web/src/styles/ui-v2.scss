@@ -1041,3 +1041,82 @@ textarea:focus-visible {
   height: var(--field-h);
   padding: 0;
 }
+
+// Toolbar tool groups: the last used tool of a group, plus a small arrow that opens the rest.
+.toolbar__split {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.toolbar__more {
+  position: absolute;
+  right: 1px;
+  bottom: 2px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--c-hover);
+    color: var(--c-text);
+  }
+}
+
+.toolbar__menu {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  z-index: 60;
+  min-width: 196px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  transform: translateX(-50%);
+  border-radius: calc(var(--radius) + 6px);
+  background: #1e1f22;
+  color: #f2f4f8;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.toolbar__menuitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: calc(var(--radius) - 1px);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  kbd {
+    margin-left: auto;
+    color: rgba(255, 255, 255, 0.55);
+    font: inherit;
+    font-size: 11px;
+  }
+
+  &:hover,
+  &--active {
+    background: var(--c-accent);
+    color: #fff;
+  }
+}
+
+.toolbar__menuicon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+}
