@@ -137,7 +137,9 @@ export interface VariableMode {
 export interface ColorVariable {
   id: string;
   name: string;
-  /** Hex colour per mode id. */
+  /** 'STRING' makes it a text variable (its values are texts, not colours). Missing means a colour. */
+  kind?: 'COLOR' | 'STRING';
+  /** Hex colour per mode id (the text, for a text variable). */
   values: Record<string, string>;
 }
 
@@ -430,6 +432,8 @@ export interface TextNode extends BaseNode {
   runs?: TextRun[];
   /** The pen path (a sibling vector) the text runs along (Figma's Text on path). */
   textPathId?: string;
+  /** A text variable this layer's characters follow (in the active mode). */
+  textVariableId?: string;
   /** Where the text sits inside a box taller than the text. Missing means top. */
   textVerticalAlign?: TextVerticalAlign;
   fills: Paint[];
@@ -528,6 +532,7 @@ export interface TextPatch {
   textLink?: string | null;
   runs?: TextRun[] | null;
   textPathId?: string | null;
+  textVariableId?: string | null;
   textVerticalAlign?: TextVerticalAlign;
 }
 

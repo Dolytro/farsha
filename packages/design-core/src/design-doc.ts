@@ -156,7 +156,7 @@ export class DesignDoc {
 
   /** Paints bound to a colour variable take its value in the active mode; a deleted variable just leaves the colour as it was. */
   private syncVariables(): void {
-    if (!this.variableMap.size && ![...this.nodes.values()].some((m) => this.hasBoundPaint(m))) return;
+    if (!this.variableMap.size && ![...this.nodes.values()].some((m) => this.hasBoundPaint(m) || !!m.get('textVariableId'))) return;
     this.syncing = true;
     try {
       const mode = this.activeModeId();
@@ -183,6 +183,15 @@ export class DesignDoc {
           for (const key of ['fills', 'strokes']) {
             const next = resolve(map.get(key));
             if (next) map.set(key, next);
+          }
+          const textVar = map.get('textVariableId') as string | undefined;
+          if (textVar) {
+            const v = this.variableMap.get(textVar);
+            if (!v || v.kind !== 'STRING') map.delete('textVariableId');
+            else {
+              const text = v.values[mode] ?? Object.values(v.values)[0] ?? '';
+              if (map.get('characters') !== text) map.set('characters', text);
+            }
           }
         }
       });
@@ -1034,7 +1043,7 @@ export class DesignDoc {
       if (!this.modeMap.size) this.modeMap.set('default', { id: 'default', name: 'Mode 1', order: 0 });
       const order = Math.max(-1, ...[...this.modeMap.values()].map((m) => m.order)) + 1;
       this.modeMap.set(id, { id, name: name.trim() || `Mode ${order + 1}`, order });
-      for (const v of this.variableMap.values()) this.variableMap.set(v.id, { ...v, values: { ...v.values, [id]: v.values[base] ?? Object.values(v.values)[0] ?? '#000000' } });
+      for (const v of this.variableMap.values()) this.variableMap.set(v.id, { ...v, values: { ...v.values, [id]: v.values[base] ?? Object.values(v.values)[0] ?? (v.kind === 'STRING' ? '' : '#000000') } });
     });
     return id;
   }
@@ -1059,7 +1068,44 @@ export class DesignDoc {
   }
 
   colorVariables(): ColorVariable[] {
-    return [...this.variableMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+    return [...this.variableMap.values()].filter((v) => v.kind !== 'STRING').sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Text variables: a text per mode that text layers can follow. */
+  textVariables(): ColorVariable[] {
+    return [...this.variableMap.values()].filter((v) => v.kind === 'STRING').sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  createTextVariable(name: string, text: string): string {
+    const id = nanoid();
+    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Text', kind: 'STRING', values: Object.fromEntries(this.modes().map((m) => [m.id, text])) }));
+    return id;
+  }
+
+  /** Change the name of a text variable, or its text in one mode. */
+  updateTextVariable(id: string, patch: { name?: string; modeId?: string; text?: string }): void {
+    const v = this.variableMap.get(id);
+    if (!v || v.kind !== 'STRING') throw new Error('Text variable not found');
+    this.transact(() =>
+      this.variableMap.set(id, {
+        ...v,
+        ...(patch.name?.trim() ? { name: patch.name.trim() } : {}),
+        values: patch.text !== undefined && patch.modeId ? { ...v.values, [patch.modeId]: patch.text } : v.values,
+      }),
+    );
+  }
+
+  /** Make a text layer follow a text variable (or pass null to keep the text it has now and detach). */
+  bindTextVariable(nodeId: string, variableId: string | null): void {
+    const node = this.requireNode(nodeId);
+    if (node.type !== 'TEXT') throw new Error('Only text layers can use a text variable');
+    if (variableId === null) {
+      this.setText(nodeId, { textVariableId: null });
+      return;
+    }
+    const v = this.variableMap.get(variableId);
+    if (!v || v.kind !== 'STRING') throw new Error('Text variable not found');
+    this.setText(nodeId, { textVariableId: variableId, characters: v.values[this.activeModeId()] ?? Object.values(v.values)[0] ?? '' });
   }
 
   getColorVariable(id: string): ColorVariable | undefined {
@@ -1101,7 +1147,7 @@ export class DesignDoc {
       next = rest;
     } else {
       const v = this.variableMap.get(variableId);
-      if (!v) throw new Error('Variable not found');
+      if (!v || v.kind === 'STRING') throw new Error('Variable not found');
       next = { ...paint, variableId, color: v.values[this.activeModeId()] ?? paint.color };
     }
     this.setStyle(nodeId, { [key]: (paints as Paint[]).map((p, i) => (i === index ? next : p)) } as StylePatch);
