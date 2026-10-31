@@ -4,9 +4,23 @@ import type { Box, DesignNode, LayoutMode } from "@canvylo/types";
 
 const round = (v: number) => Math.round(v * 100) / 100;
 
-/** Row or column? Whichever axis the layers are spread along more. */
-function guessDirection(boxes: Box[]): LayoutMode {
+/** Do any two of the boxes share part of their span on one axis? (Boxes in a row overlap vertically, boxes in a column overlap horizontally.) */
+function overlapOn(boxes: Box[], axis: "x" | "y"): boolean {
+  const start = (b: Box) => (axis === "x" ? b.x : b.y);
+  const size = (b: Box) => (axis === "x" ? b.width : b.height);
+  return boxes.some((a, i) => boxes.slice(i + 1).some((b) => start(a) < start(b) + size(b) && start(b) < start(a) + size(a)));
+}
+
+/**
+ * Row or column? Boxes that are side by side (separate on x, overlapping on y) make a row and the other way round make a column,
+ * however different their sizes are. Only when that does not decide, the axis the layers are spread along more wins.
+ */
+export function guessDirection(boxes: Box[]): LayoutMode {
   if (boxes.length < 2) return "VERTICAL";
+  const sharesX = overlapOn(boxes, "x");
+  const sharesY = overlapOn(boxes, "y");
+  if (sharesY && !sharesX) return "HORIZONTAL";
+  if (sharesX && !sharesY) return "VERTICAL";
   const spread = (values: number[]) => Math.max(...values) - Math.min(...values);
   const x = spread(boxes.map((b) => b.x + b.width / 2));
   const y = spread(boxes.map((b) => b.y + b.height / 2));

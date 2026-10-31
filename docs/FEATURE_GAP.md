@@ -221,7 +221,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | 2 | Aspect ratio lock icon beside width / height | ✅ lock button next to W and H (also keeps the ratio when dragging a handle) |
 | 3 | Add video | open |
 | 4 | "UX of this part" (picture only) | needs the owner's screenshot |
-| 5 | Auto layout over two frames ignores the spacing between them | open |
+| 5 | Auto layout over two frames ignores the spacing between them | ✅ the direction is now chosen from how the frames sit (side by side = row), so a tall frame next to a short one keeps its gap |
 | 6 | PDF download | ✅ PDF is a format in the Export section and the Export dialog (print dialog, "Save as PDF") |
 | 7 | Prototype did not seem to work | connector arrows on the canvas in the Prototype tab, a Preview button in the toolbar ✅ |
 | 8 | Collapse all layers in the sidebar | ✅ button beside the layer search (Alt+L) |
