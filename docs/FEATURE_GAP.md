@@ -184,7 +184,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 |---|---|---|
 | Menu bar | Main menu with File / Edit / View / Object / Text / Arrange / Vector / Preferences and shortcut hints | ✅ (hamburger in the left header; every entry is a command of the Actions palette, entries for commands that do not exist yet are hidden) |
 | File | New file, Place image… (Ctrl+Shift+K), Duplicate, Open / Save local copy, Save to version history (Ctrl+Alt+S), Show version history, Export… (Ctrl+Shift+E: selection, or every frame of the page) | ✅ |
-| File | Export frames to PDF, Create branch | ❌ (PDF later; branching needs a backend) |
+| File | Export frames to PDF… ✅ (opens the print dialog with one page per frame, each page the size of its frame; choose "Save as PDF"); Create branch ❌ (needs a backend) | ◐ |
 | Edit | Undo / Redo, Copy as, Paste over selection, Duplicate, Delete, Copy / Paste properties, Pick color, Select all / matching / none / inverse | ✅ |
 | Edit | Find (Ctrl+F: layer names and text, Enter / Shift+Enter step through the matches, Match case), Find and replace (text layers) | ✅ |
 | Edit | Paste to replace under Ctrl+Shift+R (the browser reserves it; it stays Ctrl+Alt+Shift+V), Set default properties, Select all with… | ❌ |
