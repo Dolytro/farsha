@@ -89,6 +89,9 @@ interface EditorState {
   /** Figma's "Minimize UI": the side panels and toolbar are hidden so the canvas fills the window. */
   uiHidden: boolean;
   /** View > Panels: hide the left (layers) or right (properties) panel on its own. */
+  /** The tab of the left panel (Layers, Assets or Comments). */
+  leftTab: "layers" | "assets" | "comments";
+  setLeftTab: (t: "layers" | "assets" | "comments") => void;
   hideLeftPanel: boolean;
   hideRightPanel: boolean;
   setHideLeftPanel: (on: boolean) => void;
@@ -186,6 +189,7 @@ export const useEditor = create<EditorState>((set) => ({
   prefs: readPrefs(),
   prefsOpen: false,
   uiHidden: false,
+  leftTab: "layers",
   hideLeftPanel: false,
   hideRightPanel: false,
   theme: readTheme(),
@@ -251,6 +255,7 @@ export const useEditor = create<EditorState>((set) => ({
   setPrefsOpen: (prefsOpen) => set({ prefsOpen }),
   setUiHidden: (uiHidden) => set({ uiHidden }),
   setHideLeftPanel: (hideLeftPanel) => set({ hideLeftPanel }),
+  setLeftTab: (leftTab) => set({ leftTab }),
   setHideRightPanel: (hideRightPanel) => set({ hideRightPanel }),
   setTheme: (theme) => {
     try {

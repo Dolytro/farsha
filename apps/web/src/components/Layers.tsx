@@ -67,7 +67,8 @@ export function Layers() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collapseTick]);
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<"layers" | "assets" | "comments">("layers");
+  const tab = useEditor((s) => s.leftTab);
+  const setTab = useEditor((s) => s.setLeftTab);
   const [drop, setDrop] = useState<{ id: string; where: DropWhere } | null>(null);
   const dragging = useRef<string[]>([]);
   const rows = layerRows(doc, pageId, collapsed, query);

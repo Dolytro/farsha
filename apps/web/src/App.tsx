@@ -28,6 +28,7 @@ import { CommentPopover } from "./components/CommentPopover";
 import { PreferencesDialog } from "./components/PreferencesDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
+import { buildCommands } from "./commands";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
 import { restoreLocal, startLocalAutosave } from "./local-persist";
@@ -308,6 +309,11 @@ export function App() {
         const frame = startFrame(doc, selection);
         if (frame) s.setPresenting(frame);
         else s.showToast("Add a frame to present");
+      } else if (e.altKey && !mod && !e.shiftKey && ({ Digit1: "panel-left", Digit2: "panel-assets", Digit8: "panel-design", Digit9: "panel-prototype" } as const)[e.code as "Digit1"]) {
+        // View > Panels: Alt+1 layers, Alt+2 libraries, Alt+8 design, Alt+9 prototype
+        e.preventDefault();
+        const id = ({ Digit1: "panel-left", Digit2: "panel-assets", Digit8: "panel-design", Digit9: "panel-prototype" } as const)[e.code as "Digit1"];
+        buildCommands().find((c) => c.id === id)?.run();
       } else if (s.devMode) {
         // Dev Mode is read-only: only Esc (deselect) and the toggle above are active.
         if (key === "escape") s.select([]);
@@ -381,11 +387,14 @@ export function App() {
       } else if (mod && key === "z") {
         e.preventDefault();
         e.shiftKey ? doc.redo() : doc.undo();
-      } else if (e.altKey && !mod && !e.shiftKey && (e.code === "Digit1" || e.code === "Digit2")) {
-        // View > Panels: Alt+1 layers panel, Alt+2 properties panel
+      } else if (mod && !e.shiftKey && !e.altKey && key === "r" && selection.length === 1 && !s.viewer) {
+        // Figma's "Rename" (Ctrl+R)
         e.preventDefault();
-        if (e.code === "Digit1") s.setHideLeftPanel(!s.hideLeftPanel);
-        else s.setHideRightPanel(!s.hideRightPanel);
+        buildCommands().find((c) => c.id === "rename-layer")?.run();
+      } else if (!mod && !e.altKey && !e.shiftKey && (key === "home" || key === "end") && !s.viewer) {
+        // Figma's "Find previous / next frame"
+        e.preventDefault();
+        buildCommands().find((c) => c.id === (key === "home" ? "frame-find-prev" : "frame-find-next"))?.run();
       } else if (mod && e.shiftKey && !e.altKey && key === "y") {
         // Figma's "Outlines" (Ctrl+Y stays Redo here)
         e.preventDefault();

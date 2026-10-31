@@ -4,7 +4,7 @@ import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
 import { extractDefaults, saveDefaults } from "./defaults";
 import { exportFramesToPdf } from "./pdf-export";
 import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, splitVectorAt } from "./vector-actions";
-import { booleanGroupSelection, booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { panToLayer, booleanGroupSelection, booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
@@ -433,8 +433,53 @@ export function buildCommands(): Command[] {
     { id: "outlines", label: "Show / hide outlines", shortcut: `${MOD}${SHIFT}Y`, keywords: "view wireframe outline mode", run: () => state().setOutlines(!state().outlines) },
     { id: "pixel-grid", label: "Show / hide pixel grid", shortcut: `${SHIFT}'`, keywords: "view pixels zoom", run: () => state().setPixelGrid(!state().pixelGrid) },
     ...UI_PRESETS.map((p): Command => ({ id: `preset-${p.id}`, label: `UI preset: ${p.label}`, keywords: "interface look density compact comfortable contrast figma", run: () => state().setPrefs({ preset: p.id }) })),
-    { id: "panel-left", label: "Show / hide layers panel", shortcut: `${ALT}1`, keywords: "view panels sidebar left", run: () => state().setHideLeftPanel(!state().hideLeftPanel) },
-    { id: "panel-right", label: "Show / hide properties panel", shortcut: `${ALT}2`, keywords: "view panels sidebar right design", run: () => state().setHideRightPanel(!state().hideRightPanel) },
+    {
+      id: "panel-left",
+      label: "Open layers panel",
+      shortcut: `${ALT}1`,
+      keywords: "view panels sidebar left",
+      run: () => {
+        const s = state();
+        // Alt+1 shows the Layers tab; pressed again on it, it hides the panel
+        if (s.hideLeftPanel || s.leftTab !== "layers") {
+          s.setHideLeftPanel(false);
+          s.setLeftTab("layers");
+        } else s.setHideLeftPanel(true);
+      },
+    },
+    { id: "panel-assets", label: "Open libraries panel", shortcut: `${ALT}2`, keywords: "view panels assets components", run: () => (state().setHideLeftPanel(false), state().setLeftTab("assets")) },
+    { id: "panel-design", label: "Open design panel", shortcut: `${ALT}8`, keywords: "view panels properties right", run: () => (state().setHideRightPanel(false), state().setPrototypeMode(false), state().setDevMode(false)) },
+    { id: "panel-prototype", label: "Open prototype panel", shortcut: `${ALT}9`, keywords: "view panels interactions right", run: () => (state().setHideRightPanel(false), state().setPrototypeMode(true)) },
+    { id: "panel-right", label: "Show / hide properties panel", keywords: "view panels sidebar right design", run: () => state().setHideRightPanel(!state().hideRightPanel) },
+    { id: "rename-layer", label: "Rename layer", shortcut: `${MOD}R`, needsSelection: true, keywords: "name layers", run: () => (sel().length === 1 ? (state().setHideLeftPanel(false), state().setLeftTab("layers"), state().setRenaming(sel()[0]!)) : state().showToast("Select one layer to rename")) },
+    {
+      id: "frame-find-next",
+      label: "Find next frame",
+      shortcut: "End",
+      keywords: "view frames jump",
+      run: () => {
+        const s = state();
+        const next = adjacentFrame(s.doc, s.pageId, s.selection[0], 1);
+        if (!next) return;
+        s.select([next]);
+        const v = panToLayer(s.doc, next, s.viewport);
+        if (v) s.setViewport(v);
+      },
+    },
+    {
+      id: "frame-find-prev",
+      label: "Find previous frame",
+      shortcut: "Home",
+      keywords: "view frames jump",
+      run: () => {
+        const s = state();
+        const prev = adjacentFrame(s.doc, s.pageId, s.selection[0], -1);
+        if (!prev) return;
+        s.select([prev]);
+        const v = panToLayer(s.doc, prev, s.viewport);
+        if (v) s.setViewport(v);
+      },
+    },
     { id: "hide-ui", label: "Show / hide UI", shortcut: `${MOD}\\`, keywords: "minimize panels fullscreen focus", run: () => state().setUiHidden(!state().uiHidden) },
     { id: "rulers", label: "Show / hide rulers", shortcut: `${SHIFT}R`, keywords: "view guides", run: () => state().setRulers(!state().rulers) },
     { id: "dev-mode", label: "Toggle Dev Mode", shortcut: `${SHIFT}D`, keywords: "inspect code", run: () => state().setDevMode(!state().devMode) },
