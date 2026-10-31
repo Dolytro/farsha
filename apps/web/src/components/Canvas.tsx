@@ -84,6 +84,9 @@ export function Canvas() {
   const outlines = useEditor((s) => s.outlines);
   const prototypeMode = useEditor((s) => s.prototypeMode);
   const spellCheck = useEditor((s) => s.prefs.spellCheck);
+  const hoverHighlight = useEditor((s) => s.prefs.hoverHighlight);
+  const showDimensions = useEditor((s) => s.prefs.showDimensions);
+  const rightPanMoved = useRef(false);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
@@ -137,6 +140,11 @@ export function Canvas() {
 
   const onContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    // a right-button drag that panned the canvas does not open the menu
+    if (rightPanMoved.current) {
+      rightPanMoved.current = false;
+      return;
+    }
     const w = world(e);
     const labelId = (e.target as SVGElement).dataset?.labelId;
     const hit = labelId ? doc.getNode(labelId) : pick(w.x, w.y);
@@ -151,7 +159,8 @@ export function Canvas() {
     (svgRef.current ?? (e.target as Element)).setPointerCapture?.(e.pointerId);
     setEditing(null);
     const w = world(e);
-    if (e.button === 1 || spaceDown || tool === "hand") {
+    if (e.button === 1 || spaceDown || tool === "hand" || (e.button === 2 && useEditor.getState().prefs.rightDragPan)) {
+      rightPanMoved.current = false;
       drag.current = { kind: "pan", sx: e.clientX, sy: e.clientY, vx: viewport.x, vy: viewport.y };
       return;
     }
@@ -271,6 +280,7 @@ export function Canvas() {
       return;
     }
     if (d.kind === "pan") {
+      if (e.buttons === 2 && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 3) rightPanMoved.current = true;
       setViewport({ ...viewport, x: d.vx + e.clientX - d.sx, y: d.vy + e.clientY - d.sy });
       return;
     }
@@ -594,7 +604,7 @@ export function Canvas() {
 
   const boxes = selection.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b);
   const sel: Box | undefined = unionBox(boxes);
-  const hoverBox = hoverId && !selection.includes(hoverId) ? doc.absoluteBox(hoverId) : undefined;
+  const hoverBox = hoverHighlight && hoverId && !selection.includes(hoverId) ? doc.absoluteBox(hoverId) : undefined;
   // Measurements are an inspect feature: public view-only links don't get them.
   const canInspect = !viewer || (viewer === "inspect" && signedIn);
   const measurements = canInspect && altDown && sel && hoverBox ? measure(sel, hoverBox) : [];
@@ -780,12 +790,14 @@ export function Canvas() {
                   />
                 ))}
               </g>
+              {showDimensions && (
               <g pointerEvents="none" transform={`translate(${sel.x + sel.width / 2} ${sel.y + sel.height + 14 / z})`}>
                 <rect x={-34 / z} y={-9 / z} width={68 / z} height={18 / z} rx={3 / z} fill={ACCENT} />
                 <text textAnchor="middle" y={4 / z} fontSize={11 / z} fill="#fff">
                   {Math.round(sel.width)} × {Math.round(sel.height)}
                 </text>
               </g>
+              )}
             </g>
           )}
 
