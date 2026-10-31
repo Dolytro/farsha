@@ -1,6 +1,6 @@
 import polygonClipping from "polygon-clipping";
 import type { DesignDoc } from "@canvylo/design-core";
-import type { DesignNode } from "@canvylo/types";
+import type { DesignNode, Paint } from "@canvylo/types";
 
 export type BooleanOp = "UNION" | "SUBTRACT" | "INTERSECT" | "EXCLUDE";
 
@@ -97,20 +97,23 @@ function pageOutline(doc: DesignDoc, n: DesignNode): Ring | null {
   });
 }
 
-/** Layers that can be outlined inside the given one (groups and frames are searched), bottom to top. */
-function outlinable(doc: DesignDoc, id: string): DesignNode[] {
+/** Outlines of a layer and what is inside it (groups and frames are searched; a boolean group gives its combined outline). */
+function outlinesOf(doc: DesignDoc, id: string): Ring[] {
   const n = doc.getNode(id);
   if (!n) return [];
-  if (n.type === "GROUP" || n.type === "FRAME") return doc.children(id).flatMap((c) => outlinable(doc, c.id));
-  return localOutline(n) ? [n] : [];
+  if (n.type === "GROUP" && n.booleanOp) {
+    const members = n.type === "GROUP" ? doc.children(id).filter((c) => c.visible).map((c) => c.id) : [];
+    const combined = members.length >= 2 ? booleanShapes(doc, members, n.booleanOp) : null;
+    if (combined) return combined.rings;
+  }
+  if (n.type === "GROUP" || n.type === "FRAME") return doc.children(id).flatMap((c) => outlinesOf(doc, c.id));
+  const ring = pageOutline(doc, n);
+  return ring && ring.length > 2 ? [ring] : [];
 }
 
 /** Merge layers into one set of outlines without combining them (Figma's Flatten). Groups and frames contribute their shapes. */
 export function flattenShapes(doc: DesignDoc, ids: string[]): BooleanResult | null {
-  const rings = ids
-    .flatMap((id) => outlinable(doc, id))
-    .map((n) => pageOutline(doc, n))
-    .filter((ring): ring is Ring => !!ring && ring.length > 2);
+  const rings = ids.flatMap((id) => outlinesOf(doc, id));
   if (!rings.length) return null;
   const xs = rings.flatMap((ring) => ring.map((p) => p[0]));
   const ys = rings.flatMap((ring) => ring.map((p) => p[1]));
@@ -195,6 +198,35 @@ export function outlineStrokeShape(doc: DesignDoc, id: string): BooleanResult | 
   const box = { x, y, width: Math.max(1, Math.max(...xs) - x), height: Math.max(1, Math.max(...ys) - y) };
   const d = rings.map((r) => `M${r.map((p) => `${r2(p[0] - x)} ${r2(p[1] - y)}`).join(" L")} Z`).join(" ");
   return { rings, box, d };
+}
+
+/** The visible shapes inside a boolean group, bottom to top. */
+function booleanGroupMembers(doc: DesignDoc, group: DesignNode): string[] {
+  return doc.children(group.id).filter((c) => c.visible).map((c) => c.id);
+}
+
+/**
+ * A live boolean group (Figma's Union / Subtract / Intersect / Exclude selection) draws the combined outline of its children,
+ * which stays in step with them as they move. Returns that outline as a vector layer in the group's own coordinates, or null when the
+ * group is not a boolean group or its children cannot be combined (the children are drawn normally then).
+ */
+export function booleanGroupVector(doc: DesignDoc, group: DesignNode): { x: number; y: number; width: number; height: number; viewBox: string; markup: string; fills: Paint[]; strokes: Paint[]; strokeWidth: number } | null {
+  if (group.type !== "GROUP" || !group.booleanOp) return null;
+  const members = booleanGroupMembers(doc, group);
+  const result = members.length >= 2 ? booleanShapes(doc, members, group.booleanOp) : null;
+  const origin = doc.absoluteBox(group.id);
+  if (!result || !origin) return null;
+  return {
+    x: result.box.x - origin.x,
+    y: result.box.y - origin.y,
+    width: result.box.width,
+    height: result.box.height,
+    viewBox: `0 0 ${r2(result.box.width)} ${r2(result.box.height)}`,
+    markup: `<path d="${result.d}" fill-rule="evenodd" vector-effect="non-scaling-stroke"/>`,
+    fills: group.fills ?? [{ type: "SOLID", color: "#d9d9d9", opacity: 1 }],
+    strokes: group.strokes ?? [],
+    strokeWidth: group.strokeWidth ?? 1,
+  };
 }
 
 /** Combine layers (listed bottom to top) with a boolean operation. Returns null when a layer cannot be outlined or the result is empty. */

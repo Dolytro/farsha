@@ -11,7 +11,7 @@ import { createComponentFromSelection, detachSelection } from "./component-actio
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
 import { joinSelection } from "./vector-actions";
-import { booleanSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
+import { booleanGroupSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
@@ -355,7 +355,7 @@ export function App() {
       } else if (mod && e.altKey && !e.shiftKey && key === "u" && selection.length > 1 && !s.viewer) {
         // Figma's "Union selection"
         e.preventDefault();
-        const out = booleanSelection(doc, selection, "UNION");
+        const out = booleanGroupSelection(doc, selection, "UNION");
         if (out.error) s.showToast(out.error);
         else s.select(out.ids);
       } else if (mod && e.altKey && !e.shiftKey && key === "m" && selection.length && !s.viewer) {

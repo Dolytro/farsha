@@ -350,6 +350,12 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
 
 export interface GroupNode extends BaseNode {
   type: 'GROUP';
+  /** A live boolean group: the group draws the union / difference / intersection / exclusion of its children. */
+  booleanOp?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE';
+  /** Paint of a boolean group's result. */
+  fills?: Paint[];
+  strokes?: Paint[];
+  strokeWidth?: number;
 }
 
 export interface RectangleNode extends BaseNode {
@@ -484,6 +490,7 @@ export interface StylePatch extends AutoLayoutProps {
   devNote?: string | null;
   flowStart?: boolean | null;
   overflowScroll?: 'NONE' | 'VERTICAL' | null;
+  booleanOp?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE' | null;
   opacity?: number;
   visible?: boolean;
   locked?: boolean;

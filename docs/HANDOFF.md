@@ -386,7 +386,7 @@ Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows
   and `backgroundBlurOf`. `DesignDoc` gained `patchNodes`, comments and `pageBackground` / `setPageBackground` (per page,
   stored in the `meta` map).
 - **Still open** (all listed in FEATURE_GAP.md): rich text sizes, colours and fonts per run (bold, italic, underline and strikethrough per run exist: `TextRun`, `lineSegments`), Slots,
-  live boolean groups (the selected point of a path being edited lives in the store as `editingPoint`; Delete
+  (the selected point of a path being edited lives in the store as `editingPoint`; Delete
   and heal and Split vector already use it), Home / End frame stepping, Switch to Draw, Paste to
   replace on Ctrl+Shift+R (the browser reserves it), SVG / PNG export of background blur. Anything that needs a server
   (live cursors, mentions, branching, team libraries) is documented as such.

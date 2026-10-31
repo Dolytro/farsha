@@ -1,6 +1,6 @@
 import type { DesignDoc } from "@canvylo/design-core";
 import { booleanShapes, flattenShapes, offsetShape, outlineStrokeShape, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@canvylo/canvas-engine";
-import type { Box } from "@canvylo/types";
+import type { Box, DesignNode } from "@canvylo/types";
 import { isSection, topLevelFrames } from "./section-actions";
 
 /** Group selected siblings under a new GROUP (Ctrl+G). Returns the new selection. */
@@ -254,6 +254,41 @@ export function outlineStrokeSelection(doc: DesignDoc, ids: string[]): { ids: st
   }
   doc.stopCapturing();
   return made.length ? { ids: made } : { ids, error: "Select a rectangle, ellipse, polygon, star or pen path that has a stroke" };
+}
+
+/**
+ * Figma's Union / Subtract / Intersect / Exclude selection: the shapes go into a group that draws their combined outline and keeps it
+ * in step as the shapes change. Fill and stroke come from the bottom shape. Returns the new selection (the group).
+ */
+export function booleanGroupSelection(doc: DesignDoc, ids: string[], op: BooleanOp): { ids: string[]; error?: string } {
+  const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n?.parentId);
+  const parentId = nodes[0]?.parentId;
+  if (nodes.length < 2 || !parentId || nodes.some((n) => n.parentId !== parentId)) return { ids, error: "Select two or more shapes in the same frame" };
+  const order = doc.children(parentId).map((n) => n.id);
+  const sorted = [...nodes].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  if (!booleanShapes(doc, sorted.map((n) => n.id), op)) return { ids, error: op === "INTERSECT" ? "The shapes do not overlap, or one is not a shape" : "Boolean groups work on rectangles, ellipses, polygons, stars and pen paths" };
+  const bottom = sorted[0] as unknown as { fills?: unknown; strokes?: unknown; strokeWidth?: number };
+  const [group] = groupSelection(doc, sorted.map((n) => n.id));
+  if (!group || doc.getNode(group)?.type !== "GROUP") return { ids, error: "Could not group the shapes" };
+  doc.setStyle(group, {
+    booleanOp: op,
+    fills: (Array.isArray(bottom.fills) && bottom.fills.length ? bottom.fills : [{ type: "SOLID", color: "#d9d9d9", opacity: 1 }]) as never,
+    strokes: (Array.isArray(bottom.strokes) ? bottom.strokes : []) as never,
+    strokeWidth: bottom.strokeWidth ?? 1,
+    name: BOOLEAN_NAMES[op],
+  } as never);
+  doc.stopCapturing();
+  return { ids: [group] };
+}
+
+/** The frame a new layer drawn on top of `under` belongs to: `under` itself when it is a frame, else its closest frame ancestor (sections do not count). */
+export function nearestFrame(doc: DesignDoc, under: DesignNode | undefined): DesignNode | undefined {
+  let cur: DesignNode | undefined = under;
+  while (cur && cur.type !== "PAGE" && cur.type !== "DOCUMENT") {
+    if (cur.type === "FRAME" && !cur.isSection) return cur;
+    cur = cur.parentId ? doc.getNode(cur.parentId) : undefined;
+  }
+  return undefined;
 }
 
 export function adjacentFrame(doc: DesignDoc, pageId: string, current: string | undefined, direction: 1 | -1): string | undefined {
