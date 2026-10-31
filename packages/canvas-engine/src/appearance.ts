@@ -68,10 +68,32 @@ export function cornerRadiiOf(n: DesignNode): [number, number, number, number] |
   return r.some((v) => v > 0) ? r : null;
 }
 
+/** Rounded rectangle whose corner curves start earlier along the edges and hug the corner more, like Figma's corner smoothing. */
+export function smoothedRectPath(w: number, h: number, r: [number, number, number, number], smooth: number): string {
+  // Each curve starts p = r(1+smooth) from the corner (capped at half the side); its control points sit closer to the corner than a circle's.
+  const k = 0.5523 + 0.2 * smooth;
+  const ext = (v: number) => Math.min(Math.min(w, h) / 2, v * (1 + smooth));
+  const [tl, tr, br, bl] = r.map((v) => (v > 0 ? ext(v) : 0)) as [number, number, number, number];
+  return [
+    `M${num(tl)} 0`,
+    `H${num(w - tr)}`,
+    tr > 0 ? `C${num(w - tr * (1 - k))} 0 ${num(w)} ${num(tr * (1 - k))} ${num(w)} ${num(tr)}` : "",
+    `V${num(h - br)}`,
+    br > 0 ? `C${num(w)} ${num(h - br * (1 - k))} ${num(w - br * (1 - k))} ${num(h)} ${num(w - br)} ${num(h)}` : "",
+    `H${num(bl)}`,
+    bl > 0 ? `C${num(bl * (1 - k))} ${num(h)} 0 ${num(h - bl * (1 - k))} 0 ${num(h - bl)}` : "",
+    `V${num(tl)}`,
+    tl > 0 ? `C0 ${num(tl * (1 - k))} ${num(tl * (1 - k))} 0 ${num(tl)} 0` : "",
+    "Z",
+  ].join("");
+}
+
 /** The outline of a rectangle-like or elliptical layer as one SVG shape element carrying `extra` attributes. */
 export function shapeGeometry(n: DesignNode, extra: string): string {
   if (n.type === "ELLIPSE") return `<ellipse cx="${num(n.width / 2)}" cy="${num(n.height / 2)}" rx="${num(n.width / 2)}" ry="${num(n.height / 2)}"${extra}/>`;
   const r = cornerRadiiOf(n);
+  const smooth = "cornerSmoothing" in n && typeof n.cornerSmoothing === "number" ? Math.min(1, Math.max(0, n.cornerSmoothing)) : 0;
+  if (r && smooth > 0) return `<path d="${smoothedRectPath(n.width, n.height, r, smooth)}"${extra}/>`;
   if (r && !r.every((v) => v === r[0])) {
     const [tl, tr, br, bl] = r.map(num) as [string, string, string, string];
     const w = n.width;

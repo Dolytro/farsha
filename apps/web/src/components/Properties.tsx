@@ -225,6 +225,21 @@ export function Properties() {
             </button>
           )}
         </div>
+        {(node.type === "RECTANGLE" || node.type === "FRAME") && (
+          <label className="field" title="Corner smoothing (0 to 100%)">
+            <span className="field__label">Smoothing</span>
+            <input
+              className="field__input"
+              type="number"
+              min={0}
+              max={100}
+              step={5}
+              aria-label="Corner smoothing"
+              value={Math.round((node.cornerSmoothing ?? 0) * 100)}
+              onChange={(e) => doc.setStyle(node.id, { cornerSmoothing: Math.min(1, Math.max(0, Number(e.target.value) / 100)) })}
+            />
+          </label>
+        )}
         {(node.type === "RECTANGLE" || node.type === "FRAME") && node.cornerRadii && (
           <div className="props__grid props__grid--gap">
             {(["↖", "↗", "↘", "↙"] as const).map((icon, i) => (
