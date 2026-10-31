@@ -990,7 +990,7 @@ textarea:focus-visible {
 
 .field--row {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-columns: 84px minmax(0, 1fr);
   align-items: center;
 
   .field__label--text {
@@ -1026,4 +1026,18 @@ textarea:focus-visible {
   padding-right: 8px;
   color: var(--c-muted);
   font-size: 11px;
+}
+
+// Appearance row: opacity, corner radius and the independent-corners button share one line.
+.props__grid--corner-toggle {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
+  align-items: center;
+}
+
+.props__corner-toggle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: var(--field-h);
+  padding: 0;
 }

@@ -209,25 +209,31 @@ export function Properties() {
             </option>
           ))}
         </Select>
-        <div className="props__grid">
-          <label className="field">
+        <div className={`props__grid props__grid--corner${"cornerRadius" in node && (node.type === "RECTANGLE" || node.type === "FRAME") ? " props__grid--corner-toggle" : ""}`}>
+          <label className="field" title="Layer opacity">
             <span className="field__label">%</span>
             <input
               className="field__input"
               type="number"
               min={0}
               max={100}
+              aria-label="Opacity"
               value={Math.round(node.opacity * 100)}
               onChange={(e) => doc.setStyle(node.id, { opacity: Math.min(1, Math.max(0, Number(e.target.value) / 100)) })}
             />
           </label>
           {"cornerRadius" in node && (
-            <label className="field">
-              <span className="field__label">R</span>
+            <label className="field" title="Corner radius">
+              <span className="field__label">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+                  <path d="M2 10V6a4 4 0 014-4h4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+              </span>
               <input
                 className="field__input"
                 type="number"
                 min={0}
+                aria-label="Corner radius"
                 value={radii ? "" : node.cornerRadius}
                 placeholder={radii ? "Mixed" : undefined}
                 onChange={(e) => doc.setStyle(node.id, { cornerRadius: Math.max(0, Number(e.target.value)), cornerRadii: null })}
@@ -238,19 +244,54 @@ export function Properties() {
             <button
               className={`seg__btn props__corner-toggle${node.cornerRadii ? " seg__btn--active" : ""}`}
               title="Independent corners"
+              aria-label="Independent corners"
+              aria-pressed={!!node.cornerRadii}
               onClick={() => {
                 const r = node.cornerRadius;
                 doc.setStyle(node.id, node.cornerRadii ? { cornerRadii: null } : { cornerRadii: [r, r, r, r] });
               }}
             >
-              ⌜⌝
+              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+                <path d="M2 5V3.5A1.5 1.5 0 013.5 2H5M9 2h1.5A1.5 1.5 0 0112 3.5V5M12 9v1.5a1.5 1.5 0 01-1.5 1.5H9M5 12H3.5A1.5 1.5 0 012 10.5V9" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              </svg>
             </button>
           )}
         </div>
-        {(node.type === "RECTANGLE" || node.type === "FRAME") && (
+        {(node.type === "RECTANGLE" || node.type === "FRAME") && node.cornerRadii && (
           <div className="props__grid props__grid--gap">
-          <label className="field" title="Corner smoothing (0 to 100%)">
-            <span className="field__label">Sm</span>
+            {(
+              [
+                ["Top left", "M2 10V6a4 4 0 014-4h4"],
+                ["Top right", "M2 2h4a4 4 0 014 4v4"],
+                ["Bottom right", "M10 2v4a4 4 0 01-4 4H2"],
+                ["Bottom left", "M10 10H6a4 4 0 01-4-4V2"],
+              ] as const
+            ).map(([title, path], i) => (
+              <label className="field" key={title} title={`${title} radius`}>
+                <span className="field__label">
+                  <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+                    <path d={path} fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <input
+                  className="field__input"
+                  type="number"
+                  min={0}
+                  aria-label={`${title} radius`}
+                  value={node.cornerRadii![i]}
+                  onChange={(e) => {
+                    const next = [...node.cornerRadii!] as [number, number, number, number];
+                    next[i] = Math.max(0, Number(e.target.value));
+                    doc.setStyle(node.id, { cornerRadii: next });
+                  }}
+                />
+              </label>
+            ))}
+          </div>
+        )}
+        {(node.type === "RECTANGLE" || node.type === "FRAME") && (
+          <label className="field field--row" title="How far the corner curve eases into the edge (0 to 100%)">
+            <span className="field__label field__label--text">Smoothing</span>
             <input
               className="field__input"
               type="number"
@@ -262,27 +303,6 @@ export function Properties() {
               onChange={(e) => doc.setStyle(node.id, { cornerSmoothing: Math.min(1, Math.max(0, Number(e.target.value) / 100)) })}
             />
           </label>
-          </div>
-        )}
-        {(node.type === "RECTANGLE" || node.type === "FRAME") && node.cornerRadii && (
-          <div className="props__grid props__grid--gap">
-            {(["↖", "↗", "↘", "↙"] as const).map((icon, i) => (
-              <label className="field" key={icon} title={["Top left", "Top right", "Bottom right", "Bottom left"][i]}>
-                <span className="field__label">{icon}</span>
-                <input
-                  className="field__input"
-                  type="number"
-                  min={0}
-                  value={node.cornerRadii![i]}
-                  onChange={(e) => {
-                    const next = [...node.cornerRadii!] as [number, number, number, number];
-                    next[i] = Math.max(0, Number(e.target.value));
-                    doc.setStyle(node.id, { cornerRadii: next });
-                  }}
-                />
-              </label>
-            ))}
-          </div>
         )}
       </section>
 
