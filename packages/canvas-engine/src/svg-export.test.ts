@@ -324,3 +324,17 @@ describe("slices", () => {
     expect(exportSvg(doc, [frame])!.svg.match(/<g /g)!.length).toBeLessThan(exportSvg(doc, [frame, inside])!.svg.length);
   });
 });
+
+describe("individual stroke sides", () => {
+  const rect = (extra: object) => ({ id: "r", type: "RECTANGLE", x: 0, y: 0, width: 100, height: 50, cornerRadius: 0, fills: [], strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }], strokeWidth: 2, ...extra }) as never;
+  it("draws one band per side with its own weight, clipped to the shape", () => {
+    const out = shapeMarkup(rect({ strokeSides: [4, 0, 2, 0] }));
+    expect(out).toContain('<rect x="0" y="0" width="100" height="4" fill="#00ff00"');
+    expect(out).toContain('<rect x="0" y="48" width="100" height="2" fill="#00ff00"');
+    expect(out).toContain("clip-path=");
+    expect(out.match(/<rect x="[^"]*" y="[^"]*" width="[^"]*" height="[^"]*" fill="#00ff00"/g)).toHaveLength(2);
+  });
+  it("falls back to the normal stroke without sides", () => {
+    expect(shapeMarkup(rect({}))).toContain('stroke-width="2"');
+  });
+});

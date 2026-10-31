@@ -77,6 +77,42 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
           </label>
         </div>
       )}
+      {strokes.length > 0 && (node.type === "RECTANGLE" || node.type === "FRAME") && (
+        <>
+          <div className="props__grid props__grid--gap">
+            <button
+              className={`seg__btn${node.strokeSides ? " seg__btn--active" : ""}`}
+              title="Individual stroke sides"
+              aria-label="Individual stroke sides"
+              onClick={() => doc.setStyle(node.id, { strokeSides: node.strokeSides ? null : (Array(4).fill(node.strokeWidth ?? 1) as [number, number, number, number]) })}
+            >
+              Sides
+            </button>
+          </div>
+          {node.strokeSides && (
+            <div className="props__grid props__grid--gap">
+              {(["T", "R", "B", "L"] as const).map((label, i) => (
+                <label className="field" key={label} title={["Top", "Right", "Bottom", "Left"][i]! + " stroke weight"}>
+                  <span className="field__label">{label}</span>
+                  <input
+                    className="field__input"
+                    type="number"
+                    min={0}
+                    step={0.5}
+                    aria-label={["Top", "Right", "Bottom", "Left"][i]! + " stroke weight"}
+                    value={node.strokeSides![i]}
+                    onChange={(e) => {
+                      const next = [...node.strokeSides!] as [number, number, number, number];
+                      next[i] = Math.max(0, Number(e.target.value));
+                      doc.setStyle(node.id, { strokeSides: next });
+                    }}
+                  />
+                </label>
+              ))}
+            </div>
+          )}
+        </>
+      )}
       {strokes.length > 0 && (
         <div className="props__grid props__grid--gap">
           <label className="field" title="Dash length in pixels (0 = solid line)">

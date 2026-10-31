@@ -131,6 +131,25 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
   });
   if (!strokes.length || !("strokeWidth" in n)) return out;
 
+  const sides = "strokeSides" in n && Array.isArray(n.strokeSides) && n.strokeSides.length === 4 ? n.strokeSides.map((v) => Math.max(0, Number.isFinite(v) ? v : 0)) : null;
+  if (sides) {
+    // Figma's individual stroke weights: each side is an inside band of its own width, clipped to the rounded shape.
+    const [t, r, b, l] = sides as [number, number, number, number];
+    const sid = safeId(n.id);
+    out += `<clipPath id="ss-${sid}">${geometry(n, "")}</clipPath>`;
+    for (const stroke of strokes) {
+      const fill = ` fill="${hex(paintColor(stroke))}" fill-opacity="${unit(stroke.opacity)}"`;
+      const bands = [
+        t > 0 ? `<rect x="0" y="0" width="${num(n.width)}" height="${num(t)}"${fill}/>` : "",
+        r > 0 ? `<rect x="${num(n.width - r)}" y="0" width="${num(r)}" height="${num(n.height)}"${fill}/>` : "",
+        b > 0 ? `<rect x="0" y="${num(n.height - b)}" width="${num(n.width)}" height="${num(b)}"${fill}/>` : "",
+        l > 0 ? `<rect x="0" y="0" width="${num(l)}" height="${num(n.height)}"${fill}/>` : "",
+      ].join("");
+      out += `<g clip-path="url(#ss-${sid})">${bands}</g>`;
+    }
+    return out;
+  }
+
   const w = Math.max(0, (n.strokeWidth ?? 1));
   const id = safeId(n.id);
   const align = "strokeAlign" in n && n.strokeAlign ? n.strokeAlign : "CENTER";

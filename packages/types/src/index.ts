@@ -290,6 +290,8 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   cornerRadii?: [number, number, number, number];
   /** 0 to 1: how far the corner curve eases into the edge (Figma's corner smoothing; 0.6 is the iOS look). */
   cornerSmoothing?: number;
+  /** Individual stroke weights [top, right, bottom, left] (Figma's per-side strokes); inside the shape. */
+  strokeSides?: [number, number, number, number];
   clipsContent: boolean;
   layoutGrids?: LayoutGrid[];
   /** A section: a named area of the canvas that holds frames and layers but is not itself a screen (Figma's Section tool). */
@@ -321,6 +323,7 @@ export interface RectangleNode extends BaseNode {
   cornerRadius: number;
   cornerRadii?: [number, number, number, number];
   cornerSmoothing?: number;
+  strokeSides?: [number, number, number, number];
   /** A slice (Figma's Slice tool): an invisible export region that captures whatever is under it on the page. */
   isSlice?: boolean;
 }
@@ -414,6 +417,7 @@ export interface StylePatch extends AutoLayoutProps {
   cornerRadius?: number;
   cornerRadii?: [number, number, number, number] | null;
   cornerSmoothing?: number;
+  strokeSides?: [number, number, number, number] | null;
   opacity?: number;
   visible?: boolean;
   locked?: boolean;
