@@ -5,6 +5,7 @@ import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
 import { textPathData } from "./text-path";
+import { booleanGroupVector } from "./boolean";
 import { approxMeasure, layoutText, lineSegments, textPlacement, textFontStyle, verticalTextOffset, type Measure } from "./text";
 
 export interface SvgExport {
@@ -113,6 +114,12 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
         return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(Math.max(n.height, 0.001))}" viewBox="${esc(n.viewBox)}" preserveAspectRatio="none" overflow="visible"><defs>${vectorMarkerDefs(n)}</defs><g ${vectorPaintAttrs(n)}>${n.markup}</g></svg></g>`;
       }
       return `<g transform="${transform}"${opacity}><svg width="${num(n.width)}" height="${num(n.height)}" viewBox="${esc(n.viewBox)}" overflow="visible">${n.markup}</svg></g>`;
+    case "GROUP": {
+      const bv = booleanGroupVector(doc, n);
+      if (!bv) return `<g transform="${transform}"${opacity}>${kids}</g>`;
+      const pseudo = { ...bv, id: n.id, type: "VECTOR" } as unknown as DesignNode;
+      return `<g transform="${transform}"${opacity}><g transform="translate(${num(bv.x)} ${num(bv.y)})"><svg width="${num(bv.width)}" height="${num(Math.max(bv.height, 0.001))}" viewBox="${esc(bv.viewBox)}" preserveAspectRatio="none" overflow="visible"><defs>${vectorMarkerDefs(pseudo)}</defs><g ${vectorPaintAttrs(pseudo)}>${bv.markup}</g></svg></g></g>`;
+    }
     case "RECTANGLE":
       if (n.isSlice) return "";
       return `<g transform="${transform}"${opacity}>${shapeMarkup(n, imageHref(doc))}${kids}</g>`;

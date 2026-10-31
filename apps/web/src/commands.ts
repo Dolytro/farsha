@@ -4,7 +4,7 @@ import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
 import { extractDefaults, saveDefaults } from "./defaults";
 import { exportFramesToPdf } from "./pdf-export";
 import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, splitVectorAt } from "./vector-actions";
-import { booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { booleanGroupSelection, booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
@@ -126,10 +126,9 @@ export function buildCommands(): Command[] {
     ).map(
       ([op, label, shortcut]): Command => ({
         id: `boolean-${op}`,
-        label,
-        shortcut: shortcut || undefined,
+        label: `${label} and flatten`,
         needsSelection: true,
-        keywords: "boolean combine merge shapes",
+        keywords: "boolean combine merge shapes flatten",
         run: () => {
           const out = booleanSelection(doc(), sel(), op);
           if (out.error) state().showToast(out.error);
@@ -161,6 +160,27 @@ export function buildCommands(): Command[] {
         else state().select(out.ids);
       },
     },
+    ...(
+      [
+        ["UNION", "Union selection", `${MOD}${ALT}U`],
+        ["SUBTRACT", "Subtract selection", ""],
+        ["INTERSECT", "Intersect selection", ""],
+        ["EXCLUDE", "Exclude selection", ""],
+      ] as const
+    ).map(
+      ([op, label, shortcut]): Command => ({
+        id: `boolean-group-${op}`,
+        label,
+        shortcut: shortcut || undefined,
+        needsSelection: true,
+        keywords: "boolean combine merge shapes live group",
+        run: () => {
+          const out = booleanGroupSelection(doc(), sel(), op);
+          if (out.error) state().showToast(out.error);
+          else state().select(out.ids);
+        },
+      }),
+    ),
     { id: "text-bold", label: "Bold", shortcut: `${MOD}B`, needsSelection: true, keywords: "text weight", run: () => void toggleTextStyle(doc(), sel(), "bold", fitText) },
     { id: "text-italic", label: "Italic", shortcut: `${MOD}I`, needsSelection: true, keywords: "text style", run: () => void toggleTextStyle(doc(), sel(), "italic", fitText) },
     { id: "text-underline", label: "Underline", shortcut: `${MOD}U`, needsSelection: true, keywords: "text decoration", run: () => void toggleTextStyle(doc(), sel(), "underline", fitText) },

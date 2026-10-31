@@ -124,7 +124,7 @@ export function buildMainMenu(): MenuNode[] {
         item("outline-stroke"),
         sub(
           "Boolean groups",
-          list(item("boolean-UNION"), item("boolean-SUBTRACT"), item("boolean-INTERSECT"), item("boolean-EXCLUDE")),
+          list(item("boolean-group-UNION"), item("boolean-group-SUBTRACT"), item("boolean-group-INTERSECT"), item("boolean-group-EXCLUDE"), item("boolean-UNION", undefined, true), item("boolean-SUBTRACT"), item("boolean-INTERSECT"), item("boolean-EXCLUDE")),
           true,
         ),
         item("hide", "Show / Hide selection", true),

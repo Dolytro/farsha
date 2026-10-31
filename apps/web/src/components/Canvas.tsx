@@ -10,11 +10,12 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@canvylo/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@canvylo/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, textPathData, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@canvylo/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeImageFile } from "../place-image";
 import { useEditor, type Tool } from "../store";
 import { canvasMeasure, fitText } from "../text-layout";
+import { nearestFrame } from "../actions";
 import { loadDefaults, withDefaults } from "../defaults";
 
 
@@ -233,7 +234,7 @@ export function Canvas() {
     // Draw a new shape, positioned relative to the frame under the cursor (if any).
     const under = hitTest(doc, pageId, w.x, w.y);
     // sections always sit on the page itself
-    const parentFrame = tool !== "section" && under?.type === "FRAME" ? under : undefined;
+    const parentFrame = tool !== "section" ? nearestFrame(doc, under) : undefined;
     const pb = parentFrame ? (doc.absoluteBox(parentFrame.id) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
     doc.stopCapturing();
     const id = doc.createNode(type, {
@@ -529,6 +530,21 @@ export function Canvas() {
           )}
         </g>
       );
+    }
+    if (n.type === "GROUP") {
+      // a live boolean group draws the combined outline of its children instead of the children
+      const bv = booleanGroupVector(doc, n);
+      if (bv) {
+        const pseudo = { ...bv, id: n.id, type: "VECTOR" } as unknown as DesignNode;
+        return (
+          <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
+            {fxDefs(n)}
+            <g transform={`translate(${bv.x} ${bv.y})`}>
+              <svg width={bv.width} height={Math.max(bv.height, 0.001)} viewBox={bv.viewBox} preserveAspectRatio="none" overflow="visible" dangerouslySetInnerHTML={{ __html: `<defs>${vectorMarkerDefs(pseudo)}</defs><g ${vectorPaintAttrs(pseudo)}>${bv.markup}</g>` }} />
+            </g>
+          </g>
+        );
+      }
     }
     const isFrame = n.type === "FRAME";
     return (
