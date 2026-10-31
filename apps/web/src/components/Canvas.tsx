@@ -77,6 +77,7 @@ export function Canvas() {
   const signedIn = useEditor((s) => s.drive.user !== null);
   const editingPath = useEditor((s) => s.editingPath);
   const pixelGrid = useEditor((s) => s.pixelGrid);
+  const outlines = useEditor((s) => s.outlines);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
@@ -566,7 +567,7 @@ export function Canvas() {
         onDragOver={onDragOver}
         onDrop={onDrop}
       >
-        <g transform={`translate(${viewport.x} ${viewport.y}) scale(${z})`}>
+        <g className={outlines ? "canvas__outlines" : undefined} transform={`translate(${viewport.x} ${viewport.y}) scale(${z})`}>
           {renderChildren(doc.children(pageId))}
           {showPixelGrid(pixelGrid, z) && (() => {
             const r = svgRef.current?.getBoundingClientRect();

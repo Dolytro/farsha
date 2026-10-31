@@ -797,3 +797,21 @@ textarea:focus-visible {
     color: var(--c-muted);
   }
 }
+
+// View > Outlines: every layer as a thin wireframe, like Figma's outline mode.
+.canvas__outlines :is(rect, path, ellipse, polygon, circle, line, polyline, text, image):not(.canvas__handle, .canvas__frame-label) {
+  fill: none !important;
+  stroke: #4b5563 !important;
+  stroke-width: 1px !important;
+  stroke-opacity: 1 !important;
+  stroke-dasharray: none !important;
+  vector-effect: non-scaling-stroke;
+}
+
+.canvas__outlines image {
+  visibility: hidden;
+}
+
+.canvas__outlines foreignObject {
+  display: none;
+}

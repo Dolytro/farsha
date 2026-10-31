@@ -189,7 +189,7 @@ Canvylo had **no menu bar at all**; everything was a shortcut, a right-click or 
 | Edit | Find (Ctrl+F: layer names and text, Enter / Shift+Enter step through the matches, Match case), Find and replace (text layers) | ✅ |
 | Edit | Paste to replace under Ctrl+Shift+R (the browser reserves it; it stays Ctrl+Alt+Shift+V), Set default properties, Select all with… | ❌ |
 | View | Zoom in / out / 100% / fit / selection, previous / next page, zoom to previous / next frame | ✅ |
-| View | Outlines, Panels (show / hide each panel), Find previous / next frame (Home / End), Switch to Draw | ❌ |
+| View | Outlines (Ctrl+Shift+Y; Ctrl+Y stays Redo here) ✅; Panels (show / hide each panel), Home / End frame stepping, Switch to Draw ❌ | ◐ |
 | Object | Frame selection, Group, Ungroup, Use as mask, Add auto layout, Create component, Reset / Detach instance, Main component, order, Flip, Show / Hide, Lock / Unlock | ✅ |
 | Object | Ungroup with Ctrl+Backspace, Rotate 180° / 90° left / 90° right, Hide other layers, Collapse layers (Alt+L), Remove fill (Alt+/), Remove stroke (Shift+/), Swap fill and stroke (Shift+X), Remove interactions | ✅ (Delete contents ❌) |
 | Object | Wrap in new section (Ctrl+S), Convert to section / frame, Section tool (Shift+S): sections are bold-labelled folders on the canvas; frames inside them still count as screens | ✅ |

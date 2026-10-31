@@ -379,6 +379,10 @@ export function App() {
       } else if (mod && key === "z") {
         e.preventDefault();
         e.shiftKey ? doc.redo() : doc.undo();
+      } else if (mod && e.shiftKey && !e.altKey && key === "y") {
+        // Figma's "Outlines" (Ctrl+Y stays Redo here)
+        e.preventDefault();
+        s.setOutlines(!s.outlines);
       } else if (mod && key === "y") {
         e.preventDefault();
         doc.redo();
