@@ -6,7 +6,7 @@ how the code is organised, how to run and test it, how it is deployed, what was 
 done, and what to build next.
 
 Last updated: 2026-10-29 (end of the long autonomous session; see section 11 for exactly where it stopped). Repo: https://github.com/Dolytro/farsha (branch `main`).
-Live site: https://farsha.vercel.app
+Live site: https://farsha-design.vercel.app
 
 ---
 
@@ -71,7 +71,7 @@ Out of scope for now: plugins, FigJam/Slides, AI features, enterprise features, 
 |---|---|
 | GitHub | `Dolytro/farsha`, branch `main`. The `gh` CLI was logged in on the old PC. |
 | Vercel | Project `farsha` in the project owner's team (Hobby). **Root Directory = `apps/web`**, "include source files outside root" on, framework Vite. Auto-deploys on every push to `main`. `apps/web/vercel.json` rewrites all paths to `index.html` (needed for `/v/<fileId>` links). |
-| Google Cloud | Project name Farsha (the project id is set when the new project is created; write it here), owned by the project owner's Google account. Drive API enabled. Google Auth Platform: External app "Farsha", **In production**, scope `drive.file` (non-sensitive, no verification needed), home page / privacy / terms links point to the live site. OAuth client "Web client 1" (authorised JS origins: `http://localhost:5173`, `http://localhost:5174`, `https://farsha.vercel.app`). API key "Farsha Drive key": restricted to Drive API and to those three origins as HTTP referrers. |
+| Google Cloud | Project name Farsha (the project id is set when the new project is created; write it here), owned by the project owner's Google account. Drive API enabled. Google Auth Platform: External app "Farsha", **In production**, scope `drive.file` (non-sensitive, no verification needed), home page / privacy / terms links point to the live site. OAuth client "Web client 1" (authorised JS origins: `http://localhost:5173`, `http://localhost:5174`, `https://farsha-design.vercel.app`). API key "Farsha Drive key": restricted to Drive API and to those three origins as HTTP referrers. |
 | Env vars | `VITE_GOOGLE_CLIENT_ID` and `VITE_GOOGLE_API_KEY`. Set in Vercel (Production) and in `apps/web/.env.local` locally. Both end up in the browser bundle, so neither is a secret, but the key stays out of git. Find the values in Google Cloud Console → APIs & Services → Credentials. |
 | Public pages | `/privacy.html`, `/terms.html` (`apps/web/public`), required by the Google consent screen. |
 
@@ -448,7 +448,7 @@ Known gaps and risks to keep in mind:
 
 ```
 Read CLAUDE.md and docs/HANDOFF.md, then docs/FEATURE_GAP.md. Run git status and git log -8. 
-Check the live site (https://farsha.vercel.app) deployment is Ready. In the dev server (?nologin) check layer
+Check the live site (https://farsha-design.vercel.app) deployment is Ready. In the dev server (?nologin) check layer
 drag-reorder in the layers panel, then start the next feature from section 11 of HANDOFF.md (Components).
 Rules: one feature at a time (build, test, fix, push), copy Figma exactly, commits without any Claude
 attribution, never put secrets in git or web forms. Reply in Banglish.
@@ -456,4 +456,4 @@ attribution, never put secrets in git or web forms. Reply in Banglish.
 
 ## Rename to Farsha
 
-The product is called Farsha (packages `@farsha/*`, file extension `.farsha`, GitHub repo `Dolytro/farsha`). There is no migration of data saved under any earlier name (nobody used it). The Google Cloud project is to be replaced by a new one, so the IDs in `apps/web/.env.local` and Vercel must be replaced too. The Vercel project and its address are farsha.vercel.app.
+The product is called Farsha (packages `@farsha/*`, file extension `.farsha`, GitHub repo `Dolytro/farsha`). There is no migration of data saved under any earlier name (nobody used it). The Google Cloud project is to be replaced by a new one, so the IDs in `apps/web/.env.local` and Vercel must be replaced too. The Vercel project and its address are farsha-design.vercel.app.
