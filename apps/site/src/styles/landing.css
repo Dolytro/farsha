@@ -24,19 +24,19 @@ a:focus-visible,button:focus-visible{outline:2px solid #2de2c8;outline-offset:2p
 .mk:has(.z0:hover){--rx:-3.5deg;--ry:4.5deg}.mk:has(.z1:hover){--rx:-3.5deg}.mk:has(.z2:hover){--rx:-3.5deg;--ry:-4.5deg}
 .mk:has(.z3:hover){--ry:4.5deg}.mk:has(.z5:hover){--ry:-4.5deg}
 .mk:has(.z6:hover){--rx:3.5deg;--ry:4.5deg}.mk:has(.z7:hover){--rx:3.5deg}.mk:has(.z8:hover){--rx:3.5deg;--ry:-4.5deg}
-.shp{position:absolute;left:calc(var(--ml) + var(--mw) / 2);top:calc(16px + var(--mh) / 2);width:calc(var(--mw) * 1.5);aspect-ratio:1;translate:-50% -50%;z-index:1;pointer-events:none;filter:drop-shadow(0 36px 60px #000b)}
+.shp{position:absolute;left:calc(var(--ml) + var(--mw) / 2);top:calc(16px + var(--mh) / 2);width:calc(var(--mw) * 1.5);aspect-ratio:1;translate:-50% -50%;z-index:1;pointer-events:none;will-change:translate,scale,rotate,opacity}
 .glows{position:absolute;inset:0;background:radial-gradient(40% 50% at 78% 60%,#7c3aed33,transparent 70%)}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes slow{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
 @keyframes hue{to{filter:hue-rotate(-32deg)}}
 @keyframes mkgrow{0%{translate:0 0;scale:1;animation-timing-function:cubic-bezier(.45,0,.2,1)}44.4%{translate:calc(50vw - var(--ml) - var(--mw) / 2) 0px;scale:var(--s);animation-timing-function:cubic-bezier(.4,0,.6,1)}100%{translate:calc(50vw - var(--ml) - var(--mw) / 2) -7vh;scale:calc(var(--s) * .93)}}
-@keyframes ex{to{translate:0 -42px;filter:blur(9px)}}
+@keyframes ex{to{translate:0 -42px}}
 @keyframes fadeL{from{opacity:1}to{opacity:0;pointer-events:none}}
 @keyframes shpspin{to{rotate:140deg}}
 @keyframes pinfade{from{opacity:0}to{opacity:1}}
-@keyframes rv{from{opacity:0;translate:0 70px;filter:blur(8px)}to{opacity:1;translate:0 0;filter:none}}
+@keyframes rv{from{opacity:0;translate:0 70px}to{opacity:1;translate:0 0}}
 @keyframes tilt{to{transform:perspective(1400px) rotateY(0deg) rotateZ(0deg)}}
-@keyframes shpout{to{left:50%;top:50%;transform:rotate(40deg) scale(4);opacity:0}}
+@keyframes shpout{to{translate:calc(-50% + 50vw - var(--ml) - var(--mw) / 2) -50%;scale:4;transform:rotate(40deg);opacity:0}}
 @media (max-height:1600px){
 @supports (animation-timeline:scroll()){
 .nvb{position:sticky!important;top:0;z-index:50!important;height:var(--nh);box-sizing:border-box;padding-top:0!important;padding-bottom:0!important}
@@ -68,7 +68,7 @@ a:focus-visible,button:focus-visible{outline:2px solid #2de2c8;outline-offset:2p
 
 .tn{position:relative;isolation:isolate;padding-top:72px!important}
 .tn::before{content:"";position:absolute;z-index:-2;top:0;bottom:0;left:calc(50% - 50vw);width:100vw;background:#130f26;border-top:1px solid #2a2450;border-bottom:1px solid #2a2450}
-.grain{position:absolute;inset:0;pointer-events:none;z-index:60;opacity:.07;background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.grain{position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.07;background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
 .tile{transition:transform .24s cubic-bezier(.2,.8,.2,1),border-color .12s,background .12s}
 .tile:hover{transform:translateY(-4px);border-color:#7c5cff;background:#1c1830}
 .card{transition:transform .3s cubic-bezier(.2,.8,.2,1)}
@@ -82,8 +82,8 @@ a:focus-visible,button:focus-visible{outline:2px solid #2de2c8;outline-offset:2p
 .eb{justify-content:inherit}
 
 @property --v{syntax:'<integer>';initial-value:0;inherits:false}
-@keyframes rvl{from{opacity:0;translate:-70px 0;filter:blur(8px)}to{opacity:1;translate:0 0;filter:none}}
-@keyframes rvr{from{opacity:0;translate:70px 0;filter:blur(8px)}to{opacity:1;translate:0 0;filter:none}}
+@keyframes rvl{from{opacity:0;translate:-70px 0}to{opacity:1;translate:0 0}}
+@keyframes rvr{from{opacity:0;translate:70px 0}to{opacity:1;translate:0 0}}
 @keyframes rvs{from{opacity:0;scale:.92;translate:0 50px}to{opacity:1;scale:1;translate:0 0}}
 @keyframes fan{from{opacity:0;translate:var(--fx) 70px;rotate:var(--fr)}to{opacity:1;translate:0 0;rotate:0deg}}
 @keyframes pxm{from{translate:0 var(--pd)}to{translate:0 calc(var(--pd) * -1)}}
@@ -196,7 +196,7 @@ h1 span[style*="Instrument Serif"],h2 span[style*="Instrument Serif"]{background
 .rm{position:relative}
 .cl{position:absolute;width:130px;height:110px;z-index:4;transition:transform .55s cubic-bezier(.3,1.7,.4,1)}
 .cl.one{width:42px;height:42px}
-.sw{position:absolute;display:block;width:var(--z);height:var(--z);transform:rotate(var(--r,0deg));transition:transform .5s cubic-bezier(.3,1.8,.4,1);filter:drop-shadow(0 10px 14px #0007);cursor:grab}
+.sw{position:absolute;display:block;width:var(--z);height:var(--z);transform:rotate(var(--r,0deg));transition:transform .5s cubic-bezier(.3,1.8,.4,1);cursor:grab}
 .sw:hover{transform:rotate(calc(var(--r,0deg) + 40deg)) scale(1.5)}
 .sw:active{transform:rotate(calc(var(--r,0deg) - 40deg)) scale(.85)}
 .cl .sp{position:static;width:100%;height:100%;opacity:1}
