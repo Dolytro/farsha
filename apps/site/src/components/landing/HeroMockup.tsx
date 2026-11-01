@@ -68,7 +68,6 @@ function Cursor({ x, y, color, name }: { x: number; y: number; color: string; na
 }
 
 export function HeroMockup() {
-  const canvasX = 158;
   return (
     <>
       {/* left: layers */}
@@ -96,8 +95,8 @@ export function HeroMockup() {
 
       {/* centre: canvas */}
       <div style={{ flex: 1, minWidth: 0, position: "relative", backgroundColor: "#0f0c1c", backgroundImage: "radial-gradient(#26204a 1px,transparent 1.5px)", backgroundSize: `${P(20)} ${P(20)}`, overflow: "hidden" }}>
-        {/* top toolbar */}
-        <div style={abs({ x: 12, y: 10, w: 180, h: 24 }, { display: "flex", alignItems: "center", gap: P(14), padding: `0 ${P(10)}`, borderRadius: P(8), background: "#17151f", border: `1px solid ${LINE}`, color: MUTED })}>
+        {/* bottom toolbar, where the editor keeps it */}
+        <div style={abs({ x: 86, y: 430, w: 160, h: 26 }, { display: "flex", alignItems: "center", justifyContent: "space-between", padding: `0 ${P(12)}`, borderRadius: P(8), background: "#17151f", border: `1px solid ${LINE}`, color: MUTED })}>
           <Icon d={ICONS.move} size={11} color="#fff" />
           <Icon d={ICONS.frame} size={11} />
           <Icon d={ICONS.rect} size={11} />
@@ -171,7 +170,7 @@ export function HeroMockup() {
         </div>
 
         {/* bottom: zoom */}
-        <div style={abs({ x: canvasX - 158 + 262, y: 438, w: 50, h: 20 }, { borderRadius: P(6), background: "#17151f", border: `1px solid ${LINE}`, fontFamily: MONO, fontSize: P(8.5), color: MUTED, display: "grid", placeItems: "center" })}>100%</div>
+        <div style={abs({ x: 268, y: 434, w: 50, h: 20 }, { borderRadius: P(6), background: "#17151f", border: `1px solid ${LINE}`, fontFamily: MONO, fontSize: P(8.5), color: MUTED, display: "grid", placeItems: "center" })}>100%</div>
       </div>
 
       {/* right: properties */}

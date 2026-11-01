@@ -84,6 +84,11 @@ h2{font-size:38px!important;line-height:1.04!important}
 .fg>:first-child{grid-column:1/-1}
 .fg>:last-child{grid-column:1/-1}
 footer,footer>*{max-width:100%}
+.pin{top:0!important}
+.cl{display:none!important}
+.shp{width:calc(100vw * .75)!important}
+.rt-art{transform:scale(.78);transform-origin:left top;margin-bottom:-90px}
+.ft-art{right:10px!important;top:-240px!important;transform:scale(.6);transform-origin:right bottom}
 }
 
 .tn{position:relative;isolation:isolate;padding-top:72px!important}
@@ -205,7 +210,6 @@ h1 span[style*="Instrument Serif"],h2 span[style*="Instrument Serif"]{background
 .ft a[aria-label]:hover{transform:translateY(-5px) rotate(-7deg)}
 .ft a[aria-label="GitHub"]:hover{box-shadow:0 12px 26px #15131d44;border-color:#15131d}
 .ft a[aria-label="Google Drive"]:hover{box-shadow:0 12px 26px #ffba0066;border-color:#ffba00}
-.ft a[aria-label="Figma import"]:hover{box-shadow:0 12px 26px #a259ff55;border-color:#a259ff}
 @supports (animation-timeline:view()){
 .tp{animation:tpop 1s cubic-bezier(.3,1.5,.4,1) both;animation-timeline:view();animation-range:entry calc(var(--i,0) * 4%) entry calc(60% + var(--i,0) * 4%)}
 .sp{animation:spx 1s linear both,spf var(--ft,7s) ease-in-out infinite;animation-timeline:view(),auto;animation-range:cover,normal}
