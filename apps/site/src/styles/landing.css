@@ -33,6 +33,7 @@ a:focus-visible,button:focus-visible{outline:2px solid #2de2c8;outline-offset:2p
 @keyframes ex{to{translate:0 -42px}}
 @keyframes fadeL{from{opacity:1}to{opacity:0;pointer-events:none}}
 @keyframes shpspin{to{rotate:140deg}}
+@keyframes shpspin2{to{rotate:360deg}}
 @keyframes pinfade{from{opacity:0}to{opacity:1}}
 @keyframes rv{from{opacity:0;translate:0 70px}to{opacity:1;translate:0 0}}
 @keyframes tilt{to{transform:perspective(1400px) rotateY(0deg) rotateZ(0deg)}}
@@ -62,8 +63,8 @@ a:focus-visible,button:focus-visible{outline:2px solid #2de2c8;outline-offset:2p
 @media (max-width:900px){
 .hs{height:auto!important}.pin{animation:none!important;position:relative!important;height:auto!important;clip-path:inset(-400px 0 0 0)}.nvb{position:relative!important;height:auto!important;animation:none!important;padding:16px 20px!important}
 .hg{grid-template-columns:1fr;min-height:0;padding:24px 20px 0}.ht h1{font-size:56px!important}
-.mk{position:relative!important;left:auto!important;top:auto!important;width:calc(100% - 40px)!important;margin:32px 20px 56px;translate:none!important;animation:none!important}
-.tl{animation:none!important}.ht,.ht>*{animation:none!important}.shp{display:none}.pin::after{display:none}.zs{display:none}#parity{animation:none!important}
+.mk{position:relative!important;left:auto!important;top:auto!important;width:calc(100% - 40px)!important;margin:32px 20px 56px;translate:none!important;animation:up .9s cubic-bezier(.2,.8,.2,1) .4s both!important;animation-timeline:auto!important;animation-range:normal!important;will-change:auto}
+.tl{animation:none!important}.ht{animation:none!important}.ht>*{animation:up .9s cubic-bezier(.2,.8,.2,1) var(--d,0s) both!important;animation-timeline:auto!important;animation-range:normal!important}.shp{display:block;left:50%!important;top:auto!important;bottom:calc(56px + (100vw - 40px) * 470 / 695 / 2);width:calc(100vw * 1.1);translate:-50% 50%;filter:none;animation:shpspin2 48s linear infinite!important;animation-timeline:auto!important;animation-range:normal!important}.pin::after{display:none}.zs{display:none}#parity{animation:none!important}@supports (animation-timeline:scroll()){.tl{animation:tilt 1s cubic-bezier(.45,0,.2,1) both!important;animation-timeline:scroll(root block)!important;animation-range:0px 500px!important}}
 html,body{overflow-x:hidden}
 #parity,#tools,#oss,#faq{grid-template-columns:minmax(0,1fr)!important;gap:32px!important}
 #parity,#tools,#oss,#status,#compare,#import,#faq{padding-left:20px!important;padding-right:20px!important}
