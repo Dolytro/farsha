@@ -66,6 +66,16 @@ function build(raw: Raw, parent: string): void {
     return;
   }
   if (noFx) delete raw.props.effects;
+  // pattern images from the extractor travel as data URLs; they become document assets
+  const fills = raw.props.fills as { type: string; dataUrl?: string; assetId?: string }[] | undefined;
+  if (fills) {
+    for (const f of fills) {
+      if (f.type === "IMAGE" && f.dataUrl) {
+        f.assetId = doc.addAsset("image/png", Uint8Array.from(Buffer.from(f.dataUrl.split(",")[1] ?? "", "base64")));
+        delete f.dataUrl;
+      }
+    }
+  }
   const id = doc.createNode(raw.type as never, { parentId: parent, props: raw.props as never });
   for (const c of raw.children) build(c, id);
 }
