@@ -191,6 +191,9 @@ importers:
 
   apps/site:
     dependencies:
+      '@farsha/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       next:
         specifier: ^16.4.3
         version: 16.4.3(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1)
