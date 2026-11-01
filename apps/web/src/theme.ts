@@ -7,6 +7,8 @@ export function resolveTheme(preference: ThemePreference, systemDark: boolean): 
   return preference === "system" ? (systemDark ? "dark" : "light") : preference;
 }
 
+/** Nothing saved yet means the Farsha dark look; an unreadable value falls back to the system setting. */
 export function parseTheme(value: string | null | undefined): ThemePreference {
+  if (value == null) return "dark";
   return value === "light" || value === "dark" || value === "system" ? value : "system";
 }

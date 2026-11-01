@@ -96,6 +96,46 @@
   --c-canvas: #0b0b0b;
 }
 
+/* The Farsha look from the UI design: Daylight and Midnight palettes, Geist type, iris accent. */
+:root[data-ui="farsha"] {
+  --font-size: 13px;
+  --field-h: 32px;
+  --row-h: 32px;
+  --radius: 6px;
+  --panel-w: 264px;
+  --c-accent: #6a47f5;
+  --c-panel: #ffffff;
+  --c-border: #d6d2e6;
+  --c-text: #15131d;
+  --c-muted: #5a5570;
+  --c-hover: #ebe9f3;
+  --c-input: #ebe9f3;
+  --c-canvas: #f6f5fa;
+}
+
+:root[data-ui="farsha"][data-theme="dark"] {
+  --c-accent: #7c5cff;
+  --c-panel: #17151f;
+  --c-border: #34304a;
+  --c-text: #f2f0fa;
+  --c-muted: #a29cba;
+  --c-hover: #221f2e;
+  --c-input: #221f2e;
+  --c-canvas: #0e0d14;
+  --c-selected: #3a2f7a;
+  --c-accent-soft: color-mix(in srgb, var(--c-accent) 24%, transparent);
+}
+
+:root[data-ui="farsha"] body {
+  font-family: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+:root[data-ui="farsha"] input,
+:root[data-ui="farsha"] textarea,
+:root[data-ui="farsha"] select {
+  font-family: inherit;
+}
+
 /* ---------- base ---------- */
 body {
   font-size: var(--font-size);
