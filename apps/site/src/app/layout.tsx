@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "../styles/globals.scss";
-import "../styles/components/_button.scss";
 
 export const metadata: Metadata = {
   title: "Farsha: free, open source design tool",
