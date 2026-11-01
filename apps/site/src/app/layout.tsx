@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "../styles/globals.scss";
+import "@farsha/ui/styles.scss";
+import { SiteLoader } from "../components/SiteLoader";
 
 export const metadata: Metadata = {
   title: "Farsha: free, open source design tool",
@@ -17,7 +19,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap"
         />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <SiteLoader />
+        {children}
+      </body>
     </html>
   );
 }

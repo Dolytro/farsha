@@ -1,6 +1,11 @@
-import type { CSSProperties } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { Butterfly } from "./butterfly";
 import { TRAIL_DOTS } from "./trail";
+
+/** The butterfly flies in, lands and the logo appears by 62% of the 9s loop; this is when the intro is complete. */
+export const LOADER_INTRO_MS = 6200;
+
+const FADE_MS = 500;
 
 type Props = {
   /** Fades the loader out; the parent removes it once the transition has ended. */
@@ -10,6 +15,13 @@ type Props = {
 };
 
 export function ButterflyLoader({ hidden = false, onHidden }: Props) {
+  // transitionend is not guaranteed (hidden tab, reduced motion), so never leave the overlay stuck on screen.
+  useEffect(() => {
+    if (!hidden) return;
+    const t = window.setTimeout(() => onHidden?.(), FADE_MS + 150);
+    return () => window.clearTimeout(t);
+  }, [hidden, onHidden]);
+
   return (
     <div
       className={`loader${hidden ? " loader--hidden" : ""}`}

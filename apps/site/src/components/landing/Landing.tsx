@@ -18,10 +18,10 @@ export function Landing() {
 </div>
 <nav style={s({ "display": "flex", "gap": "28px", "flex": "1", "fontSize": "14px", "flexWrap": "wrap" })}>
 <a href="#tools" style={s({ "color": "#c9c4de" })}>Features</a><a href="#compare" style={s({ "color": "#c9c4de" })}>Compare</a><a href="#oss" style={s({ "color": "#c9c4de" })}>Open source</a><a href="#status" style={s({ "color": "#c9c4de" })}>Roadmap</a><a href="#import" style={s({ "color": "#c9c4de" })}>Import</a><a href="#faq" style={s({ "color": "#c9c4de" })}>FAQ</a>
-</nav>
+</nav><div className="nvb__actions" style={s({ "display": "flex", "alignItems": "center", "gap": "16px" })}>
 <a href="https://github.com/Tanjir-Hasan/farsha" target="_blank" rel="noopener" style={s({ "height": "40px", "padding": "0 16px", "borderRadius": "10px", "border": "1px solid #34304a", "color": "#f2f0fa", "display": "flex", "alignItems": "center", "gap": "8px", "fontWeight": "500", "fontSize": "14px" })}>
 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 00-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.8.06 1.23.83 1.23.83.71 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 014 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 008 0z"></path></svg><span>GitHub</span></a>
-<a className="bt" href="/app" style={s({ "height": "40px", "padding": "0 18px", "borderRadius": "10px", "background": "#6a46f2", "color": "#fff", "display": "flex", "alignItems": "center", "gap": "8px", "fontWeight": "600", "fontSize": "14px" })}>Open the editor <span aria-hidden="true">→</span></a>
+<a className="bt" href="/app" style={s({ "height": "40px", "padding": "0 18px", "borderRadius": "10px", "background": "#6a46f2", "color": "#fff", "display": "flex", "alignItems": "center", "gap": "8px", "fontWeight": "600", "fontSize": "14px" })}>Open the editor <span aria-hidden="true">→</span></a></div>
 </div>
 
 
