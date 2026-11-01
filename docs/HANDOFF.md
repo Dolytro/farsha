@@ -475,8 +475,9 @@ How the file is made (not part of the build, run by hand when the design changes
 a DOM extractor turns every element into a layer (boxes, gradients, borders, shadows, text, SVG), then
 `apps/web/scripts/build-starter.ts` writes the file (bundle it with esbuild for node, `node build-starter.cjs <json dir> <out>`; `ONLY` and
 `NOFX` env vars build a subset or drop effects). The landing page comes from the Next.js site, the other boards from static pages made from
-the design canvas. Animation, hover, scroll effects, 3D tilt, masks and background patterns are not layers; the hero shape is rebuilt from a
-circle and three petals.
+the design canvas. Animation, hover, scroll effects and masks are not layers. Dot-grid backgrounds (with their radial fade) are drawn once into a PNG
+and used as an image fill; the hero shape is one vector path (circle, three petals and the hole); the hero mockup keeps a 3 degree tilt
+instead of the 3D one; gradient text takes the first colour of its gradient. The file is about 1.3 MB (550 KB gzipped) because of those images.
 
 ## Rename to Farsha
 
