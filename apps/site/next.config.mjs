@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  agentRules: false,
   // The editor (apps/web, built with base /app/) is copied to public/app by scripts/build-all.mjs.
   async rewrites() {
     return {
