@@ -1,0 +1,27 @@
+:root {
+  --color-ground: #0b0a13;
+  --color-surface: #17151f;
+  --color-surface-2: #221f2e;
+  --color-line: #34304a;
+  --color-ink: #f2f0fa;
+  --color-muted: #a29cba;
+  --color-iris: #7c5cff;
+  --color-coral: #ff5e4d;
+  --color-aqua: #2de2c8;
+  --color-amber: #ffb020;
+  --color-pink: #ff4fa3;
+
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Geist", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, Consolas, monospace;
+
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --glow-iris: 0 0 0 1px #7c5cff66, 0 10px 40px #7c5cff55;
+}
