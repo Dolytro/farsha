@@ -1,4 +1,4 @@
-import type { DesignDoc } from "@farsha/design-core";
+import { DesignDoc } from "@farsha/design-core";
 
 /** Default canvas for a fresh editor: the starter board from the Farsha UI design (hero card, mobile card, avatars). */
 
@@ -91,4 +91,20 @@ export function seedWelcome(doc: DesignDoc, pageId: string): void {
   heroCard(doc, pageId);
   mobileCard(doc, pageId);
   avatars(doc, pageId);
+}
+
+/** True for a saved working copy that still holds only the old "Welcome to Farsha" and "Shortcuts" frames (never edited). */
+export function isLegacyWelcome(doc: DesignDoc): boolean {
+  const pages = doc.pages();
+  if (pages.length !== 1) return false;
+  const names = doc.children(pages[0]!.id).map((n) => n.name).sort();
+  return names.length === 2 && names[0] === "Shortcuts" && names[1] === "Welcome to Farsha";
+}
+
+/** A new document holding the starter board. */
+export function newWelcomeDoc(): DesignDoc {
+  const doc = new DesignDoc();
+  seedWelcome(doc, doc.pages()[0]!.id);
+  doc.clearHistory();
+  return doc;
 }
