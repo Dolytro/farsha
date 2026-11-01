@@ -463,6 +463,21 @@ Share links are `/app/v/<fileId>` (old `/v/<fileId>` still works through a rewri
 Design source: the Claude Design canvas "Farsha UI" (boards Landing2 and Loader). Landing v2 and the butterfly loader are
 not ported yet: `apps/site/src/app/page.tsx` is a placeholder.
 
+## Starter file (the Farsha UI design on the canvas)
+
+A fresh editor opens `apps/web/public/starter.farsha` (Yjs state, ~860 KB, 178 KB gzipped): the five boards of the UI design canvas
+(Editor, Files home, Loader, Landing page, Logo) as layers at the same canvas positions. `loadStarter()` in `seed/welcome.ts` fetches it;
+`newWelcomeDoc()` (hero card, mobile card, avatars) is the offline fallback. A saved working copy that still holds only an earlier default
+canvas (`isOldStarter`) is dropped so the starter loads. Boards start folded in Layers (`collapseLayers`), the canvas skips layers outside
+the window (`inView` in `Canvas.tsx`) and the first board is fitted on open.
+
+How the file is made (not part of the build, run by hand when the design changes): each board's HTML is rendered in a 1440 px iframe and
+a DOM extractor turns every element into a layer (boxes, gradients, borders, shadows, text, SVG), then
+`apps/web/scripts/build-starter.ts` writes the file (bundle it with esbuild for node, `node build-starter.cjs <json dir> <out>`; `ONLY` and
+`NOFX` env vars build a subset or drop effects). The landing page comes from the Next.js site, the other boards from static pages made from
+the design canvas. Animation, hover, scroll effects, 3D tilt, masks and background patterns are not layers; the hero shape is rebuilt from a
+circle and three petals.
+
 ## Rename to Farsha
 
 The product is called Farsha (packages `@farsha/*`, file extension `.farsha`, GitHub repo `Dolytro/farsha`). There is no migration of data saved under any earlier name (nobody used it). The Google Cloud project is to be replaced by a new one, so the IDs in `apps/web/.env.local` and Vercel must be replaced too. The Vercel project and its address are farsha-design.vercel.app.

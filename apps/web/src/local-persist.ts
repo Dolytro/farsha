@@ -1,7 +1,7 @@
 import { DesignDoc } from "@farsha/design-core";
 import { debounced } from "./debounce";
 import { useEditor } from "./store";
-import { isLegacyWelcome, newWelcomeDoc } from "./seed/welcome";
+import { isOldStarter } from "./seed/welcome";
 
 /**
  * The working copy of the open design is kept in this browser (IndexedDB), so a reload never loses work, signed in or not.
@@ -73,8 +73,9 @@ export async function restoreLocal(): Promise<boolean> {
     if (!saved) return false;
     const { loadDoc, setDrive } = useEditor.getState();
     const restored = DesignDoc.fromState(saved.bytes);
-    // Browsers that kept the old, untouched welcome canvas get the new starter board instead.
-    loadDoc(isLegacyWelcome(restored) ? newWelcomeDoc() : restored);
+    // A copy that still holds only an earlier default canvas is dropped, so the current starter file loads instead.
+    if (isOldStarter(restored)) return false;
+    loadDoc(restored);
     setDrive({ fileId: saved.fileId, fileName: saved.fileName, status: saved.fileId ? "saved" : "idle", error: null });
     return true;
   } catch {

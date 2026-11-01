@@ -434,7 +434,8 @@ export function Canvas() {
   }, []);
 
   /** Sibling layers bottom to top; a mask layer is not drawn and clips everything above it. */
-  function renderChildren(list: DesignNode[]): ReactElement[] {
+  function renderChildren(all: DesignNode[]): ReactElement[] {
+    const list = all.filter(inView);
     const at = list.findIndex((c) => c.isMask && c.visible);
     if (at < 0) return list.map(renderNode).filter((e): e is ReactElement => !!e);
     const mask = maskMarkup(list[at]!);
@@ -446,6 +447,18 @@ export function Canvas() {
       </g>,
     ];
   }
+
+  // Layers outside the window are not drawn (a design with several large boards stays fast); hit-testing and
+  // selection read the document, not the drawn elements.
+  const svgBox = svgRef.current?.getBoundingClientRect();
+  const winBox = svgBox && svgBox.width > 0 ? visibleWorld(viewport, svgBox.width, svgBox.height) : null;
+  const inView = (n: DesignNode): boolean => {
+    if (!winBox || n.isMask || selection.includes(n.id)) return true;
+    const b = doc.absoluteBox(n.id);
+    if (!b) return true;
+    const pad = 400;
+    return b.x + b.width + pad >= winBox.x && b.x - pad <= winBox.x + winBox.width && b.y + b.height + pad >= winBox.y && b.y - pad <= winBox.y + winBox.height;
+  };
 
   const renderNode = (n: DesignNode): ReactElement | null => {
     if (!n.visible || n.isMask) return null;
