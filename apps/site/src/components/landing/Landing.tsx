@@ -205,7 +205,7 @@ export function Landing() {
 <path d="M0 220 C 240 120 480 300 760 220 C 1040 140 1240 60 1440 160 L1440 520 L0 520Z" fill="url(#fw)"></path>
 <path d="M0 300 C 300 220 560 380 860 300 C 1120 230 1300 180 1440 240 L1440 520 L0 520Z" fill="#ffffff12"></path>
 </svg>
-<div style={s({ "position": "relative", "maxWidth": "1280px", "margin": "0 auto", "padding": "0 32px" })}>
+<div className="ftw" style={s({ "position": "relative", "maxWidth": "1280px", "margin": "0 auto", "padding": "0 32px" })}>
 <div className="rs ft" style={s({ "position": "relative", "borderRadius": "28px", "background": "radial-gradient(circle at 1px 1px,#6a46f21c 1px,transparent 1.5px) 0 0/18px 18px,linear-gradient(180deg,#faf9ff,#f1eeff)", "color": "#15131d", "padding": "48px 48px 24px", "boxShadow": "0 40px 90px #0009" })}>
 <div className="ft-art" aria-hidden="true" style={s({ "position": "absolute", "right": "40px", "top": "-150px", "width": "300px", "height": "230px", "pointerEvents": "none" })}>
 <div style={s({ "position": "absolute", "right": "120px", "top": "36px", "width": "120px", "height": "150px", "borderRadius": "18px", "background": "linear-gradient(160deg,#9b85ff,#5a3ad6)", "transform": "rotate(-8deg)", "boxShadow": "0 18px 40px #0005" })}><span style={s({ "position": "absolute", "left": "18px", "top": "34px", "fontFamily": "'Bricolage Grotesque',sans-serif", "fontWeight": "800", "fontSize": "46px", "color": "#fff", "letterSpacing": "-.03em" })}>Aa</span></div>
