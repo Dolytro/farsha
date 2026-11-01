@@ -11,6 +11,10 @@ describe("parseRoute", () => {
     expect(parseRoute("/v/1AbC_dEfGhIjKlMn/", "?mode=inspect")).toMatchObject({ mode: "inspect" });
   });
 
+  it("parses a viewer link under /app", () => {
+    expect(parseRoute("/app/v/1AbC_dEfGhIjKlMn", "")).toEqual({ kind: "viewer", fileId: "1AbC_dEfGhIjKlMn", mode: "view" });
+  });
+
   it("ignores malformed ids", () => {
     expect(parseRoute("/v/short", "")).toEqual({ kind: "editor" });
     expect(parseRoute("/v/../etc/passwd", "")).toEqual({ kind: "editor" });

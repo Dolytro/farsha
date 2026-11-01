@@ -103,7 +103,7 @@ pnpm --filter @farsha/web build       # production build (what Vercel runs)
 pnpm --filter @farsha/web exec vite --port 5174 --strictPort   # a second dev server on an authorised origin
 ```
 
-- The editor is behind Google sign-in. For local testing open `http://localhost:5173/?nologin`. That bypass
+- The editor is behind Google sign-in. For local testing open `http://localhost:5173/app/?nologin` (the editor is served under `/app`). That bypass
   only exists when `import.meta.env.DEV` is true, so it can never open the editor on the live site.
 - If sign-in says "Access blocked", the Google account may not be allowed; the app is In production, so any
   Google account should work after a few minutes.
@@ -453,6 +453,15 @@ drag-reorder in the layers panel, then start the next feature from section 11 of
 Rules: one feature at a time (build, test, fix, push), copy Figma exactly, commits without any Claude
 attribution, never put secrets in git or web forms. Reply in Banglish.
 ```
+
+## Website (apps/site)
+
+`apps/site` is a Next.js site (SCSS, BEM) served at `/`; the editor (`apps/web`, Vite, base `/app/`) is built and copied to
+`apps/site/public/app` by `pnpm --filter @farsha/site build` (`scripts/build-all.mjs`), so one Vercel project serves both.
+Share links are `/app/v/<fileId>` (old `/v/<fileId>` still works through a rewrite). `privacy.html` / `terms.html` live in
+`apps/site/public`. Vercel must use Root Directory `apps/site`, framework Next.js, build command `pnpm build`.
+Design source: the Claude Design canvas "Farsha UI" (boards Landing2 and Loader). Landing v2 and the butterfly loader are
+not ported yet: `apps/site/src/app/page.tsx` is a placeholder.
 
 ## Rename to Farsha
 

@@ -11,3 +11,6 @@ dist
 # Screenshots taken while testing in the browser
 /*.png
 .playwright-mcp/
+.next
+apps/site/public/app
+next-env.d.ts
