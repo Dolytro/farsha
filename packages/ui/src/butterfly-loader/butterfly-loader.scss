@@ -1,0 +1,319 @@
+@property --loader-v {
+  syntax: "<integer>";
+  initial-value: 0;
+  inherits: false;
+}
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  background: #171232;
+  color: #f2f0fa;
+  font-family: "Geist", system-ui, sans-serif;
+  transition: opacity 0.5s ease;
+
+  &--hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &__dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(#a592ff55 1.3px, transparent 1.8px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(ellipse at 50% 48%, #000 20%, transparent 72%);
+  }
+
+  &__orbit {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    translate: -50% -50%;
+    border-radius: 50%;
+    border: 1px solid #8a6bff44;
+    width: 520px;
+    height: 520px;
+
+    &--pink {
+      width: 820px;
+      height: 820px;
+      border-color: #ff4fa333;
+    }
+
+    &--aqua {
+      width: 1140px;
+      height: 1140px;
+      border-color: #2de2c833;
+    }
+  }
+
+  // The design is drawn on a 1440x900 stage; it is scaled down on narrow screens.
+  &__stage {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1440px;
+    height: 900px;
+    margin: -450px 0 0 -720px;
+    scale: min(1, tan(atan2(100vw, 1440px)));
+  }
+
+  &__flyer,
+  &__trail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    offset-path: path("M -140 700 C 120 820 230 330 470 380 S 760 640 840 470 S 640 330 720 450");
+    offset-anchor: 50% 50%;
+    animation-duration: 9s;
+    animation-iteration-count: infinite;
+    animation-fill-mode: both;
+  }
+
+  &__flyer {
+    width: 190px;
+    height: 190px;
+    offset-rotate: auto 90deg;
+    animation-name: loader-fly;
+    animation-timing-function: ease-in-out;
+    z-index: 3;
+    filter: drop-shadow(0 18px 16px #000a);
+  }
+
+  &__sway-x {
+    width: 100%;
+    height: 100%;
+    animation: loader-sway-x 2.3s ease-in-out infinite alternate;
+  }
+
+  &__sway-y {
+    width: 100%;
+    height: 100%;
+    animation: loader-sway-y 1.7s ease-in-out infinite alternate;
+  }
+
+  &__trail {
+    border-radius: 50%;
+    offset-rotate: 0deg;
+    animation-name: loader-trail, loader-drift;
+    animation-duration: 9s, 1.3s;
+    animation-timing-function: ease-in-out, ease-out;
+    animation-delay: calc(var(--i) * 0.07s), var(--dd);
+    animation-fill-mode: both, none;
+    z-index: 2;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  &__ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 260px;
+    height: 260px;
+    margin: -250px 0 0 -130px;
+    border-radius: 50%;
+    border: 2px solid #8a6bff;
+    animation: loader-ring 9s infinite both;
+    pointer-events: none;
+  }
+
+  &__perched {
+    position: absolute;
+    left: 625px;
+    top: 355px;
+    width: 190px;
+    height: 190px;
+    z-index: 4;
+    animation: loader-perch 9s infinite both ease-in-out;
+    filter: drop-shadow(0 10px 10px #0008);
+
+    .butterfly {
+      animation: none;
+    }
+
+    .butterfly__wing {
+      animation: loader-perch-front 9s infinite both ease-in-out;
+    }
+
+    .butterfly__wing--hind {
+      animation-name: loader-perch-hind;
+    }
+  }
+
+  &__logo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 190px;
+    height: 190px;
+    margin: -120px 0 0 -95px;
+    animation: loader-logo 9s infinite both;
+    z-index: 1;
+  }
+
+  &__wordmark {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    margin-top: 92px;
+    text-align: center;
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 800;
+    font-size: 44px;
+    letter-spacing: -0.04em;
+    animation: loader-logo 9s infinite both;
+  }
+
+  &__progress {
+    position: absolute;
+    left: 50%;
+    bottom: 110px;
+    width: 300px;
+    margin-left: -150px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    animation: loader-progress 9s infinite both;
+  }
+
+  &__bar {
+    width: 100%;
+    height: 3px;
+    border-radius: 3px;
+    background: #2a2640;
+    overflow: hidden;
+  }
+
+  &__bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #ff5e4d, #8a6bff, #2de2c8);
+    animation: loader-fill 9s infinite both cubic-bezier(0.4, 0, 0.3, 1);
+  }
+
+  &__percent {
+    font-family: "Geist Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: #b4aecb;
+    animation: loader-count 9s infinite both cubic-bezier(0.4, 0, 0.3, 1);
+    counter-reset: loader-n var(--loader-v);
+
+    &::after {
+      content: "LOADING FARSHA  " counter(loader-n) "%";
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .butterfly__wing {
+      animation-duration: 3s;
+    }
+
+    &__sway-x,
+    &__sway-y {
+      animation: none;
+    }
+  }
+}
+
+.butterfly {
+  display: block;
+  animation: loader-roll 2.6s ease-in-out infinite alternate, loader-bob 1.5s ease-in-out infinite;
+
+  &__wing {
+    transform-box: view-box;
+    transform-origin: 100px 100px;
+    animation: loader-flap 1.5s infinite;
+
+    &--hind {
+      animation-name: loader-flap-hind;
+    }
+  }
+}
+
+@keyframes loader-fly {
+  0% { offset-distance: 0%; opacity: 0; scale: 0.9; }
+  2% { opacity: 1; }
+  14% { offset-distance: 12%; }
+  27% { offset-distance: 32%; }
+  37% { offset-distance: 41%; }
+  47% { offset-distance: 80%; }
+  54% { offset-distance: 100%; opacity: 1; scale: 1; }
+  54.2%, 100% { offset-distance: 100%; opacity: 0; scale: 1; }
+}
+@keyframes loader-sway-x { from { translate: -16px 0; } to { translate: 16px 0; } }
+@keyframes loader-sway-y { from { translate: 0 -12px; } to { translate: 0 12px; } }
+@keyframes loader-roll { from { rotate: -7deg; } to { rotate: 7deg; } }
+@keyframes loader-bob {
+  0%, 16%, 32%, 48% { translate: 0 0; }
+  8%, 24%, 40% { translate: 0 4px; }
+  60% { translate: 0 -2px; }
+  100% { translate: 0 6px; }
+}
+@keyframes loader-flap {
+  0%, 16%, 32%, 48% { transform: scaleX(1) skewY(0); }
+  8%, 24%, 40% { transform: scaleX(0.3) skewY(5deg); }
+  62% { transform: scaleX(0.9) skewY(0); }
+  100% { transform: scaleX(0.94) skewY(0); }
+}
+@keyframes loader-flap-hind {
+  0%, 18%, 34%, 50% { transform: scaleX(1); }
+  10%, 26%, 42% { transform: scaleX(0.3); }
+  64% { transform: scaleX(0.92); }
+  100% { transform: scaleX(0.95); }
+}
+@keyframes loader-trail {
+  0% { offset-distance: 0%; visibility: hidden; }
+  3% { visibility: visible; }
+  47% { offset-distance: 80%; }
+  54% { offset-distance: 100%; visibility: visible; }
+  58%, 100% { offset-distance: 100%; visibility: hidden; }
+}
+@keyframes loader-drift {
+  from { translate: 0 0; opacity: 0.95; scale: 1; }
+  to { translate: var(--dx, 0px) 34px; opacity: 0; scale: 0.3; }
+}
+@keyframes loader-logo {
+  0%, 53% { opacity: 0; scale: 0.5; }
+  58% { opacity: 1; scale: 1.08; }
+  62% { scale: 1; }
+  90% { opacity: 1; scale: 1; }
+  96%, 100% { opacity: 0; scale: 1; }
+}
+@keyframes loader-ring {
+  0%, 55% { opacity: 0; scale: 0.5; }
+  56% { opacity: 0.8; }
+  70%, 100% { opacity: 0; scale: 1.9; }
+}
+@keyframes loader-progress {
+  0% { opacity: 0; }
+  3%, 55% { opacity: 1; }
+  60%, 100% { opacity: 0; }
+}
+@keyframes loader-fill { 0% { width: 0; } 55%, 100% { width: 100%; } }
+@keyframes loader-count { 0% { --loader-v: 0; } 55%, 100% { --loader-v: 100; } }
+@keyframes loader-perch {
+  0%, 53.9% { opacity: 0; translate: 0 0; scale: 1; rotate: 146.3deg; }
+  54% { opacity: 1; }
+  66% { translate: 77px -102px; scale: 0.4; rotate: 10deg; opacity: 1; }
+  90% { translate: 77px -102px; scale: 0.4; rotate: 10deg; opacity: 1; }
+  96%, 100% { opacity: 0; translate: 77px -102px; scale: 0.4; rotate: 10deg; }
+}
+@keyframes loader-perch-front {
+  0%, 54%, 66%, 90%, 100% { transform: scaleX(1); }
+  54.75%, 56.25%, 57.75%, 59.25%, 60.75%, 62.25%, 63.75%, 65.25% { transform: scaleX(0.3); }
+  55.5%, 57%, 58.5%, 60%, 61.5%, 63%, 64.5% { transform: scaleX(1); }
+  76%, 82% { transform: scaleX(0.58); }
+}
+@keyframes loader-perch-hind {
+  0%, 54%, 66%, 90%, 100% { transform: scaleX(1); }
+  54.75%, 56.25%, 57.75%, 59.25%, 60.75%, 62.25%, 63.75%, 65.25% { transform: scaleX(0.4); }
+  55.5%, 57%, 58.5%, 60%, 61.5%, 63%, 64.5% { transform: scaleX(1); }
+  76%, 82% { transform: scaleX(0.58); }
+}
