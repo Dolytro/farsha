@@ -27,7 +27,7 @@ export function Landing() {
 
 <div className="hs"><div className="pin">
 <div className="glows" aria-hidden="true"></div>
-<div className="shp" aria-hidden="true"><svg viewBox="-300 -300 600 600" style={s({ "width": "100%", "height": "100%", "display": "block", "overflow": "visible", "animation": "spin 48s linear infinite,hue 20s ease-in-out infinite alternate" })}>
+<div className="shp" aria-hidden="true"><svg viewBox="-300 -300 600 600" style={s({ "width": "100%", "height": "100%", "display": "block", "overflow": "visible", "animation": "spin 48s linear infinite" })}>
 <defs><linearGradient id="bm" gradientUnits="userSpaceOnUse" x1="-260" y1="-260" x2="260" y2="260"><stop offset="0" stopColor="#9b85ff"></stop><stop offset=".5" stopColor="#7c3aed"></stop><stop offset="1" stopColor="#ff4fa3"></stop></linearGradient>
 <linearGradient id="bh" gradientUnits="userSpaceOnUse" x1="-240" y1="-240" x2="120" y2="140"><stop offset="0" stopColor="#fff" stopOpacity=".5"></stop><stop offset=".45" stopColor="#fff" stopOpacity="0"></stop><stop offset="1" stopColor="#1a0b4a" stopOpacity=".35"></stop></linearGradient>
 <mask id="bmk" maskUnits="userSpaceOnUse" x="-300" y="-300" width="600" height="600"><rect x="-300" y="-300" width="600" height="600" fill="#fff"></rect><circle r="42" fill="#000"></circle></mask>
