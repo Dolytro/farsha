@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { LoginScreen } from "./components/LoginScreen";
+import { useEffect } from "react";
 import { Canvas } from "./components/Canvas";
 import { Rulers } from "./components/Rulers";
 import { Layers } from "./components/Layers";
@@ -109,15 +108,8 @@ export function App() {
   const loadState = useEditor((s) => s.loadState);
   const loadError = useEditor((s) => s.loadError);
   const toast = useEditor((s) => s.toast);
-  const signedIn = useEditor((s) => s.drive.user !== null);
-  const authChecked = useEditor((s) => s.drive.checked);
   const rulers = useEditor((s) => s.rulers);
   const viewer = useEditor((s) => s.viewer);
-  const [offline, setOffline] = useState(false);
-  // Local testing only: `?nologin` skips the sign-in gate on the dev server. Production builds
-  // have import.meta.env.DEV === false, so this can never open the editor on the live site.
-  const devBypass = import.meta.env.DEV && new URLSearchParams(window.location.search).has("nologin");
-
   useEffect(() => {
     void restoreSession();
   }, []);
@@ -567,12 +559,6 @@ export function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-
-  // Shared links are public and never ask for sign-in. The editor requires Google sign-in.
-  if (route.kind === "editor" && !offline && !devBypass) {
-    if (!authChecked) return <div className="loading" role="status">Loading…</div>;
-    if (!signedIn) return <LoginScreen onSkip={() => setOffline(true)} />;
-  }
 
   return (
     <div className={`editor${uiHidden ? " editor--minimal" : ""}${hideLeft ? " editor--no-left" : ""}${hideRight ? " editor--no-right" : ""}`}>

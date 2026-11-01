@@ -220,7 +220,7 @@ in event handlers.
   `/v/<driveFileId>` (view only) and `/v/<id>?mode=inspect`.
 - Viewer: loads with the **API key** (public files); falls back to the owner's token only for unshared files.
   Public view shows no measurements or code; Inspect requires Google sign-in (Dev panel, Alt measure).
-- Login gate: the editor shows `LoginScreen` until signed in. Shared links never ask for sign-in.
+- No login gate: the editor opens straight away as a guest (working copy in the browser). Google sign-in is only for saving to Drive and sharing.
 - Not possible with Drive links: passwords, expiry, live cursors.
 
 ### Appearance, text, layout (added later)
@@ -320,7 +320,7 @@ new line (Esc leaves).
    Hurdles: Google Cloud needed 2-Step Verification on the right account; the first attempt used the wrong
    Google account; publishing the OAuth app needed home/privacy/terms links (added `/privacy.html`,
    `/terms.html`); pnpm 12 failed on Vercel until `allowBuilds` was added.
-6. Product decisions from the owner: login required for the editor; shared links public for viewing;
+6. Product decisions from the owner: editor opens without login (sign-in only for Drive save and share); shared links public for viewing;
    Dev tools / Inspect only after Google sign-in; browser zoom must never scale the app; the default canvas
    must be Farsha's own welcome content (an earlier Envato/ThemeForest sample was removed).
 7. Wrote `docs/FEATURE_GAP.md` by reading Figma's live File/Edit/View/Object/Preferences menus.
