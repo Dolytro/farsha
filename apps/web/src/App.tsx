@@ -224,13 +224,11 @@ export function App() {
     // Bring back the working copy saved in this browser first, then keep saving it (and Drive) as the design changes.
     let stopLocal: (() => void) | undefined;
     let cancelled = false;
-    void restoreLocal().then((restored) => {
+    void restoreLocal().then(() => {
       if (cancelled) return;
-      if (restored) {
-        const s = useEditor.getState();
-        const v = zoomFit(s.doc, s.pageId, []);
-        if (v) s.setViewport(v);
-      }
+      const s = useEditor.getState();
+      const v = zoomFit(s.doc, s.pageId, []);
+      if (v) s.setViewport(v);
       stopLocal = startLocalAutosave();
     });
     const stopDrive = startAutosave();

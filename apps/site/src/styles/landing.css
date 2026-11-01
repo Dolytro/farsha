@@ -64,6 +64,25 @@ a:focus-visible,button:focus-visible{outline:2px solid #2de2c8;outline-offset:2p
 .hg{grid-template-columns:1fr;min-height:0;padding:24px 20px 0}.ht h1{font-size:56px!important}
 .mk{position:relative!important;left:auto!important;top:auto!important;width:calc(100% - 40px)!important;margin:32px 20px 56px;translate:none!important;animation:none!important}
 .tl{animation:none!important}.ht,.ht>*{animation:none!important}.shp{display:none}.pin::after{display:none}.zs{display:none}#parity{animation:none!important}
+html,body{overflow-x:hidden}
+#parity,#tools,#oss,#faq{grid-template-columns:minmax(0,1fr)!important;gap:32px!important}
+#parity,#tools,#oss,#status,#compare,#import,#faq{padding-left:20px!important;padding-right:20px!important}
+#parity,#tools,#oss,#status,#compare,#import{padding-top:56px!important;padding-bottom:56px!important}
+#stats{padding:56px 20px 0!important}#faq{padding-top:56px!important}
+#stats .rs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#stats .stc{border-left:0!important;padding:20px!important;border-top:1px solid #2a2640}
+#stats .stc:nth-child(-n+2){border-top:0}#stats .stc:nth-child(even){border-left:1px solid #2a2640!important}
+h2{font-size:38px!important;line-height:1.04!important}
+[style*="repeat(6,"],[style*="repeat(6, "]{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+
+[style*="repeat(3,"],[style*="repeat(3, "]{grid-template-columns:minmax(0,1fr)!important}
+[style*="5fr) minmax(0,7fr)"],[style*="6fr) minmax(0,6fr)"],[style*="4fr) minmax(0,8fr)"],[style*="5fr) minmax(0, 7fr)"],[style*="6fr) minmax(0, 6fr)"],[style*="4fr) minmax(0, 8fr)"]{grid-template-columns:minmax(0,1fr)!important}
+.nvb :has(>a[href="#tools"]){display:none!important}#compare [style*="3fr"]>div{padding:14px 10px!important;font-size:13px!important;gap:6px!important}
+.nvb{gap:12px!important;justify-content:space-between;flex-wrap:nowrap!important}.nvb a[href*="github"]{display:none!important}
+.fg{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:28px!important}.ft{padding:36px 22px 20px!important}
+.fg>:first-child{grid-column:1/-1}
+.fg>:last-child{grid-column:1/-1}
+footer,footer>*{max-width:100%}
 }
 
 .tn{position:relative;isolation:isolate;padding-top:72px!important}
