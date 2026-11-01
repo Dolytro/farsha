@@ -3,7 +3,6 @@ import { DesignDoc } from "@farsha/design-core";
 import type { Viewport } from "@farsha/canvas-engine";
 import type { DriveUser } from "./drive/drive";
 import { parseRoute, type ViewerMode } from "./route";
-import { seedWelcome } from "./seed/welcome";
 import { parseTheme, THEME_KEY, type ThemePreference } from "./theme";
 import { DEFAULT_PREFS, parsePrefs, PREFS_KEY, type Prefs } from "./prefs";
 
@@ -30,14 +29,9 @@ export type LoadState = "ready" | "loading" | "error";
 const route = parseRoute(window.location.pathname, window.location.search);
 const viewer: ViewerMode | null = route.kind === "viewer" ? route.mode : null;
 
-/** The editor starts with sample screens; a shared link starts empty until the file loads. */
+/** The editor starts empty; App loads the saved working copy or the starter file before the boot loader fades out. */
 function initialDoc(): DesignDoc {
-  const doc = new DesignDoc();
-  if (!viewer) {
-    seedWelcome(doc, doc.pages()[0]!.id);
-    doc.clearHistory();
-  }
-  return doc;
+  return new DesignDoc();
 }
 
 const firstDoc = initialDoc();

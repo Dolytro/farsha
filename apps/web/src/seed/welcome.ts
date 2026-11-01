@@ -93,18 +93,37 @@ export function seedWelcome(doc: DesignDoc, pageId: string): void {
   avatars(doc, pageId);
 }
 
-/** True for a saved working copy that still holds only the old "Welcome to Farsha" and "Shortcuts" frames (never edited). */
-export function isLegacyWelcome(doc: DesignDoc): boolean {
+/** Top-level layer names of earlier default canvases; a saved copy that still has only these was never edited. */
+const OLD_STARTERS: string[][] = [
+  ["Shortcuts", "Welcome to Farsha"],
+  ["Avatars", "Hero card", "Hero · 1440 × 900", "Mobile", "Mobile card"],
+];
+
+/** True for a saved working copy that still holds only an earlier default canvas. */
+export function isOldStarter(doc: DesignDoc): boolean {
   const pages = doc.pages();
   if (pages.length !== 1) return false;
   const names = doc.children(pages[0]!.id).map((n) => n.name).sort();
-  return names.length === 2 && names[0] === "Shortcuts" && names[1] === "Welcome to Farsha";
+  return OLD_STARTERS.some((old) => old.length === names.length && old.every((n, i) => n === names[i]));
 }
 
-/** A new document holding the starter board. */
+/** A small document holding the hero card, mobile card and avatars (offline fallback for the starter file). */
 export function newWelcomeDoc(): DesignDoc {
   const doc = new DesignDoc();
   seedWelcome(doc, doc.pages()[0]!.id);
   doc.clearHistory();
   return doc;
+}
+
+/** The Farsha UI design (editor, files home, loader, landing page, logo) as layers, built by scripts/build-starter.ts. */
+export async function loadStarter(): Promise<DesignDoc | null> {
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}starter.farsha`);
+    if (!res.ok) return null;
+    const doc = DesignDoc.fromState(new Uint8Array(await res.arrayBuffer()));
+    doc.clearHistory();
+    return doc;
+  } catch {
+    return null;
+  }
 }

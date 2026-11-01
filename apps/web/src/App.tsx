@@ -33,6 +33,7 @@ import { textShortcutCommand } from "./text-shortcuts";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
 import { restoreLocal, startLocalAutosave } from "./local-persist";
+import { loadStarter, newWelcomeDoc } from "./seed/welcome";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
 import { resolveTheme } from "./theme";
@@ -224,10 +225,19 @@ export function App() {
     // Bring back the working copy saved in this browser first, then keep saving it (and Drive) as the design changes.
     let stopLocal: (() => void) | undefined;
     let cancelled = false;
-    void restoreLocal().then(() => {
+    void restoreLocal().then(async (restored) => {
+      if (!restored) {
+        // A fresh browser: start from the Farsha UI design file (or the small built-in board when it can't be fetched).
+        const starter = (await loadStarter()) ?? newWelcomeDoc();
+        if (cancelled) return;
+        useEditor.getState().loadDoc(starter);
+        useEditor.getState().collapseLayers(); // boards start folded, like a Figma file
+      }
       if (cancelled) return;
       const s = useEditor.getState();
-      const v = zoomFit(s.doc, s.pageId, []);
+      // A fresh canvas opens on its first board (the editor screen); a restored one fits everything, as before.
+      const first = restored ? undefined : s.doc.children(s.pageId).find((n) => n.type === "FRAME");
+      const v = zoomFit(s.doc, s.pageId, first ? [first.id] : []);
       if (v) s.setViewport(v);
       stopLocal = startLocalAutosave();
     });
