@@ -1,6 +1,6 @@
 import type { DesignDoc } from "@farsha/design-core";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@farsha/types";
-import { effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
+import { textFill, effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
@@ -71,6 +71,9 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     case "ELLIPSE":
       return `<g transform="${transform}"${opacity}>${shapeMarkup(n, imageHref(doc))}${kids}</g>`;
     case "TEXT": {
+      const tf = textFill(n);
+      const textFillAttrs = tf.defs ? ` fill="${tf.fill}"` : fillAttrs;
+      const tfDefs = tf.defs ? `<defs>${tf.defs}</defs>` : "";
       const place = textPlacement(n);
       const anchor = `${place.anchor === "start" && !place.rtl ? "" : ` text-anchor="${place.anchor}"`}${place.rtl ? ' direction="rtl" unicode-bidi="plaintext"' : ""}`;
       const x = place.x;
@@ -93,9 +96,9 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
         // text on a path: one line of characters that follows the curve, starting where the alignment says
         const pid = `tp-${n.id.replace(/[^A-Za-z0-9_-]/g, "_")}`;
         const offset = n.textAlign === "CENTER" ? ' startOffset="50%" text-anchor="middle"' : n.textAlign === "RIGHT" ? ' startOffset="100%" text-anchor="end"' : "";
-        return `<g transform="${transform}"${opacity}><defs><path id="${pid}" d="${pathD}" fill="none"/></defs><text${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs} xml:space="preserve"><textPath href="#${pid}"${offset}>${esc(lines.join(" "))}</textPath></text></g>`;
+        return `<g transform="${transform}"${opacity}>${tfDefs}<defs><path id="${pid}" d="${pathD}" fill="none"/></defs><text${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${textFillAttrs} xml:space="preserve"><textPath href="#${pid}"${offset}>${esc(lines.join(" "))}</textPath></text></g>`;
       }
-      return `<g transform="${transform}"${opacity}><text x="${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrs} xml:space="preserve">${spans}</text></g>`;
+      return `<g transform="${transform}"${opacity}>${tfDefs}<text x="${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${textFillAttrs} xml:space="preserve">${spans}</text></g>`;
     }
     case "FRAME": {
       const clipId = `clip-${n.id}`;

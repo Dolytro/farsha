@@ -10,7 +10,7 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@farsha/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
 import { isVideoFile, videoUrl } from "../video";
@@ -508,9 +508,11 @@ export function Canvas() {
           </g>
         );
       }
+      const tf = textFill(n);
       return (
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
+          {tf.defs && <defs dangerouslySetInnerHTML={{ __html: tf.defs }} />}
           <text
             xmlSpace="preserve"
             x={textPlacement(n).x}
@@ -519,7 +521,7 @@ export function Canvas() {
             unicodeBidi={textPlacement(n).rtl ? "plaintext" : undefined}
             y={textBaseline(n) + verticalTextOffset(n, layoutText(n, canvasMeasure).height)}
             letterSpacing={n.letterSpacing || undefined}
-            fill={color}
+            fill={tf.defs ? tf.fill : color}
             fontFamily={n.fontFamily}
             fontSize={n.fontSize}
             fontWeight={n.fontWeight}
@@ -599,8 +601,14 @@ export function Canvas() {
         <g dangerouslySetInnerHTML={{ __html: shapeMarkup(n, (id) => assetUrl(doc, id)) }} />
         {isFrame ? (
           <>
-            <clipPath id={`clip-${n.id}`} dangerouslySetInnerHTML={{ __html: shapeGeometry(n, "") }} />
-            <g clipPath={`url(#clip-${n.id})`}>{kids}</g>
+            {n.clipsContent === false ? (
+              <g>{kids}</g>
+            ) : (
+              <>
+                <clipPath id={`clip-${n.id}`} dangerouslySetInnerHTML={{ __html: shapeGeometry(n, "") }} />
+                <g clipPath={`url(#clip-${n.id})`}>{kids}</g>
+              </>
+            )}
             {n.type === "FRAME" && !devMode && (n.layoutGrids ?? []).filter((g) => g.visible).map((g, gi) => (
               <g key={`grid-${gi}`} pointerEvents="none" fill={/^#[0-9a-fA-F]{3,8}$/.test(g.color) ? g.color : "#ff0000"} fillOpacity={Math.min(1, Math.max(0, Number(g.opacity) || 0.1))}>
                 {gridRects(g, n.width, n.height).map((r, ri) => (

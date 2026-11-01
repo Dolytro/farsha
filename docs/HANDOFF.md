@@ -471,13 +471,16 @@ A fresh editor opens `apps/web/public/starter.farsha` (Yjs state, ~860 KB, 178 K
 canvas (`isOldStarter`) is dropped so the starter loads. Boards start folded in Layers (`collapseLayers`), the canvas skips layers outside
 the window (`inView` in `Canvas.tsx`) and the first board is fitted on open.
 
-How the file is made (not part of the build, run by hand when the design changes): each board's HTML is rendered in a 1440 px iframe and
-a DOM extractor turns every element into a layer (boxes, gradients, borders, shadows, text, SVG), then
-`apps/web/scripts/build-starter.ts` writes the file (bundle it with esbuild for node, `node build-starter.cjs <json dir> <out>`; `ONLY` and
-`NOFX` env vars build a subset or drop effects). The landing page comes from the Next.js site, the other boards from static pages made from
-the design canvas. Animation, hover, scroll effects and masks are not layers. Dot-grid backgrounds (with their radial fade) are drawn once into a PNG
-and used as an image fill; the hero shape is one vector path (circle, three petals and the hole); the hero mockup keeps a 3 degree tilt
-instead of the 3D one; gradient text takes the first colour of its gradient. The file is about 1.3 MB (550 KB gzipped) because of those images.
+How the file is made (not part of the build, run by hand when the design changes): every board's page is rendered in a 1440 px wide
+iframe (the landing page in a 5400 px tall one, because the page lays itself out differently in a short window) and a DOM extractor
+turns each element into a layer (boxes, gradients, borders, shadows, text, SVG), then `apps/web/scripts/build-starter.ts` writes the file
+(bundle it with esbuild for node, `node build-starter.cjs <json dir> <out>`; `ONLY` and `NOFX` env vars build a subset or drop effects).
+Things the extractor does on purpose: text is placed by the browser's own baseline and line breaks; elements with a real 3D transform
+(the hero mockup, the plane in "Real tools") are projected with their matrix into vector polygons and placed text; gradients are
+mapped onto the layer box (CSS ones are sampled premultiplied); dot grids, the animated gradient border of the compare table, glows of
+boxes without a background and the hero shape are drawn once into PNG image fills; stacking order follows z-index; SVG shapes with
+gradient fills become vector layers with real gradients. Not layers: animation, hover and scroll effects, masks, counters animate to
+their final numbers. The extractor and the compare harness (editor at 100% against the live page) were scratch scripts, not in the repo.
 
 ## Rename to Farsha
 
