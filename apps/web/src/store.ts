@@ -19,7 +19,7 @@ function readTheme(): ThemePreference {
   try {
     return parseTheme(localStorage.getItem(THEME_KEY));
   } catch {
-    return "system";
+    return "dark";
   }
 }
 
