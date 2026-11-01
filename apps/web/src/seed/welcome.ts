@@ -99,12 +99,20 @@ const OLD_STARTERS: string[][] = [
   ["Avatars", "Hero card", "Hero · 1440 × 900", "Mobile", "Mobile card"],
 ];
 
-/** True for a saved working copy that still holds only an earlier default canvas. */
+/** The boards of the starter file, and how many layers each earlier published version of it had. */
+const STARTER_BOARDS = ["Editor", "Farsha: app, landing and logo", "Files home", "Landing page", "Loader: butterfly", "Logo"];
+const OLD_STARTER_LAYER_COUNTS = new Set([1563, 1599]);
+
+/** True for a saved working copy that still holds only an earlier default canvas, never edited. */
 export function isOldStarter(doc: DesignDoc): boolean {
   const pages = doc.pages();
   if (pages.length !== 1) return false;
-  const names = doc.children(pages[0]!.id).map((n) => n.name).sort();
-  return OLD_STARTERS.some((old) => old.length === names.length && old.every((n, i) => n === names[i]));
+  const page = pages[0]!.id;
+  const names = doc.children(page).map((n) => n.name).sort();
+  if (OLD_STARTERS.some((old) => old.length === names.length && old.every((n, i) => n === names[i]))) return true;
+  // an earlier version of the starter file: same boards, and a layer count that only an unedited copy has
+  const boards = [...STARTER_BOARDS].sort();
+  return names.length === boards.length && boards.every((n, i) => n === names[i]) && OLD_STARTER_LAYER_COUNTS.has(doc.descendants(page).length);
 }
 
 /** A small document holding the hero card, mobile card and avatars (offline fallback for the starter file). */

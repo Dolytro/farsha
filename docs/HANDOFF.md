@@ -468,7 +468,7 @@ not ported yet: `apps/site/src/app/page.tsx` is a placeholder.
 A fresh editor opens `apps/web/public/starter.farsha` (Yjs state, ~860 KB, 178 KB gzipped): the five boards of the UI design canvas
 (Editor, Files home, Loader, Landing page, Logo) as layers at the same canvas positions. `loadStarter()` in `seed/welcome.ts` fetches it;
 `newWelcomeDoc()` (hero card, mobile card, avatars) is the offline fallback. A saved working copy that still holds only an earlier default
-canvas (`isOldStarter`) is dropped so the starter loads. Boards start folded in Layers (`collapseLayers`), the canvas skips layers outside
+canvas (`isOldStarter`: the old two-frame canvas, or an earlier starter file recognised by its boards and layer count, kept in `OLD_STARTER_LAYER_COUNTS`; add the previous count there whenever the starter file is rebuilt) is dropped so the starter loads. Boards start folded in Layers (`collapseLayers`), the canvas skips layers outside
 the window (`inView` in `Canvas.tsx`) and the first board is fitted on open.
 
 How the file is made (not part of the build, run by hand when the design changes): every board's page is rendered in a 1440 px wide
