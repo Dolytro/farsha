@@ -401,8 +401,8 @@ Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows
 - **Testing gotchas learned:** never trigger `window.print()` from a Playwright-driven headed browser without stubbing it (it
   opens a native dialog and the MCP server hangs); `apps/web` vitest has no DOM, so anything importing the Zustand store or
   `commands.ts` cannot be unit-tested there (test the pure module instead); `indexedDB.deleteDatabase("farsha")` plus a
-  reload gives a clean canvas, which still contains the "Welcome to Farsha" and "Shortcuts" frames, so draw test layers in
-  empty space (a frame drawn on top of them becomes a nested frame, not a top-level one).
+  reload gives a clean canvas, which still contains the starter board (Hero card, Mobile card, Avatars; `seed/welcome.ts`), so draw test layers in
+  empty space (a frame drawn on top of them becomes a nested frame, not a top-level one). The starter board is the one from the Farsha UI design canvas and the page background is set to #0e0d14.
 
 Where the session stopped (before the night run): everything above is committed and pushed to `main`, typecheck and all tests pass. Nothing is
 half-done in the working tree. Each feature was tested in the real browser with Playwright (dev server on 5173, `?nologin`);
