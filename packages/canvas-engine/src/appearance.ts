@@ -1,4 +1,4 @@
-import { paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd } from "@farsha/types";
+import { paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
 
 /**
  * SVG markup for strokes and effects, shared by the canvas and by SVG/PNG export.
@@ -285,6 +285,20 @@ export function gradientDef(id: string, p: GradientPaint): string {
   return `<linearGradient id="${id}" x1="${f(0.5 - dx)}" y1="${f(0.5 - dy)}" x2="${f(0.5 + dx)}" y2="${f(0.5 + dy)}">${stops}</linearGradient>`;
 }
 
+const isGradient = (p: Paint | undefined): p is GradientPaint => p?.type === "GRADIENT_LINEAR" || p?.type === "GRADIENT_RADIAL";
+
+/** A text layer's first fill: the gradient definition it needs (empty for a plain colour) and the `fill` value to use. */
+export function textFill(n: DesignNode): { defs: string; fill: string } {
+  const p = "fills" in n ? n.fills?.[0] : undefined;
+  if (isGradient(p)) {
+    const id = `tg-${safeId(n.id)}`;
+    return { defs: gradientDef(id, p), fill: `url(#${id})` };
+  }
+  return { defs: "", fill: p ? hex(paintColor(p)) : "none" };
+}
+
+const vectorGradientId = (n: DesignNode) => `vg-${safeId(n.id)}`;
+
 /** True for a VECTOR drawn with the Line / Arrow / Polygon / Star tools: it has its own fill and stroke instead of baked-in markup attributes. */
 export function isDrawnVector(n: DesignNode): boolean {
   return n.type === "VECTOR" && Array.isArray(n.fills);
@@ -295,7 +309,7 @@ export function vectorPaintAttrs(n: DesignNode): string {
   if (n.type !== "VECTOR") return "";
   const fill = n.fills?.[0];
   const stroke = n.strokes?.[0];
-  const parts = [fill ? `fill="${hex(paintColor(fill))}" fill-opacity="${unit(fill.opacity)}"` : 'fill="none"'];
+  const parts = [fill ? `fill="${isGradient(fill) ? `url(#${vectorGradientId(n)})` : hex(paintColor(fill))}" fill-opacity="${unit(fill.opacity)}"` : 'fill="none"'];
   if (stroke) {
     parts.push(`stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}" stroke-width="${num(Math.max(0, n.strokeWidth ?? 1))}"${strokeExtras(n, "ROUND", "ROUND")}`);
     if (n.strokeStartCap && n.strokeStartCap !== "NONE") parts.push(`marker-start="url(#${markerId(n, "s")})"`);
@@ -330,7 +344,10 @@ const MARKER_SHAPES: Record<Exclude<LineEnd, "NONE">, (c: string) => string> = {
 
 /** The `<marker>` definitions for the arrowheads of a drawn vector ("" when it has none). */
 export function vectorMarkerDefs(n: DesignNode): string {
-  if (n.type !== "VECTOR" || !n.strokes?.[0]) return "";
+  if (n.type !== "VECTOR") return "";
+  const fill = n.fills?.[0];
+  const gradient = isGradient(fill) ? gradientDef(vectorGradientId(n), fill) : "";
+  if (!n.strokes?.[0]) return gradient;
   const color = hex(paintColor(n.strokes[0]));
   // arrowheads grow with the stroke but are never smaller than 8 px
   const size = num(Math.max(8, 4 * Math.max(0, n.strokeWidth ?? 1)));
@@ -338,5 +355,5 @@ export function vectorMarkerDefs(n: DesignNode): string {
     end && end !== "NONE" && end in MARKER_SHAPES
       ? `<marker id="${markerId(n, side)}" viewBox="0 0 10 10" refX="${end === "ARROW_LINES" ? 6 : 5}" refY="5" markerUnits="userSpaceOnUse" markerWidth="${size}" markerHeight="${size}" orient="auto-start-reverse" overflow="visible">${MARKER_SHAPES[end](color)}</marker>`
       : "";
-  return one("s", n.strokeStartCap) + one("e", n.strokeEndCap);
+  return gradient + one("s", n.strokeStartCap) + one("e", n.strokeEndCap);
 }
