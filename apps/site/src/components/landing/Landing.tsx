@@ -1,4 +1,5 @@
 import { FaqList } from "./FaqList";
+import { HeroMockup } from "./HeroMockup";
 import { s } from "./style";
 import { ToolTiles } from "./ToolTiles";
 
@@ -45,46 +46,7 @@ export function Landing() {
 </div>
 </div>
 </div>
-<div className="mk rise" style={s({ "animationDelay": ".4s" })}><div className="bob" style={s({ "position": "absolute", "right": "-2.5cqw", "top": "-9cqw", "width": "5.8cqw", "height": "5.8cqw", "borderRadius": "1.6cqw", "background": "linear-gradient(145deg,#8a6bff,#5b3fd8)" })}></div><div className="tl"><div className="hv"><div style={s({ "position": "relative", "width": "100%", "aspectRatio": "695/470", "animation": "float2 9s ease-in-out infinite", "borderRadius": "2.301cqw", "background": "linear-gradient(160deg,#1c1834,#110e21 60%)", "border": "1px solid #2c2650", "borderRightColor": "#6a4fd0", "borderBottomColor": "#6a4fd0", "boxShadow": "0 5.753cqw 11.506cqw #0009,0 0 5.753cqw #6a4fd033", "overflow": "hidden", "display": "flex", "fontSize": "1.726cqw", "color": "#eceaf7" })}>
-
-<div style={s({ "width": "22.724cqw", "flex": "none", "borderRight": "1px solid #262046", "padding": "2.014cqw 1.438cqw", "display": "flex", "flexDirection": "column", "gap": "0.575cqw" })}>
-<div style={s({ "display": "flex", "gap": "0.863cqw", "padding": "0 0.575cqw 1.438cqw" })}><span style={s({ "width": "1.294cqw", "height": "1.294cqw", "borderRadius": "143.679cqw", "background": "#ff5e4d" })}></span><span style={s({ "width": "1.294cqw", "height": "1.294cqw", "borderRadius": "143.679cqw", "background": "#ffb020" })}></span><span style={s({ "width": "1.294cqw", "height": "1.294cqw", "borderRadius": "143.679cqw", "background": "#4fd19a" })}></span></div>
-<div style={s({ "display": "flex", "gap": "2.014cqw", "padding": "0.575cqw 0.863cqw 1.438cqw", "fontWeight": "600" })}><span>Layers</span><span style={s({ "color": "#a29cba" })}>Assets</span></div>
-<div style={s({ "padding": "1.294cqw 1.438cqw", "borderRadius": "1.007cqw", "background": "#32286a", "display": "flex", "gap": "1.151cqw", "alignItems": "center" })}><i style={s({ "width": "1.438cqw", "height": "1.438cqw", "border": "1.5px solid #cbbfff", "borderRadius": "2px", "display": "block" })}></i>Frame 1</div>
-<div style={s({ "padding": "1.294cqw 1.438cqw 1.294cqw 3.452cqw", "color": "#b7b2cc" })}>Text</div><div style={s({ "padding": "1.294cqw 1.438cqw 1.294cqw 3.452cqw", "color": "#b7b2cc" })}>Rectangle</div><div style={s({ "padding": "1.294cqw 1.438cqw 1.294cqw 3.452cqw", "color": "#b7b2cc" })}>Ellipse</div><div style={s({ "padding": "1.294cqw 1.438cqw", "color": "#b7b2cc", "display": "flex", "gap": "1.151cqw", "alignItems": "center" })}><i style={s({ "width": "1.438cqw", "height": "1.438cqw", "border": "1.5px solid #8d87a6", "borderRadius": "2px", "display": "block" })}></i>Frame</div>
-</div>
-
-<div style={s({ "flex": "1", "minWidth": "0", "position": "relative", "backgroundColor": "#0f0c1c", "backgroundImage": "radial-gradient(#26204a 1px,transparent 1.5px)", "backgroundSize": "2.876cqw 2.876cqw" })}>
-<div style={s({ "position": "absolute", "left": "2.301cqw", "top": "2.014cqw", "width": "3.452cqw", "height": "3.452cqw", "borderRadius": "1.007cqw", "background": "#6a46f2" })}></div>
-<div style={s({ "position": "absolute", "left": "17.259cqw", "top": "2.589cqw", "display": "flex", "gap": "4.315cqw", "color": "#a29cba", "alignItems": "center" })}>
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 5l14 7-6 2-2 6z"></path></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M16 16l4 4"></path></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 6h12v12H6z"></path></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle></svg><span style={s({ "fontSize": "1.582cqw" })}>100%</span></div>
-<div style={s({ "position": "absolute", "left": "2.589cqw", "top": "14.382cqw", "width": "29.340cqw", "height": "27.326cqw", "border": "1.5px solid #6a46f2", "background": "#17132b", "padding": "3.164cqw 2.876cqw", "display": "flex", "flexDirection": "column", "gap": "1.151cqw" })}>
-<i style={s({ "position": "absolute", "left": "-4px", "top": "-4px", "width": "1.007cqw", "height": "1.007cqw", "background": "#fff", "display": "block" })}></i><i style={s({ "position": "absolute", "right": "-4px", "top": "-4px", "width": "1.007cqw", "height": "1.007cqw", "background": "#fff", "display": "block" })}></i><i style={s({ "position": "absolute", "left": "-4px", "bottom": "-4px", "width": "1.007cqw", "height": "1.007cqw", "background": "#fff", "display": "block" })}></i><i style={s({ "position": "absolute", "right": "-4px", "bottom": "-4px", "width": "1.007cqw", "height": "1.007cqw", "background": "#fff", "display": "block" })}></i>
-<div style={s({ "fontWeight": "700", "fontSize": "3.308cqw", "lineHeight": "1", "letterSpacing": "-.02em", "color": "#fff", "whiteSpace": "nowrap" })}>Make it yours</div>
-<div style={s({ "height": "0.575cqw", "width": "100%", "borderRadius": "2px", "background": "#2e2750" })}></div>
-<div style={s({ "fontSize": "1.726cqw", "color": "#a29cba" })}>Design. Collaborate. Share.</div>
-<div style={s({ "flex": "1" })}></div>
-<div style={s({ "height": "4.315cqw", "width": "13.807cqw", "borderRadius": "1.007cqw", "background": "#6a46f2", "color": "#fff", "display": "grid", "placeItems": "center", "fontWeight": "600", "fontSize": "1.582cqw" })}>Get Started!</div>
-</div>
-<div style={s({ "position": "absolute", "left": "33.942cqw", "top": "15.533cqw", "width": "10.931cqw", "height": "10.931cqw", "borderRadius": "143.679cqw", "background": "#f2503f" })}></div>
-<div style={s({ "position": "absolute", "left": "33.367cqw", "top": "28.189cqw", "width": "12.081cqw", "height": "9.205cqw", "borderRadius": "2.014cqw", "background": "#2fd1b3" })}></div>
-<div style={s({ "position": "absolute", "left": "2.589cqw", "top": "48.900cqw", "width": "9.205cqw", "height": "9.205cqw", "borderRadius": "2.301cqw", "background": "#f5a623" })}></div>
-<div style={s({ "position": "absolute", "left": "14.095cqw", "top": "50.626cqw", "width": "13.807cqw", "height": "7.191cqw", "borderRadius": "1.726cqw", "background": "#f04a9b" })}></div>
-</div>
-
-<div style={s({ "width": "29.627cqw", "flex": "none", "borderLeft": "1px solid #262046", "padding": "2.014cqw", "display": "flex", "flexDirection": "column", "gap": "1.726cqw" })}>
-<div style={s({ "display": "flex", "gap": "0.863cqw" })}><span style={s({ "padding": "0.863cqw 1.726cqw", "borderRadius": "1.007cqw", "background": "#221d3e", "fontWeight": "600" })}>Design</span><span style={s({ "padding": "0.863cqw 1.151cqw", "color": "#b7b2cc" })}>Prototype</span></div>
-<div style={s({ "display": "grid", "gridTemplateColumns": "repeat(2,minmax(0,1fr))", "gap": "0.863cqw", "fontSize": "1.582cqw" })}>
-<div style={s({ "background": "#1e1a36", "borderRadius": "1.007cqw", "padding": "1.151cqw 1.438cqw" })}><span style={s({ "color": "#a29cba" })}>X </span>120</div><div style={s({ "background": "#1e1a36", "borderRadius": "1.007cqw", "padding": "1.151cqw 1.438cqw" })}><span style={s({ "color": "#a29cba" })}>Y </span>80</div>
-<div style={s({ "background": "#1e1a36", "borderRadius": "1.007cqw", "padding": "1.151cqw 1.438cqw" })}><span style={s({ "color": "#a29cba" })}>W </span>320</div><div style={s({ "background": "#1e1a36", "borderRadius": "1.007cqw", "padding": "1.151cqw 1.438cqw" })}><span style={s({ "color": "#a29cba" })}>H </span>200</div></div>
-<div style={s({ "color": "#b7b2cc", "fontSize": "1.582cqw" })}>Auto layout</div>
-<div style={s({ "display": "flex", "gap": "0.863cqw" })}><span style={s({ "width": "4.602cqw", "height": "4.315cqw", "borderRadius": "1.007cqw", "background": "#1e1a36" })}></span><span style={s({ "width": "4.602cqw", "height": "4.315cqw", "borderRadius": "1.007cqw", "background": "#1e1a36" })}></span><span style={s({ "width": "4.602cqw", "height": "4.315cqw", "borderRadius": "1.007cqw", "background": "#1e1a36" })}></span><span style={s({ "width": "4.602cqw", "height": "4.315cqw", "borderRadius": "1.007cqw", "background": "#1e1a36" })}></span></div>
-<div style={s({ "color": "#b7b2cc", "fontSize": "1.582cqw" })}>Fill</div>
-<div style={s({ "display": "flex", "alignItems": "center", "gap": "1.151cqw", "background": "#1e1a36", "borderRadius": "1.007cqw", "padding": "1.151cqw 1.438cqw", "fontSize": "1.582cqw" })}><i style={s({ "width": "2.014cqw", "height": "2.014cqw", "borderRadius": "0.575cqw", "background": "#7c3aed", "display": "block" })}></i>#7C3AED</div>
-<div style={s({ "color": "#b7b2cc", "fontSize": "1.582cqw" })}>Stroke</div>
-<div style={s({ "background": "#1e1a36", "borderRadius": "1.007cqw", "padding": "1.438cqw", "fontSize": "1.582cqw", "color": "#b7b2cc" })}>Effects</div>
-</div>
-</div></div></div><div className="zs" aria-hidden="true"><i className="z0"></i><i className="z1"></i><i className="z2"></i><i className="z3"></i><i className="z4"></i><i className="z5"></i><i className="z6"></i><i className="z7"></i><i className="z8"></i></div></div>
+<div className="mk rise" style={s({ "animationDelay": ".4s" })}><div className="bob" style={s({ "position": "absolute", "right": "-2.5cqw", "top": "-9cqw", "width": "5.8cqw", "height": "5.8cqw", "borderRadius": "1.6cqw", "background": "linear-gradient(145deg,#8a6bff,#5b3fd8)" })}></div><div className="tl"><div className="hv"><div style={s({ "position": "relative", "width": "100%", "aspectRatio": "695/470", "animation": "float2 9s ease-in-out infinite", "borderRadius": "2.301cqw", "background": "linear-gradient(160deg,#1c1834,#110e21 60%)", "border": "1px solid #2c2650", "borderRightColor": "#6a4fd0", "borderBottomColor": "#6a4fd0", "boxShadow": "0 5.753cqw 11.506cqw #0009,0 0 5.753cqw #6a4fd033", "overflow": "hidden", "display": "flex", "fontSize": "1.726cqw", "color": "#eceaf7" })}><HeroMockup /></div></div></div><div className="zs" aria-hidden="true"><i className="z0"></i><i className="z1"></i><i className="z2"></i><i className="z3"></i><i className="z4"></i><i className="z5"></i><i className="z6"></i><i className="z7"></i><i className="z8"></i></div></div>
 </div></div>
 
 
