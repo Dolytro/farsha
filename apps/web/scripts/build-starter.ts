@@ -102,6 +102,8 @@ for (const b of BOARDS) {
   }
   const raw = JSON.parse(readFileSync(path, "utf8")) as Raw;
   raw.props.name = b.name;
+  const last = raw.children[raw.children.length - 1];
+  if (b.file === "landing" && last?.props.name === "Frame") last.props.name = "Footer";
   raw.props.x = b.x;
   raw.props.y = b.y;
   build(raw, page);
