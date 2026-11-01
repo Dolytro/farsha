@@ -101,7 +101,7 @@ const OLD_STARTERS: string[][] = [
 
 /** The boards of the starter file, and how many layers each earlier published version of it had. */
 const STARTER_BOARDS = ["Editor", "Farsha: app, landing and logo", "Files home", "Landing page", "Loader: butterfly", "Logo"];
-const OLD_STARTER_LAYER_COUNTS = new Set([1563, 1599]);
+const OLD_STARTER_LAYER_COUNTS = new Set([1563, 1599, 1579]);
 
 /** True for a saved working copy that still holds only an earlier default canvas, never edited. */
 export function isOldStarter(doc: DesignDoc): boolean {
