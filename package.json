@@ -7,10 +7,10 @@
   "homepage": "https://farsha-design.vercel.app",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tanjir-Hasan/farsha.git"
+    "url": "git+https://github.com/Dolytro/farsha.git"
   },
   "bugs": {
-    "url": "https://github.com/Tanjir-Hasan/farsha/issues"
+    "url": "https://github.com/Dolytro/farsha/issues"
   },
   "funding": {
     "type": "buymeacoffee",

@@ -2,7 +2,7 @@
 
 Goal: only the repository owner can merge into `main`; everyone else sends pull requests.
 
-Repository settings can only be changed by the owner account (`Tanjir-Hasan`), and branch rules on a private
+Repository settings can only be changed by the owner account (`Dolytro`), and branch rules on a private
 repository need GitHub Pro. Making the repository public removes that limit. This file is the checklist.
 
 ## 1. Import the ruleset

@@ -1,6 +1,6 @@
 # Getting help
 
-- **Questions and ideas:** open a [GitHub issue](https://github.com/Tanjir-Hasan/farsha/issues/new/choose) using the right template.
+- **Questions and ideas:** open a [GitHub issue](https://github.com/Dolytro/farsha/issues/new/choose) using the right template.
 - **Bugs:** use the bug report template and say what you expected and what happened.
 - **Security problems:** do not open a public issue; see [SECURITY.md](SECURITY.md).
 - **Setup trouble:** read [docs/DEPLOY.md](docs/DEPLOY.md) and [CONTRIBUTING.md](CONTRIBUTING.md) first.

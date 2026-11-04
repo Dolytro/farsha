@@ -1,6 +1,6 @@
 # Farsha
 
-[![CI](https://github.com/Tanjir-Hasan/farsha/actions/workflows/ci.yml/badge.svg)](https://github.com/Tanjir-Hasan/farsha/actions/workflows/ci.yml)
+[![CI](https://github.com/Dolytro/farsha/actions/workflows/ci.yml/badge.svg)](https://github.com/Dolytro/farsha/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-donate-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/your-username)
@@ -50,7 +50,7 @@ pnpm + Turborepo for the monorepo.
 Requirements: Node.js and [pnpm](https://pnpm.io).
 
 ```bash
-git clone https://github.com/Tanjir-Hasan/farsha.git
+git clone https://github.com/Dolytro/farsha.git
 cd farsha
 pnpm install
 pnpm --filter @farsha/web dev

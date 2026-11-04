@@ -6,7 +6,7 @@ setting up the project to getting your pull request merged. By taking part you a
 
 ## Ways to contribute
 
-- **Report a bug** or **suggest a feature** with the [issue templates](https://github.com/Tanjir-Hasan/farsha/issues/new/choose).
+- **Report a bug** or **suggest a feature** with the [issue templates](https://github.com/Dolytro/farsha/issues/new/choose).
   Search existing issues first so we do not duplicate.
 - **Fix a bug or build a feature.** Check [docs/FEATURE_GAP.md](docs/FEATURE_GAP.md) for what Figma has that Farsha still lacks.
 - **Improve the docs.**
@@ -39,7 +39,7 @@ request that the owner reviews and merges.
    ```bash
    git clone https://github.com/<your-username>/farsha.git
    cd farsha
-   git remote add upstream https://github.com/Tanjir-Hasan/farsha.git
+   git remote add upstream https://github.com/Dolytro/farsha.git
    pnpm install
    ```
 2. **Create a branch** from the latest `main`. Use a short name, for example `add-star-point-count`:
@@ -50,7 +50,7 @@ request that the owner reviews and merges.
 3. **Make one change.** One feature or fix per pull request. Small pull requests are reviewed faster.
 4. **Run the checks** (see below) and try the change in the browser, not only in tests.
 5. **Commit** with a short, plain message in the imperative, for example "Add star point count control".
-6. **Push** to your fork and **open a pull request** against `Tanjir-Hasan/farsha` `main`:
+6. **Push** to your fork and **open a pull request** against `Dolytro/farsha` `main`:
    ```bash
    git push -u origin add-star-point-count
    ```
