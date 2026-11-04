@@ -8,7 +8,7 @@
 A free, open source, Figma-like design tool for UI/UX design, Dev Mode handoff and share links.
 It runs in the browser and saves your designs to **your own Google Drive**. There is no backend.
 
-Live: https://farsha-design.vercel.app
+Live: https://farsha.org
 
 > **Status: early.** Farsha already covers everyday design work, but it is not at full Figma parity.
 > See [docs/FEATURE_GAP.md](docs/FEATURE_GAP.md) for what is done and what is missing.
