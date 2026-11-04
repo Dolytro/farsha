@@ -3,3 +3,6 @@ contact_links:
   - name: Security problem
     url: https://github.com/Tanjir-Hasan/farsha/security/advisories/new
     about: Report vulnerabilities privately, not as a public issue.
+  - name: Support the project
+    url: https://buymeacoffee.com/your-username
+    about: Farsha is free. Donations are optional and appreciated.
