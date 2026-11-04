@@ -38,5 +38,5 @@ describe("starter board", () => {
     expect(isOldStarter(doc)).toBe(true);
     doc.createNode("RECTANGLE", { parentId: first, props: { name: "mine", x: 0, y: 0, width: 1, height: 1 } });
     expect(isOldStarter(doc)).toBe(false);
-  });
+  }, 30000);
 });

@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest a feature, ideally one Figma already has
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What should Farsha do?
+    validations:
+      required: true
+  - type: textarea
+    id: figma
+    attributes:
+      label: How does Figma do it?
+      description: Name, shortcut, panel and behaviour in Figma, so Farsha can match it.
+  - type: textarea
+    id: why
+    attributes:
+      label: Why do you need it?
+  - type: markdown
+    attributes:
+      value: Check docs/FEATURE_GAP.md first; the feature may already be planned.
