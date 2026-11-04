@@ -1,9 +1,9 @@
 name: CI
 
+# CI is switched off: it only runs when started by hand from the Actions tab.
+# To turn it back on, restore the push and pull_request triggers.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
