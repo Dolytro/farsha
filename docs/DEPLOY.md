@@ -6,13 +6,16 @@ user's own Google Drive and shared through Drive's "anyone with the link" permis
 ## Vercel
 
 1. Import the GitHub repo in Vercel.
-2. **Root Directory:** `apps/web` (keep "Include source files outside of the Root Directory" on,
-   because the app imports workspace packages).
-3. Framework preset: Vite. Vercel detects pnpm from `pnpm-lock.yaml`.
+2. **Root Directory:** `apps/site` (keep "Include source files outside of the Root Directory" on,
+   because the site imports workspace packages). One project serves the landing site at `/` and the
+   editor at `/app`.
+3. Framework preset: Next.js. **Build Command:** `pnpm build` (override on); it builds the editor
+   (`apps/web`) and copies it to `apps/site/public/app` before the Next.js build. Vercel detects pnpm
+   from `pnpm-lock.yaml`. Do not import `apps/api` or `apps/web` as separate projects.
 4. Add environment variables (Production):
    - `VITE_GOOGLE_CLIENT_ID`
    - `VITE_GOOGLE_API_KEY`
-5. Deploy. `apps/web/vercel.json` rewrites every path to `index.html`, so `/v/<fileId>` share
+5. Deploy. `apps/site/next.config.mjs` rewrites `/v/<fileId>` and `/app/v/<fileId>` to the editor, so share
    links open the viewer.
 
 ## Google Cloud (one time)
@@ -23,7 +26,7 @@ user's own Google Drive and shared through Drive's "anyone with the link" permis
    Publish the app (**In production**); in "Testing" tokens expire after 7 days.
 3. **Credentials → OAuth client ID → Web application.** Authorized JavaScript origins:
    - `http://localhost:5173` (local development)
-   - your production URL, e.g. `https://farsha-design.vercel.app`
+   - your production URL, e.g. `https://farsha.org`
 
    Vercel preview URLs change per deployment and are not covered; use the production URL.
 4. **Credentials → API key.** Restrict it to *HTTP referrers* (your production URL and
@@ -64,4 +67,4 @@ pnpm dev
 
 ## Live site
 
-Production: https://farsha-design.vercel.app (Vercel project `farsha`, root directory `apps/web`).
+Production: https://farsha.org (Vercel project `farsha` in the Dolytro team, root directory `apps/site`).
