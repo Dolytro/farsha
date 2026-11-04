@@ -29,7 +29,7 @@ const buttonStyle = {
  * accepts, "Accept" and "Decline" look the same, the choice can be changed later from "Cookie settings", and a
  * browser that sends Global Privacy Control or Do Not Track is never asked.
  */
-export function AnalyticsConsent({ gaId, privacyHref = "/privacy.html" }: Props) {
+export function AnalyticsConsent({ gaId, privacyHref = "/privacy" }: Props) {
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState<Consent | null>(null);
 

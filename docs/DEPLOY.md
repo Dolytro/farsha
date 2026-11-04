@@ -17,7 +17,7 @@ user's own Google Drive and shared through Drive's "anyone with the link" permis
    - `VITE_GOOGLE_API_KEY`
    - optional, for Google Analytics 4: `NEXT_PUBLIC_GA_ID` (landing site) and `VITE_GA_ID` (editor), both the
      same `G-XXXXXXXXXX` measurement ID. Leave them unset for no analytics. Analytics only loads after the visitor
-     presses Accept; see "Analytics" in `apps/site/public/privacy.html`.
+     presses Accept; see "Analytics" in `apps/site/src/app/privacy/page.tsx`.
 5. Deploy. `apps/site/next.config.mjs` rewrites `/v/<fileId>` and `/app/v/<fileId>` to the editor, so share
    links open the viewer.
 
@@ -63,7 +63,7 @@ pnpm dev
 - **Google sign-in says "Access blocked / has not completed the Google verification process":**
   the OAuth consent screen is in *Testing*, where only listed test users can sign in. Publish it
   (Google Auth Platform → Audience → Publish app). Publishing needs the home page, privacy policy
-  and terms links on the Branding page; this app serves them at `/privacy.html` and `/terms.html`.
+  and terms links on the Branding page; this app serves them at `https://farsha.org/privacy` and `https://farsha.org/terms` (the old `.html` URLs redirect).
   With only the non-sensitive `drive.file` scope and no logo, no Google verification is required and
   any Google account can sign in. Viewers of shared links never need to sign in to view.
 - **Changing `VITE_*` variables on Vercel** requires a new deployment (they are baked in at build time).

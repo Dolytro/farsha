@@ -73,7 +73,7 @@ Out of scope for now: plugins, FigJam/Slides, AI features, enterprise features, 
 | Vercel | Project `farsha` in the Dolytro team (Hobby). **Root Directory = `apps/site`**, framework Next.js, build command `pnpm build`, "include source files outside root" on. Production domain `https://farsha.org`. Auto-deploys on every push to `main`. `apps/site/next.config.mjs` rewrites `/v/<fileId>` and `/app/v/<fileId>` to the editor (needed for share links). |
 | Google Cloud | Project name Farsha (the project id is set when the new project is created; write it here), owned by the project owner's Google account. Drive API enabled. Google Auth Platform: External app "Farsha", **In production**, scope `drive.file` (non-sensitive, no verification needed), home page / privacy / terms links point to the live site. OAuth client "Web client 1" (authorised JS origins: `http://localhost:5173`, `http://localhost:5174`, `https://farsha.org`). API key "Farsha Drive key": restricted to Drive API and to those three origins as HTTP referrers. |
 | Env vars | `VITE_GOOGLE_CLIENT_ID` and `VITE_GOOGLE_API_KEY`. Set in Vercel (Production) and in `apps/web/.env.local` locally. Both end up in the browser bundle, so neither is a secret, but the key stays out of git. Find the values in Google Cloud Console → APIs & Services → Credentials. |
-| Public pages | `/privacy.html`, `/terms.html` (`apps/web/public`), required by the Google consent screen. |
+| Public pages | `/privacy`, `/terms` (`apps/site/src/app/privacy`, `terms`), required by the Google consent screen; `/privacy.html` and `/terms.html` redirect to them. |
 
 If the production origin ever changes, add it to the OAuth client's authorised origins and to the API key's
 referrers, then redeploy (Vite bakes env vars in at build time).
@@ -116,7 +116,7 @@ pnpm --filter @farsha/web exec vite --port 5174 --strictPort   # a second dev se
 ```
 apps/
   web/                React app (the whole product right now)
-    public/           privacy.html, terms.html
+    public/           (the privacy and terms pages are now routes in apps/site/src/app)
     src/
       App.tsx         shell, login gate, global keyboard shortcuts, clipboard events
       store.ts        Zustand store (document, selection, viewport, tool, drive, toast, menu, ...)
@@ -458,8 +458,8 @@ attribution, never put secrets in git or web forms. Reply in Banglish.
 
 `apps/site` is a Next.js site (SCSS, BEM) served at `/`; the editor (`apps/web`, Vite, base `/app/`) is built and copied to
 `apps/site/public/app` by `pnpm --filter @farsha/site build` (`scripts/build-all.mjs`), so one Vercel project serves both.
-Share links are `/app/v/<fileId>` (old `/v/<fileId>` still works through a rewrite). `privacy.html` / `terms.html` live in
-`apps/site/public`. Vercel must use Root Directory `apps/site`, framework Next.js, build command `pnpm build`.
+Share links are `/app/v/<fileId>` (old `/v/<fileId>` still works through a rewrite). the privacy policy and terms are pages at `/privacy` and `/terms`
+(`apps/site/src/app/privacy`, `terms`). Vercel must use Root Directory `apps/site`, framework Next.js, build command `pnpm build`.
 Design source: the Claude Design canvas "Farsha UI" (boards Landing2 and Loader). Landing v2 and the butterfly loader are
 not ported yet: `apps/site/src/app/page.tsx` is a placeholder.
 

@@ -47,8 +47,8 @@ export function ContentPage({ path, title, children }: Props) {
         <span>
           Made by <a href={MAKER.url}>{MAKER.name}</a>. Free and open source (MIT). Not affiliated with Figma, Inc.
         </span>
-        <a href="/privacy.html">Privacy</a>
-        <a href="/terms.html">Terms</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
         {DONATE_URL ? <a href={DONATE_URL}>Buy me a coffee</a> : null}
         <CookieSettingsLink gaId={process.env.NEXT_PUBLIC_GA_ID} />

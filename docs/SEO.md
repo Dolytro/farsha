@@ -24,7 +24,7 @@ page to `apps/site/src/app/sitemap.ts`, keep claims true (see `docs/FEATURE_GAP.
 Optional and consent based. Set the same GA4 measurement ID (`G-XXXXXXXXXX`) as `NEXT_PUBLIC_GA_ID` (landing site)
 and `VITE_GA_ID` (editor) in Vercel, then redeploy. Visitors are asked first; nothing loads until they accept, and
 browsers sending Global Privacy Control or Do Not Track are never asked. Do not add other trackers without updating
-`apps/site/public/privacy.html`.
+`apps/site/src/app/privacy/page.tsx`.
 
 ## Off-page checklist (do these by hand)
 
