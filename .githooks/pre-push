@@ -1,0 +1,11 @@
+#!/bin/sh
+# Stops accidental pushes straight to main. Open a pull request instead (see CONTRIBUTING.md).
+# The repository owner can override with: ALLOW_MAIN_PUSH=1 git push
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ] && [ "$ALLOW_MAIN_PUSH" != "1" ]; then
+    echo "Push blocked: do not push directly to main." >&2
+    echo "Push a branch and open a pull request instead. See CONTRIBUTING.md." >&2
+    exit 1
+  fi
+done
+exit 0
