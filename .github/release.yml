@@ -1,0 +1,26 @@
+# Categories for the notes GitHub generates when you click "Generate release notes".
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+    authors:
+      - dependabot
+  categories:
+    - title: Breaking changes
+      labels: [breaking-change]
+    - title: New features
+      labels: [enhancement, figma-parity]
+    - title: Bug fixes
+      labels: [bug]
+    - title: Performance
+      labels: [performance]
+    - title: Security
+      labels: [security]
+    - title: Accessibility
+      labels: [accessibility]
+    - title: Documentation
+      labels: [documentation]
+    - title: Maintenance
+      labels: [chore, refactor, dependencies, github_actions]
+    - title: Other changes
+      labels: ["*"]

@@ -109,6 +109,15 @@ All three must pass. Add tests for new behaviour.
 - Do not mix unrelated changes, formatting sweeps or dependency bumps into a feature pull request.
 - Be kind in reviews. Critique the code, not the person.
 
+## Labels
+
+Issues and pull requests use the labels listed in [`.github/labels.yml`](.github/labels.yml): a type
+(`bug`, `enhancement`, `figma-parity`, `documentation` ...), an area (`area: canvas`, `area: dev-mode` ...),
+a status (`needs-triage`, `needs-info`, `confirmed` ...) and a priority. New issues start as `needs-triage`.
+Look for `good first issue` and `help wanted` if you want a place to start. Release notes are grouped by
+these labels (`.github/release.yml`). Maintainers apply the labels to GitHub with
+`node .github/scripts/sync-labels.mjs` (needs the `gh` CLI).
+
 ## License
 
 By contributing, you agree that your contributions are licensed under the [MIT License](LICENSE), and that you

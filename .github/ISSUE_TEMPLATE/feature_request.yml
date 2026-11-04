@@ -1,6 +1,6 @@
 name: Feature request
 description: Suggest a feature, ideally one Figma already has
-labels: [enhancement]
+labels: [enhancement, needs-triage]
 body:
   - type: textarea
     id: what
