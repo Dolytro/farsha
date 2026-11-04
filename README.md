@@ -75,6 +75,7 @@ pnpm --filter @farsha/web build    # production build of the editor
 - [docs/FEATURE_GAP.md](docs/FEATURE_GAP.md): Farsha compared with Figma
 - [docs/DEPLOY.md](docs/DEPLOY.md): deployment and Google setup
 - [docs/PLAN.md](docs/PLAN.md): the original plan
+- [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md): how `main` is protected (owner only)
 
 ## Contributing
 
