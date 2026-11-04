@@ -3,7 +3,7 @@
 [![CI](https://github.com/Dolytro/farsha/actions/workflows/ci.yml/badge.svg)](https://github.com/Dolytro/farsha/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-donate-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/your-username)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-donate-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/farsha)
 
 A free, open source, Figma-like design tool for UI/UX design, Dev Mode handoff and share links.
 It runs in the browser and saves your designs to **your own Google Drive**. There is no backend.
@@ -85,7 +85,7 @@ To report a security problem, see [SECURITY.md](SECURITY.md).
 ## Support the project
 
 Farsha is free and will stay free. If it saves you time, you can
-[buy me a coffee](https://buymeacoffee.com/your-username). Starring the repo, reporting bugs and sending
+[buy me a coffee](https://buymeacoffee.com/farsha). Starring the repo, reporting bugs and sending
 pull requests help just as much.
 
 ## Community
@@ -97,3 +97,11 @@ pull requests help just as much.
 ## License
 
 [MIT](LICENSE). Third-party packages keep their own open source licenses.
+
+---
+
+<p align="center">
+  <a href="https://buymeacoffee.com/farsha" target="_blank" rel="noopener">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" width="217" height="60" />
+  </a>
+</p>
