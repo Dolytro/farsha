@@ -52,7 +52,7 @@ export function ContentPage({ path, title, children }: Props) {
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
         {DONATE_URL ? <a href={DONATE_URL}>Buy me a coffee</a> : null}
         <CookieSettingsLink gaId={process.env.NEXT_PUBLIC_GA_ID} />
-        <SocialLinks />
+        <SocialLinks tone="dark" />
       </footer>
     </div>
   );
