@@ -93,11 +93,6 @@ pull requests help just as much.
 - [Support and questions](SUPPORT.md)
 - [Changelog](CHANGELOG.md)
 
-## Related open source projects
-
-Farsha is not the only open source design tool. [Penpot](https://penpot.app) is a mature, open source
-design and prototyping platform, worth a look if Farsha does not cover what you need yet.
-
 ## License
 
 [MIT](LICENSE). Third-party packages keep their own open source licenses.
