@@ -3,6 +3,27 @@
   "private": true,
   "version": "0.0.0",
   "license": "MIT",
+  "description": "A free, open source, Figma-like design tool that runs in the browser.",
+  "homepage": "https://farsha-design.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dolytro/farsha.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Dolytro/farsha/issues"
+  },
+  "funding": {
+    "type": "buymeacoffee",
+    "url": "https://buymeacoffee.com/your-username"
+  },
+  "keywords": [
+    "design-tool",
+    "figma-alternative",
+    "open-source",
+    "ui-design",
+    "vector-editor",
+    "yjs"
+  ],
   "packageManager": "pnpm@12.16.1",
   "scripts": {
     "dev": "turbo run dev",
@@ -14,5 +35,8 @@
     "turbo": "^2.11.10",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

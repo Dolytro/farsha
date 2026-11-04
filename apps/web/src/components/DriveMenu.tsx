@@ -91,9 +91,12 @@ export function DriveMenu() {
           {!driveConfigured ? (
             <p className="drive__note">Google Drive isn't configured. Set VITE_GOOGLE_CLIENT_ID and VITE_GOOGLE_API_KEY.</p>
           ) : !drive.user ? (
-            <button className="drive__item drive__item--primary" onClick={() => void connect()}>
-              Sign in with Google
-            </button>
+            <>
+              <button className="drive__item drive__item--primary" onClick={() => void connect()}>
+                Sign in with Google
+              </button>
+              <p className="drive__note">Google sign-in is not public yet. Your design is kept in this browser until then.</p>
+            </>
           ) : (
             <>
               <div className="drive__user">
