@@ -26,6 +26,7 @@
   ],
   "packageManager": "pnpm@12.16.1",
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",

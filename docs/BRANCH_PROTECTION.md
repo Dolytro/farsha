@@ -15,6 +15,7 @@ It does this on `main`:
 - Pull request required, with 1 approving review and **code owner review** (`.github/CODEOWNERS` lists the owner, so only
   the owner's approval counts).
 - Stale approvals dismissed on new pushes; conversations must be resolved.
+- Direct pushes and updates to `main` are rejected for everyone except the owner (`update` rule plus the pull request rule).
 - No force pushes, no deleting the branch, linear history.
 - Bypass is limited to the **Repository admin** role (the owner).
 
@@ -29,3 +30,10 @@ It does this on `main`:
 
 Try `git push origin main` from a non-owner account: it must be rejected. A pull request from a fork must show
 "Review required" until the owner approves.
+
+## Local safety hook
+
+`.githooks/pre-push` is enabled by `pnpm install` (the `prepare` script sets `core.hooksPath`). It stops
+accidental `git push` to `main` on a contributor's machine. It is only a convenience: a person can skip it
+(`--no-verify`), so the ruleset above is what really enforces the rule. The owner can override it with
+`ALLOW_MAIN_PUSH=1 git push`.
