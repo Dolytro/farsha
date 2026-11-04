@@ -68,6 +68,18 @@ request that the owner reviews and merges.
 
 If you do not get a reply within about a week, leave a polite comment on the pull request.
 
+### If you pushed to `main` by mistake
+
+`pnpm install` turns on a local safety hook (`.githooks/pre-push`) that refuses any push to `main` and tells
+you to open a pull request. On the server, branch protection rejects direct pushes from everyone except the
+owner (see [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md)). If your push was blocked, nothing is wrong:
+create a branch from your commits and push that instead:
+
+```bash
+git switch -c my-change
+git push -u origin my-change
+```
+
 ## Checks that must pass
 
 Automatic CI is switched off for now, so please run these yourself before you open a pull request:
