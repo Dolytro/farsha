@@ -88,7 +88,7 @@ Prerequisites: Node 22+, git, a modern Chromium browser. Install pnpm 12: `npm i
 git clone https://github.com/Dolytro/farsha.git
 cd farsha
 git config --global user.name  "Dolytro"
-git config --global user.email "dolytro.contact@gmail.com"   # GitHub no-reply address
+git config --global user.email "dolytro.contact@gmail.com"
 pnpm install            # pnpm 12 needs the build approvals already in pnpm-workspace.yaml (allowBuilds)
 cp apps/web/.env.example apps/web/.env.local   # then fill in the two values (section 4)
 pnpm --filter @farsha/web dev                  # http://localhost:5173
