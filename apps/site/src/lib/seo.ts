@@ -21,6 +21,18 @@ export const KEYWORDS = [
 ];
 
 export const MAKER = { name: "Dolytro", url: "https://dolytro.com" } as const;
+/** Dolytro's social profiles; Farsha news is posted there. Used by the footer links and the JSON-LD `sameAs`. */
+export const SOCIALS: { name: string; url: string }[] = [
+  { name: "Facebook", url: "https://www.facebook.com/share/1CfyyzePHR/" },
+  { name: "YouTube", url: "https://youtube.com/@dolytro" },
+  { name: "Instagram", url: "https://www.instagram.com/dolytro.ig/" },
+  { name: "X", url: "https://x.com/dolytro" },
+  { name: "Threads", url: "https://www.threads.net/@dolytro.ig" },
+  { name: "TikTok", url: "https://www.tiktok.com/@dolytro" },
+  { name: "Pinterest", url: "https://www.pinterest.com/dolytro_/" },
+];
+
 export const REPO_URL = "https://github.com/Dolytro/farsha";
-export const DONATE_URL = "https://buymeacoffee.com/farsha";
-export const CONTACT_EMAIL = "dolytro.contact@gmail.com";
+/** Set to a Buy Me a Coffee URL (for example "https://buymeacoffee.com/farsha") to show donate links again. Hidden for now. */
+export const DONATE_URL: string | null = null;
+export const CONTACT_EMAIL = "contact@farsha.org";

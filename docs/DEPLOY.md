@@ -15,6 +15,9 @@ user's own Google Drive and shared through Drive's "anyone with the link" permis
 4. Add environment variables (Production):
    - `VITE_GOOGLE_CLIENT_ID`
    - `VITE_GOOGLE_API_KEY`
+   - optional, for Google Analytics 4: `NEXT_PUBLIC_GA_ID` (landing site) and `VITE_GA_ID` (editor), both the
+     same `G-XXXXXXXXXX` measurement ID. Leave them unset for no analytics. Analytics only loads after the visitor
+     presses Accept; see "Analytics" in `apps/site/public/privacy.html`.
 5. Deploy. `apps/site/next.config.mjs` rewrites `/v/<fileId>` and `/app/v/<fileId>` to the editor, so share
    links open the viewer.
 

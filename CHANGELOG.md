@@ -14,7 +14,6 @@ First public release of Farsha, a free and open source, Figma-like design tool t
 - Dev Mode with code generation, and share links.
 - The landing site at https://farsha.org and a starter file that opens on a fresh canvas.
 - Open source project files: contributing guide, code of conduct, security policy, support guide, issue and pull request templates, CI, Dependabot, CODEOWNERS and EditorConfig.
-- Buy Me a Coffee link (README, GitHub Sponsor button, landing page).
 
 ### Notes
 - Google sign-in is not public yet because the Google Cloud project is not published. Drive saving stays off for visitors until then.

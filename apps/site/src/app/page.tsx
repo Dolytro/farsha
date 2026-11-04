@@ -1,6 +1,6 @@
 import { Landing } from "../components/landing/Landing";
 import { FAQ } from "../components/landing/faq-data";
-import { CONTACT_EMAIL, DONATE_URL, MAKER, REPO_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../lib/seo";
+import { CONTACT_EMAIL, MAKER, REPO_URL, SOCIALS, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../lib/seo";
 import "../styles/landing.css";
 
 const jsonLd = {
@@ -12,7 +12,8 @@ const jsonLd = {
       name: MAKER.name,
       url: MAKER.url,
       email: CONTACT_EMAIL,
-      sameAs: ["https://github.com/Dolytro"],
+      contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: CONTACT_EMAIL, availableLanguage: "English" },
+      sameAs: ["https://github.com/Dolytro", ...SOCIALS.map((x) => x.url)],
     },
     {
       "@type": "WebSite",
@@ -42,7 +43,6 @@ const jsonLd = {
       codeRepository: REPO_URL,
       installUrl: `${SITE_URL}/app`,
       potentialAction: { "@type": "UseAction", target: `${SITE_URL}/app` },
-      sponsor: { "@type": "Organization", name: "Buy Me a Coffee supporters", url: DONATE_URL },
     },
     {
       "@type": "FAQPage",

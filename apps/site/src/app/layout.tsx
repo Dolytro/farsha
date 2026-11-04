@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "../styles/globals.scss";
 import "@farsha/ui/styles.scss";
 import { SiteLoader } from "../components/SiteLoader";
+import { AnalyticsConsent } from "@farsha/ui/analytics";
 import { KEYWORDS, MAKER, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "../lib/seo";
 
 export const viewport: Viewport = {
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <SiteLoader />
         {children}
+        <AnalyticsConsent gaId={process.env.NEXT_PUBLIC_GA_ID} />
       </body>
     </html>
   );

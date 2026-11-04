@@ -7,7 +7,8 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./styles.scss": "./src/ui.scss"
+    "./styles.scss": "./src/ui.scss",
+    "./analytics": "./src/analytics/index.ts"
   },
   "types": "./src/index.ts",
   "scripts": {
