@@ -66,7 +66,10 @@ export function VersionHistory() {
             <li className="dialog__row" key={v.id}>
               <div className="dialog__main">
                 <span className="dialog__name">{v.name}</span>
-                <span className="dialog__meta">{new Date(v.savedAt).toLocaleString()}</span>
+                <span className="dialog__meta">
+                  {new Date(v.savedAt).toLocaleString()}
+                  {v.auto ? <span className="dialog__tag">Auto</span> : null}
+                </span>
               </div>
               <button className="seg__btn" title="What changed since this version" onClick={() => setDiff({ id: v.id, name: v.name, changes: compareDocs(DesignDoc.fromState(v.bytes), doc) })}>
                 Compare

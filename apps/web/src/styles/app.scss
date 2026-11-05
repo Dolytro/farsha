@@ -1937,3 +1937,13 @@ body {
     opacity: 0.6;
   }
 }
+
+// "Auto" tag on versions the editor saved by itself
+.dialog__tag {
+  margin-left: 8px;
+  padding: 0 6px;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  font-size: 10px;
+  opacity: 0.8;
+}

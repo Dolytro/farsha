@@ -34,6 +34,7 @@ import { textShortcutCommand } from "./text-shortcuts";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
 import { restoreLocal, startLocalAutosave } from "./local-persist";
+import { startAutoVersions } from "./auto-versions";
 import { loadStarter, newWelcomeDoc } from "./seed/welcome";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
@@ -225,6 +226,7 @@ export function App() {
     }
     // Bring back the working copy saved in this browser first, then keep saving it (and Drive) as the design changes.
     let stopLocal: (() => void) | undefined;
+    let stopAuto: (() => void) | undefined;
     let cancelled = false;
     void restoreLocal().then(async (restored) => {
       if (!restored) {
@@ -241,11 +243,13 @@ export function App() {
       const v = zoomFit(s.doc, s.pageId, first ? [first.id] : []);
       if (v) s.setViewport(v);
       stopLocal = startLocalAutosave();
+      stopAuto = startAutoVersions();
     });
     const stopDrive = startAutosave();
     return () => {
       cancelled = true;
       stopLocal?.();
+      stopAuto?.();
       stopDrive();
     };
   }, []);

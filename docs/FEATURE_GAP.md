@@ -124,7 +124,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Save local copy (.farsha download), open local file | ✅ | In the cloud menu, works without signing in. Missing: Duplicate file, drag a .farsha onto the canvas |
 | Export all (File → Export, Ctrl+Shift+E), export frames to PDF (menu) | ❌ | P2 |
 | Import SVG / images / drag and drop files | ❌ | P1 |
-| Version history, restore | 🟡 | Save a named version (Ctrl+Alt+S, Actions, cloud menu → Version history), list, restore (the current state is saved first), delete; newest 30 kept in this browser per file. Missing: automatic versions, versions on Drive (shared across devices), visual compare |
+| Version history, restore | 🟡 | Save a named version (Ctrl+Alt+S, Actions, cloud menu → Version history), list, restore (the current state is saved first), delete; newest 30 kept in this browser per file. Automatic versions done (an "Autosave" version every 10 minutes of editing, the newest 10 kept, marked Auto). Missing: versions on Drive (shared across devices), visual compare |
 | Branching (menu: Create branch) | ❌ | P3 |
 | Offline editing and sync queue | ❌ | P3 |
 
@@ -307,7 +307,7 @@ Other
 - Plugins and widgets: a small sandboxed plugin API (large)
 - Figma Draw tools (brush, marker, highlighter) and the Switch to Draw mode
 - Import: PDF, Sketch, .fig (partial)
-- Autosave history entries (Figma saves versions by itself), named versions with descriptions
+- ✅ Autosave history entries (every 10 minutes of editing, in the browser). Still missing: named versions with descriptions
 
 ### 12.3 Needs a server (cannot be free and offline, documented, not planned)
 Live cursors, observation mode, cursor chat, audio, comment notifications and @mentions, branching and merging, team and shared libraries,
