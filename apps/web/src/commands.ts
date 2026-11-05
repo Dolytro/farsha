@@ -32,6 +32,8 @@ export interface Command {
   keywords?: string;
   /** Needs a selection; hidden from the list otherwise. */
   needsSelection?: boolean;
+  /** Set for the page and layer matches the palette adds to a search. */
+  jump?: { kind: "page" | "layer"; detail: string };
   run: () => void | Promise<void>;
 }
 

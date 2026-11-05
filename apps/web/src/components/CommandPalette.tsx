@@ -1,10 +1,29 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { buildCommands } from "../commands";
+import { buildCommands, type Command } from "../commands";
 import { filterCommands } from "../command-filter";
 import { useEditor } from "../store";
 import { buildMainMenu } from "../main-menu";
 import { categoryMap, sortByCategory } from "../command-categories";
 import { loadRecent, pushRecent, saveRecent, splitRecent } from "../recent-actions";
+import { searchTargets } from "../palette-search";
+import { panToLayer } from "../actions";
+
+/** Pages and layers matching the query, as commands that go there. */
+function jumpCommands(query: string): Command[] {
+  return searchTargets(useEditor.getState().doc, query).map((t) => ({
+    id: "jump-" + t.kind + "-" + t.id,
+    label: t.label,
+    run: () => {
+      useEditor.getState().setPage(t.pageId);
+      if (t.kind === "page") return;
+      useEditor.getState().select([t.id]);
+      const s = useEditor.getState();
+      const next = panToLayer(s.doc, t.id, s.viewport);
+      if (next) s.setViewport(next);
+    },
+    jump: { kind: t.kind, detail: t.detail },
+  }));
+}
 
 /** Figma's "Actions" (Ctrl+/): search every command and run it, with its shortcut shown. */
 export function CommandPalette() {
@@ -24,7 +43,8 @@ export function CommandPalette() {
   const available = useMemo(() => commands.filter((c) => hasSelection || !c.needsSelection), [commands, hasSelection]);
   const { shown, recentCount } = useMemo(() => {
     const list = filterCommands(available, query);
-    if (query.trim()) return { shown: list, recentCount: 0 };
+    // A search also finds pages and layers by name; picking one jumps to it.
+    if (query.trim()) return { shown: [...list, ...jumpCommands(query)], recentCount: 0 };
     // Nothing typed: the actions you ran lately come first, then everything else by category.
     const { recent, rest } = splitRecent(sortByCategory(list, categories), recentIds);
     return { shown: [...recent, ...rest], recentCount: recent.length };
@@ -48,7 +68,7 @@ export function CommandPalette() {
   const run = (i: number) => {
     const cmd = shown[i];
     if (!cmd) return;
-    saveRecent(pushRecent(loadRecent(), cmd.id));
+    if (!cmd.jump) saveRecent(pushRecent(loadRecent(), cmd.id));
     setOpen(false);
     Promise.resolve(cmd.run()).catch((err) => useEditor.getState().showToast(err instanceof Error ? `Couldn't do that: ${err.message}` : "Couldn't do that"));
   };
@@ -96,7 +116,7 @@ export function CommandPalette() {
               onClick={() => run(i)}
             >
               <span>{c.label}</span>
-              {query.trim() && <span className="palette__category">{categories.get(c.id) ?? "Other"}</span>}
+              {query.trim() && <span className="palette__category">{c.jump ? (c.jump.kind === "page" ? "Page" : "Layer · " + c.jump.detail) : (categories.get(c.id) ?? "Other")}</span>}
               {c.shortcut && <kbd className="palette__key">{c.shortcut}</kbd>}
             </li>
             </Fragment>
