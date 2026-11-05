@@ -218,7 +218,7 @@ export function Canvas() {
         doc.stopCapturing();
         // Figma: Alt+drag drags a copy and leaves the original where it was
         if (e.altKey && !viewer) {
-          const copies = duplicateNodes(doc, next, 0, false);
+          const copies = duplicateNodes(doc, next, 0, false, useEditor.getState().prefs.renameDuplicates);
           if (copies.length) {
             next = copies;
             select(copies);

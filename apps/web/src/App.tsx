@@ -458,7 +458,7 @@ export function App() {
         reorderSelection(doc, selection, mod ? (up ? Infinity : -Infinity) : up ? 1 : -1);
       } else if (mod && key === "d") {
         e.preventDefault();
-        s.select(duplicateNodes(doc, selection));
+        s.select(duplicateNodes(doc, selection, 10, true, s.prefs.renameDuplicates));
       } else if (key === "delete" || key === "backspace") {
         doc.stopCapturing();
         selection.forEach((id) => doc.hasNode(id) && doc.deleteNode(id));

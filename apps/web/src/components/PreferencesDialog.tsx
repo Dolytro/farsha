@@ -3,12 +3,13 @@ import { UI_PRESETS, type Prefs, type UiPreset } from "../prefs";
 import { Select } from "./Select";
 import { useEditor } from "../store";
 
-const SWITCHES: { key: keyof Pick<Prefs, "keepTool" | "invertZoom" | "wheelZoom" | "snapping" | "spellCheck" | "hoverHighlight" | "showDimensions" | "rightDragPan">; label: string; hint: string }[] = [
+const SWITCHES: { key: keyof Pick<Prefs, "keepTool" | "invertZoom" | "wheelZoom" | "snapping" | "spellCheck" | "hoverHighlight" | "showDimensions" | "rightDragPan" | "renameDuplicates">; label: string; hint: string }[] = [
   { key: "keepTool", label: "Keep tool selected after use", hint: "Stay on Rectangle, Ellipse, … after drawing a layer" },
   { key: "spellCheck", label: "Check spelling in text", hint: "Underlines misspelled words while you type in a text layer" },
   { key: "hoverHighlight", label: "Highlight layers on hover", hint: "Outline the layer under the pointer" },
   { key: "showDimensions", label: "Show dimensions on objects", hint: "The width and height under the selection" },
   { key: "rightDragPan", label: "Right-click and drag to pan", hint: "A plain right click still opens the menu" },
+  { key: "renameDuplicates", label: "Rename duplicated layers", hint: "Duplicating “Card 1” names the copy “Card 2”" },
   { key: "snapping", label: "Snap to layers and guides", hint: "While moving layers (hold Ctrl to snap off for one move)" },
   { key: "wheelZoom", label: "Use scroll wheel to zoom", hint: "Instead of panning; hold Shift is not needed, Ctrl + wheel always zooms" },
   { key: "invertZoom", label: "Invert zoom direction", hint: "Scroll up to zoom out" },

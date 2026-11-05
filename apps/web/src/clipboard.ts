@@ -1,3 +1,4 @@
+import { nextCopyName } from "./copy-name";
 import type { DesignDoc } from "@farsha/design-core";
 import type { DesignNode, NodeType } from "@farsha/types";
 import { fitSize } from "./images";
@@ -37,12 +38,16 @@ function toClip(doc: DesignDoc, node: DesignNode, mainAsInstance = true): ClipNo
 }
 
 /** Ctrl+D: copy each top-level layer with its whole subtree next to the original (a main component duplicates into a new main). */
-export function duplicateNodes(doc: DesignDoc, ids: string[], offset = 10, closeStep = true): string[] {
+export function duplicateNodes(doc: DesignDoc, ids: string[], offset = 10, closeStep = true, renameCopies = false): string[] {
   doc.stopCapturing();
   const copies = topLevelOf(doc, ids).flatMap((id) => {
     const n = doc.getNode(id);
     if (!n?.parentId) return [];
     const made = create(doc, toClip(doc, n, false), n.parentId, offset, offset);
+    if (made && renameCopies) {
+      const name = nextCopyName(n.name);
+      if (name !== n.name) doc.rename(made, name);
+    }
     return made ? [made] : [];
   });
   // Alt+drag keeps the copy and the drag that follows in one undo step
