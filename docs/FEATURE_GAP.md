@@ -147,7 +147,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Highlight layers on hover | ✅ always on |
 | Show dimensions on objects | ✅ always on |
 | Hide canvas UI during changes | ❌ |
-| Keyboard zooms into selection | ❌ |
+| Keyboard zooms into selection | ✅ (+ and - centre the selection) |
 | Invert zoom direction | ✅ |
 | Ctrl+click opens right-click menus | ❌ |
 | Use scroll wheel zoom (instead of pan) | ✅ |
