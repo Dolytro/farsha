@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
 import type { DesignNode } from "@farsha/types";
 import { useEditor } from "../store";
-import { addPage, deletePage } from "../pages";
+import { addPage, deletePage, duplicatePage } from "../pages";
 import { zoomFit } from "../actions";
 import { Select } from "./Select";
 import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow } from "../layers-tree";
@@ -236,6 +236,19 @@ export function Layers() {
               />
             ) : (
               <span className="layers__name">{p.name}</span>
+            )}
+            {canEdit && (
+              <button
+                className="layers__toggle"
+                title="Duplicate page"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const copy = duplicatePage(doc, p.id);
+                  if (copy) setPage(copy);
+                }}
+              >
+                ⧉
+              </button>
             )}
             {canEdit && pages.length > 1 && (
               <button

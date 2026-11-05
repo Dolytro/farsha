@@ -110,6 +110,13 @@ function create(doc: DesignDoc, clip: ClipNode, parentId: string, dx: number, dy
   }
 }
 
+/** Copy every layer inside `fromParentId` under `toParentId`, keeping positions (used by Duplicate page). Returns how many top-level layers were copied. */
+export function copyChildren(doc: DesignDoc, fromParentId: string, toParentId: string): number {
+  let copied = 0;
+  for (const child of doc.children(fromParentId)) if (create(doc, toClip(doc, child, false), toParentId, 0, 0)) copied++;
+  return copied;
+}
+
 /** Paste copied layers under `parentId` as one undo step. Returns the new top-level ids. */
 export function pasteNodes(doc: DesignDoc, payload: ClipPayload, parentId: string): string[] {
   const sameParent = payload.parentId === parentId;

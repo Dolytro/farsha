@@ -40,6 +40,7 @@ export function buildMainMenu(): MenuNode[] {
         item("new-file", "New file"),
         item("place-image", "Place image…"),
         item("duplicate-file", "Duplicate"),
+        item("duplicate-page", "Duplicate page"),
         item("open-local", "Open local file…", true),
         item("save-local", "Save local copy…"),
         item("save-version", "Save to version history…", true),

@@ -8,6 +8,7 @@ import { panToLayer, booleanGroupSelection, booleanSelection, flattenSelection, 
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
+import { duplicatePage } from "./pages";
 import { duplicateFile, openLocalFilePicker, saveLocalCopy } from "./local-file";
 import { placeImagePicker } from "./place-image";
 import { deleteContents, hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, swapFillAndStroke } from "./object-actions";
@@ -65,6 +66,15 @@ export function buildCommands(): Command[] {
         const count = exportFramesToPdf(s.doc, s.pageId, s.selection, s.drive.fileName || "Farsha");
         if (!count) s.showToast("There are no frames to export");
         else s.showToast(`Choose "Save as PDF" in the print window (${count} page${count === 1 ? "" : "s"})`);
+      },
+    },
+    {
+      id: "duplicate-page",
+      label: "Duplicate page",
+      keywords: "copy page",
+      run: () => {
+        const copy = duplicatePage(doc(), state().pageId);
+        if (copy) state().setPage(copy);
       },
     },
     { id: "duplicate-file", label: "Duplicate file", keywords: "copy document", run: () => duplicateFile() },
