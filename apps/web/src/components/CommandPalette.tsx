@@ -4,6 +4,7 @@ import { filterCommands } from "../command-filter";
 import { useEditor } from "../store";
 import { buildMainMenu } from "../main-menu";
 import { categoryMap, sortByCategory } from "../command-categories";
+import { loadRecent, pushRecent, saveRecent, splitRecent } from "../recent-actions";
 
 /** Figma's "Actions" (Ctrl+/): search every command and run it, with its shortcut shown. */
 export function CommandPalette() {
@@ -13,21 +14,28 @@ export function CommandPalette() {
   const viewer = useEditor((s) => s.viewer);
   const [query, setQuery] = useState("");
   const [index, setIndex] = useState(0);
+  const [recentIds, setRecentIds] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLUListElement>(null);
 
   const commands = useMemo(() => (open ? buildCommands() : []), [open]);
   const categories = useMemo(() => (open ? categoryMap(buildMainMenu(), commands.map((c) => c.id)) : new Map<string, string>()), [open, commands]);
   // With nothing typed the list is grouped by category; once you search, the best matches come first and each shows its category.
-  const shown = useMemo(() => {
-    const list = filterCommands(commands.filter((c) => hasSelection || !c.needsSelection), query);
-    return query.trim() ? list : sortByCategory(list, categories);
-  }, [commands, query, hasSelection, categories]);
+  const available = useMemo(() => commands.filter((c) => hasSelection || !c.needsSelection), [commands, hasSelection]);
+  const { shown, recentCount } = useMemo(() => {
+    const list = filterCommands(available, query);
+    if (query.trim()) return { shown: list, recentCount: 0 };
+    // Nothing typed: the actions you ran lately come first, then everything else by category.
+    const { recent, rest } = splitRecent(sortByCategory(list, categories), recentIds);
+    return { shown: [...recent, ...rest], recentCount: recent.length };
+  }, [available, query, categories, recentIds]);
+  const groupOf = (i: number) => (i < recentCount ? "Recent" : (categories.get(shown[i]!.id) ?? "Other"));
 
   useEffect(() => {
     if (open) {
       setQuery("");
       setIndex(0);
+      setRecentIds(loadRecent());
     }
   }, [open]);
   useEffect(() => setIndex(0), [query]);
@@ -40,6 +48,7 @@ export function CommandPalette() {
   const run = (i: number) => {
     const cmd = shown[i];
     if (!cmd) return;
+    saveRecent(pushRecent(loadRecent(), cmd.id));
     setOpen(false);
     Promise.resolve(cmd.run()).catch((err) => useEditor.getState().showToast(err instanceof Error ? `Couldn't do that: ${err.message}` : "Couldn't do that"));
   };
@@ -73,9 +82,9 @@ export function CommandPalette() {
           {shown.length === 0 && <li className="palette__empty">No matching actions</li>}
           {shown.map((c, i) => (
             <Fragment key={c.id}>
-              {!query.trim() && (i === 0 || categories.get(shown[i - 1]!.id) !== categories.get(c.id)) && (
+              {!query.trim() && (i === 0 || groupOf(i - 1) !== groupOf(i)) && (
                 <li className="palette__group" role="presentation">
-                  {categories.get(c.id) ?? "Other"}
+                  {groupOf(i)}
                 </li>
               )}
             <li
