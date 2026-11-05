@@ -393,6 +393,7 @@ Done in the night run (2026-10-30 to 10-31, each feature pushed separately, rows
   text variables (`ColorVariable.kind = "STRING"`, `bindTextVariable`, `textVariableId`), the Actions palette grouped by category
   (`command-categories.ts`), video layers (`videoAssetId` on a rectangle, `video.ts`, MP4 / WebM up to 25 MB, plays in the
   prototype). Items 4 (needs the screenshot) and 13 (owner) are still open.
+- **Feature round 1** (10 small features, each with tests; rows in docs/FEATURE_GAP.md): keyboard shortcuts cheat sheet (Ctrl+Shift+?, `shortcut-list.ts`, `ShortcutsDialog`), recent actions and page / layer search in the palette (`recent-actions.ts`, `palette-search.ts`), layers panel type filter (`layerKind` in `layers-tree.ts`), three preferences (rename duplicated layers `copy-name.ts`, keyboard zoom into selection `zoomKeyboard`, Ctrl+click menu), automatic versions every 10 minutes (`auto-version-policy.ts`, `auto-versions.ts`; test hook: localStorage `farsha.autoVersionMs`), auto layout min / max sizes (`clampSize` in design-core `auto-layout.ts`, "Size limits" section) and Duplicate page (`pages.ts`).
 - **Still open** (all listed in FEATURE_GAP.md): rich text sizes, colours and fonts per run (bold, italic, underline and strikethrough per run exist: `TextRun`, `lineSegments`), Slots,
   (the selected point of a path being edited lives in the store as `editingPoint`; Delete
   and heal and Split vector already use it), Home / End frame stepping, Switch to Draw, Paste to
