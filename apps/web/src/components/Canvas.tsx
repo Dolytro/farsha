@@ -146,6 +146,11 @@ export function Canvas() {
       rightPanMoved.current = false;
       return;
     }
+    openContextMenu(e);
+  };
+
+  /** Select what is under the pointer (when it is outside the selection) and open the right-click menu there. */
+  const openContextMenu = (e: { clientX: number; clientY: number; shiftKey: boolean; target: EventTarget | null }) => {
     const w = world(e);
     const labelId = (e.target as SVGElement).dataset?.labelId;
     const hit = labelId ? doc.getNode(labelId) : pick(w.x, w.y);
@@ -163,6 +168,12 @@ export function Canvas() {
     if (e.button === 1 || spaceDown || tool === "hand" || (e.button === 2 && useEditor.getState().prefs.rightDragPan)) {
       rightPanMoved.current = false;
       drag.current = { kind: "pan", sx: e.clientX, sy: e.clientY, vx: viewport.x, vy: viewport.y };
+      return;
+    }
+    if (e.button === 0 && e.ctrlKey && useEditor.getState().prefs.ctrlClickMenu) {
+      // Preferences > Ctrl+click opens right-click menus (what Ctrl+click does on a Mac)
+      e.preventDefault();
+      openContextMenu(e);
       return;
     }
     if (tool === "comment" && !viewer) {

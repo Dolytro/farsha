@@ -149,7 +149,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Hide canvas UI during changes | ❌ |
 | Keyboard zooms into selection | ✅ (+ and - centre the selection) |
 | Invert zoom direction | ✅ |
-| Ctrl+click opens right-click menus | ❌ |
+| Ctrl+click opens right-click menus | ✅ (Preferences switch, off by default) |
 | Use scroll wheel zoom (instead of pan) | ✅ |
 | Right-click and drag to pan | ❌ |
 | Theme (light / dark / system) | ✅ (cloud menu or Actions; the canvas and panels follow, design layers are never recoloured) |
