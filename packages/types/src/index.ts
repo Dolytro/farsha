@@ -283,6 +283,11 @@ export interface BaseNode {
   /** Inside an auto layout frame: FILL = take the free space of the frame along that side (Figma's "Fill container"). Missing means FIXED. */
   layoutSizingH?: 'FIXED' | 'FILL';
   layoutSizingV?: 'FIXED' | 'FILL';
+  /** Size limits (Figma's min / max width and height): a layer that fills or hugs in auto layout never gets smaller than the min or larger than the max. Missing means no limit. */
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
   /** Inside an auto layout frame: ABSOLUTE takes the layer out of the flow, so it stays where it is placed (Figma's "Ignore auto layout"). */
   layoutPositioning?: 'AUTO' | 'ABSOLUTE';
   /** True for a mask layer: it is not drawn itself, and only shows through its shape the layers above it in the same parent. */
@@ -568,6 +573,10 @@ export interface StylePatch extends AutoLayoutProps {
   clipsContent?: boolean;
   layoutSizingH?: 'FIXED' | 'FILL';
   layoutSizingV?: 'FIXED' | 'FILL';
+  minWidth?: number | null;
+  maxWidth?: number | null;
+  minHeight?: number | null;
+  maxHeight?: number | null;
   layoutPositioning?: 'AUTO' | 'ABSOLUTE';
   strokeDash?: number[];
   strokeCap?: StrokeCap;

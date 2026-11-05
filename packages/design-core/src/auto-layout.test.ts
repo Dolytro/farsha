@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeAutoLayout } from './auto-layout';
+import { clampSize, computeAutoLayout } from './auto-layout';
 
 const kids = [
   { id: 'a', width: 40, height: 20 },
@@ -117,5 +117,40 @@ describe('wrap', () => {
     const r = computeAutoLayout({ ...frame, primarySizing: 'HUG' }, items)!;
     expect(r.positions.c.y).toBe(5);
     expect(r.width).toBe(10 + 40 * 3 + 20 + 10);
+  });
+});
+
+describe('size limits', () => {
+  it('clampSize keeps a value between min and max, the min winning when they cross', () => {
+    expect(clampSize(50, 20, 80)).toBe(50);
+    expect(clampSize(5, 20, 80)).toBe(20);
+    expect(clampSize(500, 20, 80)).toBe(80);
+    expect(clampSize(50)).toBe(50);
+    expect(clampSize(50, 90, 60)).toBe(90);
+  });
+
+  it('a child that fills stops growing at its max width and the rest stays empty', () => {
+    const r = computeAutoLayout({ layoutMode: 'HORIZONTAL', primarySizing: 'FIXED', counterSizing: 'FIXED', width: 300, height: 50 }, [{ id: 'a', width: 10, height: 10, fillWidth: true, maxWidth: 120 }])!;
+    expect(r.sizes.a!.width).toBe(120);
+  });
+
+  it('a child that fills never gets narrower than its min width', () => {
+    const r = computeAutoLayout({ layoutMode: 'HORIZONTAL', primarySizing: 'FIXED', counterSizing: 'FIXED', width: 100, height: 50 }, [
+      { id: 'a', width: 10, height: 10, fillWidth: true, minWidth: 70 },
+      { id: 'b', width: 60, height: 10 },
+    ])!;
+    expect(r.sizes.a!.width).toBe(70);
+  });
+
+  it('a hugging frame grows to its min width and stops at its max width', () => {
+    const small = computeAutoLayout({ layoutMode: 'HORIZONTAL', width: 0, height: 0, minWidth: 200 }, [{ id: 'a', width: 40, height: 20 }])!;
+    expect(small.width).toBe(200);
+    const big = computeAutoLayout({ layoutMode: 'HORIZONTAL', width: 0, height: 0, maxWidth: 100 }, [{ id: 'a', width: 400, height: 20 }])!;
+    expect(big.width).toBe(100);
+  });
+
+  it('limits apply to the height of a vertical frame too', () => {
+    const r = computeAutoLayout({ layoutMode: 'VERTICAL', width: 0, height: 0, minHeight: 90 }, [{ id: 'a', width: 40, height: 20 }])!;
+    expect(r.height).toBe(90);
   });
 });

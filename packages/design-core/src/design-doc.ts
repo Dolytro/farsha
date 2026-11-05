@@ -632,7 +632,17 @@ export class DesignDoc {
         const kids = this.children(id).filter((c) => c.visible && c.layoutPositioning !== 'ABSOLUTE');
         const result = computeAutoLayout(
           frame,
-          kids.map((c) => ({ id: c.id, width: c.width, height: c.height, fillWidth: c.layoutSizingH === 'FILL', fillHeight: c.layoutSizingV === 'FILL' })),
+          kids.map((c) => ({
+            id: c.id,
+            width: c.width,
+            height: c.height,
+            fillWidth: c.layoutSizingH === 'FILL',
+            fillHeight: c.layoutSizingV === 'FILL',
+            minWidth: c.minWidth,
+            maxWidth: c.maxWidth,
+            minHeight: c.minHeight,
+            maxHeight: c.maxHeight,
+          })),
         );
         if (!result) continue;
         const moves = kids.filter((c) => {

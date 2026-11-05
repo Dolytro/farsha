@@ -1,6 +1,20 @@
 import type { AutoLayoutProps } from '@farsha/types';
 
-export interface LayoutChild {
+/** Min / max sizes (Figma's size limits); a missing value means no limit on that side. */
+export interface SizeLimits {
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
+}
+
+/** `v` kept between min and max; when the limits cross, the min wins. */
+export function clampSize(v: number, min?: number, max?: number): number {
+  const hi = typeof max === 'number' && Number.isFinite(max) ? Math.min(v, Math.max(0, max)) : v;
+  return typeof min === 'number' && Number.isFinite(min) ? Math.max(hi, Math.max(0, min)) : hi;
+}
+
+export interface LayoutChild extends SizeLimits {
   id: string;
   width: number;
   height: number;
@@ -9,7 +23,7 @@ export interface LayoutChild {
   fillHeight?: boolean;
 }
 
-export interface LayoutFrame extends AutoLayoutProps {
+export interface LayoutFrame extends AutoLayoutProps, SizeLimits {
   width: number;
   height: number;
 }
@@ -52,8 +66,8 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
   const sizes: LayoutResult['sizes'] = {};
   const sized = children.map((c) => {
     const next = { ...c };
-    if (fillsMain(c)) horizontal ? (next.width = share) : (next.height = share);
-    if (fillsCross(c)) horizontal ? (next.height = Math.max(0, crossBox)) : (next.width = Math.max(0, crossBox));
+    if (fillsMain(c)) horizontal ? (next.width = clampSize(share, c.minWidth, c.maxWidth)) : (next.height = clampSize(share, c.minHeight, c.maxHeight));
+    if (fillsCross(c)) horizontal ? (next.height = clampSize(Math.max(0, crossBox), c.minHeight, c.maxHeight)) : (next.width = clampSize(Math.max(0, crossBox), c.minWidth, c.maxWidth));
     if (next.width !== c.width || next.height !== c.height) sizes[c.id] = { width: next.width, height: next.height };
     return next;
   });
@@ -105,8 +119,8 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
     return {
       positions: wrapped,
       sizes,
-      width: horizontal ? frame.width : frameCrossWrapped,
-      height: horizontal ? frameCrossWrapped : frame.height,
+      width: clampSize(horizontal ? frame.width : frameCrossWrapped, frame.minWidth, frame.maxWidth),
+      height: clampSize(horizontal ? frameCrossWrapped : frame.height, frame.minHeight, frame.maxHeight),
     };
   }
 
@@ -114,8 +128,10 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
   const contentMain = childMain + gap * Math.max(0, children.length - 1);
   const contentCross = sized.reduce((m, c) => Math.max(m, cross(c)), 0);
 
-  const frameMain = hugMain ? contentMain + padMainStart + padMainEnd : horizontal ? frame.width : frame.height;
-  const frameCross = hugCross ? contentCross + padCrossStart + padCrossEnd : horizontal ? frame.height : frame.width;
+  const mainLimits: [number | undefined, number | undefined] = horizontal ? [frame.minWidth, frame.maxWidth] : [frame.minHeight, frame.maxHeight];
+  const crossLimits: [number | undefined, number | undefined] = horizontal ? [frame.minHeight, frame.maxHeight] : [frame.minWidth, frame.maxWidth];
+  const frameMain = clampSize(hugMain ? contentMain + padMainStart + padMainEnd : horizontal ? frame.width : frame.height, ...mainLimits);
+  const frameCross = clampSize(hugCross ? contentCross + padCrossStart + padCrossEnd : horizontal ? frame.height : frame.width, ...crossLimits);
   const innerMain = frameMain - padMainStart - padMainEnd;
   const innerCross = frameCross - padCrossStart - padCrossEnd;
 

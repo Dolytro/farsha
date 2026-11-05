@@ -14,10 +14,56 @@ const COUNTER: [LayoutAlign, string][] = PRIMARY.slice(0, 3);
 
 const num = (v: number | undefined) => (typeof v === "number" ? v : 0);
 
-/** Resizing of a layer inside an auto layout frame: fixed, or fill the free space (Figma's "Fill container"). */
+type LimitKey = "minWidth" | "maxWidth" | "minHeight" | "maxHeight";
+const LIMITS: [LimitKey, string, string][] = [
+  ["minWidth", "Min W", "Minimum width"],
+  ["maxWidth", "Max W", "Maximum width"],
+  ["minHeight", "Min H", "Minimum height"],
+  ["maxHeight", "Max H", "Maximum height"],
+];
+
+/** Min and max width and height (Figma's size limits). An empty field means no limit. */
+function SizeLimitFields({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
+  return (
+    <div className="props__grid">
+      {LIMITS.map(([key, label, title]) => {
+        const value = (node as Partial<Record<LimitKey, number | null>>)[key];
+        return (
+          <label className="field" title={title} key={key}>
+            <span className="field__label">{label}</span>
+            <input
+              className="field__input"
+              type="number"
+              min={0}
+              placeholder="None"
+              value={typeof value === "number" ? value : ""}
+              onChange={(e) => {
+                const text = e.target.value.trim();
+                doc.setStyle(node.id, { [key]: text === "" || !(Number(text) >= 0) ? null : Number(text) });
+              }}
+            />
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Resizing of a layer inside an auto layout frame (fixed, or fill the free space: Figma's "Fill container"), plus its size limits. */
 export function ChildSizingSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
   const parent = node.parentId ? doc.getNode(node.parentId) : undefined;
-  if (parent?.type !== "FRAME" || (parent.layoutMode !== "HORIZONTAL" && parent.layoutMode !== "VERTICAL")) return null;
+  const inLayout = parent?.type === "FRAME" && (parent.layoutMode === "HORIZONTAL" || parent.layoutMode === "VERTICAL");
+  const isLayoutFrame = node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL");
+  if (!inLayout && !isLayoutFrame) return null;
+  if (!inLayout) {
+    // an auto layout frame on its own: only the size limits
+    return (
+      <section className="props__section">
+        <h3 className="props__heading">Size limits</h3>
+        <SizeLimitFields doc={doc} node={node} />
+      </section>
+    );
+  }
   const row = (label: string, key: "layoutSizingH" | "layoutSizingV") => (
     <label className="field" title={`${label} resizing`}>
       <span className="field__label">{label}</span>
@@ -34,6 +80,7 @@ export function ChildSizingSection({ doc, node }: { doc: DesignDoc; node: Design
         {row("W", "layoutSizingH")}
         {row("H", "layoutSizingV")}
       </div>
+      <SizeLimitFields doc={doc} node={node} />
       <label className="props__check" title="Take this layer out of the auto layout flow; it keeps the position you give it">
         <input type="checkbox" checked={node.layoutPositioning === "ABSOLUTE"} onChange={(e) => doc.setStyle(node.id, { layoutPositioning: e.target.checked ? "ABSOLUTE" : "AUTO" })} />
         Absolute position
