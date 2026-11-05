@@ -54,16 +54,8 @@
     font-size: 16px;
   }
 
+  // the rainbow border sits on the wrapper, so it stays put when the table scrolls sideways
   &__wrap {
-    position: relative;
-  }
-
-  // the table has a slowly turning rainbow border; on small screens it scrolls sideways
-  &__table {
-    border: 1px solid #2a2640;
-    border-radius: 22px;
-    background: #100f1a;
-    overflow: hidden;
     position: relative;
 
     &::before {
@@ -80,6 +72,16 @@
       pointer-events: none;
       z-index: 3;
     }
+  }
+
+  // the table has a slowly turning rainbow border; on small screens it scrolls sideways
+  &__table {
+    border: 1px solid #2a2640;
+    border-radius: 22px;
+    background: #100f1a;
+    overflow: hidden;
+    position: relative;
+
 
     @media (max-width: 900px) {
       overflow-x: auto;
