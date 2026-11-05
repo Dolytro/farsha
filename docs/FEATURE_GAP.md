@@ -277,7 +277,7 @@ Design panel
 - Typography: ✅ paragraph spacing, indent, truncate text (max lines). ✅ font picker with search, ~70 Google Fonts (downloaded from fonts.googleapis.com only when a file uses one; PNG export may use a stand-in font) and installed fonts (Chromium asks permission). Still missing: vertical trim, text decoration style, OpenType features and variable font axes, rich text size / colour / font per range
 - Export: ✅ several export settings per layer (scale, suffix, format incl. WebP and PDF) saved with the layer. Still missing: "contents only"
 - Styles for grids and strokes
-- Layers panel: filter by type, Rename shortcut, hover highlight
+- Layers panel: ✅ filter by type (a dropdown beside the search: frames, sections, groups, components, instances, text, rectangles, ellipses, vectors, images; combines with the search). Rename shortcut and hover highlight were already done
 
 Prototype
 - Triggers: While pressing (Mouse enter / leave / down / up done ✅)

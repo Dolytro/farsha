@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { layerRows, moveLayers } from "./layers-tree";
+import { layerKind, layerRows, moveLayers } from "./layers-tree";
 
 function setup() {
   const doc = new DesignDoc();
@@ -47,5 +47,29 @@ describe("layerRows", () => {
   it("search keeps matches and their ancestors", () => {
     const { doc, page } = setup();
     expect(layerRows(doc, page, new Set(), "inner").map((r) => doc.getNode(r.id)!.name)).toEqual(["Card", "Inner"]);
+  });
+  it("a type filter keeps layers of that type and the layers above them, even when collapsed", () => {
+    const { doc, page, frame } = setup();
+    const names = (kind: Parameters<typeof layerRows>[4]) => layerRows(doc, page, new Set([frame]), "", kind).map((r) => doc.getNode(r.id)!.name);
+    expect(names("rectangle")).toEqual(["B", "A", "Card", "Inner"]);
+    expect(names("frame")).toEqual(["Card"]);
+    expect(names("text")).toEqual([]);
+    expect(names("all")).toEqual(["B", "A", "Card"]);
+  });
+  it("search and type filter must both match", () => {
+    const { doc, page } = setup();
+    expect(layerRows(doc, page, new Set(), "inner", "rectangle").map((r) => doc.getNode(r.id)!.name)).toEqual(["Card", "Inner"]);
+    expect(layerRows(doc, page, new Set(), "inner", "frame")).toEqual([]);
+  });
+});
+
+describe("layerKind", () => {
+  it("tells sections, components and instances apart from frames", () => {
+    const { doc, page, frame } = setup();
+    const section = doc.createNode("FRAME", { parentId: page, props: { name: "S", isSection: true } });
+    const main = doc.createNode("FRAME", { parentId: page, props: { name: "Btn", isComponent: true } });
+    const inst = doc.createNode("FRAME", { parentId: page, props: { name: "Btn copy", componentId: main } });
+    expect([frame, section, main, inst].map((id) => layerKind(doc, id))).toEqual(["frame", "section", "component", "instance"]);
+    expect(layerKind(doc, page)).toBeUndefined();
   });
 });
