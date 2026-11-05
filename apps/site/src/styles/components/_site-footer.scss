@@ -1,0 +1,418 @@
+// Footer: a purple wave behind a light card with the site links and a closing call to action.
+.site-footer {
+  position: relative;
+  padding: 170px 0 64px;
+  overflow: hidden;
+
+  &__wave {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 520px;
+
+    @supports (animation-timeline: view()) {
+      animation: wvm 1s linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+  }
+
+  &__wrap {
+    position: relative;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px;
+
+    @media (max-width: 900px) {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+  }
+
+  &__card {
+    position: relative;
+    border-radius: 28px;
+    background: radial-gradient(circle at 1px 1px, #6a46f21c 1px, transparent 1.5px) 0 0 / 18px 18px, linear-gradient(180deg, #faf9ff, #f1eeff);
+    color: #15131d;
+    padding: 48px 48px 24px;
+    box-shadow: 0 40px 90px #0009;
+
+    @media (max-width: 900px) {
+      padding: 36px 22px 20px;
+    }
+
+    // every link in the card eases its colour, nudge and shadow
+    a {
+      transition: color .2s, translate .25s, transform .35s cubic-bezier(.3, 1.7, .4, 1), box-shadow .3s, border-color .3s;
+    }
+  }
+
+  // the little stack of cards sticking out above the footer card
+  &__art {
+    position: absolute;
+    right: 40px;
+    top: -150px;
+    width: 300px;
+    height: 230px;
+    pointer-events: none;
+
+    @media (max-width: 900px) {
+      right: 10px;
+      top: -240px;
+      transform: scale(.6);
+      transform-origin: right bottom;
+    }
+  }
+
+  &__art-card {
+    position: absolute;
+    right: 120px;
+    top: 36px;
+    width: 120px;
+    height: 150px;
+    border-radius: 18px;
+    background: linear-gradient(160deg, #9b85ff, #5a3ad6);
+    transform: rotate(-8deg);
+    box-shadow: 0 18px 40px #0005;
+  }
+
+  &__art-label {
+    position: absolute;
+    left: 18px;
+    top: 34px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 46px;
+    color: #fff;
+    letter-spacing: -.03em;
+  }
+
+  &__art-card-2 {
+    position: absolute;
+    right: 30px;
+    top: 0;
+    width: 130px;
+    height: 170px;
+    border-radius: 18px;
+    background: #ff5e4d;
+    transform: rotate(7deg);
+    box-shadow: 0 18px 40px #0005;
+    overflow: hidden;
+  }
+
+  &__art-dot {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    width: 62px;
+    height: 62px;
+    border-radius: 999px;
+    background: #ffb020;
+  }
+
+  &__art-bar {
+    position: absolute;
+    left: 34px;
+    top: 84px;
+    width: 74px;
+    height: 56px;
+    border-radius: 12px;
+    background: #2de2c8;
+  }
+
+  &__art-chip {
+    position: absolute;
+    right: 0;
+    top: 120px;
+    width: 58px;
+    height: 58px;
+    border-radius: 16px;
+    background: #ff4fa3;
+    box-shadow: 0 14px 30px #0004;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 6fr);
+    gap: 28px;
+
+    @media (max-width: 900px) {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+  }
+
+  &__brand {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+
+    @media (max-width: 900px) {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__logo-name {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: -.04em;
+  }
+
+  &__text {
+    margin: 0;
+    color: #5a5570;
+    line-height: 22px;
+    font-size: 13px;
+    max-width: 260px;
+  }
+
+  &__socials {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__social-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: #fff;
+    border: 1px solid #dcd7ee;
+    display: grid;
+    place-items: center;
+
+    &:hover {
+      color: #6a46f2;
+      transform: translateY(-5px) rotate(-7deg);
+    }
+
+    &--github:hover {
+      box-shadow: 0 12px 26px #15131d44;
+    }
+
+    &--drive:hover {
+      box-shadow: 0 12px 26px #ffba0066;
+    }
+  }
+
+  &__stack-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    color: #5a5570;
+  }
+
+  &__pill {
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #dcd7ee;
+  }
+
+  &__column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  &__column-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Geist Mono', monospace;
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #5a5570;
+  }
+
+  &__link {
+    color: #3a3650;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  &__icon {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    transition: transform .3s cubic-bezier(.3, 1.6, .4, 1);
+
+    &--tone-1 {
+      background: #6a46f21a;
+      border: 1px solid #6a46f240;
+    }
+
+    &--tone-2 {
+      background: #ff5e4d1a;
+      border: 1px solid #ff5e4d40;
+    }
+
+    &--tone-3 {
+      background: #14b8a01a;
+      border: 1px solid #14b8a040;
+    }
+
+    &--tone-4 {
+      background: #e8901a1a;
+      border: 1px solid #e8901a40;
+    }
+
+    &--tone-5 {
+      background: #15131d1a;
+      border: 1px solid #15131d40;
+    }
+
+    &--tone-6 {
+      background: #ff4fa31a;
+      border: 1px solid #ff4fa340;
+    }
+  }
+
+  &__link:hover &__icon {
+    transform: scale(1.1);
+  }
+
+  &__cta {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 22px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #7c5cff1f, #ff4fa31a 60%, #2de2c81a);
+    border: 1px solid #d9d2f3;
+    align-self: start;
+
+    @media (max-width: 900px) {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__cta-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    line-height: 1.05;
+    letter-spacing: -.03em;
+  }
+
+  &__accent {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+    color: #6a47f5;
+  }
+
+  &__cta-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__cta-primary {
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 10px;
+    background: #0e0d14;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  &__cta-secondary {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 10px;
+    border: 1px solid #cfc9e4;
+    color: #15131d;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  &__cta-note {
+    font-size: 12px;
+    color: #5a5570;
+    line-height: 18px;
+  }
+
+  &__bottom {
+    margin-top: 36px;
+    padding-top: 18px;
+    border-top: 1px solid #dcd7ee;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #5a5570;
+  }
+
+  &__legal {
+    display: flex;
+    gap: 20px;
+  }
+
+  &__legal-link {
+    color: #5a5570;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &:hover {
+      translate: 5px 0;
+    }
+  }
+
+  &__credits {
+    display: flex;
+    align-items: center;
+    gap: 10px 16px;
+    flex-wrap: wrap;
+  }
+
+  &__credit-link {
+    color: #3a3650;
+    text-decoration: underline;
+  }
+
+  &__to-top {
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid #cfc9e4;
+    background: #fff;
+    color: #15131d;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+
+    &:hover {
+      translate: 0 -3px;
+      transform: translateY(-5px) rotate(-7deg);
+    }
+  }
+}

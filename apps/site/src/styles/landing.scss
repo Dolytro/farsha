@@ -1,0 +1,29 @@
+// Landing page styles. Every block lives in its own file: base, shared ui and fx, then one file per section.
+@use "base/motion";
+@use "base/page";
+
+@use "ui/ui-accent";
+@use "ui/ui-band";
+@use "ui/ui-button";
+@use "ui/ui-cluster";
+@use "ui/ui-eyebrow";
+@use "ui/ui-link";
+@use "ui/ui-spark";
+@use "ui/ui-sparkles";
+
+@use "fx/fx-parallax";
+@use "fx/fx-reveal";
+@use "fx/fx-rise";
+
+@use "components/site-shell";
+@use "components/site-nav";
+@use "components/site-hero";
+@use "components/site-parity";
+@use "components/site-tools";
+@use "components/site-stats";
+@use "components/site-compare";
+@use "components/site-oss";
+@use "components/site-import";
+@use "components/site-status";
+@use "components/site-faq";
+@use "components/site-footer";

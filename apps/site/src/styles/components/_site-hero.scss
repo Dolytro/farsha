@@ -1,0 +1,464 @@
+// Hero. On wide screens the section is tall and the content inside is pinned while scroll drives the animation:
+// the copy fades out, the mockup untilts and grows, and the purple shape flies away.
+// Below 900px (or without scroll-driven animation support) it is an ordinary stacked section.
+.site-hero {
+  @media (max-height: 1600px) {
+    @supports (animation-timeline: scroll()) {
+      height: calc(100vh + 1800px);
+    }
+  }
+
+  @media (max-width: 900px) {
+    height: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    height: auto;
+  }
+
+  &__pin {
+    position: relative;
+    min-height: calc(var(--mh) + 16px);
+    padding-bottom: 72px;
+    box-sizing: border-box;
+    clip-path: inset(-400px 0 0 0);
+    --cw: calc(min(100vw, 1280px) - 64px);
+    --mw: calc((var(--cw) - 24px) * 7 / 12);
+    --ml: calc(max(0px, (100vw - 1280px) / 2) + 32px + (var(--cw) - 24px) * 5 / 12 + 24px);
+    --mh: calc(var(--mw) * 470 / 695);
+    --off: -56px;
+
+    @media (max-height: 1600px) {
+      @supports (animation-timeline: scroll()) {
+        --nh: 84px;
+        --tw: min(88vw, calc(86vh * 695 / 470));
+        --s: tan(atan2(var(--tw), var(--mw)));
+        position: sticky;
+        top: var(--nh);
+        height: calc(100vh - var(--nh));
+        padding-bottom: 0;
+        animation: pinnh 1s linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 1900px;
+
+        &::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 22vh;
+          background: linear-gradient(transparent, #0b0a13);
+          z-index: 4;
+          pointer-events: none;
+          animation: pinfade 1s linear both;
+          animation-timeline: scroll(root block);
+          animation-range: 1300px 1800px;
+        }
+      }
+    }
+
+    @media (max-width: 900px) {
+      animation: none;
+      position: relative;
+      top: 0;
+      height: auto;
+      clip-path: inset(-400px 0 0 0);
+
+      &::after {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      position: relative;
+      height: auto;
+    }
+  }
+
+  &__glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(40% 50% at 78% 60%, #7c3aed33, transparent 70%);
+  }
+
+  // the big purple shape behind the mockup
+  &__shape {
+    position: absolute;
+    left: calc(var(--ml) + var(--mw) / 2);
+    top: calc(16px + var(--mh) / 2);
+    width: calc(var(--mw) * 1.5);
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    z-index: 1;
+    pointer-events: none;
+    will-change: translate, scale, rotate, opacity;
+
+    @media (max-height: 1600px) {
+      @supports (animation-timeline: scroll()) {
+        top: 50%;
+        animation: shpout 1s cubic-bezier(.4, 0, .6, 1) both, shpspin 1s linear both;
+        animation-timeline: scroll(root block), scroll(root block);
+        animation-range: 800px 1800px, 0px 1800px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      display: block;
+      left: 50%;
+      top: auto;
+      bottom: calc(56px + (100vw - 40px) * 470 / 695 / 2);
+      width: calc(100vw * .6);
+      translate: -50% 50%;
+      filter: none;
+      animation: shpspin2 48s linear infinite;
+    }
+  }
+
+  &__shape-art {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+    animation: spin 48s linear infinite;
+  }
+
+  &__grid {
+    position: relative;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 16px 32px 0;
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 24px;
+    align-items: center;
+    min-height: calc(var(--mh) + 16px);
+
+    @media (max-height: 1600px) {
+      @supports (animation-timeline: scroll()) {
+        height: 100%;
+        min-height: 0;
+        padding-top: 0;
+      }
+    }
+
+    @media (max-width: 900px) {
+      grid-template-columns: minmax(0, 1fr);
+      min-height: 0;
+      padding: 24px 20px 0;
+    }
+  }
+
+  &__copy {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+
+    @media (max-height: 1600px) {
+      @supports (animation-timeline: scroll()) {
+        animation: fadeL 1s linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 200px 480px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      animation: none;
+    }
+
+    // each line rises in on load and drifts up while scrolling
+    > * {
+      @media (max-height: 1600px) {
+        @supports (animation-timeline: scroll()) {
+          animation: up .9s cubic-bezier(.2, .8, .2, 1) var(--d, 0s) both, ex 1s linear both;
+          animation-timeline: auto, scroll(root block);
+        }
+      }
+
+      @media (max-width: 900px) {
+        animation: up .9s cubic-bezier(.2, .8, .2, 1) var(--d, 0s) both;
+      }
+    }
+
+    > :nth-child(1) {
+      @media (max-height: 1600px) {
+        @supports (animation-timeline: scroll()) {
+          animation-range: normal, 0px 300px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        animation-range: normal;
+      }
+    }
+
+    > :nth-child(2) {
+      @media (max-height: 1600px) {
+        @supports (animation-timeline: scroll()) {
+          animation-range: normal, 40px 350px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        animation-range: normal;
+      }
+    }
+
+    > :nth-child(3) {
+      @media (max-height: 1600px) {
+        @supports (animation-timeline: scroll()) {
+          animation-range: normal, 110px 420px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        animation-range: normal;
+      }
+    }
+
+    > :nth-child(4) {
+      @media (max-height: 1600px) {
+        @supports (animation-timeline: scroll()) {
+          animation-range: normal, 180px 480px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        animation-range: normal;
+      }
+    }
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid #2a2640;
+    background: #14121e;
+    font-size: 13px;
+    color: #e8e4f7;
+  }
+
+  &__badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #4fd19a;
+    display: block;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 92px;
+    line-height: .92;
+    letter-spacing: -.05em;
+
+    @media (max-width: 900px) {
+      font-size: 56px;
+    }
+  }
+
+  &__accent {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -.02em;
+    background: linear-gradient(90deg, #8a6bff, #b05bff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  &__text {
+    margin: 0;
+    max-width: 430px;
+    font-size: 17px;
+    line-height: 27px;
+    color: #c9c4de;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__cta {
+    height: 40px;
+    padding: 0 22px;
+    border-radius: 10px;
+    background: #6a46f2;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  &__github {
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 10px;
+    border: 1px solid #34304a;
+    color: #f2f0fa;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  // the editor picture. --rx and --ry tilt it toward whichever hover zone the pointer is in.
+  &__mockup {
+    position: absolute;
+    left: var(--ml);
+    top: 16px;
+    width: var(--mw);
+    container-type: inline-size;
+    z-index: 2;
+    animation-delay: .4s;
+
+    @media (max-height: 1600px) {
+      @supports (animation-timeline: scroll()) {
+        top: calc((100% - var(--mh)) / 2);
+        animation: up .9s cubic-bezier(.2, .8, .2, 1) .4s both, mkgrow 1s linear both;
+        animation-timeline: auto, scroll(root block);
+        animation-range: normal, 0px 1800px;
+        animation-delay: .4s;
+        will-change: translate, scale;
+      }
+    }
+
+    @media (max-width: 900px) {
+      position: relative;
+      left: auto;
+      top: auto;
+      width: calc(100% - 40px);
+      margin: 32px 20px 56px;
+      translate: none;
+      animation: up .9s cubic-bezier(.2, .8, .2, 1) .4s both;
+      will-change: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      will-change: auto;
+    }
+
+    &:has(.site-hero__zone--0:hover) {
+      --rx: -3.5deg;
+      --ry: 4.5deg;
+    }
+
+    &:has(.site-hero__zone--1:hover) {
+      --rx: -3.5deg;
+    }
+
+    &:has(.site-hero__zone--2:hover) {
+      --rx: -3.5deg;
+      --ry: -4.5deg;
+    }
+
+    &:has(.site-hero__zone--3:hover) {
+      --ry: 4.5deg;
+    }
+
+    &:has(.site-hero__zone--5:hover) {
+      --ry: -4.5deg;
+    }
+
+    &:has(.site-hero__zone--6:hover) {
+      --rx: 3.5deg;
+      --ry: 4.5deg;
+    }
+
+    &:has(.site-hero__zone--7:hover) {
+      --rx: 3.5deg;
+    }
+
+    &:has(.site-hero__zone--8:hover) {
+      --rx: 3.5deg;
+      --ry: -4.5deg;
+    }
+  }
+
+  &__float {
+    position: absolute;
+    right: -2.5cqw;
+    top: -9cqw;
+    width: 5.8cqw;
+    height: 5.8cqw;
+    border-radius: 1.6cqw;
+    background: linear-gradient(145deg, #8a6bff, #5b3fd8);
+  }
+
+  &__tilt {
+    transform: perspective(1400px) rotateY(-13deg) rotateZ(3deg);
+    transform-origin: 50% 50%;
+
+    @media (max-height: 1600px) {
+      @supports (animation-timeline: scroll()) {
+        animation: tilt 1s cubic-bezier(.45, 0, .2, 1) both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 800px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      animation: none;
+
+      @supports (animation-timeline: scroll()) {
+        animation: tilt 1s cubic-bezier(.45, 0, .2, 1) both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 500px;
+      }
+    }
+  }
+
+  &__hover {
+    transform: perspective(1600px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform .7s cubic-bezier(.2, .8, .2, 1);
+  }
+
+  &__frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 695 / 470;
+    animation: float2 9s ease-in-out infinite;
+    border-radius: 2.301cqw;
+    background: linear-gradient(160deg, #1c1834, #110e21 60%);
+    border: 1px solid #2c2650;
+    border-right-color: #6a4fd0;
+    border-bottom-color: #6a4fd0;
+    box-shadow: 0 5.753cqw 11.506cqw #0009, 0 0 5.753cqw #6a4fd033;
+    overflow: hidden;
+    display: flex;
+    font-size: 1.726cqw;
+    color: #eceaf7;
+  }
+
+  // a 3 x 3 grid of invisible hover zones over the mockup
+  &__zones {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    z-index: 5;
+
+    @media (max-width: 900px) {
+      display: none;
+    }
+  }
+
+  &__zone {
+    display: block;
+  }
+}

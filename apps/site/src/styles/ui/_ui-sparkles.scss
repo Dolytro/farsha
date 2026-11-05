@@ -1,0 +1,7 @@
+// Decorative layer behind a section; its children are the floating shapes.
+.ui-sparkles {
+  position: absolute;
+  inset: -40px -150px;
+  pointer-events: none;
+  z-index: -1;
+}
