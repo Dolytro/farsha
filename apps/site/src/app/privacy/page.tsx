@@ -18,7 +18,7 @@ export default function PrivacyPage() {
     <ContentPage path="/privacy" title={TITLE}>
       <h1>Privacy Policy</h1>
       <p>Last updated: 4 November 2026</p>
-      <p className="cp__lead">
+      <p className="content-page__lead">
         Farsha is a free, open source design tool at <a href="https://farsha.org">farsha.org</a>. It has no server or database of its own,
         so your designs are never sent to us. This page explains what does happen to data when you use it.
       </p>
@@ -38,8 +38,8 @@ export default function PrivacyPage() {
       </ul>
 
       <h2 id="data">What data is involved and where it goes</h2>
-      <div className="cp__wrap">
-        <table className="cp__table">
+      <div className="content-page__wrap">
+        <table className="content-page__table">
           <thead>
             <tr><th scope="col">Data</th><th scope="col">Where it lives</th><th scope="col">Who can see it</th></tr>
           </thead>

@@ -28,13 +28,13 @@ export default function FigmaAlternativePage() {
   return (
     <ContentPage path="/figma-alternative" title="Figma alternative">
       <h1>A free, open source Figma alternative</h1>
-      <p className="cp__lead">
+      <p className="content-page__lead">
         Farsha is a design tool that runs in your browser and costs nothing. It follows Figma&apos;s panel names, tool order and
         shortcuts, so you can start without relearning anything, and your files stay in your own Google Drive.
       </p>
-      <div className="cp__actions">
-        <a className="cp__cta" href="/app">Open the editor</a>
-        <a className="cp__cta cp__cta--ghost" href="https://github.com/Dolytro/farsha">Star on GitHub</a>
+      <div className="content-page__actions">
+        <a className="content-page__cta" href="/app">Open the editor</a>
+        <a className="content-page__cta content-page__cta--ghost" href="https://github.com/Dolytro/farsha">Star on GitHub</a>
       </div>
 
       <h2>Who Farsha is for</h2>
@@ -45,8 +45,8 @@ export default function FigmaAlternativePage() {
       </ul>
 
       <h2>Farsha and Figma side by side</h2>
-      <div className="cp__wrap">
-        <table className="cp__table">
+      <div className="content-page__wrap">
+        <table className="content-page__table">
           <thead>
             <tr><th scope="col">&nbsp;</th><th scope="col">Farsha</th><th scope="col">Figma</th></tr>
           </thead>
@@ -76,7 +76,7 @@ export default function FigmaAlternativePage() {
         <li>Press Ctrl+K to search every action and its shortcut.</li>
         <li>Download a local <code>.farsha</code> copy or save to Google Drive to keep your file.</li>
       </ol>
-      <p className="cp__note">
+      <p className="content-page__note">
         Farsha is an independent project, not affiliated with, endorsed by or sponsored by Figma, Inc. &quot;Figma&quot; is a trademark of
         Figma, Inc., used here only to describe compatibility of workflow.
       </p>

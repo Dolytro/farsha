@@ -1,0 +1,181 @@
+// Plain content pages (features, Figma alternative, privacy, terms, 404): header, article, footer.
+// Text elements inside the page are styled by tag, like a prose container; the few classes that must beat them
+// (brand, button colour, lead paragraph) use a doubled selector instead of !important.
+.content-page {
+  min-height: 100vh;
+  background: #0e0d14;
+  color: #f2f0fa;
+  font-family: 'Geist', 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.65;
+
+  a {
+    color: #a99bff;
+  }
+
+  h1 {
+    font-family: 'Bricolage Grotesque', 'Geist', sans-serif;
+    font-size: clamp(34px, 6vw, 52px);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    margin: 8px 0 16px;
+  }
+
+  h2 {
+    font-family: 'Bricolage Grotesque', 'Geist', sans-serif;
+    font-size: 26px;
+    margin: 44px 0 10px;
+  }
+
+  h3 {
+    font-size: 17px;
+    margin: 22px 0 6px;
+  }
+
+  p,
+  li {
+    color: #cfcbe0;
+    font-size: 16px;
+  }
+
+  ul {
+    padding-left: 20px;
+  }
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 20px 24px;
+  }
+
+  &__brand {
+    font-family: 'Bricolage Grotesque', 'Geist', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    text-decoration: none;
+    margin-right: auto;
+  }
+
+  & &__brand {
+    color: #f2f0fa;
+  }
+
+  &__nav {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 14px;
+
+    a {
+      color: #c9c4de;
+      text-decoration: none;
+
+      &:hover {
+        color: #fff;
+      }
+    }
+  }
+
+  &__cta {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 10px;
+    background: #6a46f2;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+
+    &--ghost {
+      background: transparent;
+      border: 1px solid #34304a;
+    }
+  }
+
+  & &__cta {
+    color: #fff;
+  }
+
+  &__main {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 24px 24px 80px;
+  }
+
+  &__crumbs {
+    font-size: 13px;
+    color: #a29cba;
+    margin-bottom: 8px;
+
+    a {
+      color: #a29cba;
+    }
+  }
+
+  & &__lead {
+    font-size: 19px;
+    color: #e4e0f2;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 24px 0 8px;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 15px;
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid #2a2640;
+      vertical-align: top;
+    }
+
+    th {
+      color: #a29cba;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+  }
+
+  &__wrap {
+    overflow-x: auto;
+  }
+
+  &__note {
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #17151f;
+    border: 1px solid #34304a;
+    font-size: 15px;
+  }
+
+  &__foot {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 24px 48px;
+    border-top: 1px solid #2a2640;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    color: #a29cba;
+
+    a {
+      color: #c9c4de;
+    }
+  }
+}

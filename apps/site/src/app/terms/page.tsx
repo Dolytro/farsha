@@ -18,7 +18,7 @@ export default function TermsPage() {
     <ContentPage path="/terms" title={TITLE}>
       <h1>Terms of Service</h1>
       <p>Last updated: 4 November 2026</p>
-      <p className="cp__lead">
+      <p className="content-page__lead">
         These terms apply when you use the Farsha website and editor at <a href="https://farsha.org">farsha.org</a> (the “Service”). By
         using the Service you agree to them. If you do not agree, please do not use it.
       </p>
