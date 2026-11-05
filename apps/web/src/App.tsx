@@ -25,6 +25,7 @@ import { ExportDialog } from "./components/ExportDialog";
 import { FindBar } from "./components/FindBar";
 import { CommentPopover } from "./components/CommentPopover";
 import { PreferencesDialog } from "./components/PreferencesDialog";
+import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
 import { buildCommands } from "./commands";
@@ -270,6 +271,10 @@ export function App() {
         // Ctrl +/-/0 would zoom the whole browser page; zoom the canvas instead (like Figma).
         e.preventDefault();
         s.setViewport(zoomBy(s.viewport, key === "0" ? 1 : s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
+      } else if (mod && e.shiftKey && !e.altKey && (key === "?" || key === "/")) {
+        // Figma: Ctrl+Shift+? opens the keyboard shortcuts cheat sheet
+        e.preventDefault();
+        s.setShortcutsOpen(!s.shortcutsOpen);
       } else if (mod && !e.shiftKey && !e.altKey && (key === "/" || key === "k") && !s.viewer) {
         // Figma's "Actions" search
         e.preventDefault();
@@ -597,6 +602,7 @@ export function App() {
       <ExportDialog />
       <FindBar />
       <PreferencesDialog />
+      <ShortcutsDialog />
     </div>
   );
 }

@@ -155,7 +155,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Theme (light / dark / system) | ✅ (cloud menu or Actions; the canvas and panels follow, design layers are never recoloured) |
 | Snapping, nudge amount, color profile | 🟡 snapping on / off and nudge amounts done (Preferences in the cloud menu or Actions); no colour profile |
 | Keyboard layout, accessibility settings | ❌ |
-| Keyboard shortcuts cheat sheet (Ctrl+Shift+?) | ❌ |
+| Keyboard shortcuts cheat sheet (Ctrl+Shift+?) | ✅ (every command with a shortcut, grouped, with search; also in Preferences menu and Actions) |
 | Help and account menu, sign out in a profile menu | 🟡 sign out is in ☁ |
 
 ## 11. Quality
