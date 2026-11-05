@@ -1,19 +1,16 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 
 /**
  * The editor picture in the hero: a believable Farsha session (layers, a design on the canvas with a selection and
  * a measurement, two collaborators, a comment, the property panel). Sizes are written in pixels of a 695 px wide
- * mockup and converted to container units so it scales with the page.
+ * mockup in the stylesheet (site-mockup.scss) and converted to container units so it scales with the page.
  */
 const P = (n: number) => `${(n / 6.95).toFixed(3)}cqw`;
 
-const MONO = "'Geist Mono', monospace";
-const LINE = "#262046";
 const MUTED = "#a29cba";
-const IRIS = "#7c5cff";
 
-type Box = { x: number; y: number; w: number; h: number };
-const abs = ({ x, y, w, h }: Box, extra: CSSProperties = {}): CSSProperties => ({ position: "absolute", left: P(x), top: P(y), width: P(w), height: P(h), ...extra });
+/** Lets a style carry custom properties (`--c`) without a cast at every use. */
+const tone = (c: string) => ({ "--c": c }) as CSSProperties;
 
 function Icon({ d, size = 9, color = MUTED, fill = "none" }: { d: string; size?: number; color?: string; fill?: string }) {
   return (
@@ -35,34 +32,35 @@ const ICONS = {
 };
 
 function Row({ icon, name, depth = 0, selected = false, dim = false }: { icon: keyof typeof ICONS; name: string; depth?: number; selected?: boolean; dim?: boolean }) {
+  const cls = ["site-mockup__row", depth ? "site-mockup__row--depth-1" : "", selected ? "site-mockup__row--selected" : "", dim ? "site-mockup__row--dim" : ""].filter(Boolean).join(" ");
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: P(6), height: P(20), padding: `0 ${P(6)} 0 ${P(6 + depth * 12)}`, borderRadius: P(5), background: selected ? "#3a2f7a" : "transparent", color: selected ? "#fff" : dim ? MUTED : "#d8d3ee", fontSize: P(10.5), whiteSpace: "nowrap" }}>
+    <div className={cls}>
       <Icon d={ICONS[icon]} size={9} color={selected ? "#cbbfff" : "#8d87a6"} />
       <span>{name}</span>
     </div>
   );
 }
 
-function Label({ children }: { children: ReactNode }) {
-  return <div style={{ fontFamily: MONO, fontSize: P(8), letterSpacing: ".1em", color: MUTED, padding: `${P(8)} ${P(8)} ${P(3)}` }}>{children}</div>;
+function Label({ children }: { children: string }) {
+  return <div className="site-mockup__section-label">{children}</div>;
 }
 
-function Field({ k, v, w }: { k: string; v: string; w?: number }) {
+function Field({ k, v, fixed = false }: { k: string; v: string; fixed?: boolean }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: P(5), height: P(20), padding: `0 ${P(7)}`, borderRadius: P(5), background: "#1e1a36", fontSize: P(10), width: w ? P(w) : undefined, flex: w ? undefined : 1 }}>
-      <span style={{ color: MUTED }}>{k}</span>
-      <span style={{ fontFamily: MONO }}>{v}</span>
+    <div className={fixed ? "site-mockup__field site-mockup__field--fixed" : "site-mockup__field"}>
+      <span className="site-mockup__field-key">{k}</span>
+      <span className="site-mockup__mono">{v}</span>
     </div>
   );
 }
 
-function Cursor({ x, y, color, name }: { x: number; y: number; color: string; name: string }) {
+function Cursor({ mod, color, name }: { mod: string; color: string; name: string }) {
   return (
-    <div style={{ position: "absolute", left: P(x), top: P(y) }}>
+    <div className={`site-mockup__cursor site-mockup__cursor--${mod}`} style={tone(color)}>
       <svg width={P(11)} height={P(13)} viewBox="0 0 11 13" aria-hidden="true">
         <path d="M0 0l10 5.2-4.2 1.2L3.8 12z" fill={color} stroke="#0e0d14" strokeWidth=".8" strokeLinejoin="round" />
       </svg>
-      <div style={{ position: "absolute", left: P(10), top: P(9), padding: `${P(1.5)} ${P(6)}`, borderRadius: P(8), background: color, color: "#0e0d14", fontSize: P(8.5), fontWeight: 600, whiteSpace: "nowrap" }}>{name}</div>
+      <div className="site-mockup__cursor-name">{name}</div>
     </div>
   );
 }
@@ -71,15 +69,15 @@ export function HeroMockup() {
   return (
     <>
       {/* left: layers */}
-      <div style={{ width: P(158), flex: "none", borderRight: `1px solid ${LINE}`, display: "flex", flexDirection: "column", padding: `${P(10)} ${P(6)}`, gap: P(1) }}>
-        <div style={{ display: "flex", gap: P(5), padding: `0 ${P(4)} ${P(9)}` }}>
+      <div className="site-mockup__layers">
+        <div className="site-mockup__window-dots">
           {["#ff5e4d", "#ffb020", "#4fd19a"].map((c) => (
-            <span key={c} style={{ width: P(7), height: P(7), borderRadius: "50%", background: c }} />
+            <span key={c} className="site-mockup__window-dot" style={tone(c)} />
           ))}
         </div>
-        <div style={{ display: "flex", gap: P(12), padding: `0 ${P(6)} ${P(7)}`, fontSize: P(10.5), fontWeight: 600 }}>
+        <div className="site-mockup__tabs">
           <span>Layers</span>
-          <span style={{ color: MUTED, fontWeight: 500 }}>Assets</span>
+          <span className="site-mockup__tabs-muted">Assets</span>
         </div>
         <Row icon="frame" name="Onboarding" depth={0} />
         <Row icon="rect" name="Hero image" depth={1} />
@@ -94,9 +92,9 @@ export function HeroMockup() {
       </div>
 
       {/* centre: canvas */}
-      <div style={{ flex: 1, minWidth: 0, position: "relative", backgroundColor: "#0f0c1c", backgroundImage: "radial-gradient(#26204a 1px,transparent 1.5px)", backgroundSize: `${P(20)} ${P(20)}`, overflow: "hidden" }}>
+      <div className="site-mockup__canvas">
         {/* bottom toolbar, where the editor keeps it */}
-        <div style={abs({ x: 86, y: 430, w: 160, h: 26 }, { display: "flex", alignItems: "center", justifyContent: "space-between", padding: `0 ${P(12)}`, borderRadius: P(8), background: "#17151f", border: `1px solid ${LINE}`, color: MUTED })}>
+        <div className="site-mockup__toolbar">
           <Icon d={ICONS.move} size={11} color="#fff" />
           <Icon d={ICONS.frame} size={11} />
           <Icon d={ICONS.rect} size={11} />
@@ -106,104 +104,113 @@ export function HeroMockup() {
         </div>
 
         {/* frame label + onboarding screen */}
-        <div style={{ ...abs({ x: 20, y: 50, w: 130, h: 12 }), fontFamily: MONO, fontSize: P(8.5), color: MUTED }}>Onboarding</div>
-        <div style={abs({ x: 20, y: 66, w: 130, h: 258 }, { borderRadius: P(16), background: "#fbfaff", overflow: "hidden", boxShadow: "0 18px 40px #0008" })}>
-          <div style={abs({ x: 8, y: 8, w: 114, h: 112 }, { borderRadius: P(11), background: "linear-gradient(150deg,#ff7a59,#c04fd0 55%,#5b3fd8)", overflow: "hidden" })}>
-            <div style={abs({ x: 0, y: 70, w: 114, h: 42 }, { background: "#ffffff22", clipPath: "polygon(0 60%,28% 20%,50% 55%,72% 10%,100% 50%,100% 100%,0 100%)" })} />
-            <div style={abs({ x: 78, y: 14, w: 20, h: 20 }, { borderRadius: "50%", background: "#ffe3a3" })} />
+        <div className="site-mockup__frame-label site-mockup__frame-label--onboarding">Onboarding</div>
+        <div className="site-mockup__screen site-mockup__screen--onboarding">
+          <div className="site-mockup__photo">
+            <div className="site-mockup__hills" />
+            <div className="site-mockup__sun" />
           </div>
-          <div style={abs({ x: 10, y: 130, w: 110, h: 24 }, { fontWeight: 800, fontSize: P(15), color: "#15131d", letterSpacing: "-.02em", fontFamily: "'Bricolage Grotesque',sans-serif", lineHeight: 1.05 })}>Plan your trip</div>
-          <div style={abs({ x: 10, y: 162, w: 110, h: 30 }, { fontSize: P(8.5), color: "#6b6781", lineHeight: 1.45 })}>Save places, share routes and travel together.</div>
-          <div style={abs({ x: 10, y: 200, w: 110, h: 28 }, { borderRadius: P(9), background: "#6a46f2", color: "#fff", display: "grid", placeItems: "center", fontWeight: 600, fontSize: P(10) })}>Get started</div>
-          <div style={abs({ x: 49, y: 240, w: 32, h: 6 }, { display: "flex", gap: P(4), alignItems: "center", justifyContent: "center" })}>
-            <i style={{ width: P(10), height: P(5), borderRadius: P(3), background: "#6a46f2" }} />
-            <i style={{ width: P(5), height: P(5), borderRadius: "50%", background: "#d6d1ec" }} />
-            <i style={{ width: P(5), height: P(5), borderRadius: "50%", background: "#d6d1ec" }} />
+          <div className="site-mockup__headline">Plan your trip</div>
+          <div className="site-mockup__copy">Save places, share routes and travel together.</div>
+          <div className="site-mockup__cta">Get started</div>
+          <div className="site-mockup__pager">
+            <i className="site-mockup__pager-active" />
+            <i className="site-mockup__pager-dot" />
+            <i className="site-mockup__pager-dot" />
           </div>
         </div>
 
         {/* selection around the button, size pill and a measurement to the frame edge */}
-        <div style={abs({ x: 30, y: 266, w: 110, h: 28 }, { border: `1.5px solid ${IRIS}`, borderRadius: P(9) })}>
-          {[[-4, -4], [106, -4], [-4, 24], [106, 24]].map(([hx, hy]) => (
-            <i key={`${hx}${hy}`} style={abs({ x: hx!, y: hy!, w: 7, h: 7 }, { background: "#fff", border: `1.5px solid ${IRIS}`, borderRadius: P(1.5) })} />
+        <div className="site-mockup__selection">
+          {["tl", "tr", "bl", "br"].map((corner) => (
+            <i key={corner} className={`site-mockup__handle site-mockup__handle--${corner}`} />
           ))}
-          <div style={abs({ x: 25, y: 33, w: 60, h: 14 }, { background: IRIS, color: "#fff", borderRadius: P(4), fontFamily: MONO, fontSize: P(8), display: "grid", placeItems: "center" })}>110 × 28</div>
+          <div className="site-mockup__size-pill">110 × 28</div>
         </div>
-        <div style={abs({ x: 132, y: 294, w: 1, h: 30 }, { background: "#ff4fa3" })} />
-        <div style={abs({ x: 135, y: 303, w: 16, h: 12 }, { background: "#ff4fa3", color: "#fff", borderRadius: P(3), fontFamily: MONO, fontSize: P(8), display: "grid", placeItems: "center" })}>16</div>
+        <div className="site-mockup__measure-line" />
+        <div className="site-mockup__measure-tag">16</div>
 
         {/* home screen */}
-        <div style={{ ...abs({ x: 168, y: 50, w: 130, h: 12 }), fontFamily: MONO, fontSize: P(8.5), color: MUTED }}>Home</div>
-        <div style={abs({ x: 168, y: 66, w: 130, h: 258 }, { borderRadius: P(16), background: "#17151f", border: `1px solid ${LINE}`, overflow: "hidden" })}>
-          <div style={abs({ x: 10, y: 12, w: 80, h: 12 }, { fontWeight: 700, fontSize: P(11) })}>Good morning</div>
+        <div className="site-mockup__frame-label site-mockup__frame-label--home">Home</div>
+        <div className="site-mockup__screen site-mockup__screen--home">
+          <div className="site-mockup__greeting">Good morning</div>
           {[
             ["#ff5e4d", "Lisbon", "5 days"],
             ["#2de2c8", "Kyoto", "9 days"],
             ["#ffb020", "Oslo", "3 days"],
           ].map(([c, name, meta], i) => (
-            <div key={name} style={abs({ x: 10, y: 38 + i * 56, w: 110, h: 48 }, { borderRadius: P(11), background: "#221f2e", display: "flex", alignItems: "center", gap: P(8), padding: `0 ${P(8)}` })}>
-              <i style={{ width: P(30), height: P(30), borderRadius: P(9), background: c, flex: "none" }} />
-              <div style={{ lineHeight: 1.3 }}>
-                <div style={{ fontSize: P(10.5), fontWeight: 600 }}>{name}</div>
-                <div style={{ fontSize: P(8.5), color: MUTED }}>{meta}</div>
+            <div key={name} className={`site-mockup__trip site-mockup__trip--${i + 1}`} style={tone(c!)}>
+              <i className="site-mockup__trip-swatch" />
+              <div className="site-mockup__trip-text">
+                <div className="site-mockup__trip-name">{name}</div>
+                <div className="site-mockup__trip-meta">{meta}</div>
               </div>
             </div>
           ))}
-          <div style={abs({ x: 0, y: 220, w: 130, h: 38 }, { borderTop: `1px solid ${LINE}`, display: "flex", justifyContent: "space-around", alignItems: "center" })}>
-            {[IRIS, "#4a4470", "#4a4470", "#4a4470"].map((c, i) => (
-              <i key={i} style={{ width: P(12), height: P(12), borderRadius: P(4), background: c }} />
+          <div className="site-mockup__tabbar">
+            {["#7c5cff", "#4a4470", "#4a4470", "#4a4470"].map((c, i) => (
+              <i key={i} className="site-mockup__tabbar-icon" style={tone(c)} />
             ))}
           </div>
         </div>
 
         {/* collaborators and a comment */}
-        <Cursor x={262} y={118} color="#ff5e4d" name="Nadia" />
-        <Cursor x={120} y={250} color="#2de2c8" name="Rafi" />
-        <div style={abs({ x: 296, y: 100, w: 20, h: 20 }, { borderRadius: "50% 50% 50% 0", background: "#ffb020", color: "#0e0d14", display: "grid", placeItems: "center", fontSize: P(9), fontWeight: 700 })}>3</div>
+        <Cursor mod="nadia" color="#ff5e4d" name="Nadia" />
+        <Cursor mod="rafi" color="#2de2c8" name="Rafi" />
+        <div className="site-mockup__comment">3</div>
 
         {/* a palette row below the screens */}
-        <div style={{ ...abs({ x: 20, y: 372, w: 80, h: 12 }), fontFamily: MONO, fontSize: P(8.5), color: MUTED }}>Palette</div>
-        <div style={abs({ x: 20, y: 390, w: 280, h: 30 }, { display: "flex", gap: P(10) })}>
+        <div className="site-mockup__frame-label site-mockup__frame-label--palette">Palette</div>
+        <div className="site-mockup__palette">
           {["#6a46f2", "#ff4fa3", "#ff5e4d", "#ffb020", "#2de2c8", "#4fd19a"].map((c, i) => (
-            <i key={c} style={{ width: P(30), height: P(30), borderRadius: i % 2 ? P(9) : "50%", background: c, display: "block", flex: "none" }} />
+            <i key={c} className={i % 2 ? "site-mockup__swatch" : "site-mockup__swatch site-mockup__swatch--round"} style={tone(c)} />
           ))}
         </div>
 
         {/* bottom: zoom */}
-        <div style={abs({ x: 268, y: 434, w: 50, h: 20 }, { borderRadius: P(6), background: "#17151f", border: `1px solid ${LINE}`, fontFamily: MONO, fontSize: P(8.5), color: MUTED, display: "grid", placeItems: "center" })}>100%</div>
+        <div className="site-mockup__zoom">100%</div>
       </div>
 
       {/* right: properties */}
-      <div style={{ width: P(205), flex: "none", borderLeft: `1px solid ${LINE}`, display: "flex", flexDirection: "column", padding: `${P(10)} ${P(8)}`, gap: P(2) }}>
-        <div style={{ display: "flex", gap: P(5), paddingBottom: P(6) }}>
-          <span style={{ padding: `${P(4)} ${P(10)}`, borderRadius: P(7), background: "#221d3e", fontWeight: 600, fontSize: P(10.5) }}>Design</span>
-          <span style={{ padding: `${P(4)} ${P(8)}`, color: "#b7b2cc", fontSize: P(10.5) }}>Prototype</span>
+      <div className="site-mockup__props">
+        <div className="site-mockup__props-tabs">
+          <span className="site-mockup__props-tab site-mockup__props-tab--active">Design</span>
+          <span className="site-mockup__props-tab">Prototype</span>
         </div>
-        <div style={{ fontWeight: 600, fontSize: P(11), padding: `${P(2)} ${P(2)} ${P(5)}` }}>Get started</div>
-        <div style={{ display: "flex", gap: P(5) }}><Field k="X" v="10" /><Field k="Y" v="200" /></div>
-        <div style={{ display: "flex", gap: P(5), marginTop: P(5) }}><Field k="W" v="110" /><Field k="H" v="28" /></div>
-        <div style={{ display: "flex", gap: P(5), marginTop: P(5) }}><Field k="R" v="9" /><Field k="%" v="100" /></div>
+        <div className="site-mockup__props-title">Get started</div>
+        <div className="site-mockup__fields">
+          <Field k="X" v="10" />
+          <Field k="Y" v="200" />
+        </div>
+        <div className="site-mockup__fields site-mockup__fields--spaced">
+          <Field k="W" v="110" />
+          <Field k="H" v="28" />
+        </div>
+        <div className="site-mockup__fields site-mockup__fields--spaced">
+          <Field k="R" v="9" />
+          <Field k="%" v="100" />
+        </div>
         <Label>AUTO LAYOUT</Label>
-        <div style={{ display: "flex", gap: P(5) }}>
-          <div style={{ flex: 1, height: P(20), borderRadius: P(5), background: "#1e1a36", display: "flex", alignItems: "center", justifyContent: "center", gap: P(8) }}>
+        <div className="site-mockup__fields">
+          <div className="site-mockup__direction">
             <Icon d="M5 12h14M13 6l6 6-6 6" size={9} color="#fff" />
             <Icon d="M12 5v14M6 13l6 6 6-6" size={9} />
           </div>
-          <Field k="Gap" v="8" w={56} />
+          <Field k="Gap" v="8" fixed />
         </div>
         <Label>FILL</Label>
-        <div style={{ display: "flex", alignItems: "center", gap: P(7), height: P(22), padding: `0 ${P(7)}`, borderRadius: P(5), background: "#1e1a36", fontSize: P(10) }}>
-          <i style={{ width: P(12), height: P(12), borderRadius: P(3), background: "#6a46f2", display: "block" }} />
-          <span style={{ fontFamily: MONO }}>6A46F2</span>
-          <span style={{ marginLeft: "auto", color: MUTED, fontFamily: MONO }}>100%</span>
+        <div className="site-mockup__value-row">
+          <i className="site-mockup__chip site-mockup__chip--fill" />
+          <span className="site-mockup__mono">6A46F2</span>
+          <span className="site-mockup__value-end">100%</span>
         </div>
         <Label>STROKE</Label>
-        <div style={{ height: P(22), padding: `0 ${P(7)}`, borderRadius: P(5), background: "#1e1a36", fontSize: P(10), color: MUTED, display: "flex", alignItems: "center" }}>Add stroke</div>
+        <div className="site-mockup__empty-row">Add stroke</div>
         <Label>EFFECTS</Label>
-        <div style={{ display: "flex", alignItems: "center", gap: P(7), height: P(22), padding: `0 ${P(7)}`, borderRadius: P(5), background: "#1e1a36", fontSize: P(10) }}>
-          <i style={{ width: P(12), height: P(12), borderRadius: P(3), background: "#00000099", border: "1px solid #4a4470", display: "block" }} />
+        <div className="site-mockup__value-row">
+          <i className="site-mockup__chip site-mockup__chip--shadow" />
           <span>Drop shadow</span>
-          <span style={{ marginLeft: "auto", color: MUTED, fontFamily: MONO }}>0 6 16</span>
+          <span className="site-mockup__value-end">0 6 16</span>
         </div>
       </div>
     </>

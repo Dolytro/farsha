@@ -1,0 +1,553 @@
+@use "sass:math";
+
+// The editor picture inside the hero. It is drawn for a 695 px wide mockup; p() turns those pixels into container
+// query units so everything scales with the mockup's width (the mockup is a size container, see site-hero).
+$muted: #a29cba;
+$line: #262046;
+$iris: #7c5cff;
+$mono: 'Geist Mono', monospace;
+$panel: #1e1a36;
+
+@function p($n) {
+  @return math.div(math.round(math.div($n * 1000, 6.95)), 1000) * 1cqw;
+}
+
+// absolutely positioned box, in mockup pixels
+@mixin box($x, $y, $w, $h) {
+  position: absolute;
+  left: p($x);
+  top: p($y);
+  width: p($w);
+  height: p($h);
+}
+
+// small centered text badge
+@mixin badge {
+  display: grid;
+  place-items: center;
+}
+
+.site-mockup {
+  &__mono {
+    font-family: $mono;
+  }
+
+  // ---- left: layers ----
+  &__layers {
+    width: p(158);
+    flex: none;
+    border-right: 1px solid $line;
+    display: flex;
+    flex-direction: column;
+    padding: p(10) p(6);
+    gap: p(1);
+  }
+
+  &__window-dots {
+    display: flex;
+    gap: p(5);
+    padding: 0 p(4) p(9);
+  }
+
+  &__window-dot {
+    width: p(7);
+    height: p(7);
+    border-radius: 50%;
+    background: var(--c);
+  }
+
+  &__tabs {
+    display: flex;
+    gap: p(12);
+    padding: 0 p(6) p(7);
+    font-size: p(10.5);
+    font-weight: 600;
+  }
+
+  &__tabs-muted {
+    color: $muted;
+    font-weight: 500;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: p(6);
+    height: p(20);
+    padding: 0 p(6) 0 p(6);
+    border-radius: p(5);
+    background: transparent;
+    color: #d8d3ee;
+    font-size: p(10.5);
+    white-space: nowrap;
+
+    &--depth-1 {
+      padding-left: p(18);
+    }
+
+    &--dim {
+      color: $muted;
+    }
+
+    &--selected {
+      background: #3a2f7a;
+      color: #fff;
+    }
+  }
+
+  // ---- centre: canvas ----
+  &__canvas {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    background-color: #0f0c1c;
+    background-image: radial-gradient(#26204a 1px, transparent 1.5px);
+    background-size: p(20) p(20);
+    overflow: hidden;
+  }
+
+  &__toolbar {
+    @include box(86, 430, 160, 26);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 p(12);
+    border-radius: p(8);
+    background: #17151f;
+    border: 1px solid $line;
+    color: $muted;
+  }
+
+  &__frame-label {
+    font-family: $mono;
+    font-size: p(8.5);
+    color: $muted;
+
+    &--onboarding {
+      @include box(20, 50, 130, 12);
+    }
+
+    &--home {
+      @include box(168, 50, 130, 12);
+    }
+
+    &--palette {
+      @include box(20, 372, 80, 12);
+    }
+  }
+
+  &__screen {
+    &--onboarding {
+      @include box(20, 66, 130, 258);
+      border-radius: p(16);
+      background: #fbfaff;
+      overflow: hidden;
+      box-shadow: 0 18px 40px #0008;
+    }
+
+    &--home {
+      @include box(168, 66, 130, 258);
+      border-radius: p(16);
+      background: #17151f;
+      border: 1px solid $line;
+      overflow: hidden;
+    }
+  }
+
+  &__photo {
+    @include box(8, 8, 114, 112);
+    border-radius: p(11);
+    background: linear-gradient(150deg, #ff7a59, #c04fd0 55%, #5b3fd8);
+    overflow: hidden;
+  }
+
+  &__hills {
+    @include box(0, 70, 114, 42);
+    background: #ffffff22;
+    clip-path: polygon(0 60%, 28% 20%, 50% 55%, 72% 10%, 100% 50%, 100% 100%, 0 100%);
+  }
+
+  &__sun {
+    @include box(78, 14, 20, 20);
+    border-radius: 50%;
+    background: #ffe3a3;
+  }
+
+  &__headline {
+    @include box(10, 130, 110, 24);
+    font-weight: 800;
+    font-size: p(15);
+    color: #15131d;
+    letter-spacing: -.02em;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    line-height: 1.05;
+  }
+
+  &__copy {
+    @include box(10, 162, 110, 30);
+    font-size: p(8.5);
+    color: #6b6781;
+    line-height: 1.45;
+  }
+
+  &__cta {
+    @include box(10, 200, 110, 28);
+    @include badge;
+    border-radius: p(9);
+    background: #6a46f2;
+    color: #fff;
+    font-weight: 600;
+    font-size: p(10);
+  }
+
+  &__pager {
+    @include box(49, 240, 32, 6);
+    display: flex;
+    gap: p(4);
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__pager-active {
+    width: p(10);
+    height: p(5);
+    border-radius: p(3);
+    background: #6a46f2;
+  }
+
+  &__pager-dot {
+    width: p(5);
+    height: p(5);
+    border-radius: 50%;
+    background: #d6d1ec;
+  }
+
+  // selection box with four corner handles, a size pill and a measurement to the frame edge
+  &__selection {
+    @include box(30, 266, 110, 28);
+    border: 1.5px solid $iris;
+    border-radius: p(9);
+  }
+
+  &__handle {
+    width: p(7);
+    height: p(7);
+    position: absolute;
+    background: #fff;
+    border: 1.5px solid $iris;
+    border-radius: p(1.5);
+
+    &--tl {
+      left: p(-4);
+      top: p(-4);
+    }
+
+    &--tr {
+      left: p(106);
+      top: p(-4);
+    }
+
+    &--bl {
+      left: p(-4);
+      top: p(24);
+    }
+
+    &--br {
+      left: p(106);
+      top: p(24);
+    }
+  }
+
+  &__size-pill {
+    @include box(25, 33, 60, 14);
+    @include badge;
+    background: $iris;
+    color: #fff;
+    border-radius: p(4);
+    font-family: $mono;
+    font-size: p(8);
+  }
+
+  &__measure-line {
+    @include box(132, 294, 1, 30);
+    background: #ff4fa3;
+  }
+
+  &__measure-tag {
+    @include box(135, 303, 16, 12);
+    @include badge;
+    background: #ff4fa3;
+    color: #fff;
+    border-radius: p(3);
+    font-family: $mono;
+    font-size: p(8);
+  }
+
+  // ---- home screen ----
+  &__greeting {
+    @include box(10, 12, 80, 12);
+    font-weight: 700;
+    font-size: p(11);
+  }
+
+  &__trip {
+    position: absolute;
+    left: p(10);
+    width: p(110);
+    height: p(48);
+    border-radius: p(11);
+    background: #221f2e;
+    display: flex;
+    align-items: center;
+    gap: p(8);
+    padding: 0 p(8);
+
+    &--1 {
+      top: p(38);
+    }
+
+    &--2 {
+      top: p(94);
+    }
+
+    &--3 {
+      top: p(150);
+    }
+  }
+
+  &__trip-swatch {
+    width: p(30);
+    height: p(30);
+    border-radius: p(9);
+    background: var(--c);
+    flex: none;
+  }
+
+  &__trip-text {
+    line-height: 1.3;
+  }
+
+  &__trip-name {
+    font-size: p(10.5);
+    font-weight: 600;
+  }
+
+  &__trip-meta {
+    font-size: p(8.5);
+    color: $muted;
+  }
+
+  &__tabbar {
+    @include box(0, 220, 130, 38);
+    border-top: 1px solid $line;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  &__tabbar-icon {
+    width: p(12);
+    height: p(12);
+    border-radius: p(4);
+    background: var(--c);
+  }
+
+  // ---- collaborators ----
+  &__cursor {
+    position: absolute;
+
+    &--nadia {
+      left: p(262);
+      top: p(118);
+    }
+
+    &--rafi {
+      left: p(120);
+      top: p(250);
+    }
+  }
+
+  &__cursor-name {
+    position: absolute;
+    left: p(10);
+    top: p(9);
+    padding: p(1.5) p(6);
+    border-radius: p(8);
+    background: var(--c);
+    color: #0e0d14;
+    font-size: p(8.5);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  &__comment {
+    @include box(296, 100, 20, 20);
+    @include badge;
+    border-radius: 50% 50% 50% 0;
+    background: #ffb020;
+    color: #0e0d14;
+    font-size: p(9);
+    font-weight: 700;
+  }
+
+  // ---- palette row ----
+  &__palette {
+    @include box(20, 390, 280, 30);
+    display: flex;
+    gap: p(10);
+  }
+
+  &__swatch {
+    width: p(30);
+    height: p(30);
+    border-radius: p(9);
+    background: var(--c);
+    display: block;
+    flex: none;
+
+    &--round {
+      border-radius: 50%;
+    }
+  }
+
+  &__zoom {
+    @include box(268, 434, 50, 20);
+    @include badge;
+    border-radius: p(6);
+    background: #17151f;
+    border: 1px solid $line;
+    font-family: $mono;
+    font-size: p(8.5);
+    color: $muted;
+  }
+
+  // ---- right: properties ----
+  &__props {
+    width: p(205);
+    flex: none;
+    border-left: 1px solid $line;
+    display: flex;
+    flex-direction: column;
+    padding: p(10) p(8);
+    gap: p(2);
+  }
+
+  &__props-tabs {
+    display: flex;
+    gap: p(5);
+    padding-bottom: p(6);
+  }
+
+  &__props-tab {
+    padding: p(4) p(8);
+    color: #b7b2cc;
+    font-size: p(10.5);
+
+    &--active {
+      padding: p(4) p(10);
+      border-radius: p(7);
+      background: #221d3e;
+      color: inherit;
+      font-weight: 600;
+    }
+  }
+
+  &__props-title {
+    font-weight: 600;
+    font-size: p(11);
+    padding: p(2) p(2) p(5);
+  }
+
+  &__fields {
+    display: flex;
+    gap: p(5);
+
+    &--spaced {
+      margin-top: p(5);
+    }
+  }
+
+  &__field {
+    display: flex;
+    align-items: center;
+    gap: p(5);
+    height: p(20);
+    padding: 0 p(7);
+    border-radius: p(5);
+    background: $panel;
+    font-size: p(10);
+    flex: 1;
+
+    &--fixed {
+      width: p(56);
+      flex: 0 1 auto;
+    }
+  }
+
+  &__field-key {
+    color: $muted;
+  }
+
+  &__section-label {
+    font-family: $mono;
+    font-size: p(8);
+    letter-spacing: .1em;
+    color: $muted;
+    padding: p(8) p(8) p(3);
+  }
+
+  &__direction {
+    flex: 1;
+    height: p(20);
+    border-radius: p(5);
+    background: $panel;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: p(8);
+  }
+
+  &__value-row {
+    display: flex;
+    align-items: center;
+    gap: p(7);
+    height: p(22);
+    padding: 0 p(7);
+    border-radius: p(5);
+    background: $panel;
+    font-size: p(10);
+  }
+
+  &__chip {
+    width: p(12);
+    height: p(12);
+    border-radius: p(3);
+    display: block;
+
+    &--fill {
+      background: #6a46f2;
+    }
+
+    &--shadow {
+      background: #00000099;
+      border: 1px solid #4a4470;
+    }
+  }
+
+  &__value-end {
+    margin-left: auto;
+    color: $muted;
+    font-family: $mono;
+  }
+
+  &__empty-row {
+    height: p(22);
+    padding: 0 p(7);
+    border-radius: p(5);
+    background: $panel;
+    font-size: p(10);
+    color: $muted;
+    display: flex;
+    align-items: center;
+  }
+}
