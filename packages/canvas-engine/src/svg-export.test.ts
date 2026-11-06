@@ -259,6 +259,12 @@ describe("advanced strokes", () => {
     expect(svg).toContain('stroke-linejoin="bevel"');
   });
 
+  it("turns a miter angle into a miter limit", () => {
+    expect(rect({ strokeMiterAngle: 60 })).toContain('stroke-miterlimit="2"');
+    expect(rect({ strokeMiterAngle: 28.96 })).not.toContain("miterlimit");
+    expect(rect({ strokeMiterAngle: 60, strokeJoin: "BEVEL" })).not.toContain("miterlimit");
+  });
+
   it("leaves a plain stroke plain", () => {
     const svg = rect({});
     expect(svg).not.toContain("stroke-dasharray");

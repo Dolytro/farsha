@@ -300,6 +300,8 @@ export interface BaseNode {
   strokeDash?: number[];
   strokeCap?: StrokeCap;
   strokeJoin?: StrokeJoin;
+  /** Miter join: the smallest corner angle (degrees, 1 to 180) that stays pointed; sharper corners are bevelled. Missing means 28.96 (Figma's default). */
+  strokeMiterAngle?: number;
   /** Line ends of a vector's stroke (arrowheads). */
   strokeStartCap?: LineEnd;
   strokeEndCap?: LineEnd;
@@ -590,6 +592,7 @@ export interface StylePatch extends AutoLayoutProps {
   strokeDash?: number[];
   strokeCap?: StrokeCap;
   strokeJoin?: StrokeJoin;
+  strokeMiterAngle?: number | null;
   strokeStartCap?: LineEnd;
   strokeEndCap?: LineEnd;
   interactions?: Interaction[];

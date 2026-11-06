@@ -156,6 +156,28 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
             <option value="BEVEL">Join: bevel</option>
             <option value="ROUND">Join: round</option>
           </Select>
+          {(node.strokeJoin ?? (node.type === "VECTOR" ? "ROUND" : "MITER")) === "MITER" && (
+            <label className="field" title="Corners sharper than this angle are bevelled (miter angle)">
+              <span className="field__label">Miter°</span>
+              <input
+                className="field__input"
+                type="number"
+                min={1}
+                max={180}
+                aria-label="Miter angle"
+                key={node.strokeMiterAngle ?? "default"}
+                defaultValue={node.strokeMiterAngle ?? 28.96}
+                onBlur={(e) => {
+                  const v = Number(e.currentTarget.value);
+                  doc.setStyle(node.id, { strokeMiterAngle: Number.isFinite(v) && e.currentTarget.value !== "" ? Math.min(180, Math.max(1, v)) : null });
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+              />
+            </label>
+          )}
           {node.type === "VECTOR" &&
             (["strokeStartCap", "strokeEndCap"] as const).map((key) => (
               <Select key={key} className="field__select" aria-label={key === "strokeStartCap" ? "Start point" : "End point"} value={node[key] ?? "NONE"} onChange={(e) => doc.setStyle(node.id, { [key]: e.target.value as LineEnd })}>

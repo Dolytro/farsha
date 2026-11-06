@@ -331,7 +331,10 @@ export function strokeExtras(n: DesignNode, defaultCap: "NONE" | "ROUND" | "SQUA
   const dashAttr = dash.length && dash.some((v) => v > 0) ? ` stroke-dasharray="${dash.map(num).join(" ")}"` : "";
   const capAttr = cap !== "NONE" || defaultCap !== "NONE" ? ` stroke-linecap="${CAP_ATTR[cap]}"` : "";
   const joinAttr = join !== "MITER" || defaultJoin !== "MITER" ? ` stroke-linejoin="${JOIN_ATTR[join]}"` : "";
-  return dashAttr + capAttr + joinAttr;
+  // a miter angle other than Figma's default 28.96 degrees becomes SVG's miter limit: 1 / sin(angle / 2)
+  const angle = typeof n.strokeMiterAngle === "number" && Number.isFinite(n.strokeMiterAngle) ? Math.min(180, Math.max(1, n.strokeMiterAngle)) : undefined;
+  const miterAttr = join === "MITER" && angle !== undefined && Math.abs(angle - 28.96) > 0.01 ? ` stroke-miterlimit="${num(1 / Math.sin((angle * Math.PI) / 360))}"` : "";
+  return dashAttr + capAttr + joinAttr + miterAttr;
 }
 
 const MARKER_SHAPES: Record<Exclude<LineEnd, "NONE">, (c: string) => string> = {
