@@ -9,6 +9,7 @@ import { AlignRow } from "./AlignRow";
 import { PrototypePanel } from "./PrototypePanel";
 import { VariantsSection } from "./VariantsSection";
 import { ComponentPropsSection } from "./ComponentPropsSection";
+import { ExplicitModeSection } from "./ExplicitModeSection";
 import { LayoutGridSection } from "./LayoutGridSection";
 import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
@@ -342,6 +343,7 @@ export function Properties() {
 
       <VariantsSection doc={doc} node={node} />
       <ComponentPropsSection doc={doc} node={node} />
+      <ExplicitModeSection doc={doc} node={node} />
       <ChildSizingSection doc={doc} node={node} />
       <AutoLayoutSection doc={doc} node={node} select={select} />
       <LayoutGridSection doc={doc} node={node} />

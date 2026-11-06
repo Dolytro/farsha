@@ -269,6 +269,8 @@ export interface BaseNode {
   flowStart?: boolean;
   /** Name of the flow that starts at this frame. Missing means "Flow 1", "Flow 2" and so on. */
   flowName?: string;
+  /** Variable mode this frame and everything inside it shows, whatever the file's active mode is (Figma's explicit mode). */
+  explicitMode?: string;
   /** Number and boolean variables bound to properties of this layer: property name to variable id. */
   varBindings?: Record<string, string>;
   /** The export settings of this layer; none means PNG at 1x. */
@@ -574,6 +576,7 @@ export interface StylePatch extends AutoLayoutProps {
   description?: string | null;
   flowStart?: boolean | null;
   flowName?: string | null;
+  explicitMode?: string | null;
   lockAspect?: boolean | null;
   exportSettings?: ExportSetting[] | null;
   varBindings?: Record<string, string> | null;

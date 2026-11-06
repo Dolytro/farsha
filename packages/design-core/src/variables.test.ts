@@ -127,3 +127,28 @@ describe('page background', () => {
     expect(doc.pageBackground(page)).toBeUndefined();
   });
 });
+
+describe('explicit mode', () => {
+  it('a frame with an explicit mode shows that mode whatever the file mode is', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const light = doc.activeModeId();
+    const dark = doc.addMode('Dark');
+    const v = doc.createColorVariable('Bg', '#ffffff');
+    doc.updateColorVariable(v, { modeId: dark, color: '#000000' });
+    const frame = doc.createNode('FRAME', { parentId: page, props: { width: 100, height: 100, fills: [{ type: 'SOLID', color: '#ffffff', opacity: 1 }] } as never });
+    const inner = doc.createNode('RECTANGLE', { parentId: frame, props: { width: 10, height: 10, fills: [{ type: 'SOLID', color: '#ffffff', opacity: 1 }] } as never });
+    doc.bindPaintVariable(frame, 'fills', 0, v);
+    doc.bindPaintVariable(inner, 'fills', 0, v);
+    const color = (id: string) => (doc.getNode(id) as unknown as { fills: { color: string }[] }).fills[0]!.color;
+    expect(color(inner)).toBe('#ffffff');
+    doc.setStyle(frame, { explicitMode: dark });
+    expect(color(frame)).toBe('#000000');
+    expect(color(inner)).toBe('#000000');
+    doc.setActiveMode(dark);
+    doc.setStyle(frame, { explicitMode: light });
+    expect(color(inner)).toBe('#ffffff');
+    doc.setStyle(frame, { explicitMode: null });
+    expect(color(inner)).toBe('#000000');
+  });
+});

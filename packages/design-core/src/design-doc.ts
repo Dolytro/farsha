@@ -159,8 +159,8 @@ export class DesignDoc {
     if (!this.variableMap.size && ![...this.nodes.values()].some((m) => this.hasBoundPaint(m) || !!m.get('textVariableId') || !!m.get('varBindings'))) return;
     this.syncing = true;
     try {
-      const mode = this.activeModeId();
-      const resolve = (paints: unknown): Paint[] | null => {
+      const active = this.activeModeId();
+      const resolve = (paints: unknown, mode: string): Paint[] | null => {
         if (!Array.isArray(paints)) return null;
         let changed = false;
         const next = (paints as Paint[]).map((p) => {
@@ -180,8 +180,9 @@ export class DesignDoc {
       };
       this.transact(() => {
         for (const map of this.nodes.values()) {
+          const mode = this.modeFor(map.get('id') as string, active);
           for (const key of ['fills', 'strokes']) {
-            const next = resolve(map.get(key));
+            const next = resolve(map.get(key), mode);
             if (next) map.set(key, next);
           }
           if (map.get('varBindings')) this.applyBindings(map.get('id') as string);
@@ -199,6 +200,19 @@ export class DesignDoc {
     } finally {
       this.syncing = false;
     }
+  }
+
+  /** The variable mode a layer shows: the explicit mode of the closest frame (or itself) that has one, else the active mode. */
+  private modeFor(id: string, active: string): string {
+    const known = (m: unknown): m is string => typeof m === 'string' && this.modes().some((x) => x.id === m);
+    for (let cur: string | null | undefined = id, hops = 0; cur && hops < 200; hops++) {
+      const map = this.nodes.get(cur);
+      if (!map) break;
+      const explicit = map.get('explicitMode');
+      if (known(explicit)) return explicit;
+      cur = map.get('parentId') as string | null | undefined;
+    }
+    return active;
   }
 
   private hasBoundPaint(map: NodeMap): boolean {
@@ -1146,7 +1160,7 @@ export class DesignDoc {
     const map = this.nodes.get(nodeId);
     const bindings = map?.get('varBindings') as Record<string, string> | undefined | null;
     if (!map || !bindings) return;
-    const mode = this.activeModeId();
+    const mode = this.modeFor(nodeId, this.activeModeId());
     const kept: Record<string, string> = {};
     for (const [prop, varId] of Object.entries(bindings)) {
       const v = this.variableMap.get(varId);

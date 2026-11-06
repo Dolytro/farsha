@@ -297,7 +297,7 @@ Dev Mode
 Variables
 - ✅ Number and boolean variables (Variables dialog tabs; the Variables section of the Design panel binds width, height, radius, opacity, gap, padding, font size, stroke weight, rotation and visibility; checked in the browser). Still missing: several collections, groups (a/b names), aliases, scopes
 - Bind variables to number properties (spacing, radius, size, opacity, font size) and to visibility
-- ✅ Import and export as JSON (Export JSON / Import JSON in the Variables dialog; values by mode name, bad values repaired, imported variables are added as new ones). Still missing: explicit mode per frame
+- ✅ Import and export as JSON (Export JSON / Import JSON in the Variables dialog; values by mode name, bad values repaired, imported variables are added as new ones). ✅ explicit mode per frame (`explicitMode`, "Mode:" picker on a frame; inner frames can override). Still missing: variable collections and aliases
 
 Components
 - ✅ Component descriptions (a Description box on a main component, shown in the Assets list). ✅ Swap instance picker (`swapInstance`, in the Design panel of an instance). Still missing: instance-swap properties, nested instances, slots
