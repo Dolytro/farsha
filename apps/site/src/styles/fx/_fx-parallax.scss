@@ -1,0 +1,8 @@
+// Drifts while it scrolls through the viewport; --pd sets how far.
+.fx-parallax {
+  @supports (animation-timeline: view()) {
+    animation: pxm 1s linear both;
+    animation-timeline: view();
+    animation-range: cover;
+  }
+}

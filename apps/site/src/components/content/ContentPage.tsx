@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { SocialLinks } from "./SocialLinks";
 import { CookieSettingsLink } from "@farsha/ui/analytics";
-import "../../styles/content.css";
+import "../../styles/content-page.scss";
 import { CONTACT_EMAIL, DONATE_URL, MAKER, REPO_URL, SITE_URL } from "../../lib/seo";
 
 type Props = {
@@ -22,28 +22,28 @@ export function ContentPage({ path, title, children }: Props) {
     ],
   };
   return (
-    <div className="cp">
-      <header className="cp__bar">
-        <a className="cp__brand" href="/">
+    <div className="content-page">
+      <header className="content-page__bar">
+        <a className="content-page__brand" href="/">
           Farsha
         </a>
-        <nav className="cp__nav" aria-label="Main">
+        <nav className="content-page__nav" aria-label="Main">
           <a href="/features">Features</a>
           <a href="/figma-alternative">Figma alternative</a>
           <a href={REPO_URL}>GitHub</a>
         </nav>
-        <a className="cp__cta" href="/app">
+        <a className="content-page__cta" href="/app">
           Open the editor
         </a>
       </header>
-      <main className="cp__main" id="main">
+      <main className="content-page__main" id="main">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs).replace(/</g, "\\u003c") }} />
-        <p className="cp__crumbs">
+        <p className="content-page__crumbs">
           <a href="/">Farsha</a> / {title}
         </p>
         {children}
       </main>
-      <footer className="cp__foot">
+      <footer className="content-page__foot">
         <span>
           Made by <a href={MAKER.url}>{MAKER.name}</a>. Free and open source (MIT). Not affiliated with Figma, Inc.
         </span>

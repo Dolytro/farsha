@@ -1,0 +1,143 @@
+// "Bring what you already have": three import cards that fan out while scrolling in.
+.site-import {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 72px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  position: relative;
+  isolation: isolate;
+
+  &__dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(#a592ff66 1.3px, transparent 1.8px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 78%);
+    mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 78%);
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -.04em;
+
+    @media (max-width: 900px) {
+      font-size: 34px;
+      line-height: 1.04;
+    }
+  }
+
+  &__accent {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  &__text {
+    margin: 0;
+    color: #c9c4de;
+    line-height: 26px;
+    max-width: 480px;
+    font-size: 16px;
+  }
+
+  &__cards {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+
+    @media (max-width: 900px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  &__card {
+    position: relative;
+    overflow: hidden;
+    height: 200px;
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+
+    // a light sweep crosses the card on hover
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(100deg, transparent, #ffffff4d, transparent);
+      transform: skewX(-18deg);
+      transition: left .9s;
+    }
+
+    &:hover {
+      transform: perspective(900px) rotateX(7deg) translateY(-12px) scale(1.04);
+      box-shadow: 0 28px 60px #7c5cff55, 0 0 40px #ff4fa322;
+
+      &::after {
+        left: 140%;
+      }
+    }
+
+    &:hover .site-import__icon {
+      animation: bnc .7s;
+    }
+
+    &--tone-1 {
+      background: linear-gradient(160deg, #7c5cff, #5a3ad6);
+    }
+
+    &--tone-2 {
+      background: #10221f;
+      border: 1px solid #1f4a44;
+    }
+
+    &--tone-3 {
+      background: linear-gradient(160deg, #ffb020, #e8901a);
+      color: #0e0d14;
+    }
+  }
+
+  &__card-title {
+    font-size: 16px;
+  }
+
+  &__desc {
+    font-size: 13px;
+    line-height: 19px;
+    color: #e8e4f7;
+  }
+
+  &__desc-2 {
+    font-size: 13px;
+    line-height: 19px;
+    color: #b8d9d4;
+  }
+
+  &__desc-3 {
+    font-size: 13px;
+    line-height: 19px;
+  }
+}

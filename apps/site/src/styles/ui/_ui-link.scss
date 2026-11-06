@@ -1,0 +1,20 @@
+// Underlined text link with a moving arrow.
+.ui-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #a592ff;
+  font-weight: 500;
+  font-size: 15px;
+  border-bottom: 1px solid #a592ff55;
+  padding-bottom: 2px;
+
+  &__arrow {
+    transition: transform .2s;
+    font-style: normal;
+  }
+
+  &:hover &__arrow {
+    transform: translateX(4px);
+  }
+}

@@ -1,0 +1,32 @@
+// Row of social icon buttons. "light" sits on the landing footer card, "dark" on the content pages.
+.social-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  &__link {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+  }
+
+  &--light &__link {
+    background: #fff;
+    border: 1px solid #dcd7ee;
+    color: #15131d;
+    transition: color .2s, translate .25s, transform .35s cubic-bezier(.3, 1.7, .4, 1), box-shadow .3s, border-color .3s;
+
+    &:hover {
+      transform: translateY(-5px) rotate(-7deg);
+    }
+  }
+
+  &--dark &__link {
+    background: #17151f;
+    border: 1px solid #34304a;
+    color: #f2f0fa;
+  }
+}

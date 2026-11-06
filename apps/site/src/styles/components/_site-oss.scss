@@ -1,0 +1,240 @@
+// "Open source. Really." copy next to a repository card, on a tinted band.
+.site-oss {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 72px 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+  gap: 48px;
+  align-items: center;
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    padding: 72px 20px;
+  }
+
+  &__ring {
+    position: absolute;
+    left: 76%;
+    top: -8%;
+    width: 380px;
+    height: 380px;
+    border-radius: 50%;
+    border: 1px solid #ff4fa388;
+  }
+
+  &__ring-2 {
+    position: absolute;
+    left: 80%;
+    top: 0%;
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    border: 1px solid #ff4fa355;
+  }
+
+  &__ring-3 {
+    position: absolute;
+    left: -4%;
+    top: 60%;
+    width: 340px;
+    height: 340px;
+    border-radius: 50%;
+    border: 1px solid #2de2c888;
+  }
+
+  &__ring-4 {
+    position: absolute;
+    left: 0%;
+    top: 68%;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 1px solid #2de2c855;
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -.04em;
+
+    @media (max-width: 900px) {
+      font-size: 34px;
+      line-height: 1.04;
+    }
+  }
+
+  &__accent {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  &__text {
+    margin: 0;
+    color: #c9c4de;
+    line-height: 26px;
+    max-width: 480px;
+    font-size: 16px;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__primary {
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 10px;
+    background: #6a46f2;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  &__secondary {
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 10px;
+    border: 1px solid #34304a;
+    color: #f2f0fa;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  &__card {
+    position: relative;
+    border: 1px solid #2a2640;
+    border-radius: 22px;
+    background: linear-gradient(160deg, #17142b, #100f1a);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    box-shadow: 0 30px 80px #7c5cff22;
+    transition: transform .5s cubic-bezier(.2, .8, .2, 1), box-shadow .5s;
+
+    &:hover {
+      transform: translateY(-8px) rotate(-.8deg);
+    }
+  }
+
+  &__repo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  &__repo-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: #f2f0fa;
+    color: #0e0d14;
+    display: grid;
+    place-items: center;
+  }
+
+  &__repo-name {
+    font-weight: 700;
+    font-size: 17px;
+  }
+
+  &__repo-meta {
+    color: #b4aecb;
+    font-size: 13px;
+  }
+
+  &__terminal {
+    border-radius: 14px;
+    background: #0b0a13;
+    border: 1px solid #2a2640;
+    padding: 16px 18px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 13px;
+    color: #d8d2f2;
+    line-height: 22px;
+    overflow: hidden;
+  }
+
+  &__prompt {
+    color: #a29cba;
+  }
+
+  // the command types itself out while scrolling in
+  &__typed {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    vertical-align: bottom;
+    width: 54ch;
+
+    @supports (animation-timeline: view()) {
+      animation: ty 1.2s steps(54) both;
+      animation-timeline: view();
+      animation-range: entry 40% entry 100%;
+    }
+
+    @media (max-width: 900px) {
+      display: inline;
+      width: auto;
+      white-space: normal;
+      word-break: break-all;
+      overflow: visible;
+      animation: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      width: auto;
+    }
+  }
+
+  &__cursor {
+    display: inline-block;
+    width: 8px;
+    height: 16px;
+    margin-left: 2px;
+    background: #ff4fa3;
+    vertical-align: -3px;
+    animation: cur 1s steps(1) infinite;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__chip {
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: #1c1830;
+    border: 1px solid color-mix(in srgb, var(--c) 45%, #34304a);
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    color: var(--c);
+    transition: transform .35s cubic-bezier(.3, 1.7, .4, 1), background .25s, border-color .25s, color .25s;
+
+    &:hover {
+      transform: translateY(-5px) scale(1.12) rotate(-4deg);
+      background: color-mix(in srgb, var(--c) 22%, #1c1830);
+    }
+  }
+}

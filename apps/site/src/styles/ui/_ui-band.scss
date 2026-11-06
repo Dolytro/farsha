@@ -1,0 +1,18 @@
+// Full-width tinted band behind a section.
+.ui-band {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: -2;
+    top: 0;
+    bottom: 0;
+    left: calc(50% - 50vw);
+    width: 100vw;
+    background: #130f26;
+    border-top: 1px solid #2a2450;
+    border-bottom: 1px solid #2a2450;
+  }
+}

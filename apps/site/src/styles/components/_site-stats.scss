@@ -1,0 +1,133 @@
+// Four headline numbers. They count up while they scroll into view.
+.site-stats {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 72px 32px 0;
+
+  &__grid {
+    position: relative;
+    border: 1px solid #2a2640;
+    border-radius: 20px;
+    background: #100f1a;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    @media (max-width: 900px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  &__cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 28px 32px;
+    transition: background .3s;
+
+    &:hover {
+      background: color-mix(in srgb, var(--c) 14%, transparent);
+    }
+
+    &--tone-2 {
+      border-left: 1px solid #2a2640;
+    }
+
+    @media (max-width: 900px) {
+      border-left: 0;
+      border-top: 1px solid #2a2640;
+      padding: 20px;
+
+      &:nth-child(even) {
+        border-left: 1px solid #2a2640;
+      }
+
+      .ui-cluster + & {
+        border-top: 0;
+      }
+    }
+  }
+
+  &__icon {
+    color: #ff4fa3;
+    transition: transform .45s cubic-bezier(.3, 1.7, .4, 1);
+  }
+
+  &__icon-2 {
+    color: #ffb020;
+    transition: transform .45s cubic-bezier(.3, 1.7, .4, 1);
+  }
+
+  &__icon-3 {
+    color: #2de2c8;
+    transition: transform .45s cubic-bezier(.3, 1.7, .4, 1);
+  }
+
+  &__icon-4 {
+    color: #8a6bff;
+    transition: transform .45s cubic-bezier(.3, 1.7, .4, 1);
+  }
+
+  &__cell:hover &__icon,
+  &__cell:hover &__icon-2,
+  &__cell:hover &__icon-3,
+  &__cell:hover &__icon-4 {
+    transform: scale(1.35) rotate(-12deg);
+  }
+
+  &__count {
+    font-size: 26px;
+    font-weight: 600;
+
+    @supports (animation-timeline: view()) {
+      visibility: hidden;
+      position: relative;
+      counter-reset: n var(--v);
+      animation: cn 1s ease-out both;
+      animation-timeline: view();
+      animation-range: entry 30% entry 100%;
+
+      &::after {
+        visibility: visible;
+        content: counter(n) var(--sfx);
+        position: absolute;
+        left: 0;
+        top: 0;
+        white-space: nowrap;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      visibility: visible;
+
+      &::after {
+        display: none;
+      }
+    }
+
+    &--tone-1 {
+      color: #ff4fa3;
+    }
+
+    &--tone-2 {
+      color: #ffb020;
+    }
+
+    &--tone-3 {
+      color: #2de2c8;
+    }
+
+    &--tone-4 {
+      color: #8a6bff;
+    }
+  }
+
+  &__cell:hover &__count {
+    text-shadow: 0 0 26px var(--c);
+  }
+
+  &__caption {
+    font-size: 13px;
+    color: #b4aecb;
+  }
+}

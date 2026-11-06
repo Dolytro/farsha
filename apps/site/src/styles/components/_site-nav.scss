@@ -1,0 +1,118 @@
+// Top bar. On wide screens it hides while the hero scrolls and comes back after it.
+.site-nav {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 22px 32px;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 5;
+  isolation: isolate;
+
+  @media (max-height: 1600px) {
+    @supports (animation-timeline: scroll()) {
+      --nh: 84px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--nh);
+      box-sizing: border-box;
+      padding-top: 0;
+      padding-bottom: 0;
+      animation: navhide 1s linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0px 1900px;
+
+      &::before {
+        content: "";
+        position: absolute;
+        z-index: -1;
+        top: 0;
+        bottom: 0;
+        left: calc(50% - 50vw);
+        width: 100vw;
+        background: #0b0a13a6;
+        border-bottom: 1px solid #ffffff14;
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+      }
+    }
+  }
+
+  @media (max-width: 900px) {
+    position: relative;
+    height: auto;
+    animation: none;
+    padding: 16px 20px;
+    gap: 12px;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__name {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -.03em;
+  }
+
+  &__menu {
+    display: flex;
+    gap: 28px;
+    flex: 1;
+    font-size: 14px;
+    flex-wrap: wrap;
+
+    @media (max-width: 900px) {
+      display: none;
+    }
+  }
+
+  &__link {
+    color: #c9c4de;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  &__github {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid #34304a;
+    color: #f2f0fa;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 14px;
+
+    @media (max-width: 900px) {
+      display: none;
+    }
+  }
+
+  &__cta {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 10px;
+    background: #6a46f2;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+}
