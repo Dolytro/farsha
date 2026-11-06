@@ -1233,6 +1233,19 @@ export class DesignDoc {
     );
   }
 
+  /** Set the value of any variable in one mode: a colour, a text, a number or "true" / "false". Throws for an unknown variable or a bad value. */
+  setVariableValue(id: string, modeId: string, value: string): void {
+    const v = this.variableMap.get(id);
+    if (!v) throw new Error('Variable not found');
+    if (!this.modes().some((m) => m.id === modeId)) throw new Error('Mode not found');
+    if (v.kind === 'STRING') this.updateTextVariable(id, { modeId, text: value });
+    else if (v.kind === 'NUMBER' || v.kind === 'BOOLEAN') this.updateValueVariable(id, { modeId, value });
+    else {
+      if (!/^#[0-9a-fA-F]{6}$/.test(value)) throw new Error('A colour variable needs a six-digit hex colour');
+      this.updateColorVariable(id, { modeId, color: value });
+    }
+  }
+
   deleteColorVariable(id: string): void {
     this.transact(() => this.variableMap.delete(id));
   }

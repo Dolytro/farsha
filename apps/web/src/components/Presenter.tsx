@@ -33,7 +33,20 @@ export function Presenter() {
   // the old frame while it moves out (Move out and Push transitions)
   const [leaving, setLeaving] = useState<{ svg: string; width: number; height: number; scale: number; stageWidth: number; stageHeight: number; name: string; ms: number; timing: string; n: number } | null>(null);
   const startMode = useRef<string | null>(null);
+  // variables changed by "Set variable": their original values, put back when the presentation ends or restarts
+  const varBackup = useRef(new Map<string, Record<string, string>>());
   const restoreMode = () => {
+    for (const [id, values] of varBackup.current) {
+      for (const [modeId, value] of Object.entries(values)) {
+        try {
+          doc.setVariableValue(id, modeId, value);
+        } catch {
+          // the variable or mode was deleted meanwhile: nothing to restore
+        }
+      }
+    }
+    if (varBackup.current.size) setModeTick((n) => n + 1);
+    varBackup.current.clear();
     if (startMode.current && doc.activeModeId() !== startMode.current) {
       try {
         doc.setActiveMode(startMode.current);
@@ -99,6 +112,22 @@ export function Presenter() {
     }
     if (interaction.action.type === "CLOSE_OVERLAY") {
       setOverlay(null);
+      return;
+    }
+    if (interaction.action.type === "SET_VARIABLE") {
+      const a = interaction.action;
+      const v = doc.getColorVariable(a.variableId);
+      if (!v) {
+        showToast("That variable no longer exists");
+        return;
+      }
+      try {
+        if (!varBackup.current.has(v.id)) varBackup.current.set(v.id, { ...v.values });
+        doc.setVariableValue(v.id, doc.activeModeId(), a.value);
+        setModeTick((n) => n + 1);
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Couldn't set the variable");
+      }
       return;
     }
     if (interaction.action.type === "SET_MODE") {

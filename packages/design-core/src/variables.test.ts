@@ -152,3 +152,25 @@ describe('explicit mode', () => {
     expect(color(inner)).toBe('#000000');
   });
 });
+
+describe('setVariableValue', () => {
+  it('sets a colour, text, number or boolean in one mode and rejects bad values', () => {
+    const doc = new DesignDoc();
+    const mode = doc.activeModeId();
+    const c = doc.createColorVariable('C', '#ffffff');
+    const t = doc.createTextVariable('T', 'hi');
+    const n = doc.createValueVariable('NUMBER', 'N', '1');
+    const b = doc.createValueVariable('BOOLEAN', 'B', 'true');
+    doc.setVariableValue(c, mode, '#112233');
+    doc.setVariableValue(t, mode, 'hello');
+    doc.setVariableValue(n, mode, '42');
+    doc.setVariableValue(b, mode, 'false');
+    expect(doc.getColorVariable(c)?.values[mode]).toBe('#112233');
+    expect(doc.getColorVariable(t)?.values[mode]).toBe('hello');
+    expect(doc.getColorVariable(n)?.values[mode]).toBe('42');
+    expect(doc.getColorVariable(b)?.values[mode]).toBe('false');
+    expect(() => doc.setVariableValue(c, mode, 'red')).toThrow();
+    expect(() => doc.setVariableValue('nope', mode, 'x')).toThrow();
+    expect(() => doc.setVariableValue(c, 'nomode', '#112233')).toThrow();
+  });
+});

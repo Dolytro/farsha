@@ -74,6 +74,7 @@ export function PrototypePanel() {
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
   const frames = prototypeFrames(doc);
   const flows = flowsOf(doc);
+  const allVariables = [...doc.colorVariables(), ...doc.textVariables(), ...doc.valueVariables("NUMBER"), ...doc.valueVariables("BOOLEAN")];
 
   const present = () => {
     const frame = startFrame(doc, selection);
@@ -193,7 +194,7 @@ export function PrototypePanel() {
                   className="field__select field__select--wide"
                   aria-label="Action"
                   value={it.action.type}
-                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" || e.target.value === "SWAP_OVERLAY" ? { type: e.target.value, targetId: defaultTarget ?? "" } : e.target.value === "SCROLL_TO" ? { type: "SCROLL_TO", targetId: node?.id ?? "" } : e.target.value === "SET_MODE" ? { type: "SET_MODE", modeId: doc.activeModeId() } : navigate() })}
+                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" || e.target.value === "SWAP_OVERLAY" ? { type: e.target.value, targetId: defaultTarget ?? "" } : e.target.value === "SCROLL_TO" ? { type: "SCROLL_TO", targetId: node?.id ?? "" } : e.target.value === "SET_MODE" ? { type: "SET_MODE", modeId: doc.activeModeId() } : e.target.value === "SET_VARIABLE" ? { type: "SET_VARIABLE", variableId: allVariables[0]?.id ?? "", value: allVariables[0] ? (allVariables[0].values[doc.activeModeId()] ?? "") : "" } : navigate() })}
                 >
                   <option value="NAVIGATE">Navigate to</option>
                   <option value="BACK">Back</option>
@@ -202,6 +203,7 @@ export function PrototypePanel() {
                   <option value="CLOSE_OVERLAY">Close overlay</option>
                   <option value="SCROLL_TO">Scroll to</option>
                   <option value="SET_MODE">Set variable mode</option>
+                  <option value="SET_VARIABLE">Set variable</option>
                   <option value="OPEN_URL">Open link</option>
                 </Select>
                 {(it.action.type === "NAVIGATE" || it.action.type === "OPEN_OVERLAY" || it.action.type === "SWAP_OVERLAY") && (
@@ -236,6 +238,26 @@ export function PrototypePanel() {
                       <input type="checkbox" aria-label="Dim the background" checked={it.action.dim !== false} onChange={(e) => patch({ action: { ...it.action, dim: e.target.checked } as InteractionAction })} />
                       Dim the background
                     </label>
+                  </>
+                )}
+                {it.action.type === "SET_VARIABLE" && (
+                  <>
+                    <Select className="field__select field__select--wide" aria-label="Variable" value={it.action.variableId} onChange={(e) => patch({ action: { type: "SET_VARIABLE", variableId: e.target.value, value: allVariables.find((v) => v.id === e.target.value)?.values[doc.activeModeId()] ?? "" } })}>
+                      {allVariables.length === 0 && <option value="">No variables yet</option>}
+                      {allVariables.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.name}
+                        </option>
+                      ))}
+                    </Select>
+                    {allVariables.find((v) => v.id === (it.action as { variableId: string }).variableId)?.kind === "BOOLEAN" ? (
+                      <Select className="field__select field__select--wide" aria-label="Value" value={it.action.value} onChange={(e) => patch({ action: { type: "SET_VARIABLE", variableId: (it.action as { variableId: string }).variableId, value: e.target.value } })}>
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                      </Select>
+                    ) : (
+                      <input className="field__input field__input--wide" aria-label="Value" defaultValue={it.action.value} key={`${it.action.variableId}`} onBlur={(e) => patch({ action: { type: "SET_VARIABLE", variableId: (it.action as { variableId: string }).variableId, value: e.currentTarget.value } })} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
+                    )}
                   </>
                 )}
                 {it.action.type === "SET_MODE" && (

@@ -213,7 +213,9 @@ export type InteractionAction =
   /** Scroll the frame so that a layer comes into view. */
   | { type: 'SCROLL_TO'; targetId: string }
   /** Switch the variable mode (for example Light to Dark) while presenting; layers bound to variables follow it. */
-  | { type: 'SET_MODE'; modeId: string };
+  | { type: 'SET_MODE'; modeId: string }
+  /** Set a variable (in the active mode) while presenting: a colour, a text, a number or "true" / "false". Undone when the presentation ends. */
+  | { type: 'SET_VARIABLE'; variableId: string; value: string };
 
 export type OverlayPosition = 'CENTER' | 'TOP' | 'BOTTOM';
 
