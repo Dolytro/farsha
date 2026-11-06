@@ -8,7 +8,8 @@ export function LocalStyles() {
   const fills = doc.fillStyles();
   const texts = doc.textStyles();
   const effectStyles = doc.effectStyles();
-  if (!fills.length && !texts.length && !effectStyles.length) return null;
+  const gridStyles = doc.gridStyles();
+  if (!fills.length && !texts.length && !effectStyles.length && !gridStyles.length) return null;
   return (
     <section className="props__section">
       <h3 className="props__heading">Styles</h3>
@@ -16,6 +17,16 @@ export function LocalStyles() {
         <div key={s.id} className="fill-row fill-row--gap">
           <span className="fill-row__swatch" style={{ background: s.paints[0] ? paintColor(s.paints[0]) : "transparent" }} />
           <span className="fill-row__hex">{s.name}</span>
+        </div>
+      ))}
+      {gridStyles.map((s) => (
+        <div key={s.id} className="fill-row fill-row--gap">
+          <span className="fill-row__swatch" style={{ display: "grid", placeItems: "center", fontSize: 10, border: 0 }}>
+            #
+          </span>
+          <span className="fill-row__hex">
+            {s.name} · {s.grids.length} {s.grids.length === 1 ? "grid" : "grids"}
+          </span>
         </div>
       ))}
       {effectStyles.map((s) => (

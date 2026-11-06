@@ -186,6 +186,13 @@ export interface FillStyle {
   paints: Paint[];
 }
 
+/** A reusable set of layout grids: frames that use it follow it. */
+export interface GridStyle {
+  id: string;
+  name: string;
+  grids: LayoutGrid[];
+}
+
 /** A reusable set of effects (shadows, blurs ...): layers that use it follow it. */
 export interface EffectStyle {
   id: string;
@@ -421,6 +428,8 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   strokeSides?: [number, number, number, number];
   clipsContent: boolean;
   layoutGrids?: LayoutGrid[];
+  /** The grid style this frame follows; its grids are the style's. */
+  gridStyleId?: string;
   /** A section: a named area of the canvas that holds frames and layers but is not itself a screen (Figma's Section tool). */
   isSection?: boolean;
   /** Prototype: a frame taller than the window scrolls vertically while presenting (Figma's Vertical scrolling). */

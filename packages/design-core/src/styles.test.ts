@@ -118,3 +118,25 @@ describe('effect styles', () => {
     expect((doc.getNode(b) as unknown as { effects: unknown[] }).effects).toHaveLength(1);
   });
 });
+
+describe('grid styles', () => {
+  it('frames follow a grid style and editing the grids detaches them', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode('FRAME', { parentId: page, props: { width: 100, height: 100 } });
+    const b = doc.createNode('FRAME', { parentId: page, props: { width: 100, height: 100 } });
+    const grids = [{ type: 'COLUMNS', count: 12, gutter: 20, margin: 40, visible: true }] as never;
+    const id = doc.createGridStyle('12 col', grids);
+    doc.applyGridStyle(a, id);
+    doc.applyGridStyle(b, id);
+    expect((doc.getNode(b) as unknown as { layoutGrids: { count: number }[] }).layoutGrids[0]!.count).toBe(12);
+    doc.updateGridStyle(id, { grids: [{ type: 'COLUMNS', count: 4, gutter: 16, margin: 16, visible: true }] as never });
+    expect((doc.getNode(b) as unknown as { layoutGrids: { count: number }[] }).layoutGrids[0]!.count).toBe(4);
+    doc.setStyle(a, { layoutGrids: [] });
+    expect((doc.getNode(a) as unknown as { gridStyleId?: string }).gridStyleId).toBeUndefined();
+    doc.deleteGridStyle(id);
+    expect((doc.getNode(b) as unknown as { gridStyleId?: string }).gridStyleId).toBeUndefined();
+    const rect = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10 } });
+    expect(() => doc.applyGridStyle(rect, id)).toThrow();
+  });
+});

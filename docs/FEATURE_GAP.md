@@ -276,7 +276,7 @@ Design panel
 - Effects: ✅ Noise, Texture, Glass (a blurred, lightly tinted backdrop; canvas and CSS, not in SVG/PNG export). ✅ effect styles (create from a layer's effects, apply, delete; editing effects detaches; listed under Styles). Still missing: renaming and editing a style in place, shadow "show behind"
 - Typography: ✅ paragraph spacing, indent, truncate text (max lines). ✅ font picker with search, ~70 Google Fonts (downloaded from fonts.googleapis.com only when a file uses one; PNG export may use a stand-in font) and installed fonts (Chromium asks permission). ✅ decoration style (solid, dotted, wavy; `textDecorationStyle`, whole layer, not per range). Still missing: vertical trim, OpenType features and variable font axes, rich text size / colour / font per range
 - Export: ✅ several export settings per layer (scale, suffix, format incl. WebP and PDF) saved with the layer. ✅ "Contents only" for a frame (a checkbox per export setting; not for PDF). Still missing: export presets
-- Styles for grids and strokes
+- ✅ Grid styles (create from a frame's layout grids, apply, delete; listed under Styles). Still missing: stroke styles, renaming and editing styles in place
 - Layers panel: ✅ filter by type (a dropdown beside the search: frames, sections, groups, components, instances, text, rectangles, ellipses, vectors, images; combines with the search). Rename shortcut and hover highlight were already done
 
 Prototype

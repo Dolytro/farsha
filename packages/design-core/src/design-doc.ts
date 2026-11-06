@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
+import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -49,6 +49,7 @@ export class DesignDoc {
   private readonly styles: Y.Map<FillStyle>;
   private readonly textStyleMap: Y.Map<TextStyle>;
   private readonly effectStyleMap: Y.Map<EffectStyle>;
+  private readonly gridStyleMap: Y.Map<GridStyle>;
   private readonly commentMap: Y.Map<Comment>;
   private readonly variableMap: Y.Map<ColorVariable>;
   private readonly modeMap: Y.Map<VariableMode & { order: number }>;
@@ -82,6 +83,11 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
+    this.gridStyleMap = ydoc.getMap('gridStyles') as Y.Map<GridStyle>;
+    this.gridStyleMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
     this.effectStyleMap = ydoc.getMap('effectStyles') as Y.Map<EffectStyle>;
     this.effectStyleMap.observe(() => {
       this.version++;
@@ -96,7 +102,7 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
-    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.effectStyleMap, this.variableMap, this.modeMap], {
+    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.effectStyleMap, this.gridStyleMap, this.variableMap, this.modeMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
     });
@@ -245,6 +251,12 @@ export class DesignDoc {
             const style = this.effectStyleMap.get(effectStyleId);
             if (!style) map.delete('effectStyleId');
             else if (JSON.stringify(map.get('effects')) !== JSON.stringify(style.effects)) map.set('effects', style.effects);
+          }
+          const gridStyleId = map.get('gridStyleId') as string | undefined;
+          if (gridStyleId) {
+            const style = this.gridStyleMap.get(gridStyleId);
+            if (!style) map.delete('gridStyleId');
+            else if (JSON.stringify(map.get('layoutGrids')) !== JSON.stringify(style.grids)) map.set('layoutGrids', style.grids);
           }
           const textStyleId = map.get('textStyleId') as string | undefined;
           if (textStyleId) {
@@ -1053,6 +1065,45 @@ export class DesignDoc {
     this.setProps(nodeId, { effects: style.effects, effectStyleId: styleId });
   }
 
+  // ---------- grid styles ----------
+
+  gridStyles(): GridStyle[] {
+    return [...this.gridStyleMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getGridStyle(id: string): GridStyle | undefined {
+    return this.gridStyleMap.get(id);
+  }
+
+  createGridStyle(name: string, grids: LayoutGrid[]): string {
+    const id = nanoid();
+    this.transact(() => this.gridStyleMap.set(id, { id, name: name.trim() || 'Grid style', grids }));
+    return id;
+  }
+
+  updateGridStyle(id: string, patch: { name?: string; grids?: LayoutGrid[] }): void {
+    const style = this.gridStyleMap.get(id);
+    if (!style) throw new Error('Style not found');
+    this.transact(() => this.gridStyleMap.set(id, { ...style, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.grids ? { grids: patch.grids } : {}) }));
+  }
+
+  deleteGridStyle(id: string): void {
+    this.transact(() => this.gridStyleMap.delete(id));
+  }
+
+  /** Give a frame a grid style (its layout grids now follow the style), or pass null to detach it. */
+  applyGridStyle(nodeId: string, styleId: string | null): void {
+    const node = this.requireNode(nodeId);
+    if (node.type !== 'FRAME') throw new Error('Only frames have layout grids');
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('gridStyleId'));
+      return;
+    }
+    const style = this.gridStyleMap.get(styleId);
+    if (!style) throw new Error('Style not found');
+    this.setProps(nodeId, { layoutGrids: style.grids, gridStyleId: styleId });
+  }
+
   // ---------- comments ----------
 
   /** Comments of a page (all pages when none is given), oldest first. */
@@ -1449,6 +1500,7 @@ export class DesignDoc {
       for (const [key, value] of Object.entries(patch)) map.set(key, value);
       // Changing the fills by hand detaches the layer from its colour style (Figma).
       if ('fills' in patch && !('fillStyleId' in patch)) map.delete('fillStyleId');
+      if ('layoutGrids' in patch && !('gridStyleId' in patch)) map.delete('gridStyleId');
       if ('effects' in patch && !('effectStyleId' in patch)) map.delete('effectStyleId');
       if (TEXT_STYLE_KEYS.some((k) => k in patch) && !('textStyleId' in patch)) map.delete('textStyleId');
       if (!follows) return;
