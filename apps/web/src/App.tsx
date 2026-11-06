@@ -45,7 +45,7 @@ import { fitText as refitText } from "./text-layout";
 import { setTextAlign, toggleTextStyle } from "./text-actions";
 import { wrapInSection } from "./section-actions";
 import { placeImagePicker } from "./place-image";
-import { removePaint, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
+import { arrowRotation, removePaint, rotateSelectionBy, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
 import { pickColorFromScreen } from "./eyedropper";
 
 /** Run a "Copy as ..." action and report the result in a toast. */
@@ -470,6 +470,9 @@ export function App() {
       } else if (key === "escape") {
         s.select([]);
         s.setTool("select");
+      } else if (mod && e.altKey && (key === "arrowleft" || key === "arrowright") && selection.length && !s.viewer && s.prefs.arrowRotate) {
+        e.preventDefault();
+        rotateSelectionBy(doc, selection, arrowRotation(key === "arrowright", e.shiftKey));
       } else if (key.startsWith("arrow") && selection.length) {
         e.preventDefault();
         const step = e.shiftKey ? s.prefs.bigNudge : s.prefs.nudge;

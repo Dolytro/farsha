@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
+import { arrowRotation, hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
 
 const red = [{ type: "SOLID" as const, color: "#ff0000", opacity: 1 }];
 const blue = [{ type: "SOLID" as const, color: "#0000ff", opacity: 1 }];
@@ -108,5 +108,14 @@ describe("deleteContents", () => {
     expect(deleteContents(doc, [frame])).toBe(0);
     doc.undo();
     expect(doc.children(frame)).toHaveLength(2);
+  });
+});
+
+describe("arrowRotation", () => {
+  it("turns 1 degree, or 15 with Shift, clockwise for Right", () => {
+    expect(arrowRotation(true, false)).toBe(1);
+    expect(arrowRotation(false, false)).toBe(-1);
+    expect(arrowRotation(true, true)).toBe(15);
+    expect(arrowRotation(false, true)).toBe(-15);
   });
 });
