@@ -4,12 +4,13 @@ import type { DesignDoc } from "@farsha/design-core";
 import { StyleMenu, StylePill } from "./StyleMenu";
 import { VariableButton, VariableChip } from "./VariableMenu";
 import { paintCss } from "@farsha/code-generator";
-import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@farsha/types";
+import { paintColor, type BlendMode, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@farsha/types";
 import { readImage } from "../images";
 import { pickVideoForLayer } from "../place-image";
 import { HexInput } from "./HexInput";
 import { useEditor } from "../store";
 import { Select } from "./Select";
+import { BLEND_MODES } from "../blend-modes";
 
 type Kind = Paint["type"];
 const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial", GRADIENT_ANGULAR: "Angular", GRADIENT_DIAMOND: "Diamond", IMAGE: "Image" };
@@ -97,7 +98,7 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
           onChange={(e) => {
             // Video is not a paint: it turns the rectangle into a video layer
             if (e.target.value === "VIDEO") pickVideoForLayer(nodeId);
-            else setPaint(convertPaint(paint, e.target.value as Kind));
+            else setPaint({ ...convertPaint(paint, e.target.value as Kind), ...(paint.blendMode ? { blendMode: paint.blendMode } : {}) } as Paint);
           }}
         >
           {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
@@ -112,6 +113,13 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
           −
         </button>
       </div>
+      <Select className="field__select field__select--wide" aria-label="Fill blend mode" title="Blend mode of this fill" value={paint.blendMode ?? "NORMAL"} onChange={(e) => setPaint({ ...paint, blendMode: e.target.value === "NORMAL" ? undefined : (e.target.value as BlendMode) })}>
+        {BLEND_MODES.map(([mode, label]) => (
+          <option key={mode} value={mode}>
+            {label}
+          </option>
+        ))}
+      </Select>
       {paint.type === "SOLID" && paint.variableId && bind && <VariableChip doc={doc} variableId={paint.variableId} onDetach={() => bind(null)} />}
 
       {paint.type === "IMAGE" ? (

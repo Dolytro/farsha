@@ -1,4 +1,4 @@
-import { paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
+import { cssBlendMode, paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
 
 /**
  * SVG markup for strokes and effects, shared by the canvas and by SVG/PNG export.
@@ -164,7 +164,8 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
       fillDef = gradientDef(gradientId, fill);
       fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
     }
-    out += fillDef + geometry(n, fillAttrs);
+    const blend = cssBlendMode(fill.blendMode);
+    out += fillDef + geometry(n, blend ? `${fillAttrs} style="mix-blend-mode:${blend}"` : fillAttrs);
   });
   if (!strokes.length || !("strokeWidth" in n)) return out;
 

@@ -37,6 +37,8 @@ export interface SolidPaint {
   opacity: number;
   /** Id of the colour variable that supplies `color`; the colour follows the variable's value in the active mode. */
   variableId?: string;
+  /** How this fill mixes with what is below it (Figma's fill blend mode). Missing means normal. */
+  blendMode?: BlendMode;
 }
 
 export interface GradientStop {
@@ -52,6 +54,7 @@ export interface GradientPaint {
   /** Degrees; 0 = left to right, 90 = top to bottom. For an angular gradient where the sweep starts. Ignored by radial and diamond gradients. */
   angle: number;
   opacity: number;
+  blendMode?: BlendMode;
 }
 
 export type ImageScaleMode = 'FILL' | 'FIT' | 'STRETCH';
@@ -62,6 +65,7 @@ export interface ImagePaint {
   assetId: string | null;
   scaleMode: ImageScaleMode;
   opacity: number;
+  blendMode?: BlendMode;
 }
 
 export type Paint = SolidPaint | GradientPaint | ImagePaint;

@@ -265,6 +265,13 @@ describe("advanced strokes", () => {
     expect(rect({ strokeMiterAngle: 60, strokeJoin: "BEVEL" })).not.toContain("miterlimit");
   });
 
+  it("blends a fill with the one below it", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { fills: [{ type: "SOLID", color: "#ff0000", opacity: 1 }, { type: "SOLID", color: "#0000ff", opacity: 1, blendMode: "MULTIPLY" }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg.match(/mix-blend-mode:multiply/g)).toHaveLength(1);
+  });
+
   it("leaves a plain stroke plain", () => {
     const svg = rect({});
     expect(svg).not.toContain("stroke-dasharray");
