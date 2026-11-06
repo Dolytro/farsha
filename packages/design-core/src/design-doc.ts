@@ -420,6 +420,24 @@ export class DesignDoc {
     return id;
   }
 
+  /**
+   * Figma's "Swap instance": point an instance at a different main component. Its layers are rebuilt from the new main; the instance
+   * keeps its position and name, and takes the new main's size when it still had the old main's size.
+   */
+  swapInstance(instanceId: string, componentId: string): void {
+    const inst = this.requireNode(instanceId);
+    if (inst.type !== 'FRAME' || !inst.componentId) throw new Error('Not an instance');
+    const main = this.requireNode(componentId);
+    if (main.type !== 'FRAME' || !main.isComponent) throw new Error('Not a main component');
+    if (componentId === instanceId || this.isAncestor(instanceId, componentId) || this.isAncestor(componentId, instanceId)) throw new Error('Cannot swap an instance with the component it sits in');
+    if (inst.componentId === componentId) return;
+    const old = this.getNode(inst.componentId);
+    const keepsSize = old?.type === 'FRAME' && old.width === inst.width && old.height === inst.height;
+    this.transact(() => {
+      this.setProps(instanceId, { componentId, ...(keepsSize ? { width: main.width, height: main.height } : {}) });
+    });
+  }
+
   /** Cut an instance loose from its main component; it becomes a plain frame with the layers it has now. */
   detachInstance(id: string): void {
     const node = this.requireNode(id);

@@ -149,3 +149,22 @@ describe('component description', () => {
     expect((doc.getNode(main) as { description?: string | null }).description ?? '').toBe('');
   });
 });
+
+describe('swapInstance', () => {
+  it('points an instance at another main and rebuilds its layers', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode('FRAME', { parentId: page, props: { name: 'A', x: 0, y: 0, width: 100, height: 40 } });
+    doc.createNode('TEXT', { parentId: a, props: { characters: 'Alpha' } });
+    const b = doc.createNode('FRAME', { parentId: page, props: { name: 'B', x: 300, y: 0, width: 160, height: 60 } });
+    doc.createNode('TEXT', { parentId: b, props: { characters: 'Beta' } });
+    doc.createComponent([a]);
+    doc.createComponent([b]);
+    const inst = doc.createInstance(a, page, 0, 200);
+    doc.swapInstance(inst, b);
+    expect(doc.getNode(inst)).toMatchObject({ componentId: b, width: 160, height: 60, x: 0, y: 200 });
+    expect(doc.children(inst).map((n) => (n as unknown as { characters?: string }).characters)).toEqual(['Beta']);
+    expect(() => doc.swapInstance(inst, inst)).toThrow();
+    expect(() => doc.swapInstance(a, b)).toThrow();
+  });
+});
