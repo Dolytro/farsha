@@ -290,7 +290,7 @@ Prototype
 
 Dev Mode
 - Code for iOS (SwiftUI, UIKit) and Android (Compose, XML)
-- Box-model visual (border and padding) in Layer properties
+- ✅ Box-model visual (border and padding) in Layer properties (Dev tab, for frames and shapes with a stroke or auto layout padding)
 - Ready-for-dev list in the left panel, annotations shown on the canvas, dev resources links
 - Code Connect style mapping (a local mapping of components to snippets)
 
