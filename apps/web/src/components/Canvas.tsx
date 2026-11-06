@@ -89,6 +89,7 @@ export function Canvas() {
   const smartQuotes = useEditor((s) => s.prefs.smartQuotes);
   const hoverHighlight = useEditor((s) => s.prefs.hoverHighlight);
   const showDimensions = useEditor((s) => s.prefs.showDimensions);
+  const hideUiWhileChanging = useEditor((s) => s.prefs.hideUiWhileChanging);
   const rightPanMoved = useRef(false);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
@@ -99,6 +100,7 @@ export function Canvas() {
   const [marquee, setMarquee] = useState<Box | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [altDown, setAltDown] = useState(false);
+  const [changing, setChanging] = useState(false);
   const z = viewport.zoom;
 
   // Selecting something else ends the point editing of a pen path.
@@ -298,6 +300,7 @@ export function Canvas() {
       setViewport({ ...viewport, x: d.vx + e.clientX - d.sx, y: d.vy + e.clientY - d.sy });
       return;
     }
+    if (hideUiWhileChanging && !changing && (d.kind === "move" || d.kind === "resize" || d.kind === "rotate" || d.kind === "scale")) setChanging(true);
     const w = world(e);
     let dx = w.x - d.wx;
     let dy = w.y - d.wy;
@@ -373,6 +376,7 @@ export function Canvas() {
   const onPointerUp = () => {
     const d = drag.current;
     drag.current = null;
+    setChanging(false);
     setMarquee(null);
     setGuides([]);
     if (!d || d.kind === "pan" || d.kind === "marquee") return;
@@ -823,7 +827,7 @@ export function Canvas() {
             </g>
           )}
 
-          {sel && (
+          {sel && !changing && (
             <g>
               <g transform={rotated && selNode ? `rotate(${selNode.rotation} ${sel.x + sel.width / 2} ${sel.y + sel.height / 2})` : undefined}>
               <rect x={sel.x} y={sel.y} width={sel.width} height={sel.height} fill="none" stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />

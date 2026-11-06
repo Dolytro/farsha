@@ -49,3 +49,15 @@ describe("canvas preferences", () => {
     expect(parsePrefs(JSON.stringify({ hoverHighlight: false, showDimensions: "no", rightDragPan: true }))).toMatchObject({ hoverHighlight: false, showDimensions: true, rightDragPan: true });
   });
 });
+
+describe("newer preferences", () => {
+  it("defaults: flip while resizing on, the rest off", () => {
+    const p = parsePrefs(null);
+    expect(p.flipWhileResizing).toBe(true);
+    expect([p.hideUiWhileChanging, p.arrowRotate, p.smartQuotes]).toEqual([false, false, false]);
+  });
+  it("reads them back and ignores bad values", () => {
+    const p = parsePrefs(JSON.stringify({ flipWhileResizing: false, hideUiWhileChanging: true, arrowRotate: "yes" }));
+    expect([p.flipWhileResizing, p.hideUiWhileChanging, p.arrowRotate]).toEqual([false, true, false]);
+  });
+});
