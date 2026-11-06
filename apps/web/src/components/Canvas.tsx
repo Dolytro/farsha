@@ -786,6 +786,7 @@ export function Canvas() {
                 fill={selection.includes(n.id) ? ACCENT : n.type === "FRAME" && n.isSection ? "#4b5563" : "#8c8c8c"}
               >
                 {n.flowStart ? "▶ " : ""}
+                {n.flowStart && n.type === "FRAME" && n.flowName?.trim() ? `${n.flowName.trim()} · ` : ""}
                 {n.name}
                 {n.devStatus && <tspan fill={n.devStatus === "READY" ? "#14ae5c" : "#7a5af8"}>{n.devStatus === "READY" ? "  ● Ready for dev" : "  ✓ Completed"}</tspan>}
               </text>

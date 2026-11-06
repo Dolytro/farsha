@@ -1,5 +1,5 @@
 import type { Easing, Interaction, InteractionAction, InteractionTrigger, OverlayPosition, TransitionType } from "@farsha/types";
-import { prototypeFrames, startFrame, topFrameOf } from "../prototype";
+import { flowsOf, prototypeFrames, startFrame, topFrameOf } from "../prototype";
 import { useEditor } from "../store";
 import { Select } from "./Select";
 
@@ -59,6 +59,7 @@ export function PrototypePanel() {
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
   const frames = prototypeFrames(doc);
+  const flows = flowsOf(doc);
 
   const present = () => {
     const frame = startFrame(doc, selection);
@@ -82,6 +83,15 @@ export function PrototypePanel() {
           <option value="phone">Phone frame</option>
           <option value="tablet">Tablet frame</option>
         </Select>
+        {flows.length > 0 && (
+          <div className="flows" role="group" aria-label="Flows">
+            {flows.map((f) => (
+              <button key={f.frameId} className="props__button" onClick={() => setPresenting(f.frameId)} title="Present this flow">
+                ▶ {f.name}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
       {node && frames.some((f) => f.id === node.id) && (
         <section className="props__section">
@@ -89,6 +99,9 @@ export function PrototypePanel() {
             <input type="checkbox" aria-label="Flow starting point" checked={!!node.flowStart} onChange={(e) => doc.setStyle(node.id, { flowStart: e.target.checked ? true : null })} />
             Flow starting point
           </label>
+          {node.flowStart && (
+            <input className="field__input field__input--wide" aria-label="Flow name" placeholder="Flow name" defaultValue={node.type === "FRAME" ? (node.flowName ?? "") : ""} key={node.id} onBlur={(e) => doc.setStyle(node.id, { flowName: e.currentTarget.value.trim() || null })} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
+          )}
           <Select
             className="field__select field__select--wide"
             aria-label="Scrolling"

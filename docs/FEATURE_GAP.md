@@ -285,7 +285,7 @@ Prototype
 - Overlay position, dim and close on outside click done ✅
 - Animations: Move in / out, Push, Slide out (easing curves and spring done ✅)
 - Scrolling: fixed (sticky) layers (horizontal and both done ✅)
-- Prototype settings: ✅ restart (R while presenting) and hotspot hints (the clickable areas flash when a click hits nothing). Still missing: background, scale options, several named flows
+- Prototype settings: ✅ restart (R while presenting) and hotspot hints (the clickable areas flash when a click hits nothing). ✅ named flows (`flowName` on a starting frame, "Flows" buttons in the Prototype tab present one flow, the canvas label shows the name). Still missing: background, scale options, a flow picker inside the Present screen
 - Interactive components (variant switching on interaction)
 
 Dev Mode

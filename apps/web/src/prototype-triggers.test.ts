@@ -157,3 +157,18 @@ describe("prototype round 3", () => {
     expect(both.stageHeight).toBe(800);
   });
 });
+
+describe("flowsOf", () => {
+  it("lists the starting frames and names unnamed flows by position", async () => {
+    const { flowsOf } = await import("./prototype");
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("FRAME", { parentId: page, props: { name: "A", width: 100, height: 100 } as never });
+    const b = doc.createNode("FRAME", { parentId: page, props: { name: "B", width: 100, height: 100 } as never });
+    doc.createNode("FRAME", { parentId: page, props: { name: "C", width: 100, height: 100 } as never });
+    expect(flowsOf(doc)).toEqual([]);
+    doc.setStyle(a, { flowStart: true });
+    doc.setStyle(b, { flowStart: true, flowName: " Checkout " });
+    expect(flowsOf(doc)).toEqual([{ frameId: a, name: "Flow 1" }, { frameId: b, name: "Checkout" }]);
+  });
+});

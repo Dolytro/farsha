@@ -265,6 +265,8 @@ export interface BaseNode {
   devNote?: string;
   /** Prototype: this top-level frame is where a flow starts (Figma's flow starting point). */
   flowStart?: boolean;
+  /** Name of the flow that starts at this frame. Missing means "Flow 1", "Flow 2" and so on. */
+  flowName?: string;
   /** Number and boolean variables bound to properties of this layer: property name to variable id. */
   varBindings?: Record<string, string>;
   /** The export settings of this layer; none means PNG at 1x. */
@@ -567,6 +569,7 @@ export interface StylePatch extends AutoLayoutProps {
   devNote?: string | null;
   description?: string | null;
   flowStart?: boolean | null;
+  flowName?: string | null;
   lockAspect?: boolean | null;
   exportSettings?: ExportSetting[] | null;
   varBindings?: Record<string, string> | null;

@@ -22,6 +22,18 @@ export function startFrame(doc: DesignDoc, selection: string[]): string | undefi
   return topFrameOf(doc, selection[0])?.id ?? frames.find((f) => f.flowStart)?.id ?? frames[0]?.id;
 }
 
+export interface Flow {
+  frameId: string;
+  name: string;
+}
+
+/** Every flow of the file: the frames marked as starting points, in order, with their names ("Flow 1", "Flow 2" when unnamed). */
+export function flowsOf(doc: DesignDoc): Flow[] {
+  return prototypeFrames(doc)
+    .filter((f) => f.flowStart)
+    .map((f, i) => ({ frameId: f.id, name: (f.type === "FRAME" && f.flowName?.trim()) || `Flow ${i + 1}` }));
+}
+
 export interface Hotspot {
   id: string;
   box: Box;
