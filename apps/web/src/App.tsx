@@ -10,7 +10,7 @@ import { createComponentFromSelection, detachSelection } from "./component-actio
 import { alignSelection, type AlignMode } from "./align";
 import { adjacentPage } from "./pages";
 import { joinSelection } from "./vector-actions";
-import { booleanGroupSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit } from "./actions";
+import { booleanGroupSelection, flattenSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked, groupSelection, reorderSelection, ungroupSelection, viewportCenter, zoomBy, zoomFit, zoomKeyboard } from "./actions";
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
@@ -25,6 +25,7 @@ import { ExportDialog } from "./components/ExportDialog";
 import { FindBar } from "./components/FindBar";
 import { CommentPopover } from "./components/CommentPopover";
 import { PreferencesDialog } from "./components/PreferencesDialog";
+import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
 import { buildCommands } from "./commands";
@@ -33,6 +34,7 @@ import { textShortcutCommand } from "./text-shortcuts";
 import { ContextMenu } from "./components/ContextMenu";
 import { ShareDialog } from "./components/ShareDialog";
 import { restoreLocal, startLocalAutosave } from "./local-persist";
+import { startAutoVersions } from "./auto-versions";
 import { loadStarter, newWelcomeDoc } from "./seed/welcome";
 import { loadShared, restoreSession, startAutosave } from "./drive/session";
 import { route, useEditor, type Tool } from "./store";
@@ -224,6 +226,7 @@ export function App() {
     }
     // Bring back the working copy saved in this browser first, then keep saving it (and Drive) as the design changes.
     let stopLocal: (() => void) | undefined;
+    let stopAuto: (() => void) | undefined;
     let cancelled = false;
     void restoreLocal().then(async (restored) => {
       if (!restored) {
@@ -240,11 +243,13 @@ export function App() {
       const v = zoomFit(s.doc, s.pageId, first ? [first.id] : []);
       if (v) s.setViewport(v);
       stopLocal = startLocalAutosave();
+      stopAuto = startAutoVersions();
     });
     const stopDrive = startAutosave();
     return () => {
       cancelled = true;
       stopLocal?.();
+      stopAuto?.();
       stopDrive();
     };
   }, []);
@@ -269,7 +274,11 @@ export function App() {
       } else if (mod && ["+", "=", "-", "_", "0"].includes(key)) {
         // Ctrl +/-/0 would zoom the whole browser page; zoom the canvas instead (like Figma).
         e.preventDefault();
-        s.setViewport(zoomBy(s.viewport, key === "0" ? 1 : s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
+        s.setViewport(key === "0" ? zoomBy(s.viewport, 1) : zoomKeyboard(doc, selection, s.viewport, s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8), s.prefs.keyboardZoomToSelection));
+      } else if (mod && e.shiftKey && !e.altKey && (key === "?" || key === "/")) {
+        // Figma: Ctrl+Shift+? opens the keyboard shortcuts cheat sheet
+        e.preventDefault();
+        s.setShortcutsOpen(!s.shortcutsOpen);
       } else if (mod && !e.shiftKey && !e.altKey && (key === "/" || key === "k") && !s.viewer) {
         // Figma's "Actions" search
         e.preventDefault();
@@ -312,7 +321,7 @@ export function App() {
         }
       } else if (!mod && (key === "+" || key === "=" || key === "-" || key === "_")) {
         e.preventDefault();
-        s.setViewport(zoomBy(s.viewport, s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8)));
+        s.setViewport(zoomKeyboard(doc, selection, s.viewport, s.viewport.zoom * (key === "+" || key === "=" ? 1.25 : 0.8), s.prefs.keyboardZoomToSelection));
       } else if (mod && e.altKey && !e.shiftKey && key === "s" && !s.viewer) {
         // Figma's "Save to version history"
         e.preventDefault();
@@ -453,7 +462,7 @@ export function App() {
         reorderSelection(doc, selection, mod ? (up ? Infinity : -Infinity) : up ? 1 : -1);
       } else if (mod && key === "d") {
         e.preventDefault();
-        s.select(duplicateNodes(doc, selection));
+        s.select(duplicateNodes(doc, selection, 10, true, s.prefs.renameDuplicates));
       } else if (key === "delete" || key === "backspace") {
         doc.stopCapturing();
         selection.forEach((id) => doc.hasNode(id) && doc.deleteNode(id));
@@ -597,6 +606,7 @@ export function App() {
       <ExportDialog />
       <FindBar />
       <PreferencesDialog />
+      <ShortcutsDialog />
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
 import type { DesignNode } from "@farsha/types";
 import { useEditor } from "../store";
-import { addPage, deletePage } from "../pages";
+import { addPage, deletePage, duplicatePage } from "../pages";
 import { zoomFit } from "../actions";
-import { isContainer, layerRows, moveLayers, type DropWhere, type LayerRow } from "../layers-tree";
+import { Select } from "./Select";
+import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
@@ -67,11 +68,12 @@ export function Layers() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collapseTick]);
   const [query, setQuery] = useState("");
+  const [kind, setKind] = useState<LayerKindFilter>("all");
   const tab = useEditor((s) => s.leftTab);
   const setTab = useEditor((s) => s.setLeftTab);
   const [drop, setDrop] = useState<{ id: string; where: DropWhere } | null>(null);
   const dragging = useRef<string[]>([]);
-  const rows = layerRows(doc, pageId, collapsed, query);
+  const rows = layerRows(doc, pageId, collapsed, query, kind);
 
   const toggleCollapsed = (id: string) =>
     setCollapsed((c) => {
@@ -235,6 +237,19 @@ export function Layers() {
             ) : (
               <span className="layers__name">{p.name}</span>
             )}
+            {canEdit && (
+              <button
+                className="layers__toggle"
+                title="Duplicate page"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const copy = duplicatePage(doc, p.id);
+                  if (copy) setPage(copy);
+                }}
+              >
+                ⧉
+              </button>
+            )}
             {canEdit && pages.length > 1 && (
               <button
                 className="layers__toggle"
@@ -266,6 +281,14 @@ export function Layers() {
         <>
           <div className="layers__tools">
             <input className="layers__search" type="search" placeholder="Search layers" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <Select className="layers__filter" aria-label="Filter layers by type" value={kind} onChange={(e) => setKind(e.target.value as LayerKindFilter)}>
+              <option value="all">All types</option>
+              {LAYER_KINDS.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.label}
+                </option>
+              ))}
+            </Select>
             <button className="icon-btn" title="Collapse all layers (Alt+L)" aria-label="Collapse all layers" onClick={() => useEditor.getState().collapseLayers()}>
               <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
                 <path d="M4 5.5l4 3 4-3M4 10.5l4-3 4 3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />

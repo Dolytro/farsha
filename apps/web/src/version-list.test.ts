@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addVersionTo, MAX_VERSIONS, type VersionEntry } from "./version-list";
+import { addVersionTo, MAX_AUTO_VERSIONS, MAX_VERSIONS, type VersionEntry } from "./version-list";
 
 const bytes = new Uint8Array([1, 2, 3]);
 
@@ -28,5 +28,17 @@ describe("addVersionTo", () => {
     expect(list).toHaveLength(MAX_VERSIONS);
     expect(list[0]!.name).toBe(`v${MAX_VERSIONS + 4}`);
     expect(list[list.length - 1]!.name).toBe("v5");
+  });
+});
+
+describe("automatic versions", () => {
+  it("are marked and kept to their own smaller limit, so named versions stay", () => {
+    let list: VersionEntry[] = [];
+    list = addVersionTo(list, { name: "Named", bytes, now: 1 });
+    for (let i = 0; i < MAX_AUTO_VERSIONS + 4; i++) list = addVersionTo(list, { name: `auto${i}`, bytes, now: 100 + i, auto: true });
+    expect(list.filter((v) => v.auto)).toHaveLength(MAX_AUTO_VERSIONS);
+    expect(list.some((v) => v.name === "Named")).toBe(true);
+    expect(list[0]!.auto).toBe(true);
+    expect(list.find((v) => v.name === "Named")!.auto).toBeUndefined();
   });
 });

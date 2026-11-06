@@ -1400,3 +1400,9 @@ textarea:focus-visible {
 .presenter__overlay--bottom {
   align-items: flex-end;
 }
+
+// Layers panel: the type filter sits beside the search box.
+.layers__tools .layers__filter {
+  flex: none;
+  width: 92px;
+}

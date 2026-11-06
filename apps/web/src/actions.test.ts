@@ -1,3 +1,4 @@
+import { centerOnBox } from "./actions";
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
 import { booleanSelection, toggleLayoutGrids, groupSelection, adjacentFrame, useAsMask, flipSelection, frameSelection, toggleHidden, toggleLocked } from "./actions";
@@ -183,5 +184,15 @@ describe("booleanSelection", () => {
     const out = booleanSelection(doc, [a, text], "UNION");
     expect(out.error).toBeTruthy();
     expect(doc.hasNode(a)).toBe(true);
+  });
+});
+
+describe("centerOnBox", () => {
+  it("puts the middle of the box in the middle of the canvas at the given zoom", () => {
+    const v = centerOnBox({ x: 0, y: 0, zoom: 1 }, 2, { x: 100, y: 50, width: 40, height: 20 }, 800, 600);
+    expect(v.zoom).toBe(2);
+    // the box centre (120, 60) lands on the canvas centre (400, 300)
+    expect(120 * v.zoom + v.x).toBe(400);
+    expect(60 * v.zoom + v.y).toBe(300);
   });
 });

@@ -88,6 +88,24 @@ export function zoomBy(v: Viewport, zoom: number): Viewport {
   return zoomTo(v, zoom, w, h);
 }
 
+/** The viewport at `zoom` with the middle of `box` in the middle of a w x h canvas. */
+export function centerOnBox(v: Viewport, zoom: number, box: Box, w: number, h: number): Viewport {
+  return { ...v, zoom, x: w / 2 - (box.x + box.width / 2) * zoom, y: h / 2 - (box.y + box.height / 2) * zoom };
+}
+
+/**
+ * Keyboard zoom (+ / - and the zoom commands). With "Keyboard zooms into selection" on and something selected, the
+ * selection ends up in the middle of the canvas; otherwise it zooms about the middle like before.
+ */
+export function zoomKeyboard(doc: DesignDoc, selection: string[], v: Viewport, zoom: number, intoSelection: boolean): Viewport {
+  const next = zoomBy(v, zoom);
+  if (!intoSelection) return next;
+  const box = unionBox(selection.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b));
+  if (!box) return next;
+  const { w, h } = canvasSize();
+  return centerOnBox(v, next.zoom, box, w, h);
+}
+
 /** Hide or show the layers; if any is visible they all get hidden (Figma's Ctrl+Shift+H). */
 export function toggleHidden(doc: DesignDoc, ids: string[]): void {
   const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n);

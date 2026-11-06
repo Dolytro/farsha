@@ -14,12 +14,12 @@ export async function listVersions(): Promise<VersionEntry[]> {
 }
 
 /** Save the open document as a version; an empty name gets the date. Returns false when it could not be stored. */
-export async function saveVersion(name: string): Promise<boolean> {
+export async function saveVersion(name: string, opts: { auto?: boolean; silent?: boolean } = {}): Promise<boolean> {
   const { doc, showToast } = useEditor.getState();
   try {
     const list = await listVersions();
-    await writeKey(keyFor(), addVersionTo(list, { name, bytes: doc.encodeState(), now: Date.now() }));
-    showToast("Saved to version history");
+    await writeKey(keyFor(), addVersionTo(list, { name, bytes: doc.encodeState(), now: Date.now(), auto: opts.auto }));
+    if (!opts.silent) showToast("Saved to version history");
     return true;
   } catch {
     showToast("Couldn't save a version in this browser");

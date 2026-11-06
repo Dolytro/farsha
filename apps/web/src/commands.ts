@@ -4,10 +4,11 @@ import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
 import { extractDefaults, saveDefaults } from "./defaults";
 import { exportFramesToPdf } from "./pdf-export";
 import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, splitVectorAt } from "./vector-actions";
-import { panToLayer, booleanGroupSelection, booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit } from "./actions";
+import { panToLayer, booleanGroupSelection, booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit, zoomKeyboard } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
+import { duplicatePage } from "./pages";
 import { duplicateFile, openLocalFilePicker, saveLocalCopy } from "./local-file";
 import { placeImagePicker } from "./place-image";
 import { deleteContents, hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, swapFillAndStroke } from "./object-actions";
@@ -32,6 +33,8 @@ export interface Command {
   keywords?: string;
   /** Needs a selection; hidden from the list otherwise. */
   needsSelection?: boolean;
+  /** Set for the page and layer matches the palette adds to a search. */
+  jump?: { kind: "page" | "layer"; detail: string };
   run: () => void | Promise<void>;
 }
 
@@ -63,6 +66,15 @@ export function buildCommands(): Command[] {
         const count = exportFramesToPdf(s.doc, s.pageId, s.selection, s.drive.fileName || "Farsha");
         if (!count) s.showToast("There are no frames to export");
         else s.showToast(`Choose "Save as PDF" in the print window (${count} page${count === 1 ? "" : "s"})`);
+      },
+    },
+    {
+      id: "duplicate-page",
+      label: "Duplicate page",
+      keywords: "copy page",
+      run: () => {
+        const copy = duplicatePage(doc(), state().pageId);
+        if (copy) state().setPage(copy);
       },
     },
     { id: "duplicate-file", label: "Duplicate file", keywords: "copy document", run: () => duplicateFile() },
@@ -105,7 +117,7 @@ export function buildCommands(): Command[] {
     { id: "select-matching", label: "Select all matching properties", shortcut: `${MOD}${ALT}A`, needsSelection: true, keywords: "same fill color font", run: () => state().select(selectMatching(doc(), sel(), state().pageId)) },
     { id: "select-children", label: "Select children", shortcut: "Enter", needsSelection: true, run: () => state().select(selectChildren(doc(), sel())) },
     { id: "select-parent", label: "Select parent", shortcut: `${SHIFT}Enter`, needsSelection: true, run: () => state().select(selectParent(doc(), sel(), state().pageId)) },
-    { id: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, needsSelection: true, run: () => state().select(duplicateNodes(doc(), sel())) },
+    { id: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, needsSelection: true, run: () => state().select(duplicateNodes(doc(), sel(), 10, true, state().prefs.renameDuplicates)) },
     {
       id: "delete",
       label: "Delete",
@@ -372,8 +384,8 @@ export function buildCommands(): Command[] {
         },
       }),
     ),
-    { id: "zoom-in", label: "Zoom in", shortcut: `${MOD}+`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, state().viewport.zoom * 1.25)) },
-    { id: "zoom-out", label: "Zoom out", shortcut: `${MOD}-`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, state().viewport.zoom * 0.8)) },
+    { id: "zoom-in", label: "Zoom in", shortcut: `${MOD}+`, keywords: "view", run: () => state().setViewport(zoomKeyboard(doc(), sel(), state().viewport, state().viewport.zoom * 1.25, state().prefs.keyboardZoomToSelection)) },
+    { id: "zoom-out", label: "Zoom out", shortcut: `${MOD}-`, keywords: "view", run: () => state().setViewport(zoomKeyboard(doc(), sel(), state().viewport, state().viewport.zoom * 0.8, state().prefs.keyboardZoomToSelection)) },
     { id: "zoom-100", label: "Zoom to 100%", shortcut: `${SHIFT}0`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, 1)) },
     {
       id: "present",
@@ -499,6 +511,7 @@ export function buildCommands(): Command[] {
       },
     },
     { id: "eyedropper", label: "Pick color from the screen", shortcut: "I", keywords: "eyedropper sample color", run: () => pickColorFromScreen(doc(), sel(), state().showToast) },
+    { id: "keyboard-shortcuts", label: "Keyboard shortcuts…", shortcut: `${MOD}${SHIFT}?`, keywords: "cheat sheet keys help hotkeys", run: () => state().setShortcutsOpen(true) },
     { id: "preferences", label: "Preferences", keywords: "settings keep tool snapping zoom nudge", run: () => state().setPrefsOpen(true) },
     { id: "outlines", label: "Show / hide outlines", shortcut: `${MOD}${SHIFT}Y`, keywords: "view wireframe outline mode", run: () => state().setOutlines(!state().outlines) },
     ...(

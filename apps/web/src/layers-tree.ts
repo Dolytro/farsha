@@ -16,29 +16,65 @@ export function isContainer(doc: DesignDoc, id: string): boolean {
   return !!n && CONTAINERS.has(n.type);
 }
 
+/** The kinds the layers panel can filter by (Figma's "filter by type"). */
+export const LAYER_KINDS = [
+  { id: "frame", label: "Frames" },
+  { id: "section", label: "Sections" },
+  { id: "group", label: "Groups" },
+  { id: "component", label: "Components" },
+  { id: "instance", label: "Instances" },
+  { id: "text", label: "Text" },
+  { id: "rectangle", label: "Rectangles" },
+  { id: "ellipse", label: "Ellipses" },
+  { id: "vector", label: "Vectors" },
+  { id: "image", label: "Images" },
+] as const;
+
+export type LayerKind = (typeof LAYER_KINDS)[number]["id"];
+export type LayerKindFilter = LayerKind | "all";
+
+/** Which filter bucket a layer falls in. Main components and instances are listed apart from plain frames. */
+export function layerKind(doc: DesignDoc, id: string): LayerKind | undefined {
+  const n = doc.getNode(id);
+  if (!n) return undefined;
+  if (n.type === "FRAME") return n.isComponent ? "component" : n.componentId ? "instance" : n.isSection ? "section" : "frame";
+  if (n.type === "GROUP") return "group";
+  if (n.type === "TEXT") return "text";
+  if (n.type === "RECTANGLE") return "rectangle";
+  if (n.type === "ELLIPSE") return "ellipse";
+  if (n.type === "VECTOR") return "vector";
+  if (n.type === "IMAGE") return "image";
+  return undefined;
+}
+
 function layerLabel(doc: DesignDoc, id: string): string {
   const n = doc.getNode(id);
   if (!n) return "";
   return n.type === "TEXT" && n.name === "Text" ? n.characters : n.name;
 }
 
-/** Rows shown in the layers panel, top of the list first. A search keeps matches and the layers above them. */
-export function layerRows(doc: DesignDoc, pageId: string, collapsed: ReadonlySet<string>, query = ""): LayerRow[] {
+/**
+ * Rows shown in the layers panel, top of the list first. A search and a type filter keep the layers that match
+ * (both must match when both are set) and the layers above them.
+ */
+export function layerRows(doc: DesignDoc, pageId: string, collapsed: ReadonlySet<string>, query = "", kind: LayerKindFilter = "all"): LayerRow[] {
   const q = query.trim().toLowerCase();
+  const filtering = !!q || kind !== "all";
   const keep = new Set<string>();
-  if (q) {
+  if (filtering) {
     for (const d of doc.descendants(pageId)) {
-      if (!layerLabel(doc, d.id).toLowerCase().includes(q)) continue;
+      if (q && !layerLabel(doc, d.id).toLowerCase().includes(q)) continue;
+      if (kind !== "all" && layerKind(doc, d.id) !== kind) continue;
       for (let cur: string | null = d.id; cur && cur !== pageId; cur = doc.getNode(cur)?.parentId ?? null) keep.add(cur);
     }
   }
   const out: LayerRow[] = [];
   const walk = (parentId: string, depth: number) => {
     for (const n of [...doc.children(parentId)].reverse()) {
-      if (q && !keep.has(n.id)) continue;
+      if (filtering && !keep.has(n.id)) continue;
       const hasChildren = doc.children(n.id).length > 0;
       out.push({ id: n.id, depth, hasChildren });
-      if (hasChildren && (q || !collapsed.has(n.id))) walk(n.id, depth + 1);
+      if (hasChildren && (filtering || !collapsed.has(n.id))) walk(n.id, depth + 1);
     }
   };
   walk(pageId, 0);

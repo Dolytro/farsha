@@ -52,18 +52,18 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Boolean operations (union, subtract, intersect, exclude), flatten, outline stroke | 🟡 | Union / Subtract / Intersect / Exclude (Ctrl+Alt+U, context menu, Actions) on rectangles, ellipses, polygons, stars and pen paths; the result is one flattened vector (curves become straight segments) with the bottom shape's fill. Flatten (Ctrl+E, Object menu) merges shapes and the shapes inside groups and frames into one vector (curves become straight segments). Outline stroke (Ctrl+Shift+O) turns the stroke into a filled vector above the shape (round joins, round caps on open paths, inside and outside strokes cut to the edge). Missing: keeping the originals editable inside the result, text as input, mitre and bevel joins in the outline |
 | Mask (Ctrl+Alt+M), frame selection (Ctrl+Alt+G) | ✅ | Mask: several layers are grouped and the bottom one masks the rest; one layer masks the layers above it; shape mask (alpha), also in SVG export. Missing: luminance masks, outline-only masks |
 | Right-click context menu (Figma items; read-only in Dev Mode; none on view links; submenu is a flat "Copy/Paste as" group) | ✅ | |
-| Command palette "Actions" (Ctrl+/ or Ctrl+K) | ✅ | Search ~50 actions with their shortcuts (also works as a shortcut cheat sheet). Missing: recent actions, plugins, searching layers / pages from the palette |
+| Command palette "Actions" (Ctrl+/ or Ctrl+K) | ✅ | Search ~50 actions with their shortcuts (also works as a shortcut cheat sheet). Recent actions (the last 5, shown first) done. Searching pages and layers by name (type two letters, pick one to jump to it) done. Missing: plugins |
 | Find (Ctrl+F), find next / previous (menu) | ❌ | P3 |
 | Draggable layer reorder, drag to reparent (drop on a frame or group) | ✅ | |
 | Layers panel: expand / collapse, search, lock icon, rename (selecting on canvas does not auto-expand parents yet) | ✅ | |
-| Pages: add, rename (double-click), delete, switch (click, Page Up / Down); each page remembers its pan and zoom | ✅ | |
+| Pages: add, rename (double-click), duplicate (the ⧉ button, File menu or Actions; the copy lands after the original and keeps the page background), delete, switch (click, Page Up / Down); each page remembers its pan and zoom | ✅ | |
 
 ## 3. Design panel (right sidebar)
 
 | Section | Status | Missing |
 |---|---|---|
 | Position | 🟡 | Rotation handle |
-| Layout | 🟡 | Auto layout v1 done: Shift+A adds it (wraps loose layers in a frame, keeps their order / gap / padding), horizontal / vertical, gap, padding (horizontal + vertical), alignment on both axes, space between, hug / fixed sizing, flexbox CSS in Dev Mode. Fill container done (Resizing section: W / H of a child = Fixed or Fill container; Dev Mode CSS uses flex: 1 1 0 and align-self: stretch). Per-side padding done (T / R / B / L fields, shown automatically when the sides differ). Wrap done (Wrap button, gap between lines, flex-wrap in Dev Mode CSS; needs a fixed size in the layout direction). Absolute position done (Resizing section checkbox; the layer leaves the flow, also in the Dev Mode CSS). Missing: nothing big in auto layout except min / max sizes. Previously missing:, min / max, nested resizing rules, drag to reorder inside a frame, layout grids, clip content toggle |
+| Layout | 🟡 | Auto layout v1 done: Shift+A adds it (wraps loose layers in a frame, keeps their order / gap / padding), horizontal / vertical, gap, padding (horizontal + vertical), alignment on both axes, space between, hug / fixed sizing, flexbox CSS in Dev Mode. Fill container done (Resizing section: W / H of a child = Fixed or Fill container; Dev Mode CSS uses flex: 1 1 0 and align-self: stretch). Per-side padding done (T / R / B / L fields, shown automatically when the sides differ). Wrap done (Wrap button, gap between lines, flex-wrap in Dev Mode CSS; needs a fixed size in the layout direction). Absolute position done (Resizing section checkbox; the layer leaves the flow, also in the Dev Mode CSS). Min / max sizes done. Missing: nothing big in auto layout. Previously missing:, min / max, nested resizing rules, drag to reorder inside a frame, layout grids, clip content toggle |
 | Appearance | 🟡 | Independent corner radius done for rectangles and frames (not images). Blend mode (16 modes, no Pass through / Plus darker / Plus lighter) done. Corner smoothing done (approximate curve, canvas and SVG export; CSS export ignores it) |
 Solid, linear and radial gradients, and image fills (upload, Fill / Fit / Stretch, opacity) (add / remove stops, position, opacity, angle) done. Gradient angle is in bounding-box units, so it skews on non-square layers. Gradient text and strokes show the first stop only; SVG / Figma paste still flatten gradients. Multiple fills (stacked, listed top first, shapes only; text keeps one) done. Hex input is editable (3 or 6 digits). Missing: tile / crop image modes, image filters, angular / diamond gradients, handles on canvas, styles, variables |
 | Stroke | 🟡 | Color, opacity, weight, position (inside / center / outside) and multiple strokes (stacked, one weight and position for all; frames, rectangles and ellipses; a drawn vector keeps one) done. Dev Mode CSS shows the first stroke only. Missing: per-side weights, dash, caps, joins, arrowheads. |
@@ -124,7 +124,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Save local copy (.farsha download), open local file | ✅ | In the cloud menu, works without signing in. Missing: Duplicate file, drag a .farsha onto the canvas |
 | Export all (File → Export, Ctrl+Shift+E), export frames to PDF (menu) | ❌ | P2 |
 | Import SVG / images / drag and drop files | ❌ | P1 |
-| Version history, restore | 🟡 | Save a named version (Ctrl+Alt+S, Actions, cloud menu → Version history), list, restore (the current state is saved first), delete; newest 30 kept in this browser per file. Missing: automatic versions, versions on Drive (shared across devices), visual compare |
+| Version history, restore | 🟡 | Save a named version (Ctrl+Alt+S, Actions, cloud menu → Version history), list, restore (the current state is saved first), delete; newest 30 kept in this browser per file. Automatic versions done (an "Autosave" version every 10 minutes of editing, the newest 10 kept, marked Auto). Missing: versions on Drive (shared across devices), visual compare |
 | Branching (menu: Create branch) | ❌ | P3 |
 | Offline editing and sync queue | ❌ | P3 |
 
@@ -147,15 +147,15 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Highlight layers on hover | ✅ always on |
 | Show dimensions on objects | ✅ always on |
 | Hide canvas UI during changes | ❌ |
-| Keyboard zooms into selection | ❌ |
+| Keyboard zooms into selection | ✅ (+ and - centre the selection) |
 | Invert zoom direction | ✅ |
-| Ctrl+click opens right-click menus | ❌ |
+| Ctrl+click opens right-click menus | ✅ (Preferences switch, off by default) |
 | Use scroll wheel zoom (instead of pan) | ✅ |
 | Right-click and drag to pan | ❌ |
 | Theme (light / dark / system) | ✅ (cloud menu or Actions; the canvas and panels follow, design layers are never recoloured) |
 | Snapping, nudge amount, color profile | 🟡 snapping on / off and nudge amounts done (Preferences in the cloud menu or Actions); no colour profile |
 | Keyboard layout, accessibility settings | ❌ |
-| Keyboard shortcuts cheat sheet (Ctrl+Shift+?) | ❌ |
+| Keyboard shortcuts cheat sheet (Ctrl+Shift+?) | ✅ (every command with a shortcut, grouped, with search; also in Preferences menu and Actions) |
 | Help and account menu, sign out in a profile menu | 🟡 sign out is in ☁ |
 
 ## 11. Quality
@@ -264,11 +264,11 @@ Menus and commands
 - View: ✅ Show slices, Annotations (Shift+Y, the dev notes on the canvas), Pixel preview (Ctrl+Shift+P, crisp edges), Mask outlines, Frame outlines, Find previous / next frame (Home / End). Still missing: Additional labels, Minimize left bar, Toggle variables panel, Switch to Draw
 - ✅ Object > More layout options (Resize to fit, hug and fill width / height, lock and unlock aspect ratio; Suggest auto layout is the same as Add auto layout) and rotate / flip buttons in the Position section. Still missing in Object: Restore / Set default thumbnail, Main component (Push changes to main, Restore main component), Slots
 - Text: justified alignment, top / middle / bottom commands, Adjust (indent, font size / weight / line height / letter spacing steps), Title case + small caps
-- Preferences: ✅ Highlight layers on hover, Show dimensions on objects, Right-click and drag to pan. Still missing: Rename duplicated layers, Hide canvas UI during changes, Use smart quotes, Flip objects while resizing, Keyboard zooms into selection, Use Ctrl+Alt+arrows to rotate, Color profile, Keyboard layout, Accessibility
+- Preferences: ✅ Highlight layers on hover, Show dimensions on objects, Right-click and drag to pan. ✅ Rename duplicated layers (Preferences: Card 1 becomes Card 2). Still missing: Hide canvas UI during changes, Use smart quotes, Flip objects while resizing, Keyboard zooms into selection, Use Ctrl+Alt+arrows to rotate, Color profile, Keyboard layout, Accessibility
 
 Design panel
 - ✅ Frame size presets (Phone, Tablet, Desktop, Presentation, Watch, Paper) in the Layout section
-- Auto layout: Grid flow, min / max width and height, Resize to fit, "Hug" / "Fill" as commands
+- Auto layout: ✅ min / max width and height (a "Size limits" section on auto layout frames, and in Resizing for layers inside one; a layer that fills stops at its max and keeps its min; a hugging frame grows to its min and stops at its max). Still missing: Grid flow, "Hug" / "Fill" as commands
 - ✅ (done above) Position section flip and rotate buttons
 - Colour picker: ✅ custom picker (square, hue, eyedropper where the browser has it, HEX / RGB / HSL, "On this page" colours). Still missing: HSB / CSS modes, fill blend mode, library colours
 - Fills: ✅ angular and diamond gradients (drawn as wedges; CSS uses conic-gradient and a radial stand-in). Still missing: Pattern, tile / crop image modes, image adjustments (exposure, contrast, saturation...), gradient handles on the canvas
@@ -277,7 +277,7 @@ Design panel
 - Typography: ✅ paragraph spacing, indent, truncate text (max lines). ✅ font picker with search, ~70 Google Fonts (downloaded from fonts.googleapis.com only when a file uses one; PNG export may use a stand-in font) and installed fonts (Chromium asks permission). Still missing: vertical trim, text decoration style, OpenType features and variable font axes, rich text size / colour / font per range
 - Export: ✅ several export settings per layer (scale, suffix, format incl. WebP and PDF) saved with the layer. Still missing: "contents only"
 - Styles for grids and strokes
-- Layers panel: filter by type, Rename shortcut, hover highlight
+- Layers panel: ✅ filter by type (a dropdown beside the search: frames, sections, groups, components, instances, text, rectangles, ellipses, vectors, images; combines with the search). Rename shortcut and hover highlight were already done
 
 Prototype
 - Triggers: While pressing (Mouse enter / leave / down / up done ✅)
@@ -307,7 +307,7 @@ Other
 - Plugins and widgets: a small sandboxed plugin API (large)
 - Figma Draw tools (brush, marker, highlighter) and the Switch to Draw mode
 - Import: PDF, Sketch, .fig (partial)
-- Autosave history entries (Figma saves versions by itself), named versions with descriptions
+- ✅ Autosave history entries (every 10 minutes of editing, in the browser). Still missing: named versions with descriptions
 
 ### 12.3 Needs a server (cannot be free and offline, documented, not planned)
 Live cursors, observation mode, cursor chat, audio, comment notifications and @mentions, branching and merging, team and shared libraries,

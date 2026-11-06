@@ -1,3 +1,4 @@
+import { nextCopyName } from "./copy-name";
 import type { DesignDoc } from "@farsha/design-core";
 import type { DesignNode, NodeType } from "@farsha/types";
 import { fitSize } from "./images";
@@ -37,12 +38,16 @@ function toClip(doc: DesignDoc, node: DesignNode, mainAsInstance = true): ClipNo
 }
 
 /** Ctrl+D: copy each top-level layer with its whole subtree next to the original (a main component duplicates into a new main). */
-export function duplicateNodes(doc: DesignDoc, ids: string[], offset = 10, closeStep = true): string[] {
+export function duplicateNodes(doc: DesignDoc, ids: string[], offset = 10, closeStep = true, renameCopies = false): string[] {
   doc.stopCapturing();
   const copies = topLevelOf(doc, ids).flatMap((id) => {
     const n = doc.getNode(id);
     if (!n?.parentId) return [];
     const made = create(doc, toClip(doc, n, false), n.parentId, offset, offset);
+    if (made && renameCopies) {
+      const name = nextCopyName(n.name);
+      if (name !== n.name) doc.rename(made, name);
+    }
     return made ? [made] : [];
   });
   // Alt+drag keeps the copy and the drag that follows in one undo step
@@ -103,6 +108,13 @@ function create(doc: DesignDoc, clip: ClipNode, parentId: string, dx: number, dy
   } catch {
     return null; // the target can't hold this type (e.g. a frame inside a rectangle)
   }
+}
+
+/** Copy every layer inside `fromParentId` under `toParentId`, keeping positions (used by Duplicate page). Returns how many top-level layers were copied. */
+export function copyChildren(doc: DesignDoc, fromParentId: string, toParentId: string): number {
+  let copied = 0;
+  for (const child of doc.children(fromParentId)) if (create(doc, toClip(doc, child, false), toParentId, 0, 0)) copied++;
+  return copied;
 }
 
 /** Paste copied layers under `parentId` as one undo step. Returns the new top-level ids. */

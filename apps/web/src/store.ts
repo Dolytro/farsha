@@ -83,6 +83,7 @@ interface EditorState {
   setOutlines: (on: boolean) => void;
   prefs: Prefs;
   prefsOpen: boolean;
+  shortcutsOpen: boolean;
   /** Figma's "Minimize UI": the side panels and toolbar are hidden so the canvas fills the window. */
   uiHidden: boolean;
   /** View > Panels: hide the left (layers) or right (properties) panel on its own. */
@@ -134,6 +135,7 @@ interface EditorState {
   setPixelGrid: (on: boolean) => void;
   setPrefs: (patch: Partial<Prefs>) => void;
   setPrefsOpen: (open: boolean) => void;
+  setShortcutsOpen: (open: boolean) => void;
   setUiHidden: (hidden: boolean) => void;
   setTheme: (theme: ThemePreference) => void;
   setVersionsOpen: (open: boolean) => void;
@@ -186,6 +188,7 @@ export const useEditor = create<EditorState>((set) => ({
   view: { slices: true, maskOutlines: false, frameOutlines: false, annotations: false, pixelPreview: false },
   prefs: readPrefs(),
   prefsOpen: false,
+  shortcutsOpen: false,
   uiHidden: false,
   leftTab: "layers",
   hideLeftPanel: false,
@@ -252,6 +255,7 @@ export const useEditor = create<EditorState>((set) => ({
       return { prefs };
     }),
   setPrefsOpen: (prefsOpen) => set({ prefsOpen }),
+  setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
   setUiHidden: (uiHidden) => set({ uiHidden }),
   setHideLeftPanel: (hideLeftPanel) => set({ hideLeftPanel }),
   setLeftTab: (leftTab) => set({ leftTab }),
