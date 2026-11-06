@@ -186,6 +186,13 @@ export interface FillStyle {
   paints: Paint[];
 }
 
+/** A reusable set of effects (shadows, blurs ...): layers that use it follow it. */
+export interface EffectStyle {
+  id: string;
+  name: string;
+  effects: Effect[];
+}
+
 /** A reusable set of text properties: text layers that use it follow it. */
 export interface TextStyle {
   id: string;
@@ -291,6 +298,8 @@ export interface BaseNode {
   lockAspect?: boolean;
   /** Optional so documents saved before effects existed still load. */
   effects?: Effect[];
+  /** The effect style this layer follows; its effects are the style's. */
+  effectStyleId?: string;
   /** Missing means NORMAL. */
   blendMode?: BlendMode;
   constraintH?: Constraint;

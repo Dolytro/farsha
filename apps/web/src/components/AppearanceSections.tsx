@@ -197,6 +197,8 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
 
 export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
   const effects = node.effects ?? [];
+  const styles = doc.effectStyles();
+  const style = node.effectStyleId ? doc.getEffectStyle(node.effectStyleId) : undefined;
   const set = (next: Effect[]) => doc.setStyle(node.id, { effects: next });
   const patch = (i: number, p: Partial<Effect>) => set(effects.map((e, j) => (j === i ? ({ ...e, ...p } as Effect) : e)));
   const changeType = (i: number, type: Effect["type"]) => {
@@ -218,6 +220,35 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
           +
         </button>
       </h3>
+      {(styles.length > 0 || effects.length > 0) && (
+        <div className="fill-row fill-row--gap">
+          <Select
+            className="field__select field__select--wide"
+            aria-label="Effect style"
+            title="Effect style"
+            value={style?.id ?? "NONE"}
+            onChange={(e) => {
+              doc.stopCapturing();
+              if (e.target.value === "NEW") doc.applyEffectStyle(node.id, doc.createEffectStyle(`Effect style ${styles.length + 1}`, effects));
+              else doc.applyEffectStyle(node.id, e.target.value === "NONE" ? null : e.target.value);
+              doc.stopCapturing();
+            }}
+          >
+            <option value="NONE">No effect style</option>
+            {styles.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+            {effects.length > 0 && !style && <option value="NEW">+ Create style from effects</option>}
+          </Select>
+          {style && (
+            <button className="props__add" title="Delete this effect style (layers keep their effects)" onClick={() => doc.deleteEffectStyle(style.id)}>
+              −
+            </button>
+          )}
+        </div>
+      )}
       {effects.map((e, i) => (
         <div className="effect" key={i}>
           <div className="effect__head">

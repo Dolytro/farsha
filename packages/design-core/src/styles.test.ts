@@ -95,3 +95,26 @@ describe('colour styles', () => {
     expect(doc.children(inst)[0]).toMatchObject({ fills: blue });
   });
 });
+
+describe('effect styles', () => {
+  it('layers follow an effect style, edits detach them, and deleting leaves the effects', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10 } });
+    const b = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10 } });
+    const shadow = [{ type: 'DROP_SHADOW', x: 0, y: 4, blur: 8, color: '#000000', opacity: 0.3, visible: true }] as never;
+    const id = doc.createEffectStyle('Soft', shadow);
+    doc.applyEffectStyle(a, id);
+    doc.applyEffectStyle(b, id);
+    expect((doc.getNode(a) as unknown as { effects: unknown[] }).effects).toHaveLength(1);
+    const bigger = [{ type: 'DROP_SHADOW', x: 0, y: 8, blur: 20, color: '#000000', opacity: 0.4, visible: true }] as never;
+    doc.updateEffectStyle(id, { effects: bigger });
+    expect((doc.getNode(b) as unknown as { effects: { blur: number }[] }).effects[0]!.blur).toBe(20);
+    doc.setStyle(a, { effects: [] });
+    expect((doc.getNode(a) as unknown as { effectStyleId?: string }).effectStyleId).toBeUndefined();
+    expect((doc.getNode(b) as unknown as { effectStyleId?: string }).effectStyleId).toBe(id);
+    doc.deleteEffectStyle(id);
+    expect((doc.getNode(b) as unknown as { effectStyleId?: string }).effectStyleId).toBeUndefined();
+    expect((doc.getNode(b) as unknown as { effects: unknown[] }).effects).toHaveLength(1);
+  });
+});

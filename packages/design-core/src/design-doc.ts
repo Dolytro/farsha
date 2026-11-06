@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
+import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -48,6 +48,7 @@ export class DesignDoc {
   /** Colour styles, keyed by style id. */
   private readonly styles: Y.Map<FillStyle>;
   private readonly textStyleMap: Y.Map<TextStyle>;
+  private readonly effectStyleMap: Y.Map<EffectStyle>;
   private readonly commentMap: Y.Map<Comment>;
   private readonly variableMap: Y.Map<ColorVariable>;
   private readonly modeMap: Y.Map<VariableMode & { order: number }>;
@@ -81,6 +82,11 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
+    this.effectStyleMap = ydoc.getMap('effectStyles') as Y.Map<EffectStyle>;
+    this.effectStyleMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
     this.styles.observe(() => {
       this.version++;
       this.listeners.forEach((fn) => fn());
@@ -90,7 +96,7 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
-    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.variableMap, this.modeMap], {
+    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.effectStyleMap, this.variableMap, this.modeMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
     });
@@ -233,6 +239,12 @@ export class DesignDoc {
             const style = this.styles.get(styleId);
             if (!style) map.delete('fillStyleId');
             else if (JSON.stringify(map.get('fills')) !== JSON.stringify(style.paints)) map.set('fills', style.paints);
+          }
+          const effectStyleId = map.get('effectStyleId') as string | undefined;
+          if (effectStyleId) {
+            const style = this.effectStyleMap.get(effectStyleId);
+            if (!style) map.delete('effectStyleId');
+            else if (JSON.stringify(map.get('effects')) !== JSON.stringify(style.effects)) map.set('effects', style.effects);
           }
           const textStyleId = map.get('textStyleId') as string | undefined;
           if (textStyleId) {
@@ -1003,6 +1015,44 @@ export class DesignDoc {
     this.setProps(nodeId, { fills: style.paints, fillStyleId: styleId });
   }
 
+  // ---------- effect styles ----------
+
+  effectStyles(): EffectStyle[] {
+    return [...this.effectStyleMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getEffectStyle(id: string): EffectStyle | undefined {
+    return this.effectStyleMap.get(id);
+  }
+
+  createEffectStyle(name: string, effects: Effect[]): string {
+    const id = nanoid();
+    this.transact(() => this.effectStyleMap.set(id, { id, name: name.trim() || 'Effect style', effects }));
+    return id;
+  }
+
+  updateEffectStyle(id: string, patch: { name?: string; effects?: Effect[] }): void {
+    const style = this.effectStyleMap.get(id);
+    if (!style) throw new Error('Style not found');
+    this.transact(() => this.effectStyleMap.set(id, { ...style, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.effects ? { effects: patch.effects } : {}) }));
+  }
+
+  deleteEffectStyle(id: string): void {
+    this.transact(() => this.effectStyleMap.delete(id));
+  }
+
+  /** Give a layer an effect style (its effects now follow the style), or pass null to detach it. */
+  applyEffectStyle(nodeId: string, styleId: string | null): void {
+    this.requireNode(nodeId);
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('effectStyleId'));
+      return;
+    }
+    const style = this.effectStyleMap.get(styleId);
+    if (!style) throw new Error('Style not found');
+    this.setProps(nodeId, { effects: style.effects, effectStyleId: styleId });
+  }
+
   // ---------- comments ----------
 
   /** Comments of a page (all pages when none is given), oldest first. */
@@ -1399,6 +1449,7 @@ export class DesignDoc {
       for (const [key, value] of Object.entries(patch)) map.set(key, value);
       // Changing the fills by hand detaches the layer from its colour style (Figma).
       if ('fills' in patch && !('fillStyleId' in patch)) map.delete('fillStyleId');
+      if ('effects' in patch && !('effectStyleId' in patch)) map.delete('effectStyleId');
       if (TEXT_STYLE_KEYS.some((k) => k in patch) && !('textStyleId' in patch)) map.delete('textStyleId');
       if (!follows) return;
       const isRoot = map.get('componentId') !== undefined;
