@@ -2,6 +2,7 @@ import { screenToWorld } from "@farsha/canvas-engine";
 import { useState } from "react";
 import { useEditor } from "../store";
 import { filterAssets } from "../asset-search";
+import { zoomFit } from "../actions";
 
 /** Figma's Assets tab: every main component of the file; a click places an instance in the middle of the canvas. */
 export function Assets() {
@@ -30,6 +31,16 @@ export function Assets() {
     }
   };
 
+  /** Figma's right-click > Go to main component: switch to its page, select it and zoom to it. */
+  const goToMain = (id: string) => {
+    const s = useEditor.getState();
+    const page = doc.pages().find((p) => p.id === id || doc.isAncestor(p.id, id));
+    if (page && page.id !== s.pageId) s.setPage(page.id);
+    s.select([id]);
+    const v = zoomFit(doc, page?.id ?? s.pageId, [id]);
+    if (v) s.setViewport(v);
+  };
+
   if (!all.length) {
     return <p className="assets__empty">No components yet. Select a frame and press Ctrl+Alt+K to create one.</p>;
   }
@@ -39,7 +50,7 @@ export function Assets() {
     {!mains.length && <p className="assets__empty">No component matches.</p>}
     <ul className="layers__list assets">
       {mains.map((n) => (
-        <li key={n.id} className="layers__item assets__item" title={viewer ? undefined : "Click to place an instance"} onClick={() => !viewer && place(n.id)}>
+        <li key={n.id} className="layers__item assets__item" title={viewer ? "Right-click to go to the main component" : "Click to place an instance, right-click to go to the main component"} onClick={() => !viewer && place(n.id)} onContextMenu={(e) => { e.preventDefault(); goToMain(n.id); }}>
           <span className="layers__type layers__type--component">❖</span>
           <span className="layers__name">{n.name}{n.type === "FRAME" && n.variantProps ? ` (${Object.entries(n.variantProps).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}</span>
           {n.type === "FRAME" && n.description && <span className="layers__hint" title={n.description} style={{ opacity: 0.6, fontSize: 11, marginLeft: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 90 }}>{n.description}</span>}
