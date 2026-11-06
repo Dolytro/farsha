@@ -8,6 +8,7 @@ export const canvasMeasure: Measure = (text, f) => {
   if (ctx === undefined) ctx = document.createElement("canvas").getContext("2d");
   if (!ctx) return text.length * (f.size * 0.56 + f.letterSpacing);
   ctx.font = `${f.weight} ${f.size}px ${f.family}`;
+  (ctx as CanvasRenderingContext2D & { fontVariantCaps?: string }).fontVariantCaps = f.smallCaps ? "small-caps" : "normal";
   return ctx.measureText(text).width + f.letterSpacing * text.length;
 };
 

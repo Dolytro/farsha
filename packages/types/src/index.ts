@@ -37,6 +37,8 @@ export interface SolidPaint {
   opacity: number;
   /** Id of the colour variable that supplies `color`; the colour follows the variable's value in the active mode. */
   variableId?: string;
+  /** How this fill mixes with what is below it (Figma's fill blend mode). Missing means normal. */
+  blendMode?: BlendMode;
 }
 
 export interface GradientStop {
@@ -52,6 +54,7 @@ export interface GradientPaint {
   /** Degrees; 0 = left to right, 90 = top to bottom. For an angular gradient where the sweep starts. Ignored by radial and diamond gradients. */
   angle: number;
   opacity: number;
+  blendMode?: BlendMode;
 }
 
 export type ImageScaleMode = 'FILL' | 'FIT' | 'STRETCH';
@@ -62,6 +65,15 @@ export interface ImagePaint {
   assetId: string | null;
   scaleMode: ImageScaleMode;
   opacity: number;
+  blendMode?: BlendMode;
+  /** Colour adjustments of the picture, each from -100 to 100 (0 or missing leaves it as it is). */
+  adjustments?: ImageAdjustments;
+}
+
+export interface ImageAdjustments {
+  exposure?: number;
+  contrast?: number;
+  saturation?: number;
 }
 
 export type Paint = SolidPaint | GradientPaint | ImagePaint;
@@ -182,6 +194,20 @@ export interface FillStyle {
   paints: Paint[];
 }
 
+/** A reusable set of layout grids: frames that use it follow it. */
+export interface GridStyle {
+  id: string;
+  name: string;
+  grids: LayoutGrid[];
+}
+
+/** A reusable set of effects (shadows, blurs ...): layers that use it follow it. */
+export interface EffectStyle {
+  id: string;
+  name: string;
+  effects: Effect[];
+}
+
 /** A reusable set of text properties: text layers that use it follow it. */
 export interface TextStyle {
   id: string;
@@ -207,7 +233,15 @@ export type InteractionAction =
   | { type: 'SWAP_OVERLAY'; targetId: string; dim?: boolean; closeOnOutside?: boolean; position?: OverlayPosition }
   | { type: 'CLOSE_OVERLAY' }
   /** Scroll the frame so that a layer comes into view. */
-  | { type: 'SCROLL_TO'; targetId: string };
+  | { type: 'SCROLL_TO'; targetId: string }
+  /** Switch the variable mode (for example Light to Dark) while presenting; layers bound to variables follow it. */
+  | { type: 'SET_MODE'; modeId: string }
+  /** Set a variable (in the active mode) while presenting: a colour, a text, a number or "true" / "false". Undone when the presentation ends. */
+  | { type: 'SET_VARIABLE'; variableId: string; value: string }
+  /** If a variable (in the active mode) compares true to a value, go to one frame, else to another (or do nothing). */
+  /** Interactive component: while presenting, the layer (an instance) turns into another main component, usually another variant of its set. Undone when the presentation ends. */
+  | { type: 'CHANGE_TO'; componentId: string }
+  | { type: 'CONDITIONAL'; variableId: string; op: 'EQ' | 'NEQ' | 'GT' | 'LT'; value: string; thenId: string; elseId?: string };
 
 export type OverlayPosition = 'CENTER' | 'TOP' | 'BOTTOM';
 
@@ -218,7 +252,7 @@ export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'ON_DRAG' | 'ON_MOUSE
 export type Easing = 'LINEAR' | 'EASE_IN' | 'EASE_OUT' | 'EASE_IN_OUT' | 'SPRING';
 
 /** How the next frame appears. */
-export type TransitionType = 'INSTANT' | 'SMART_ANIMATE' | 'DISSOLVE' | 'SLIDE_IN_LEFT' | 'SLIDE_IN_RIGHT' | 'SLIDE_IN_TOP' | 'SLIDE_IN_BOTTOM';
+export type TransitionType = 'INSTANT' | 'SMART_ANIMATE' | 'DISSOLVE' | 'SLIDE_IN_LEFT' | 'SLIDE_IN_RIGHT' | 'SLIDE_IN_TOP' | 'SLIDE_IN_BOTTOM' | 'MOVE_OUT_LEFT' | 'MOVE_OUT_RIGHT' | 'MOVE_OUT_TOP' | 'MOVE_OUT_BOTTOM' | 'PUSH_LEFT' | 'PUSH_RIGHT' | 'PUSH_TOP' | 'PUSH_BOTTOM';
 
 export interface Interaction {
   trigger: InteractionTrigger;
@@ -240,6 +274,8 @@ export interface ExportSetting {
   format: ExportSettingFormat;
   scale: number;
   suffix: string;
+  /** Frames only: leave out the frame's own fill, stroke and effects and export just what is inside it. */
+  contentsOnly?: boolean;
 }
 
 export interface BaseNode {
@@ -265,6 +301,10 @@ export interface BaseNode {
   devNote?: string;
   /** Prototype: this top-level frame is where a flow starts (Figma's flow starting point). */
   flowStart?: boolean;
+  /** Name of the flow that starts at this frame. Missing means "Flow 1", "Flow 2" and so on. */
+  flowName?: string;
+  /** Variable mode this frame and everything inside it shows, whatever the file's active mode is (Figma's explicit mode). */
+  explicitMode?: string;
   /** Number and boolean variables bound to properties of this layer: property name to variable id. */
   varBindings?: Record<string, string>;
   /** The export settings of this layer; none means PNG at 1x. */
@@ -273,6 +313,8 @@ export interface BaseNode {
   lockAspect?: boolean;
   /** Optional so documents saved before effects existed still load. */
   effects?: Effect[];
+  /** The effect style this layer follows; its effects are the style's. */
+  effectStyleId?: string;
   /** Missing means NORMAL. */
   blendMode?: BlendMode;
   constraintH?: Constraint;
@@ -298,6 +340,8 @@ export interface BaseNode {
   strokeDash?: number[];
   strokeCap?: StrokeCap;
   strokeJoin?: StrokeJoin;
+  /** Miter join: the smallest corner angle (degrees, 1 to 180) that stays pointed; sharper corners are bevelled. Missing means 28.96 (Figma's default). */
+  strokeMiterAngle?: number;
   /** Line ends of a vector's stroke (arrowheads). */
   strokeStartCap?: LineEnd;
   strokeEndCap?: LineEnd;
@@ -392,12 +436,16 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   strokeSides?: [number, number, number, number];
   clipsContent: boolean;
   layoutGrids?: LayoutGrid[];
+  /** The grid style this frame follows; its grids are the style's. */
+  gridStyleId?: string;
   /** A section: a named area of the canvas that holds frames and layers but is not itself a screen (Figma's Section tool). */
   isSection?: boolean;
   /** Prototype: a frame taller than the window scrolls vertically while presenting (Figma's Vertical scrolling). */
   overflowScroll?: 'NONE' | 'VERTICAL' | 'HORIZONTAL' | 'BOTH';
   /** True for a main component: its layers are mirrored by every instance. */
   isComponent?: boolean;
+  /** A short note on a main component (what it is for), shown in Assets. */
+  description?: string;
   /** Set on an instance: id of the main component it follows. */
   componentId?: string;
   /** On a main component: the properties its instances can set. */
@@ -446,7 +494,9 @@ export interface EllipseNode extends BaseNode {
 
 export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED';
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH';
-export type TextCase = 'NONE' | 'UPPER' | 'LOWER' | 'TITLE';
+/** Line style of an underline or strikethrough. Missing means solid. */
+export type TextDecorationStyle = 'SOLID' | 'DOTTED' | 'WAVY';
+export type TextCase = 'NONE' | 'UPPER' | 'LOWER' | 'TITLE' | 'SMALL_CAPS';
 /** Every paragraph of a text layer starts with a bullet or a running number. */
 export type TextList = 'NONE' | 'BULLET' | 'NUMBER';
 /** Writing direction; right to left text (Arabic, Hebrew) starts at the right edge. */
@@ -480,6 +530,9 @@ export interface TextNode extends BaseNode {
   italic?: boolean;
   /** Underline or strikethrough (Ctrl+U, Ctrl+Shift+X). Missing means none. */
   textDecoration?: TextDecoration;
+  textDecorationStyle?: TextDecorationStyle;
+  /** OpenType features switched on ("tnum", "zero", "frac", "ss01" ...) or off ("-liga"). Missing means the font's defaults. */
+  fontFeatures?: string[];
   /** Upper case, lower case or Title Case display of the characters. Missing means as typed. */
   textCase?: TextCase;
   /** Bulleted or numbered list of the paragraphs. Missing means a plain paragraph. */
@@ -560,7 +613,10 @@ export interface StylePatch extends AutoLayoutProps {
   strokeSides?: [number, number, number, number] | null;
   devStatus?: DevStatus | null;
   devNote?: string | null;
+  description?: string | null;
   flowStart?: boolean | null;
+  flowName?: string | null;
+  explicitMode?: string | null;
   lockAspect?: boolean | null;
   exportSettings?: ExportSetting[] | null;
   varBindings?: Record<string, string> | null;
@@ -581,6 +637,7 @@ export interface StylePatch extends AutoLayoutProps {
   strokeDash?: number[];
   strokeCap?: StrokeCap;
   strokeJoin?: StrokeJoin;
+  strokeMiterAngle?: number | null;
   strokeStartCap?: LineEnd;
   strokeEndCap?: LineEnd;
   interactions?: Interaction[];
@@ -599,6 +656,8 @@ export interface TextPatch {
   textAutoResize?: TextAutoResize;
   italic?: boolean;
   textDecoration?: TextDecoration;
+  textDecorationStyle?: TextDecorationStyle;
+  fontFeatures?: string[];
   textCase?: TextCase;
   textList?: TextList;
   paragraphSpacing?: number;

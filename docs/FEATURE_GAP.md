@@ -254,60 +254,60 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Bulleted / numbered list | Ctrl+Shift+8 / 7 | ✅ same |
 | Text align justified / top / middle / bottom | Ctrl+Alt+J, menu | ✅ same |
 | Increase / decrease font size, weight, line height, letter spacing (indentation not yet) | Ctrl+Shift+> / < , Ctrl+Alt+> / < , Alt+Shift+> / < , Alt+> / < , Ctrl+] / [ | ✅ same |
-| Zoom to previous / next frame | Shift+N / N | check |
+| Zoom to previous / next frame | Shift+N / N | ✅ same (checked in the browser) |
 | Paste to replace | Ctrl+Shift+R | Ctrl+Alt+Shift+V (browser reserves Ctrl+Shift+R) |
-| Delete and heal | Shift+Backspace | menu only |
+| Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
 Menus and commands
-- Edit: ✅ Copy as text, Copy as CSS (all layers), Select all with same text properties / instance / variant. Still missing: animated SVG, Select all with same properties
-- View: ✅ Show slices, Annotations (Shift+Y, the dev notes on the canvas), Pixel preview (Ctrl+Shift+P, crisp edges), Mask outlines, Frame outlines, Find previous / next frame (Home / End). Still missing: Additional labels, Minimize left bar, Toggle variables panel, Switch to Draw
+- Edit: ✅ Copy as text, Copy as CSS (all layers), Select all with same text properties / instance / variant. ✅ Select all matching properties (Ctrl+Alt+A, checked in the browser). Still missing: animated SVG
+- View: ✅ Show slices, Annotations (Shift+Y, the dev notes on the canvas), Pixel preview (Ctrl+Shift+P, crisp edges), Mask outlines, Frame outlines, Find previous / next frame (Home / End). ✅ Minimize left bar and Toggle variables panel (View > Panels, and Actions). Still missing: Additional labels, Switch to Draw
 - ✅ Object > More layout options (Resize to fit, hug and fill width / height, lock and unlock aspect ratio; Suggest auto layout is the same as Add auto layout) and rotate / flip buttons in the Position section. Still missing in Object: Restore / Set default thumbnail, Main component (Push changes to main, Restore main component), Slots
-- Text: justified alignment, top / middle / bottom commands, Adjust (indent, font size / weight / line height / letter spacing steps), Title case + small caps
-- Preferences: ✅ Highlight layers on hover, Show dimensions on objects, Right-click and drag to pan. ✅ Rename duplicated layers (Preferences: Card 1 becomes Card 2). Still missing: Hide canvas UI during changes, Use smart quotes, Flip objects while resizing, Keyboard zooms into selection, Use Ctrl+Alt+arrows to rotate, Color profile, Keyboard layout, Accessibility
+- Text: justified alignment, top / middle / bottom commands, Adjust (indent, font size / weight / line height / letter spacing steps), Title case + small caps (✅ both; small caps is a Text case option, drawn with `font-variant`)
+- Preferences: ✅ Highlight layers on hover, Show dimensions on objects, Right-click and drag to pan. ✅ Rename duplicated layers (Preferences: Card 1 becomes Card 2). ✅ Use smart quotes (off by default; curly quotes while typing in a text layer, but a quote typed over a selection stays straight). ✅ Use Ctrl+Alt+arrows to rotate (off by default; Left / Right turn 1°, Shift 15°; Up / Down not used). ✅ Flip objects while resizing (on by default like Figma; with Shift or locked proportions the layer still stops at the opposite side). ✅ Hide canvas UI during changes (off by default; the selection box, handles and size pill hide while moving, resizing or rotating). Still missing: Color profile, Keyboard layout, Accessibility
 
 Design panel
 - ✅ Frame size presets (Phone, Tablet, Desktop, Presentation, Watch, Paper) in the Layout section
 - Auto layout: ✅ min / max width and height (a "Size limits" section on auto layout frames, and in Resizing for layers inside one; a layer that fills stops at its max and keeps its min; a hugging frame grows to its min and stops at its max). Still missing: Grid flow, "Hug" / "Fill" as commands
 - ✅ (done above) Position section flip and rotate buttons
-- Colour picker: ✅ custom picker (square, hue, eyedropper where the browser has it, HEX / RGB / HSL, "On this page" colours). Still missing: HSB / CSS modes, fill blend mode, library colours
-- Fills: ✅ angular and diamond gradients (drawn as wedges; CSS uses conic-gradient and a radial stand-in). Still missing: Pattern, tile / crop image modes, image adjustments (exposure, contrast, saturation...), gradient handles on the canvas
-- Strokes: stroke styles, miter angle, variable width and brush strokes
-- Effects: ✅ Noise, Texture, Glass (a blurred, lightly tinted backdrop; canvas and CSS, not in SVG/PNG export). Still missing: effect styles, shadow "show behind"
-- Typography: ✅ paragraph spacing, indent, truncate text (max lines). ✅ font picker with search, ~70 Google Fonts (downloaded from fonts.googleapis.com only when a file uses one; PNG export may use a stand-in font) and installed fonts (Chromium asks permission). Still missing: vertical trim, text decoration style, OpenType features and variable font axes, rich text size / colour / font per range
-- Export: ✅ several export settings per layer (scale, suffix, format incl. WebP and PDF) saved with the layer. Still missing: "contents only"
-- Styles for grids and strokes
+- Colour picker: ✅ custom picker (square, hue, eyedropper where the browser has it, HEX / RGB / HSL, "On this page" colours). ✅ HSB and CSS modes (the CSS box reads hex, rgb(), hsl() and hsb()). ✅ fill blend mode (per fill, `blendMode` on a paint, drawn with `mix-blend-mode`; not applied to angular and diamond fills). Still missing: library colours
+- Fills: ✅ angular and diamond gradients (drawn as wedges; CSS uses conic-gradient and a radial stand-in). Still missing: Pattern, tile / crop image modes, image adjustments beyond exposure, contrast and saturation (✅ those three: fields in an image fill, drawn with an SVG filter; temperature, tint, highlights, shadows are missing), gradient handles on the canvas
+- Strokes: ✅ miter angle (`strokeMiterAngle`, becomes `stroke-miterlimit`). Still missing: stroke styles, variable width and brush strokes
+- Effects: ✅ Noise, Texture, Glass (a blurred, lightly tinted backdrop; canvas and CSS, not in SVG/PNG export). ✅ effect styles (create from a layer's effects, apply, delete; editing effects detaches; listed under Styles). Still missing: renaming and editing a style in place, shadow "show behind"
+- Typography: ✅ paragraph spacing, indent, truncate text (max lines). ✅ font picker with search, ~70 Google Fonts (downloaded from fonts.googleapis.com only when a file uses one; PNG export may use a stand-in font) and installed fonts (Chromium asks permission). ✅ decoration style (solid, dotted, wavy; `textDecorationStyle`, whole layer, not per range). ✅ OpenType features (tabular and old-style numbers, slashed zero, fractions, stylistic sets 1 and 2, no ligatures; whole layer, and the box width is not re-measured for them). Still missing: vertical trim, variable font axes, rich text size / colour / font per range
+- Export: ✅ several export settings per layer (scale, suffix, format incl. WebP and PDF) saved with the layer. ✅ "Contents only" for a frame (a checkbox per export setting; not for PDF). Still missing: export presets
+- ✅ Grid styles (create from a frame's layout grids, apply, delete; listed under Styles). Still missing: stroke styles, renaming and editing styles in place
 - Layers panel: ✅ filter by type (a dropdown beside the search: frames, sections, groups, components, instances, text, rectangles, ellipses, vectors, images; combines with the search). Rename shortcut and hover highlight were already done
 
 Prototype
 - Triggers: While pressing (Mouse enter / leave / down / up done ✅)
-- Actions: Set variable, Set variable mode, Conditional, Media controls (Scroll to and Swap overlay done ✅)
+- Actions: ✅ Set variable mode (`SET_MODE`, undone when the presentation ends). ✅ Set variable (colour, text, number or boolean, in the active mode; undone when the presentation ends or restarts). ✅ Conditional (if a variable is / is not / is greater / less than a value, go to one frame, else to another; one condition, navigation only). Still missing: several conditions, Media controls (Scroll to and Swap overlay done ✅)
 - Overlay position, dim and close on outside click done ✅
-- Animations: Move in / out, Push, Slide out (easing curves and spring done ✅)
+- Animations: ✅ Move out and Push (all four sides; the old frame is drawn over the new one while it leaves). Still missing: Move in (same as Slide in here), Slide out (easing curves and spring done ✅)
 - Scrolling: fixed (sticky) layers (horizontal and both done ✅)
-- Prototype settings: background, scale options, restart, hotspot hints, several named flows
-- Interactive components (variant switching on interaction)
+- Prototype settings: ✅ restart (R while presenting) and hotspot hints (the clickable areas flash when a click hits nothing). ✅ named flows (`flowName` on a starting frame, "Flows" buttons in the Prototype tab present one flow, the canvas label shows the name). ✅ background colour (Prototype tab, kept for this session only). ✅ scale options (fit, fill, 100%; fill and 100% crop a frame bigger than the window). Still missing: a flow picker inside the Present screen, Set variable action
+- ✅ Interactive components: a "Change to" action turns an instance into another component or variant while presenting (undone afterwards). Still missing: variant switching on hover as a component-level setting
 
 Dev Mode
 - Code for iOS (SwiftUI, UIKit) and Android (Compose, XML)
-- Box-model visual (border and padding) in Layer properties
+- ✅ Box-model visual (border and padding) in Layer properties (Dev tab, for frames and shapes with a stroke or auto layout padding)
 - Ready-for-dev list in the left panel, annotations shown on the canvas, dev resources links
 - Code Connect style mapping (a local mapping of components to snippets)
 
 Variables
 - ✅ Number and boolean variables (Variables dialog tabs; the Variables section of the Design panel binds width, height, radius, opacity, gap, padding, font size, stroke weight, rotation and visibility; checked in the browser). Still missing: several collections, groups (a/b names), aliases, scopes
 - Bind variables to number properties (spacing, radius, size, opacity, font size) and to visibility
-- Explicit mode per frame, import and export as JSON
+- ✅ Import and export as JSON (Export JSON / Import JSON in the Variables dialog; values by mode name, bad values repaired, imported variables are added as new ones). ✅ explicit mode per frame (`explicitMode`, "Mode:" picker on a frame; inner frames can override). Still missing: variable collections and aliases
 
 Components
-- Instance swap (property and picker), nested instances, slots, component descriptions
-- Assets panel: search, drag onto the canvas, "Go to main component" from the panel
+- ✅ Component descriptions (a Description box on a main component, shown in the Assets list). ✅ Swap instance picker (`swapInstance`, in the Design panel of an instance). Still missing: instance-swap properties, nested instances, slots
+- Assets panel: ✅ search (name, description, variant values). ✅ right-click a component to go to its main. ✅ drag a component onto the canvas (it lands inside the frame under the pointer; checked with synthetic drag events). Still missing: dragging with a preview image
 
 Other
 - Plugins and widgets: a small sandboxed plugin API (large)
 - Figma Draw tools (brush, marker, highlighter) and the Switch to Draw mode
 - Import: PDF, Sketch, .fig (partial)
-- ✅ Autosave history entries (every 10 minutes of editing, in the browser). Still missing: named versions with descriptions
+- ✅ Autosave history entries (every 10 minutes of editing, in the browser). ✅ version descriptions (a Description box when saving a version). Still missing: version history shared through Drive
 
 ### 12.3 Needs a server (cannot be free and offline, documented, not planned)
 Live cursors, observation mode, cursor chat, audio, comment notifications and @mentions, branching and merging, team and shared libraries,

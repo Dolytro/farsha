@@ -127,3 +127,50 @@ describe('page background', () => {
     expect(doc.pageBackground(page)).toBeUndefined();
   });
 });
+
+describe('explicit mode', () => {
+  it('a frame with an explicit mode shows that mode whatever the file mode is', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const light = doc.activeModeId();
+    const dark = doc.addMode('Dark');
+    const v = doc.createColorVariable('Bg', '#ffffff');
+    doc.updateColorVariable(v, { modeId: dark, color: '#000000' });
+    const frame = doc.createNode('FRAME', { parentId: page, props: { width: 100, height: 100, fills: [{ type: 'SOLID', color: '#ffffff', opacity: 1 }] } as never });
+    const inner = doc.createNode('RECTANGLE', { parentId: frame, props: { width: 10, height: 10, fills: [{ type: 'SOLID', color: '#ffffff', opacity: 1 }] } as never });
+    doc.bindPaintVariable(frame, 'fills', 0, v);
+    doc.bindPaintVariable(inner, 'fills', 0, v);
+    const color = (id: string) => (doc.getNode(id) as unknown as { fills: { color: string }[] }).fills[0]!.color;
+    expect(color(inner)).toBe('#ffffff');
+    doc.setStyle(frame, { explicitMode: dark });
+    expect(color(frame)).toBe('#000000');
+    expect(color(inner)).toBe('#000000');
+    doc.setActiveMode(dark);
+    doc.setStyle(frame, { explicitMode: light });
+    expect(color(inner)).toBe('#ffffff');
+    doc.setStyle(frame, { explicitMode: null });
+    expect(color(inner)).toBe('#000000');
+  });
+});
+
+describe('setVariableValue', () => {
+  it('sets a colour, text, number or boolean in one mode and rejects bad values', () => {
+    const doc = new DesignDoc();
+    const mode = doc.activeModeId();
+    const c = doc.createColorVariable('C', '#ffffff');
+    const t = doc.createTextVariable('T', 'hi');
+    const n = doc.createValueVariable('NUMBER', 'N', '1');
+    const b = doc.createValueVariable('BOOLEAN', 'B', 'true');
+    doc.setVariableValue(c, mode, '#112233');
+    doc.setVariableValue(t, mode, 'hello');
+    doc.setVariableValue(n, mode, '42');
+    doc.setVariableValue(b, mode, 'false');
+    expect(doc.getColorVariable(c)?.values[mode]).toBe('#112233');
+    expect(doc.getColorVariable(t)?.values[mode]).toBe('hello');
+    expect(doc.getColorVariable(n)?.values[mode]).toBe('42');
+    expect(doc.getColorVariable(b)?.values[mode]).toBe('false');
+    expect(() => doc.setVariableValue(c, mode, 'red')).toThrow();
+    expect(() => doc.setVariableValue('nope', mode, 'x')).toThrow();
+    expect(() => doc.setVariableValue(c, 'nomode', '#112233')).toThrow();
+  });
+});

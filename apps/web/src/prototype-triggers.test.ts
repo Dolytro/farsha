@@ -157,3 +157,71 @@ describe("prototype round 3", () => {
     expect(both.stageHeight).toBe(800);
   });
 });
+
+describe("flowsOf", () => {
+  it("lists the starting frames and names unnamed flows by position", async () => {
+    const { flowsOf } = await import("./prototype");
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("FRAME", { parentId: page, props: { name: "A", width: 100, height: 100 } as never });
+    const b = doc.createNode("FRAME", { parentId: page, props: { name: "B", width: 100, height: 100 } as never });
+    doc.createNode("FRAME", { parentId: page, props: { name: "C", width: 100, height: 100 } as never });
+    expect(flowsOf(doc)).toEqual([]);
+    doc.setStyle(a, { flowStart: true });
+    doc.setStyle(b, { flowStart: true, flowName: " Checkout " });
+    expect(flowsOf(doc)).toEqual([{ frameId: a, name: "Flow 1" }, { frameId: b, name: "Checkout" }]);
+  });
+});
+
+describe("present scale", () => {
+  it("fits, fills or shows the frame at 100%", async () => {
+    const { stageLayout } = await import("./prototype");
+    const f = { width: 400, height: 200 };
+    const win = { w: 1040, h: 840 };
+    expect(stageLayout(f, win, false, "FIT").scale).toBe(2.5);
+    const fill = stageLayout(f, win, false, "FILL");
+    expect(fill.scale).toBe(4);
+    expect(fill.stageHeight).toBe(800);
+    const actual = stageLayout(f, win, false, "ACTUAL");
+    expect(actual.scale).toBe(1);
+    expect(actual.stageWidth).toBe(400);
+  });
+});
+
+describe("set variable mode", () => {
+  it("does not navigate", () => {
+    const { doc, home } = setup();
+    const mode = doc.activeModeId();
+    expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "SET_MODE", modeId: mode } })).toBeNull();
+  });
+});
+
+describe("move out and push", () => {
+  it("names the animations of the new and the leaving frame", async () => {
+    const { transitionAnimation } = await import("./prototype");
+    expect(transitionAnimation({ type: "MOVE_OUT_LEFT", durationMs: 400 })).toMatchObject({ name: "presenter-hold", leave: "presenter-out-left", durationMs: 400 });
+    expect(transitionAnimation({ type: "PUSH_LEFT", durationMs: 400 })).toMatchObject({ name: "presenter-slide-left", leave: "presenter-out-right" });
+    expect(transitionAnimation({ type: "PUSH_TOP", durationMs: 400 })).toMatchObject({ name: "presenter-slide-top", leave: "presenter-out-bottom" });
+    expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 400 })?.leave).toBeUndefined();
+  });
+});
+
+describe("conditional", () => {
+  it("goes to the then or else frame depending on a variable", () => {
+    const { doc, home, detail } = setup();
+    const mode = doc.activeModeId();
+    const n = doc.createValueVariable("NUMBER", "Count", "3");
+    const go = (op: "EQ" | "NEQ" | "GT" | "LT", value: string, elseId?: string) =>
+      followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "CONDITIONAL", variableId: n, op, value, thenId: detail, elseId } })?.frame;
+    expect(go("EQ", "3")).toBe(detail);
+    expect(go("EQ", "4")).toBeUndefined();
+    expect(go("EQ", "4", detail)).toBe(detail);
+    expect(go("GT", "2")).toBe(detail);
+    expect(go("LT", "2")).toBeUndefined();
+    expect(go("NEQ", "2")).toBe(detail);
+    doc.setVariableValue(n, mode, "1");
+    expect(go("LT", "2")).toBe(detail);
+    const b = doc.createValueVariable("BOOLEAN", "On", "true");
+    expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "CONDITIONAL", variableId: b, op: "EQ", value: "True", thenId: detail } })?.frame).toBe(detail);
+  });
+});

@@ -95,7 +95,7 @@ export function buildMainMenu(): MenuNode[] {
         item("view-frameOutlines"),
         item("view-annotations"),
         item("view-pixelPreview"),
-        sub("Panels", list(item("panel-left"), item("panel-assets"), item("panel-design"), item("panel-prototype"), item("panel-right", undefined, true))),
+        sub("Panels", list(item("panel-left"), item("panel-left-minimize"), item("toggle-variables"), item("panel-assets"), item("panel-design"), item("panel-prototype"), item("panel-right", undefined, true))),
         item("pixel-grid"),
         item("rulers"),
         item("layout-grids"),

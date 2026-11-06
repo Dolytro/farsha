@@ -114,3 +114,8 @@ export function deleteContents(doc: DesignDoc, ids: string[]): number {
   doc.stopCapturing();
   return kids.length;
 }
+
+/** Degrees for one Ctrl+Alt+arrow press: 1 (Shift: 15), clockwise for Right, counterclockwise for Left. */
+export function arrowRotation(right: boolean, shift: boolean): number {
+  return (shift ? 15 : 1) * (right ? 1 : -1);
+}

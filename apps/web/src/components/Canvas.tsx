@@ -1,4 +1,5 @@
 import { duplicateNodes } from "../clipboard";
+import { COMPONENT_DRAG } from "../asset-search";
 import { buildScaleUpdates } from "../scale";
 import { textFontStyle, verticalTextOffset } from "@farsha/canvas-engine";
 import { PINCH_STRENGTH, WHEEL_STRENGTH, wheelZoomFactor } from "../prefs";
@@ -10,7 +11,8 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@farsha/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
 import { isVideoFile, videoUrl } from "../video";
@@ -24,7 +26,7 @@ import { loadDefaults, withDefaults } from "../defaults";
 type Drag =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
-  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box }
+  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
   | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
@@ -85,8 +87,10 @@ export function Canvas() {
   const view = useEditor((s) => s.view);
   const prototypeMode = useEditor((s) => s.prototypeMode);
   const spellCheck = useEditor((s) => s.prefs.spellCheck);
+  const smartQuotes = useEditor((s) => s.prefs.smartQuotes);
   const hoverHighlight = useEditor((s) => s.prefs.hoverHighlight);
   const showDimensions = useEditor((s) => s.prefs.showDimensions);
+  const hideUiWhileChanging = useEditor((s) => s.prefs.hideUiWhileChanging);
   const rightPanMoved = useRef(false);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
@@ -97,6 +101,7 @@ export function Canvas() {
   const [marquee, setMarquee] = useState<Box | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [altDown, setAltDown] = useState(false);
+  const [changing, setChanging] = useState(false);
   const z = viewport.zoom;
 
   // Selecting something else ends the point editing of a pen path.
@@ -208,7 +213,7 @@ export function Canvas() {
         drag.current = { kind: "scale", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, snapshot: [box, ...doc.descendants(box.id)] };
         return;
       }
-      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height } };
+      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, flipX: !!box.flipX, flipY: !!box.flipY };
       return;
     }
     const labelId = el.dataset.labelId;
@@ -296,6 +301,7 @@ export function Canvas() {
       setViewport({ ...viewport, x: d.vx + e.clientX - d.sx, y: d.vy + e.clientY - d.sy });
       return;
     }
+    if (hideUiWhileChanging && !changing && (d.kind === "move" || d.kind === "resize" || d.kind === "rotate" || d.kind === "scale")) setChanging(true);
     const w = world(e);
     let dx = w.x - d.wx;
     let dy = w.y - d.wy;
@@ -322,9 +328,17 @@ export function Canvas() {
     } else if (d.kind === "resize") {
       // Shift keeps the ratio (so does a layer with locked proportions), Alt resizes from the centre (Figma).
       const locked = !!doc.getNode(d.id)?.lockAspect;
-      const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey || locked, fromCenter: e.altKey });
-
+      const opts = { keepRatio: e.shiftKey || locked, fromCenter: e.altKey };
+      const flipping = useEditor.getState().prefs.flipWhileResizing;
+      const turned = flipping ? resizeBoxFlip(d.box, d.corner, dx, dy, opts) : { box: resizeBox(d.box, d.corner, dx, dy, opts), flipX: false, flipY: false };
+      const next = turned.box;
       doc.resizeNode(d.id, next);
+      if (flipping) {
+        const now = doc.getNode(d.id);
+        const wantX = d.flipX !== turned.flipX;
+        const wantY = d.flipY !== turned.flipY;
+        if (now && (!!now.flipX !== wantX || !!now.flipY !== wantY)) doc.setStyle(d.id, { flipX: wantX, flipY: wantY });
+      }
       const node = doc.getNode(d.id);
       if (node?.type === "TEXT") {
         // Figma: dragging the width gives auto height, dragging the height gives a fixed box.
@@ -363,6 +377,7 @@ export function Canvas() {
   const onPointerUp = () => {
     const d = drag.current;
     drag.current = null;
+    setChanging(false);
     setMarquee(null);
     setGuides([]);
     if (!d || d.kind === "pan" || d.kind === "marquee") return;
@@ -392,6 +407,11 @@ export function Canvas() {
   const dropFiles = (e: React.DragEvent) => [...e.dataTransfer.files].filter((f) => isImageFile(f) || isVideoFile(f));
   const onDragOver = (e: React.DragEvent) => {
     if (viewer || devMode) return;
+    if (e.dataTransfer.types.includes(COMPONENT_DRAG)) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      return;
+    }
     if ([...e.dataTransfer.items].some((i) => i.kind === "file" && (i.type.startsWith("image/") || i.type.startsWith("video/")))) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
@@ -399,6 +419,28 @@ export function Canvas() {
   };
   const onDrop = (e: React.DragEvent) => {
     if (viewer || devMode) return;
+    const componentId = e.dataTransfer.getData(COMPONENT_DRAG);
+    if (componentId) {
+      // dragged from the Assets panel: an instance lands under the pointer, inside the frame it is dropped on
+      e.preventDefault();
+      const main = doc.getNode(componentId);
+      if (main?.type !== "FRAME" || !main.isComponent) return;
+      const w = world(e);
+      const under = hitTest(doc, pageId, w.x, w.y);
+      let frame = under?.type === "FRAME" ? under : undefined;
+      // an instance cannot sit inside its own main component
+      if (frame && (frame.id === componentId || doc.isAncestor(componentId, frame.id))) frame = undefined;
+      const origin = frame ? (doc.absoluteBox(frame.id) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
+      try {
+        doc.stopCapturing();
+        const inst = doc.createInstance(componentId, frame?.id ?? pageId, Math.round(w.x - origin.x - main.width / 2), Math.round(w.y - origin.y - main.height / 2));
+        doc.stopCapturing();
+        select([inst]);
+      } catch (err) {
+        useEditor.getState().showToast(err instanceof Error ? `Couldn't do that: ${err.message}` : "Couldn't do that");
+      }
+      return;
+    }
     const files = dropFiles(e);
     if (!files.length) return;
     e.preventDefault();
@@ -772,6 +814,7 @@ export function Canvas() {
                 fill={selection.includes(n.id) ? ACCENT : n.type === "FRAME" && n.isSection ? "#4b5563" : "#8c8c8c"}
               >
                 {n.flowStart ? "▶ " : ""}
+                {n.flowStart && n.type === "FRAME" && n.flowName?.trim() ? `${n.flowName.trim()} · ` : ""}
                 {n.name}
                 {n.devStatus && <tspan fill={n.devStatus === "READY" ? "#14ae5c" : "#7a5af8"}>{n.devStatus === "READY" ? "  ● Ready for dev" : "  ✓ Completed"}</tspan>}
               </text>
@@ -813,7 +856,7 @@ export function Canvas() {
             </g>
           )}
 
-          {sel && (
+          {sel && !changing && (
             <g>
               <g transform={rotated && selNode ? `rotate(${selNode.rotation} ${sel.x + sel.width / 2} ${sel.y + sel.height / 2})` : undefined}>
               <rect x={sel.x} y={sel.y} width={sel.width} height={sel.height} fill="none" stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />
@@ -889,8 +932,12 @@ export function Canvas() {
                 onPointerDown={(e) => e.stopPropagation()}
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => {
-                  doc.setText(editNode.id, { characters: e.target.value, runs: adjustRuns(editNode.runs, editNode.characters, e.target.value) });
+                  const el = e.currentTarget;
+                  const value = smartQuotes ? smartQuote(editNode.characters, el.value, el.selectionStart) : el.value;
+                  doc.setText(editNode.id, { characters: value, runs: adjustRuns(editNode.runs, editNode.characters, value) });
                   fitText(doc, editNode.id);
+                  const caret = el.selectionStart;
+                  requestAnimationFrame(() => el.setSelectionRange(caret, caret));
                 }}
                 onBlur={() => setEditing(null)}
                 onKeyDown={(e) => {

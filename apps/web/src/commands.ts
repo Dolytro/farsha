@@ -423,6 +423,7 @@ export function buildCommands(): Command[] {
     {
       id: "vector-delete-heal",
       label: "Delete and heal",
+      shortcut: `${SHIFT}Backspace`,
       keywords: "vector point remove anchor",
       run: () => {
         const { editingPath, editingPoint } = state();
@@ -539,6 +540,7 @@ export function buildCommands(): Command[] {
         } else s.setHideLeftPanel(true);
       },
     },
+    { id: "panel-left-minimize", label: "Minimize left bar", keywords: "view panels sidebar left hide show layers", run: () => state().setHideLeftPanel(!state().hideLeftPanel) },
     { id: "panel-assets", label: "Open libraries panel", shortcut: `${ALT}2`, keywords: "view panels assets components", run: () => (state().setHideLeftPanel(false), state().setLeftTab("assets")) },
     { id: "panel-design", label: "Open design panel", shortcut: `${ALT}8`, keywords: "view panels properties right", run: () => (state().setHideRightPanel(false), state().setPrototypeMode(false), state().setDevMode(false)) },
     { id: "panel-prototype", label: "Open prototype panel", shortcut: `${ALT}9`, keywords: "view panels interactions right", run: () => (state().setHideRightPanel(false), state().setPrototypeMode(true)) },
@@ -622,6 +624,7 @@ export function buildCommands(): Command[] {
       }),
     ),
     { id: "show-variables", label: "Show variables", keywords: "colors modes tokens", run: () => state().setVariablesOpen(true) },
+    { id: "toggle-variables", label: "Toggle variables panel", keywords: "colors modes tokens show hide variables", run: () => state().setVariablesOpen(!state().variablesOpen) },
     {
       id: "next-mode",
       label: "Switch to next variable mode",

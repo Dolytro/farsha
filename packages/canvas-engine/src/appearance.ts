@@ -1,4 +1,4 @@
-import { paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
+import { cssBlendMode, paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
 
 /**
  * SVG markup for strokes and effects, shared by the canvas and by SVG/PNG export.
@@ -139,6 +139,26 @@ export function shapeGeometry(n: DesignNode, extra: string): string {
 }
 const geometry = shapeGeometry;
 
+/**
+ * The `<filter>` that applies image adjustments (exposure, contrast, saturation: each -100 to 100) to a picture, or "" when there is nothing to adjust.
+ * Exposure and contrast become one linear slope and intercept per colour channel; saturation is a colour matrix.
+ */
+export function imageAdjustFilter(id: string, adj: unknown): string {
+  if (!adj || typeof adj !== "object") return "";
+  const read = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(-100, v)) : 0);
+  const a = adj as Record<string, unknown>;
+  const exposure = read(a.exposure);
+  const contrast = read(a.contrast);
+  const saturation = read(a.saturation);
+  if (!exposure && !contrast && !saturation) return "";
+  const gain = 2 ** (exposure / 50);
+  const factor = (100 + contrast) / 100;
+  const slope = num(gain * factor, 1);
+  const intercept = num(0.5 - 0.5 * factor);
+  const fn = ["R", "G", "B"].map((c) => `<feFunc${c} type="linear" slope="${slope}" intercept="${intercept}"/>`).join("");
+  return `<filter id="${id}" color-interpolation-filters="sRGB"><feComponentTransfer>${fn}</feComponentTransfer>${saturation ? `<feColorMatrix type="saturate" values="${num((100 + saturation) / 100, 1)}"/>` : ""}</filter>`;
+}
+
 /** Fill and stroke of a rectangle, frame or ellipse. Inside/outside strokes are clipped/masked double-width strokes. */
 export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => string | undefined): string {
   const fills = "fills" in n ? (n.fills ?? []) : [];
@@ -154,7 +174,9 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
       const href = fill.assetId ? imageHref?.(fill.assetId) : undefined;
       if (href) {
         const par = fill.scaleMode === "FIT" ? "xMidYMid meet" : fill.scaleMode === "STRETCH" ? "none" : "xMidYMid slice";
-        fillDef = `<pattern id="${gradientId}" patternUnits="userSpaceOnUse" width="${num(n.width)}" height="${num(n.height)}"><image href="${href.replace(/"/g, "&quot;")}" width="${num(n.width)}" height="${num(n.height)}" preserveAspectRatio="${par}"/></pattern>`;
+        const filterId = `${gradientId}-adj`;
+        const filter = imageAdjustFilter(filterId, fill.adjustments);
+        fillDef = `<pattern id="${gradientId}" patternUnits="userSpaceOnUse" width="${num(n.width)}" height="${num(n.height)}">${filter}<image href="${href.replace(/"/g, "&quot;")}" width="${num(n.width)}" height="${num(n.height)}" preserveAspectRatio="${par}"${filter ? ` filter="url(#${filterId})"` : ""}/></pattern>`;
         fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
       } else fillAttrs = ' fill="#e5e5e5"';
     } else if (fill.type === "GRADIENT_ANGULAR" || fill.type === "GRADIENT_DIAMOND") {
@@ -164,7 +186,8 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
       fillDef = gradientDef(gradientId, fill);
       fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
     }
-    out += fillDef + geometry(n, fillAttrs);
+    const blend = cssBlendMode(fill.blendMode);
+    out += fillDef + geometry(n, blend ? `${fillAttrs} style="mix-blend-mode:${blend}"` : fillAttrs);
   });
   if (!strokes.length || !("strokeWidth" in n)) return out;
 
@@ -331,7 +354,10 @@ export function strokeExtras(n: DesignNode, defaultCap: "NONE" | "ROUND" | "SQUA
   const dashAttr = dash.length && dash.some((v) => v > 0) ? ` stroke-dasharray="${dash.map(num).join(" ")}"` : "";
   const capAttr = cap !== "NONE" || defaultCap !== "NONE" ? ` stroke-linecap="${CAP_ATTR[cap]}"` : "";
   const joinAttr = join !== "MITER" || defaultJoin !== "MITER" ? ` stroke-linejoin="${JOIN_ATTR[join]}"` : "";
-  return dashAttr + capAttr + joinAttr;
+  // a miter angle other than Figma's default 28.96 degrees becomes SVG's miter limit: 1 / sin(angle / 2)
+  const angle = typeof n.strokeMiterAngle === "number" && Number.isFinite(n.strokeMiterAngle) ? Math.min(180, Math.max(1, n.strokeMiterAngle)) : undefined;
+  const miterAttr = join === "MITER" && angle !== undefined && Math.abs(angle - 28.96) > 0.01 ? ` stroke-miterlimit="${num(1 / Math.sin((angle * Math.PI) / 360))}"` : "";
+  return dashAttr + capAttr + joinAttr + miterAttr;
 }
 
 const MARKER_SHAPES: Record<Exclude<LineEnd, "NONE">, (c: string) => string> = {

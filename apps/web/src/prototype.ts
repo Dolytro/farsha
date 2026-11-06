@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@farsha/design-core";
-import type { Box, DesignNode, Easing, Interaction } from "@farsha/types";
+import type { Box, DesignNode, Easing, Interaction, InteractionAction } from "@farsha/types";
 import { topLevelFrames } from "./section-actions";
 
 /** Top-level frames of every page: the screens a prototype can navigate between. */
@@ -20,6 +20,18 @@ export function topFrameOf(doc: DesignDoc, id: string | undefined): DesignNode |
 export function startFrame(doc: DesignDoc, selection: string[]): string | undefined {
   const frames = prototypeFrames(doc);
   return topFrameOf(doc, selection[0])?.id ?? frames.find((f) => f.flowStart)?.id ?? frames[0]?.id;
+}
+
+export interface Flow {
+  frameId: string;
+  name: string;
+}
+
+/** Every flow of the file: the frames marked as starting points, in order, with their names ("Flow 1", "Flow 2" when unnamed). */
+export function flowsOf(doc: DesignDoc): Flow[] {
+  return prototypeFrames(doc)
+    .filter((f) => f.flowStart)
+    .map((f, i) => ({ frameId: f.id, name: (f.type === "FRAME" && f.flowName?.trim()) || `Flow ${i + 1}` }));
 }
 
 export interface Hotspot {
@@ -68,10 +80,26 @@ export function safeUrl(url: string): string | null {
   }
 }
 
+/** The frame a Conditional action leads to: its "then" frame when the variable compares true to the value, else its "else" frame (undefined when there is none). */
+export function conditionTarget(doc: DesignDoc, a: Extract<InteractionAction, { type: "CONDITIONAL" }>): string | undefined {
+  const v = doc.getColorVariable(a.variableId);
+  if (!v) return a.elseId;
+  const have = v.values[doc.activeModeId()] ?? Object.values(v.values)[0] ?? "";
+  const bothNumbers = have.trim() !== "" && a.value.trim() !== "" && Number.isFinite(Number(have)) && Number.isFinite(Number(a.value));
+  const same = bothNumbers ? Number(have) === Number(a.value) : have.trim().toLowerCase() === a.value.trim().toLowerCase();
+  const ok = a.op === "EQ" ? same : a.op === "NEQ" ? !same : bothNumbers && (a.op === "GT" ? Number(have) > Number(a.value) : Number(have) < Number(a.value));
+  return ok ? a.thenId : a.elseId;
+}
+
 /** Where an interaction leads: the next frame and the new history, or null when it does nothing (or only opens a web address). */
 export function followInteraction(doc: DesignDoc, current: string, history: string[], interaction: Interaction): { frame: string; history: string[] } | null {
-  const action = interaction.action;
-  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO") return null;
+  let action = interaction.action;
+  if (action.type === "CONDITIONAL") {
+    const targetId = conditionTarget(doc, action);
+    if (!targetId) return null;
+    action = { type: "NAVIGATE", targetId };
+  }
+  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO" || action.type === "SET_MODE" || action.type === "SET_VARIABLE" || action.type === "CHANGE_TO") return null;
   if (action.type === "BACK") {
     const prev = history[history.length - 1];
     return prev ? { frame: prev, history: history.slice(0, -1) } : null;
@@ -136,10 +164,23 @@ export function easingFn(e: Easing | undefined): (t: number) => number {
 }
 
 /** CSS keyframes name, duration and timing function for a transition (null for an instant change). */
-export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string } | null {
+export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string; leave?: string } | null {
   if (!t || t.type === "INSTANT" || t.type === "SMART_ANIMATE") return null;
-  const name = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" }[t.type];
-  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)), timing: easingCss(t.easing) };
+  const names: Record<string, string> = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" };
+  // Move out: the old frame leaves toward a side and reveals the new one. Push: the new frame comes in from a side and pushes the old one out the opposite way.
+  const opposite: Record<string, string> = { left: "right", right: "left", top: "bottom", bottom: "top" };
+  const side = t.type.split("_").pop()!.toLowerCase();
+  let name = names[t.type];
+  let leave: string | undefined;
+  if (t.type.startsWith("MOVE_OUT_")) {
+    name = "presenter-hold";
+    leave = `presenter-out-${side}`;
+  } else if (t.type.startsWith("PUSH_")) {
+    name = `presenter-slide-${side}`;
+    leave = `presenter-out-${opposite[side] ?? side}`;
+  }
+  if (!name) return null;
+  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)), timing: easingCss(t.easing), ...(leave ? { leave } : {}) };
 }
 
 /** How big the prototype stage is in a window: fit the whole frame, or (vertical scrolling) fit the width and scroll the rest. */
@@ -149,18 +190,22 @@ export type ScrollMode = "NONE" | "VERTICAL" | "HORIZONTAL" | "BOTH";
  * How big the prototype stage is in a window: fit the whole frame, or fit the width and scroll down (VERTICAL),
  * fit the height and scroll across (HORIZONTAL), or show it at the size that fills the window's width and scroll both ways (BOTH).
  */
-export function stageLayout(frame: { width: number; height: number }, win: { w: number; h: number }, scroll: ScrollMode | boolean): { scale: number; stageWidth: number; stageHeight: number } {
+export type PresentScale = "FIT" | "FILL" | "ACTUAL";
+
+/** `zoom` only matters for a frame without scrolling: FIT shows it whole, FILL covers the window (the edges are cropped), ACTUAL shows it at 100%. */
+export function stageLayout(frame: { width: number; height: number }, win: { w: number; h: number }, scroll: ScrollMode | boolean, zoom: PresentScale = "FIT"): { scale: number; stageWidth: number; stageHeight: number } {
   const mode: ScrollMode = scroll === true ? "VERTICAL" : scroll === false ? "NONE" : scroll;
   const maxW = Math.max(1, win.w - 40);
   const maxH = Math.max(1, win.h - 40);
   const scale =
-    mode === "VERTICAL" ? Math.min(maxW / frame.width, 4) : mode === "HORIZONTAL" ? Math.min(maxH / frame.height, 4) : mode === "BOTH" ? 1 : Math.min(maxW / frame.width, maxH / frame.height, 4);
+    mode === "VERTICAL" ? Math.min(maxW / frame.width, 4) : mode === "HORIZONTAL" ? Math.min(maxH / frame.height, 4) : mode === "BOTH" ? 1 : zoom === "ACTUAL" ? 1 : zoom === "FILL" ? Math.min(Math.max(maxW / frame.width, maxH / frame.height), 4) : Math.min(maxW / frame.width, maxH / frame.height, 4);
   const w = frame.width * scale;
   const h = frame.height * scale;
+  const crop = mode === "NONE" && zoom !== "FIT";
   return {
     scale,
-    stageWidth: mode === "HORIZONTAL" || mode === "BOTH" ? Math.min(w, maxW) : w,
-    stageHeight: mode === "VERTICAL" || mode === "BOTH" ? Math.min(h, maxH) : h,
+    stageWidth: mode === "HORIZONTAL" || mode === "BOTH" || crop ? Math.min(w, maxW) : w,
+    stageHeight: mode === "VERTICAL" || mode === "BOTH" || crop ? Math.min(h, maxH) : h,
   };
 }
 

@@ -9,6 +9,8 @@ import { AlignRow } from "./AlignRow";
 import { PrototypePanel } from "./PrototypePanel";
 import { VariantsSection } from "./VariantsSection";
 import { ComponentPropsSection } from "./ComponentPropsSection";
+import { ExplicitModeSection } from "./ExplicitModeSection";
+import { BLEND_MODES } from "../blend-modes";
 import { LayoutGridSection } from "./LayoutGridSection";
 import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
@@ -23,24 +25,6 @@ import { FRAME_PRESETS, presetLabel, presetOf } from "../frame-presets";
 import { SelectionColors } from "./SelectionColors";
 import { LocalStyles } from "./LocalStyles";
 
-const BLEND_MODES: [BlendMode, string][] = [
-  ["NORMAL", "Normal"],
-  ["DARKEN", "Darken"],
-  ["MULTIPLY", "Multiply"],
-  ["COLOR_BURN", "Color burn"],
-  ["LIGHTEN", "Lighten"],
-  ["SCREEN", "Screen"],
-  ["COLOR_DODGE", "Color dodge"],
-  ["OVERLAY", "Overlay"],
-  ["SOFT_LIGHT", "Soft light"],
-  ["HARD_LIGHT", "Hard light"],
-  ["DIFFERENCE", "Difference"],
-  ["EXCLUSION", "Exclusion"],
-  ["HUE", "Hue"],
-  ["SATURATION", "Saturation"],
-  ["COLOR", "Color"],
-  ["LUMINOSITY", "Luminosity"],
-];
 
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
@@ -342,6 +326,7 @@ export function Properties() {
 
       <VariantsSection doc={doc} node={node} />
       <ComponentPropsSection doc={doc} node={node} />
+      <ExplicitModeSection doc={doc} node={node} />
       <ChildSizingSection doc={doc} node={node} />
       <AutoLayoutSection doc={doc} node={node} select={select} />
       <LayoutGridSection doc={doc} node={node} />

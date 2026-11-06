@@ -4,12 +4,13 @@ import type { DesignDoc } from "@farsha/design-core";
 import { StyleMenu, StylePill } from "./StyleMenu";
 import { VariableButton, VariableChip } from "./VariableMenu";
 import { paintCss } from "@farsha/code-generator";
-import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@farsha/types";
+import { paintColor, type BlendMode, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@farsha/types";
 import { readImage } from "../images";
 import { pickVideoForLayer } from "../place-image";
 import { HexInput } from "./HexInput";
 import { useEditor } from "../store";
 import { Select } from "./Select";
+import { BLEND_MODES } from "../blend-modes";
 
 type Kind = Paint["type"];
 const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial", GRADIENT_ANGULAR: "Angular", GRADIENT_DIAMOND: "Diamond", IMAGE: "Image" };
@@ -97,7 +98,7 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
           onChange={(e) => {
             // Video is not a paint: it turns the rectangle into a video layer
             if (e.target.value === "VIDEO") pickVideoForLayer(nodeId);
-            else setPaint(convertPaint(paint, e.target.value as Kind));
+            else setPaint({ ...convertPaint(paint, e.target.value as Kind), ...(paint.blendMode ? { blendMode: paint.blendMode } : {}) } as Paint);
           }}
         >
           {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
@@ -112,6 +113,13 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
           −
         </button>
       </div>
+      <Select className="field__select field__select--wide" aria-label="Fill blend mode" title="Blend mode of this fill" value={paint.blendMode ?? "NORMAL"} onChange={(e) => setPaint({ ...paint, blendMode: e.target.value === "NORMAL" ? undefined : (e.target.value as BlendMode) })}>
+        {BLEND_MODES.map(([mode, label]) => (
+          <option key={mode} value={mode}>
+            {label}
+          </option>
+        ))}
+      </Select>
       {paint.type === "SOLID" && paint.variableId && bind && <VariableChip doc={doc} variableId={paint.variableId} onDetach={() => bind(null)} />}
 
       {paint.type === "IMAGE" ? (
@@ -207,6 +215,25 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
         {paint.assetId ? "Change image" : "Choose image"}
         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void choose(e.target.files?.[0])} />
       </label>
+      {(["exposure", "contrast", "saturation"] as const).map((key) => (
+        <label className="field field--gap" key={key} title={`Image ${key} (-100 to 100)`}>
+          <span className="field__label field__label--text">{key[0]!.toUpperCase() + key.slice(1)}</span>
+          <input
+            className="field__input"
+            type="number"
+            min={-100}
+            max={100}
+            aria-label={`Image ${key}`}
+            value={paint.adjustments?.[key] ?? 0}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (!Number.isFinite(v) || e.target.value === "") return;
+              const next = { ...paint.adjustments, [key]: Math.min(100, Math.max(-100, v)) };
+              setPaint({ ...paint, adjustments: next });
+            }}
+          />
+        </label>
+      ))}
       <label className="field field--gap" title="Image opacity (%)">
         <span className="field__label">%</span>
         <input className="field__input" type="number" min={0} max={100} value={Math.round(paint.opacity * 100)} onChange={(e) => setPaint({ ...paint, opacity: clamp01(Number(e.target.value) / 100) })} />

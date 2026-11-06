@@ -5,6 +5,8 @@ export interface FontSpec {
   size: number;
   weight: number;
   letterSpacing: number;
+  /** Draw lower case letters as small capitals (the font's own, or the browser's stand-in). */
+  smallCaps?: boolean;
 }
 
 /** Width in px of one line of text. The browser passes a real measurer; tests and exports can use the estimate. */
@@ -55,9 +57,32 @@ export function textPlacement(n: { width: number; textAlign?: string; textDirect
   return right ? { x: n.width, anchor: "end", rtl } : { x: 0, anchor: "start", rtl };
 }
 
+/** The OpenType features a text layer can switch (a leading "-" turns a default-on feature off). */
+export const OPENTYPE_FEATURES: { tag: string; label: string }[] = [
+  { tag: "tnum", label: "Tabular numbers" },
+  { tag: "onum", label: "Old-style numbers" },
+  { tag: "lnum", label: "Lining numbers" },
+  { tag: "zero", label: "Slashed zero" },
+  { tag: "frac", label: "Fractions" },
+  { tag: "ss01", label: "Stylistic set 1" },
+  { tag: "ss02", label: "Stylistic set 2" },
+  { tag: "-liga", label: "No ligatures" },
+];
+
+/** CSS `font-feature-settings` of a text layer: only known features count (a shared file is untrusted). Undefined when there are none. */
+export function fontFeatureSettings(list: unknown): string | undefined {
+  if (!Array.isArray(list)) return undefined;
+  const known = new Set(OPENTYPE_FEATURES.map((f) => f.tag));
+  const parts = [...new Set(list.filter((t): t is string => typeof t === "string" && known.has(t)))].map((t) => (t.startsWith("-") ? `"${t.slice(1)}" 0` : `"${t}" 1`));
+  return parts.length ? parts.join(", ") : undefined;
+}
+
 /** SVG `font-style` / `text-decoration` values of a text layer (undefined when plain). */
-export function textFontStyle(n: { italic?: boolean; textDecoration?: string; textLink?: string }): { fontStyle?: "italic"; textDecoration?: "underline" | "line-through" } {
-  return { ...(n.italic ? { fontStyle: "italic" as const } : {}), ...(n.textDecoration === "UNDERLINE" || (n.textLink && !n.textDecoration) ? { textDecoration: "underline" as const } : n.textDecoration === "STRIKETHROUGH" ? { textDecoration: "line-through" as const } : {}) };
+export function textFontStyle(n: { italic?: boolean; textDecoration?: string; textDecorationStyle?: string; textLink?: string; textCase?: string; fontFeatures?: unknown }): { fontStyle?: "italic"; textDecoration?: string; fontVariant?: "small-caps"; style?: { fontFeatureSettings: string } } {
+  const line = n.textDecoration === "UNDERLINE" || (n.textLink && !n.textDecoration) ? "underline" : n.textDecoration === "STRIKETHROUGH" ? "line-through" : "";
+  const look = n.textDecorationStyle === "DOTTED" ? " dotted" : n.textDecorationStyle === "WAVY" ? " wavy" : "";
+  const features = fontFeatureSettings(n.fontFeatures);
+  return { ...(features ? { style: { fontFeatureSettings: features } } : {}), ...(n.italic ? { fontStyle: "italic" as const } : {}), ...(n.textCase === "SMALL_CAPS" ? { fontVariant: "small-caps" as const } : {}), ...(line ? { textDecoration: line + look } : {}) };
 }
 
 /** How far the text moves down inside a box taller than the text (Figma's vertical alignment). */
@@ -101,7 +126,7 @@ function wrapParagraph(text: string, maxWidth: number, width: (s: string) => num
 
 /** Split a text layer into lines: hard breaks always, soft wrapping at the layer width unless it is auto width. */
 export function layoutText(n: TextLike, measure: Measure = approxMeasure): TextLayout {
-  const font: FontSpec = { family: n.fontFamily, size: n.fontSize, weight: n.fontWeight, letterSpacing: n.letterSpacing };
+  const font: FontSpec = { family: n.fontFamily, size: n.fontSize, weight: n.fontWeight, letterSpacing: n.letterSpacing, ...(n.textCase === "SMALL_CAPS" ? { smallCaps: true } : {}) };
   const w = (s: string) => measure(s, font);
   const original = applyTextCase(n.characters, n.textCase).split("\n");
   const paragraphs = applyTextList(original, n.textList);

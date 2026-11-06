@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
+import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -48,6 +48,8 @@ export class DesignDoc {
   /** Colour styles, keyed by style id. */
   private readonly styles: Y.Map<FillStyle>;
   private readonly textStyleMap: Y.Map<TextStyle>;
+  private readonly effectStyleMap: Y.Map<EffectStyle>;
+  private readonly gridStyleMap: Y.Map<GridStyle>;
   private readonly commentMap: Y.Map<Comment>;
   private readonly variableMap: Y.Map<ColorVariable>;
   private readonly modeMap: Y.Map<VariableMode & { order: number }>;
@@ -81,6 +83,16 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
+    this.gridStyleMap = ydoc.getMap('gridStyles') as Y.Map<GridStyle>;
+    this.gridStyleMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
+    this.effectStyleMap = ydoc.getMap('effectStyles') as Y.Map<EffectStyle>;
+    this.effectStyleMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
     this.styles.observe(() => {
       this.version++;
       this.listeners.forEach((fn) => fn());
@@ -90,7 +102,7 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
-    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.variableMap, this.modeMap], {
+    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.effectStyleMap, this.gridStyleMap, this.variableMap, this.modeMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
     });
@@ -159,8 +171,8 @@ export class DesignDoc {
     if (!this.variableMap.size && ![...this.nodes.values()].some((m) => this.hasBoundPaint(m) || !!m.get('textVariableId') || !!m.get('varBindings'))) return;
     this.syncing = true;
     try {
-      const mode = this.activeModeId();
-      const resolve = (paints: unknown): Paint[] | null => {
+      const active = this.activeModeId();
+      const resolve = (paints: unknown, mode: string): Paint[] | null => {
         if (!Array.isArray(paints)) return null;
         let changed = false;
         const next = (paints as Paint[]).map((p) => {
@@ -180,8 +192,9 @@ export class DesignDoc {
       };
       this.transact(() => {
         for (const map of this.nodes.values()) {
+          const mode = this.modeFor(map.get('id') as string, active);
           for (const key of ['fills', 'strokes']) {
-            const next = resolve(map.get(key));
+            const next = resolve(map.get(key), mode);
             if (next) map.set(key, next);
           }
           if (map.get('varBindings')) this.applyBindings(map.get('id') as string);
@@ -199,6 +212,19 @@ export class DesignDoc {
     } finally {
       this.syncing = false;
     }
+  }
+
+  /** The variable mode a layer shows: the explicit mode of the closest frame (or itself) that has one, else the active mode. */
+  private modeFor(id: string, active: string): string {
+    const known = (m: unknown): m is string => typeof m === 'string' && this.modes().some((x) => x.id === m);
+    for (let cur: string | null | undefined = id, hops = 0; cur && hops < 200; hops++) {
+      const map = this.nodes.get(cur);
+      if (!map) break;
+      const explicit = map.get('explicitMode');
+      if (known(explicit)) return explicit;
+      cur = map.get('parentId') as string | null | undefined;
+    }
+    return active;
   }
 
   private hasBoundPaint(map: NodeMap): boolean {
@@ -219,6 +245,18 @@ export class DesignDoc {
             const style = this.styles.get(styleId);
             if (!style) map.delete('fillStyleId');
             else if (JSON.stringify(map.get('fills')) !== JSON.stringify(style.paints)) map.set('fills', style.paints);
+          }
+          const effectStyleId = map.get('effectStyleId') as string | undefined;
+          if (effectStyleId) {
+            const style = this.effectStyleMap.get(effectStyleId);
+            if (!style) map.delete('effectStyleId');
+            else if (JSON.stringify(map.get('effects')) !== JSON.stringify(style.effects)) map.set('effects', style.effects);
+          }
+          const gridStyleId = map.get('gridStyleId') as string | undefined;
+          if (gridStyleId) {
+            const style = this.gridStyleMap.get(gridStyleId);
+            if (!style) map.delete('gridStyleId');
+            else if (JSON.stringify(map.get('layoutGrids')) !== JSON.stringify(style.grids)) map.set('layoutGrids', style.grids);
           }
           const textStyleId = map.get('textStyleId') as string | undefined;
           if (textStyleId) {
@@ -418,6 +456,24 @@ export class DesignDoc {
       id = this.createNode('FRAME', { parentId, index, props: { name: main.name, x, y, width: main.width, height: main.height, componentId } });
     });
     return id;
+  }
+
+  /**
+   * Figma's "Swap instance": point an instance at a different main component. Its layers are rebuilt from the new main; the instance
+   * keeps its position and name, and takes the new main's size when it still had the old main's size.
+   */
+  swapInstance(instanceId: string, componentId: string): void {
+    const inst = this.requireNode(instanceId);
+    if (inst.type !== 'FRAME' || !inst.componentId) throw new Error('Not an instance');
+    const main = this.requireNode(componentId);
+    if (main.type !== 'FRAME' || !main.isComponent) throw new Error('Not a main component');
+    if (componentId === instanceId || this.isAncestor(instanceId, componentId) || this.isAncestor(componentId, instanceId)) throw new Error('Cannot swap an instance with the component it sits in');
+    if (inst.componentId === componentId) return;
+    const old = this.getNode(inst.componentId);
+    const keepsSize = old?.type === 'FRAME' && old.width === inst.width && old.height === inst.height;
+    this.transact(() => {
+      this.setProps(instanceId, { componentId, ...(keepsSize ? { width: main.width, height: main.height } : {}) });
+    });
   }
 
   /** Cut an instance loose from its main component; it becomes a plain frame with the layers it has now. */
@@ -971,6 +1027,83 @@ export class DesignDoc {
     this.setProps(nodeId, { fills: style.paints, fillStyleId: styleId });
   }
 
+  // ---------- effect styles ----------
+
+  effectStyles(): EffectStyle[] {
+    return [...this.effectStyleMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getEffectStyle(id: string): EffectStyle | undefined {
+    return this.effectStyleMap.get(id);
+  }
+
+  createEffectStyle(name: string, effects: Effect[]): string {
+    const id = nanoid();
+    this.transact(() => this.effectStyleMap.set(id, { id, name: name.trim() || 'Effect style', effects }));
+    return id;
+  }
+
+  updateEffectStyle(id: string, patch: { name?: string; effects?: Effect[] }): void {
+    const style = this.effectStyleMap.get(id);
+    if (!style) throw new Error('Style not found');
+    this.transact(() => this.effectStyleMap.set(id, { ...style, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.effects ? { effects: patch.effects } : {}) }));
+  }
+
+  deleteEffectStyle(id: string): void {
+    this.transact(() => this.effectStyleMap.delete(id));
+  }
+
+  /** Give a layer an effect style (its effects now follow the style), or pass null to detach it. */
+  applyEffectStyle(nodeId: string, styleId: string | null): void {
+    this.requireNode(nodeId);
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('effectStyleId'));
+      return;
+    }
+    const style = this.effectStyleMap.get(styleId);
+    if (!style) throw new Error('Style not found');
+    this.setProps(nodeId, { effects: style.effects, effectStyleId: styleId });
+  }
+
+  // ---------- grid styles ----------
+
+  gridStyles(): GridStyle[] {
+    return [...this.gridStyleMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getGridStyle(id: string): GridStyle | undefined {
+    return this.gridStyleMap.get(id);
+  }
+
+  createGridStyle(name: string, grids: LayoutGrid[]): string {
+    const id = nanoid();
+    this.transact(() => this.gridStyleMap.set(id, { id, name: name.trim() || 'Grid style', grids }));
+    return id;
+  }
+
+  updateGridStyle(id: string, patch: { name?: string; grids?: LayoutGrid[] }): void {
+    const style = this.gridStyleMap.get(id);
+    if (!style) throw new Error('Style not found');
+    this.transact(() => this.gridStyleMap.set(id, { ...style, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.grids ? { grids: patch.grids } : {}) }));
+  }
+
+  deleteGridStyle(id: string): void {
+    this.transact(() => this.gridStyleMap.delete(id));
+  }
+
+  /** Give a frame a grid style (its layout grids now follow the style), or pass null to detach it. */
+  applyGridStyle(nodeId: string, styleId: string | null): void {
+    const node = this.requireNode(nodeId);
+    if (node.type !== 'FRAME') throw new Error('Only frames have layout grids');
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('gridStyleId'));
+      return;
+    }
+    const style = this.gridStyleMap.get(styleId);
+    if (!style) throw new Error('Style not found');
+    this.setProps(nodeId, { layoutGrids: style.grids, gridStyleId: styleId });
+  }
+
   // ---------- comments ----------
 
   /** Comments of a page (all pages when none is given), oldest first. */
@@ -1128,7 +1261,7 @@ export class DesignDoc {
     const map = this.nodes.get(nodeId);
     const bindings = map?.get('varBindings') as Record<string, string> | undefined | null;
     if (!map || !bindings) return;
-    const mode = this.activeModeId();
+    const mode = this.modeFor(nodeId, this.activeModeId());
     const kept: Record<string, string> = {};
     for (const [prop, varId] of Object.entries(bindings)) {
       const v = this.variableMap.get(varId);
@@ -1199,6 +1332,19 @@ export class DesignDoc {
         values: patch.color && patch.modeId ? { ...v.values, [patch.modeId]: patch.color } : v.values,
       }),
     );
+  }
+
+  /** Set the value of any variable in one mode: a colour, a text, a number or "true" / "false". Throws for an unknown variable or a bad value. */
+  setVariableValue(id: string, modeId: string, value: string): void {
+    const v = this.variableMap.get(id);
+    if (!v) throw new Error('Variable not found');
+    if (!this.modes().some((m) => m.id === modeId)) throw new Error('Mode not found');
+    if (v.kind === 'STRING') this.updateTextVariable(id, { modeId, text: value });
+    else if (v.kind === 'NUMBER' || v.kind === 'BOOLEAN') this.updateValueVariable(id, { modeId, value });
+    else {
+      if (!/^#[0-9a-fA-F]{6}$/.test(value)) throw new Error('A colour variable needs a six-digit hex colour');
+      this.updateColorVariable(id, { modeId, color: value });
+    }
   }
 
   deleteColorVariable(id: string): void {
@@ -1354,6 +1500,8 @@ export class DesignDoc {
       for (const [key, value] of Object.entries(patch)) map.set(key, value);
       // Changing the fills by hand detaches the layer from its colour style (Figma).
       if ('fills' in patch && !('fillStyleId' in patch)) map.delete('fillStyleId');
+      if ('layoutGrids' in patch && !('gridStyleId' in patch)) map.delete('gridStyleId');
+      if ('effects' in patch && !('effectStyleId' in patch)) map.delete('effectStyleId');
       if (TEXT_STYLE_KEYS.some((k) => k in patch) && !('textStyleId' in patch)) map.delete('textStyleId');
       if (!follows) return;
       const isRoot = map.get('componentId') !== undefined;

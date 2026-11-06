@@ -26,7 +26,7 @@ export function cleanSettings(list: unknown): ExportSetting[] {
   if (!Array.isArray(list)) return [];
   return list
     .filter((s): s is ExportSetting => !!s && typeof s === "object" && SETTING_FORMATS.includes((s as ExportSetting).format))
-    .map((s) => ({ format: s.format, scale: Number.isFinite(s.scale) ? Math.min(8, Math.max(0.1, s.scale)) : 1, suffix: String(s.suffix ?? "").slice(0, 40) }));
+    .map((s) => ({ format: s.format, scale: Number.isFinite(s.scale) ? Math.min(8, Math.max(0.1, s.scale)) : 1, suffix: String(s.suffix ?? "").slice(0, 40), ...(s.contentsOnly ? { contentsOnly: true } : {}) }));
 }
 
 function download(blob: Blob, fileName: string): void {
@@ -45,10 +45,10 @@ export async function exportWithSettings(doc: DesignDoc, id: string, settings: E
   const node = doc.getNode(id);
   if (!node || node.type === "PAGE" || node.type === "DOCUMENT") return 0;
   const list = settings.length ? cleanSettings(settings) : [newSetting()];
-  const out = exportSvg(doc, [id], { measure: canvasMeasure });
-  if (!out) return 0;
+  if (!exportSvg(doc, [id], { measure: canvasMeasure })) return 0;
   let made = 0;
   for (const s of list) {
+    const out = exportSvg(doc, [id], { measure: canvasMeasure, contentsOnly: s.contentsOnly })!;
     if (s.format === "PDF") made += await exportAs(doc, [id], "PDF", 1, node.name);
     else {
       const blob = s.format === "SVG" ? new Blob([out.svg], { type: "image/svg+xml" }) : await svgToPngBlob(out.svg, out.width, out.height, s.scale, MIME[s.format]);

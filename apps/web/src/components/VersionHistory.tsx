@@ -10,6 +10,7 @@ export function VersionHistory() {
   const setOpen = useEditor((s) => s.setVersionsOpen);
   const [versions, setVersions] = useState<VersionEntry[] | null>(null);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [diff, setDiff] = useState<{ id: string; name: string; changes: DocChanges } | null>(null);
   const doc = useEditor((s) => s.doc);
   const select = useEditor((s) => s.select);
@@ -48,13 +49,15 @@ export function VersionHistory() {
           className="dialog__form"
           onSubmit={(e) => {
             e.preventDefault();
-            void saveVersion(name).then(() => {
+            void saveVersion(name, { description }).then(() => {
               setName("");
+              setDescription("");
               return refresh();
             });
           }}
         >
           <input className="dialog__input" placeholder="Name this version (optional)" value={name} onChange={(e) => setName(e.target.value)} />
+          <textarea className="dialog__input" rows={2} maxLength={500} placeholder="Description (optional)" aria-label="Version description" value={description} onChange={(e) => setDescription(e.target.value)} />
           <button className="props__button props__button--primary dialog__save" type="submit">
             Save version
           </button>
@@ -66,6 +69,7 @@ export function VersionHistory() {
             <li className="dialog__row" key={v.id}>
               <div className="dialog__main">
                 <span className="dialog__name">{v.name}</span>
+                {v.description && <span className="dialog__meta" style={{ whiteSpace: "pre-wrap" }}>{v.description}</span>}
                 <span className="dialog__meta">
                   {new Date(v.savedAt).toLocaleString()}
                   {v.auto ? <span className="dialog__tag">Auto</span> : null}

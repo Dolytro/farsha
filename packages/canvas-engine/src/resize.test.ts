@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resizeBox } from "./resize";
+import { resizeBox, resizeBoxFlip } from "./resize";
 
 const box = { x: 100, y: 50, width: 200, height: 100 };
 
@@ -31,5 +31,32 @@ describe("resizeBox", () => {
   it("never collapses below 1", () => {
     const r = resizeBox(box, "e", -500, 0);
     expect(r.width).toBe(1);
+  });
+});
+
+describe("resizeBoxFlip", () => {
+  const box = { x: 100, y: 100, width: 50, height: 40 };
+  it("behaves like resizeBox until the opposite side is passed", () => {
+    expect(resizeBoxFlip(box, "e", 10, 0)).toEqual({ box: { x: 100, y: 100, width: 60, height: 40 }, flipX: false, flipY: false });
+  });
+  it("turns the box over when the east handle goes past the left side", () => {
+    const r = resizeBoxFlip(box, "e", -80, 0);
+    expect(r.flipX).toBe(true);
+    expect(r.box).toEqual({ x: 70, y: 100, width: 30, height: 40 });
+  });
+  it("turns the box over when the west handle goes past the right side", () => {
+    const r = resizeBoxFlip(box, "w", 80, 0);
+    expect(r.flipX).toBe(true);
+    expect(r.box).toEqual({ x: 150, y: 100, width: 30, height: 40 });
+  });
+  it("flips each axis on its own from a corner", () => {
+    const r = resizeBoxFlip(box, "se", -60, -50);
+    expect(r.flipX && r.flipY).toBe(true);
+    expect(r.box).toEqual({ x: 90, y: 90, width: 10, height: 10 });
+  });
+  it("keeps stopping at the opposite side when the ratio is kept", () => {
+    const r = resizeBoxFlip(box, "e", -80, 0, { keepRatio: true });
+    expect(r.flipX).toBe(false);
+    expect(r.box.width).toBeGreaterThanOrEqual(1);
   });
 });

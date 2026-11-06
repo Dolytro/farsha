@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
 import { exportSvg } from "./svg-export";
 import { backgroundBlurOf, effectsFilter, shapeMarkup } from "./appearance";
-import { applyTextList, layoutText, textFontStyle, textPlacement } from "./text";
+import { applyTextList, fontFeatureSettings, layoutText, textFontStyle, textPlacement } from "./text";
 
 const solid = (color: string, opacity = 1) => [{ type: "SOLID" as const, color, opacity }];
 
@@ -259,6 +259,50 @@ describe("advanced strokes", () => {
     expect(svg).toContain('stroke-linejoin="bevel"');
   });
 
+  it("turns a miter angle into a miter limit", () => {
+    expect(rect({ strokeMiterAngle: 60 })).toContain('stroke-miterlimit="2"');
+    expect(rect({ strokeMiterAngle: 28.96 })).not.toContain("miterlimit");
+    expect(rect({ strokeMiterAngle: 60, strokeJoin: "BEVEL" })).not.toContain("miterlimit");
+  });
+
+  it("blends a fill with the one below it", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { fills: [{ type: "SOLID", color: "#ff0000", opacity: 1 }, { type: "SOLID", color: "#0000ff", opacity: 1, blendMode: "MULTIPLY" }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg.match(/mix-blend-mode:multiply/g)).toHaveLength(1);
+  });
+
+  it("exports a frame's contents only", () => {
+    const doc = new DesignDoc();
+    const frame = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id, props: { width: 100, height: 100, fills: [{ type: "SOLID", color: "#123456", opacity: 1 }] } as never });
+    doc.createNode("RECTANGLE", { parentId: frame, props: { width: 10, height: 10, fills: [{ type: "SOLID", color: "#abcdef", opacity: 1 }] } as never });
+    expect(exportSvg(doc, [frame])?.svg).toContain("#123456");
+    const only = exportSvg(doc, [frame], { contentsOnly: true })?.svg ?? "";
+    expect(only).not.toContain("#123456");
+    expect(only).toContain("#abcdef");
+  });
+
+
+  it("applies image adjustments through a filter on the picture", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1, adjustments: { contrast: 100, saturation: -100 } }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain("<filter");
+    expect(svg).toContain('slope="2"');
+    expect(svg).toContain('values="0"');
+    const plain = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1 }] } as never });
+    expect(exportSvg(doc, [plain])?.svg ?? "").not.toContain("<filter");
+  });
+
+
+  it("turns OpenType features into font-feature-settings and ignores unknown ones", () => {
+    expect(fontFeatureSettings(["tnum", "-liga", "evil\"; x", "tnum"])).toBe('"tnum" 1, "liga" 0');
+    expect(fontFeatureSettings([])).toBeUndefined();
+    expect(fontFeatureSettings("tnum")).toBeUndefined();
+    expect(textFontStyle({ fontFeatures: ["zero"] })).toEqual({ style: { fontFeatureSettings: '"zero" 1' } });
+  });
+
   it("leaves a plain stroke plain", () => {
     const svg = rect({});
     expect(svg).not.toContain("stroke-dasharray");
@@ -399,6 +443,9 @@ describe("text links", () => {
   it("underline linked text unless it has its own decoration", () => {
     expect(textFontStyle({ textLink: "https://x.dev" })).toEqual({ textDecoration: "underline" });
     expect(textFontStyle({ textLink: "https://x.dev", textDecoration: "STRIKETHROUGH" })).toEqual({ textDecoration: "line-through" });
+    expect(textFontStyle({ textDecoration: "UNDERLINE", textDecorationStyle: "WAVY" })).toEqual({ textDecoration: "underline wavy" });
+    expect(textFontStyle({ textCase: "SMALL_CAPS" })).toEqual({ fontVariant: "small-caps" });
+    expect(textFontStyle({ textDecoration: "STRIKETHROUGH", textDecorationStyle: "DOTTED" })).toEqual({ textDecoration: "line-through dotted" });
     expect(textFontStyle({})).toEqual({});
   });
 });

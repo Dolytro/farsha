@@ -3,6 +3,7 @@ import { generateCode, paintCss, type Language } from "@farsha/code-generator";
 import { useEditor } from "../store";
 import { ExportSection } from "./ExportSection";
 import { Select } from "./Select";
+import { boxModelOf } from "../box-model";
 import { cssVariableBlock, variablesUsed } from "../variable-code";
 import type { DevStatus } from "@farsha/types";
 
@@ -65,6 +66,30 @@ export function DevPanel() {
           onChange={(e) => doc.setStyle(node.id, { devNote: e.target.value || null })}
         />
       </section>
+
+      {(() => {
+        const bm = boxModelOf(node);
+        if (!bm) return null;
+        const cell = (v: number) => <span className="boxmodel__num">{n(v)}</span>;
+        const layer = (name: string, color: string, sides: [number, number, number, number], inner: React.ReactNode) => (
+          <div className="boxmodel__layer" style={{ background: color }} aria-label={name}>
+            <div className="boxmodel__label">{name}</div>
+            <div className="boxmodel__row">{cell(sides[0])}</div>
+            <div className="boxmodel__row boxmodel__row--mid">
+              {cell(sides[3])}
+              {inner}
+              {cell(sides[1])}
+            </div>
+            <div className="boxmodel__row">{cell(sides[2])}</div>
+          </div>
+        );
+        return (
+          <section className="props__section" aria-label="Box model">
+            <h3 className="props__heading">Box model</h3>
+            {layer("border", "rgba(255, 184, 0, 0.35)", bm.border, layer("padding", "rgba(46, 204, 113, 0.35)", bm.padding, <div className="boxmodel__content">{n(bm.width)} × {n(bm.height)}</div>))}
+          </section>
+        );
+      })()}
 
       <section className="props__section">
         <h3 className="props__heading">Measurements</h3>

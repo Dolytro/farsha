@@ -79,7 +79,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       const x = place.x;
       const { lines, starts, wordSpacing, lineGap, indent, lineHeight, height: textHeight } = layoutText(n, measure);
       const style = textFontStyle(n);
-      const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;
+      const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.fontVariant ? ' font-variant="small-caps"' : ""}${style.style ? ` style="font-feature-settings:${style.style.fontFeatureSettings.replace(/"/g, "'")}"` : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;
       const spans = lines
         .flatMap((l, i) =>
           lineSegments(l, starts[i] ?? 0, n.runs).map((seg, j) => {
@@ -153,7 +153,7 @@ function exportSlice(doc: DesignDoc, slice: DesignNode, bounds: Box, clipIds: st
  * Standalone SVG of the given layers, cropped to their bounding box (the same crop Figma uses for
  * "Copy as SVG" / SVG export). Layers whose ancestor is also listed are drawn once, inside that ancestor.
  */
-export function exportSvg(doc: DesignDoc, ids: string[], opts: { measure?: Measure } = {}): SvgExport | null {
+export function exportSvg(doc: DesignDoc, ids: string[], opts: { measure?: Measure; contentsOnly?: boolean } = {}): SvgExport | null {
   measure = opts.measure ?? approxMeasure;
   const tops = ids.filter((id) => doc.hasNode(id) && !ids.some((o) => o !== id && doc.isAncestor(o, id)));
   const nodes = tops.map((id) => doc.getNode(id)).filter((n): n is DesignNode => !!n && n.type !== "PAGE" && n.type !== "DOCUMENT" && n.visible);
@@ -168,7 +168,7 @@ export function exportSvg(doc: DesignDoc, ids: string[], opts: { measure?: Measu
     .map((n) => {
       const abs = doc.absoluteBox(n.id)!;
       // Draw each top-level layer at its offset inside the crop (its own parent transforms are dropped).
-      return `<g transform="translate(${num(abs.x - bounds.x - n.x)} ${num(abs.y - bounds.y - n.y)})">${render(doc, n, clipIds)}</g>`;
+      return `<g transform="translate(${num(abs.x - bounds.x - n.x)} ${num(abs.y - bounds.y - n.y)})">${render(doc, opts.contentsOnly && n.type === "FRAME" ? ({ ...n, fills: [], strokes: [], effects: [] } as DesignNode) : n, clipIds)}</g>`;
     })
     .join("");
   const w = num(bounds.width);
