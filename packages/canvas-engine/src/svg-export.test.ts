@@ -282,6 +282,19 @@ describe("advanced strokes", () => {
     expect(only).toContain("#abcdef");
   });
 
+
+  it("applies image adjustments through a filter on the picture", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1, adjustments: { contrast: 100, saturation: -100 } }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain("<filter");
+    expect(svg).toContain('slope="2"');
+    expect(svg).toContain('values="0"');
+    const plain = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1 }] } as never });
+    expect(exportSvg(doc, [plain])?.svg ?? "").not.toContain("<filter");
+  });
+
   it("leaves a plain stroke plain", () => {
     const svg = rect({});
     expect(svg).not.toContain("stroke-dasharray");

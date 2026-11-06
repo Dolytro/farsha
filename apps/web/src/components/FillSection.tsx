@@ -215,6 +215,25 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
         {paint.assetId ? "Change image" : "Choose image"}
         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void choose(e.target.files?.[0])} />
       </label>
+      {(["exposure", "contrast", "saturation"] as const).map((key) => (
+        <label className="field field--gap" key={key} title={`Image ${key} (-100 to 100)`}>
+          <span className="field__label field__label--text">{key[0]!.toUpperCase() + key.slice(1)}</span>
+          <input
+            className="field__input"
+            type="number"
+            min={-100}
+            max={100}
+            aria-label={`Image ${key}`}
+            value={paint.adjustments?.[key] ?? 0}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (!Number.isFinite(v) || e.target.value === "") return;
+              const next = { ...paint.adjustments, [key]: Math.min(100, Math.max(-100, v)) };
+              setPaint({ ...paint, adjustments: next });
+            }}
+          />
+        </label>
+      ))}
       <label className="field field--gap" title="Image opacity (%)">
         <span className="field__label">%</span>
         <input className="field__input" type="number" min={0} max={100} value={Math.round(paint.opacity * 100)} onChange={(e) => setPaint({ ...paint, opacity: clamp01(Number(e.target.value) / 100) })} />

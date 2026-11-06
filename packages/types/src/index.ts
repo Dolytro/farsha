@@ -66,6 +66,14 @@ export interface ImagePaint {
   scaleMode: ImageScaleMode;
   opacity: number;
   blendMode?: BlendMode;
+  /** Colour adjustments of the picture, each from -100 to 100 (0 or missing leaves it as it is). */
+  adjustments?: ImageAdjustments;
+}
+
+export interface ImageAdjustments {
+  exposure?: number;
+  contrast?: number;
+  saturation?: number;
 }
 
 export type Paint = SolidPaint | GradientPaint | ImagePaint;
