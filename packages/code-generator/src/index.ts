@@ -81,6 +81,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     const decoStyle = node.textDecorationStyle === "DOTTED" ? " dotted" : node.textDecorationStyle === "WAVY" ? " wavy" : "";
     if (node.textDecoration === "UNDERLINE") d.push(["text-decoration", `underline${decoStyle}`]);
     else if (node.textDecoration === "STRIKETHROUGH") d.push(["text-decoration", `line-through${decoStyle}`]);
+    if (node.textCase === "SMALL_CAPS") d.push(["font-variant", "small-caps"]);
     if (node.textCase === "UPPER") d.push(["text-transform", "uppercase"]);
     else if (node.textCase === "LOWER") d.push(["text-transform", "lowercase"]);
     else if (node.textCase === "TITLE") d.push(["text-transform", "capitalize"]);

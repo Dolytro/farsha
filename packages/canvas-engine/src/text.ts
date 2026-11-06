@@ -5,6 +5,8 @@ export interface FontSpec {
   size: number;
   weight: number;
   letterSpacing: number;
+  /** Draw lower case letters as small capitals (the font's own, or the browser's stand-in). */
+  smallCaps?: boolean;
 }
 
 /** Width in px of one line of text. The browser passes a real measurer; tests and exports can use the estimate. */
@@ -56,10 +58,10 @@ export function textPlacement(n: { width: number; textAlign?: string; textDirect
 }
 
 /** SVG `font-style` / `text-decoration` values of a text layer (undefined when plain). */
-export function textFontStyle(n: { italic?: boolean; textDecoration?: string; textDecorationStyle?: string; textLink?: string }): { fontStyle?: "italic"; textDecoration?: string } {
+export function textFontStyle(n: { italic?: boolean; textDecoration?: string; textDecorationStyle?: string; textLink?: string; textCase?: string }): { fontStyle?: "italic"; textDecoration?: string; fontVariant?: "small-caps" } {
   const line = n.textDecoration === "UNDERLINE" || (n.textLink && !n.textDecoration) ? "underline" : n.textDecoration === "STRIKETHROUGH" ? "line-through" : "";
   const look = n.textDecorationStyle === "DOTTED" ? " dotted" : n.textDecorationStyle === "WAVY" ? " wavy" : "";
-  return { ...(n.italic ? { fontStyle: "italic" as const } : {}), ...(line ? { textDecoration: line + look } : {}) };
+  return { ...(n.italic ? { fontStyle: "italic" as const } : {}), ...(n.textCase === "SMALL_CAPS" ? { fontVariant: "small-caps" as const } : {}), ...(line ? { textDecoration: line + look } : {}) };
 }
 
 /** How far the text moves down inside a box taller than the text (Figma's vertical alignment). */
@@ -103,7 +105,7 @@ function wrapParagraph(text: string, maxWidth: number, width: (s: string) => num
 
 /** Split a text layer into lines: hard breaks always, soft wrapping at the layer width unless it is auto width. */
 export function layoutText(n: TextLike, measure: Measure = approxMeasure): TextLayout {
-  const font: FontSpec = { family: n.fontFamily, size: n.fontSize, weight: n.fontWeight, letterSpacing: n.letterSpacing };
+  const font: FontSpec = { family: n.fontFamily, size: n.fontSize, weight: n.fontWeight, letterSpacing: n.letterSpacing, ...(n.textCase === "SMALL_CAPS" ? { smallCaps: true } : {}) };
   const w = (s: string) => measure(s, font);
   const original = applyTextCase(n.characters, n.textCase).split("\n");
   const paragraphs = applyTextList(original, n.textList);

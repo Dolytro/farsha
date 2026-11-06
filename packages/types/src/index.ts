@@ -458,7 +458,7 @@ export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED';
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH';
 /** Line style of an underline or strikethrough. Missing means solid. */
 export type TextDecorationStyle = 'SOLID' | 'DOTTED' | 'WAVY';
-export type TextCase = 'NONE' | 'UPPER' | 'LOWER' | 'TITLE';
+export type TextCase = 'NONE' | 'UPPER' | 'LOWER' | 'TITLE' | 'SMALL_CAPS';
 /** Every paragraph of a text layer starts with a bullet or a running number. */
 export type TextList = 'NONE' | 'BULLET' | 'NUMBER';
 /** Writing direction; right to left text (Arabic, Hebrew) starts at the right edge. */

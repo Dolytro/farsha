@@ -406,6 +406,7 @@ describe("text links", () => {
     expect(textFontStyle({ textLink: "https://x.dev" })).toEqual({ textDecoration: "underline" });
     expect(textFontStyle({ textLink: "https://x.dev", textDecoration: "STRIKETHROUGH" })).toEqual({ textDecoration: "line-through" });
     expect(textFontStyle({ textDecoration: "UNDERLINE", textDecorationStyle: "WAVY" })).toEqual({ textDecoration: "underline wavy" });
+    expect(textFontStyle({ textCase: "SMALL_CAPS" })).toEqual({ fontVariant: "small-caps" });
     expect(textFontStyle({ textDecoration: "STRIKETHROUGH", textDecorationStyle: "DOTTED" })).toEqual({ textDecoration: "line-through dotted" });
     expect(textFontStyle({})).toEqual({});
   });

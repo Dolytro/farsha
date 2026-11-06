@@ -140,6 +140,7 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           <option value="UPPER">UPPER CASE</option>
           <option value="LOWER">lower case</option>
           <option value="TITLE">Title Case</option>
+          <option value="SMALL_CAPS">Small caps</option>
         </Select>
         <Select className="field__select" aria-label="Vertical alignment" value={node.textVerticalAlign ?? "TOP"} onChange={(e) => set({ textVerticalAlign: e.target.value as TextVerticalAlign })}>
           <option value="TOP">Align top</option>
