@@ -254,7 +254,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Bulleted / numbered list | Ctrl+Shift+8 / 7 | ✅ same |
 | Text align justified / top / middle / bottom | Ctrl+Alt+J, menu | ✅ same |
 | Increase / decrease font size, weight, line height, letter spacing (indentation not yet) | Ctrl+Shift+> / < , Ctrl+Alt+> / < , Alt+Shift+> / < , Alt+> / < , Ctrl+] / [ | ✅ same |
-| Zoom to previous / next frame | Shift+N / N | check |
+| Zoom to previous / next frame | Shift+N / N | ✅ same (checked in the browser) |
 | Paste to replace | Ctrl+Shift+R | Ctrl+Alt+Shift+V (browser reserves Ctrl+Shift+R) |
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
