@@ -172,3 +172,18 @@ describe("flowsOf", () => {
     expect(flowsOf(doc)).toEqual([{ frameId: a, name: "Flow 1" }, { frameId: b, name: "Checkout" }]);
   });
 });
+
+describe("present scale", () => {
+  it("fits, fills or shows the frame at 100%", async () => {
+    const { stageLayout } = await import("./prototype");
+    const f = { width: 400, height: 200 };
+    const win = { w: 1040, h: 840 };
+    expect(stageLayout(f, win, false, "FIT").scale).toBe(2.5);
+    const fill = stageLayout(f, win, false, "FILL");
+    expect(fill.scale).toBe(4);
+    expect(fill.stageHeight).toBe(800);
+    const actual = stageLayout(f, win, false, "ACTUAL");
+    expect(actual.scale).toBe(1);
+    expect(actual.stageWidth).toBe(400);
+  });
+});

@@ -60,6 +60,8 @@ export function PrototypePanel() {
   const setDevice = useEditor((s) => s.setPresentDevice);
   const background = useEditor((s) => s.presentBackground);
   const setBackground = useEditor((s) => s.setPresentBackground);
+  const zoom = useEditor((s) => s.presentScale);
+  const setZoom = useEditor((s) => s.setPresentScale);
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
   const frames = prototypeFrames(doc);
@@ -86,6 +88,11 @@ export function PrototypePanel() {
           <option value="none">No device frame</option>
           <option value="phone">Phone frame</option>
           <option value="tablet">Tablet frame</option>
+        </Select>
+        <Select className="field__select field__select--wide" aria-label="Scale" value={zoom} onChange={(e) => setZoom(e.target.value as "FIT" | "FILL" | "ACTUAL")}>
+          <option value="FIT">Scale: fit</option>
+          <option value="FILL">Scale: fill</option>
+          <option value="ACTUAL">Scale: 100%</option>
         </Select>
         <div className="fill-row" title="Colour behind the frame while presenting">
           <ColorSwatch value={background} onChange={setBackground} />

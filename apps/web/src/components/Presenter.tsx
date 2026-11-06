@@ -14,6 +14,7 @@ export function Presenter() {
   const showToast = useEditor((s) => s.showToast);
   const device = useEditor((s) => s.presentDevice);
   const background = useEditor((s) => s.presentBackground);
+  const zoom = useEditor((s) => s.presentScale);
   const doc = useEditor((s) => s.doc);
   const [current, setCurrent] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
@@ -180,7 +181,7 @@ export function Presenter() {
   const currentNode = current ? doc.getNode(current) : undefined;
   const scrollMode = currentNode?.type === "FRAME" && currentNode.overflowScroll ? currentNode.overflowScroll : "NONE";
   const shown = tween ?? frame;
-  const { scale, stageWidth, stageHeight } = frame ? stageLayout(frame, size, scrollMode) : { scale: 1, stageWidth: 0, stageHeight: 0 };
+  const { scale, stageWidth, stageHeight } = frame ? stageLayout(frame, size, scrollMode, zoom) : { scale: 1, stageWidth: 0, stageHeight: 0 };
 
   return (
     <div className="presenter" role="dialog" aria-label="Prototype" style={{ background }}>

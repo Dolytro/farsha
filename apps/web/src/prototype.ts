@@ -161,18 +161,22 @@ export type ScrollMode = "NONE" | "VERTICAL" | "HORIZONTAL" | "BOTH";
  * How big the prototype stage is in a window: fit the whole frame, or fit the width and scroll down (VERTICAL),
  * fit the height and scroll across (HORIZONTAL), or show it at the size that fills the window's width and scroll both ways (BOTH).
  */
-export function stageLayout(frame: { width: number; height: number }, win: { w: number; h: number }, scroll: ScrollMode | boolean): { scale: number; stageWidth: number; stageHeight: number } {
+export type PresentScale = "FIT" | "FILL" | "ACTUAL";
+
+/** `zoom` only matters for a frame without scrolling: FIT shows it whole, FILL covers the window (the edges are cropped), ACTUAL shows it at 100%. */
+export function stageLayout(frame: { width: number; height: number }, win: { w: number; h: number }, scroll: ScrollMode | boolean, zoom: PresentScale = "FIT"): { scale: number; stageWidth: number; stageHeight: number } {
   const mode: ScrollMode = scroll === true ? "VERTICAL" : scroll === false ? "NONE" : scroll;
   const maxW = Math.max(1, win.w - 40);
   const maxH = Math.max(1, win.h - 40);
   const scale =
-    mode === "VERTICAL" ? Math.min(maxW / frame.width, 4) : mode === "HORIZONTAL" ? Math.min(maxH / frame.height, 4) : mode === "BOTH" ? 1 : Math.min(maxW / frame.width, maxH / frame.height, 4);
+    mode === "VERTICAL" ? Math.min(maxW / frame.width, 4) : mode === "HORIZONTAL" ? Math.min(maxH / frame.height, 4) : mode === "BOTH" ? 1 : zoom === "ACTUAL" ? 1 : zoom === "FILL" ? Math.min(Math.max(maxW / frame.width, maxH / frame.height), 4) : Math.min(maxW / frame.width, maxH / frame.height, 4);
   const w = frame.width * scale;
   const h = frame.height * scale;
+  const crop = mode === "NONE" && zoom !== "FIT";
   return {
     scale,
-    stageWidth: mode === "HORIZONTAL" || mode === "BOTH" ? Math.min(w, maxW) : w,
-    stageHeight: mode === "VERTICAL" || mode === "BOTH" ? Math.min(h, maxH) : h,
+    stageWidth: mode === "HORIZONTAL" || mode === "BOTH" || crop ? Math.min(w, maxW) : w,
+    stageHeight: mode === "VERTICAL" || mode === "BOTH" || crop ? Math.min(h, maxH) : h,
   };
 }
 
