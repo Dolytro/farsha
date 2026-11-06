@@ -61,6 +61,16 @@ function LayerExport({ doc, id }: { doc: DesignDoc; id: string }) {
           </button>
         </div>
       ))}
+      {node.type === "FRAME" && list.length > 0 && (
+        <div style={{ display: "grid", gap: 4 }}>
+          {list.map((s, i) => (
+            <label className="props__check" key={i} title="Leave out the frame's own fill, stroke and effects">
+              <input type="checkbox" aria-label={`Contents only for setting ${i + 1}`} checked={!!s.contentsOnly} disabled={s.format === "PDF"} onChange={(e) => patch(i, { contentsOnly: e.target.checked || undefined })} />
+              Contents only{list.length > 1 ? ` (${i + 1})` : ""}
+            </label>
+          ))}
+        </div>
+      )}
       <button className="props__button" disabled={busy} onClick={run}>
         Export {node.name}
       </button>

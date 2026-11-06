@@ -272,6 +272,16 @@ describe("advanced strokes", () => {
     expect(svg.match(/mix-blend-mode:multiply/g)).toHaveLength(1);
   });
 
+  it("exports a frame's contents only", () => {
+    const doc = new DesignDoc();
+    const frame = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id, props: { width: 100, height: 100, fills: [{ type: "SOLID", color: "#123456", opacity: 1 }] } as never });
+    doc.createNode("RECTANGLE", { parentId: frame, props: { width: 10, height: 10, fills: [{ type: "SOLID", color: "#abcdef", opacity: 1 }] } as never });
+    expect(exportSvg(doc, [frame])?.svg).toContain("#123456");
+    const only = exportSvg(doc, [frame], { contentsOnly: true })?.svg ?? "";
+    expect(only).not.toContain("#123456");
+    expect(only).toContain("#abcdef");
+  });
+
   it("leaves a plain stroke plain", () => {
     const svg = rect({});
     expect(svg).not.toContain("stroke-dasharray");

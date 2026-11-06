@@ -246,6 +246,8 @@ export interface ExportSetting {
   format: ExportSettingFormat;
   scale: number;
   suffix: string;
+  /** Frames only: leave out the frame's own fill, stroke and effects and export just what is inside it. */
+  contentsOnly?: boolean;
 }
 
 export interface BaseNode {
