@@ -1,5 +1,7 @@
 import { screenToWorld } from "@farsha/canvas-engine";
+import { useState } from "react";
 import { useEditor } from "../store";
+import { filterAssets } from "../asset-search";
 
 /** Figma's Assets tab: every main component of the file; a click places an instance in the middle of the canvas. */
 export function Assets() {
@@ -7,7 +9,9 @@ export function Assets() {
   const pageId = useEditor((s) => s.pageId);
   const viewer = useEditor((s) => s.viewer);
   useEditor((s) => s.version);
-  const mains = doc.pages().flatMap((p) => doc.descendants(p.id).filter((n) => n.type === "FRAME" && n.isComponent));
+  const [query, setQuery] = useState("");
+  const all = doc.pages().flatMap((p) => doc.descendants(p.id).filter((n) => n.type === "FRAME" && n.isComponent));
+  const mains = filterAssets(all, query);
 
   const place = (id: string) => {
     const main = doc.getNode(id);
@@ -26,10 +30,13 @@ export function Assets() {
     }
   };
 
-  if (!mains.length) {
+  if (!all.length) {
     return <p className="assets__empty">No components yet. Select a frame and press Ctrl+Alt+K to create one.</p>;
   }
   return (
+    <>
+    <input className="layers__search" type="search" placeholder="Search components" aria-label="Search components" value={query} onChange={(e) => setQuery(e.target.value)} style={{ margin: "8px 12px" }} />
+    {!mains.length && <p className="assets__empty">No component matches.</p>}
     <ul className="layers__list assets">
       {mains.map((n) => (
         <li key={n.id} className="layers__item assets__item" title={viewer ? undefined : "Click to place an instance"} onClick={() => !viewer && place(n.id)}>
@@ -39,5 +46,6 @@ export function Assets() {
         </li>
       ))}
     </ul>
+    </>
   );
 }
