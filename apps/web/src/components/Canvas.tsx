@@ -1,4 +1,5 @@
 import { duplicateNodes } from "../clipboard";
+import { COMPONENT_DRAG } from "../asset-search";
 import { buildScaleUpdates } from "../scale";
 import { textFontStyle, verticalTextOffset } from "@farsha/canvas-engine";
 import { PINCH_STRENGTH, WHEEL_STRENGTH, wheelZoomFactor } from "../prefs";
@@ -406,6 +407,11 @@ export function Canvas() {
   const dropFiles = (e: React.DragEvent) => [...e.dataTransfer.files].filter((f) => isImageFile(f) || isVideoFile(f));
   const onDragOver = (e: React.DragEvent) => {
     if (viewer || devMode) return;
+    if (e.dataTransfer.types.includes(COMPONENT_DRAG)) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      return;
+    }
     if ([...e.dataTransfer.items].some((i) => i.kind === "file" && (i.type.startsWith("image/") || i.type.startsWith("video/")))) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
@@ -413,6 +419,28 @@ export function Canvas() {
   };
   const onDrop = (e: React.DragEvent) => {
     if (viewer || devMode) return;
+    const componentId = e.dataTransfer.getData(COMPONENT_DRAG);
+    if (componentId) {
+      // dragged from the Assets panel: an instance lands under the pointer, inside the frame it is dropped on
+      e.preventDefault();
+      const main = doc.getNode(componentId);
+      if (main?.type !== "FRAME" || !main.isComponent) return;
+      const w = world(e);
+      const under = hitTest(doc, pageId, w.x, w.y);
+      let frame = under?.type === "FRAME" ? under : undefined;
+      // an instance cannot sit inside its own main component
+      if (frame && (frame.id === componentId || doc.isAncestor(componentId, frame.id))) frame = undefined;
+      const origin = frame ? (doc.absoluteBox(frame.id) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
+      try {
+        doc.stopCapturing();
+        const inst = doc.createInstance(componentId, frame?.id ?? pageId, Math.round(w.x - origin.x - main.width / 2), Math.round(w.y - origin.y - main.height / 2));
+        doc.stopCapturing();
+        select([inst]);
+      } catch (err) {
+        useEditor.getState().showToast(err instanceof Error ? `Couldn't do that: ${err.message}` : "Couldn't do that");
+      }
+      return;
+    }
     const files = dropFiles(e);
     if (!files.length) return;
     e.preventDefault();

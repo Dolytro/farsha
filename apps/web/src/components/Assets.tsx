@@ -1,7 +1,7 @@
 import { screenToWorld } from "@farsha/canvas-engine";
 import { useState } from "react";
 import { useEditor } from "../store";
-import { filterAssets } from "../asset-search";
+import { COMPONENT_DRAG, filterAssets } from "../asset-search";
 import { zoomFit } from "../actions";
 
 /** Figma's Assets tab: every main component of the file; a click places an instance in the middle of the canvas. */
@@ -50,7 +50,7 @@ export function Assets() {
     {!mains.length && <p className="assets__empty">No component matches.</p>}
     <ul className="layers__list assets">
       {mains.map((n) => (
-        <li key={n.id} className="layers__item assets__item" title={viewer ? "Right-click to go to the main component" : "Click to place an instance, right-click to go to the main component"} onClick={() => !viewer && place(n.id)} onContextMenu={(e) => { e.preventDefault(); goToMain(n.id); }}>
+        <li key={n.id} className="layers__item assets__item" title={viewer ? "Right-click to go to the main component" : "Click to place an instance, drag it onto the canvas, right-click to go to the main component"} onClick={() => !viewer && place(n.id)} onContextMenu={(e) => { e.preventDefault(); goToMain(n.id); }} draggable={!viewer} onDragStart={(e) => { e.dataTransfer.setData(COMPONENT_DRAG, n.id); e.dataTransfer.effectAllowed = "copy"; }}>
           <span className="layers__type layers__type--component">❖</span>
           <span className="layers__name">{n.name}{n.type === "FRAME" && n.variantProps ? ` (${Object.entries(n.variantProps).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}</span>
           {n.type === "FRAME" && n.description && <span className="layers__hint" title={n.description} style={{ opacity: 0.6, fontSize: 11, marginLeft: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 90 }}>{n.description}</span>}

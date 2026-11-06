@@ -301,7 +301,7 @@ Variables
 
 Components
 - ✅ Component descriptions (a Description box on a main component, shown in the Assets list). ✅ Swap instance picker (`swapInstance`, in the Design panel of an instance). Still missing: instance-swap properties, nested instances, slots
-- Assets panel: ✅ search (name, description, variant values). ✅ right-click a component to go to its main. Still missing: drag onto the canvas
+- Assets panel: ✅ search (name, description, variant values). ✅ right-click a component to go to its main. ✅ drag a component onto the canvas (it lands inside the frame under the pointer; checked with synthetic drag events). Still missing: dragging with a preview image
 
 Other
 - Plugins and widgets: a small sandboxed plugin API (large)

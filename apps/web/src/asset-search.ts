@@ -1,3 +1,6 @@
+/** Drag-and-drop type used when a component is dragged from the Assets panel onto the canvas. */
+export const COMPONENT_DRAG = "application/x-farsha-component";
+
 export interface AssetLike {
   name: string;
   description?: string | null;
