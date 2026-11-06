@@ -28,6 +28,16 @@ export function ComponentPropsSection({ doc, node }: { doc: DesignDoc; node: Des
     };
     return (
       <section className="props__section">
+        <h3 className="props__heading">Description</h3>
+        <textarea
+          className="field__input field__input--wide field__input--area"
+          rows={2}
+          maxLength={500}
+          aria-label="Component description"
+          placeholder="What is this component for?"
+          value={node.description ?? ""}
+          onChange={(e) => doc.setStyle(node.id, { description: e.target.value || null })}
+        />
         <h3 className="props__heading props__heading--row">
           Component properties
           <span className="props__tools">

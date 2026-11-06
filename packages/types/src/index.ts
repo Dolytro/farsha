@@ -398,6 +398,8 @@ export interface FrameNode extends BaseNode, AutoLayoutProps {
   overflowScroll?: 'NONE' | 'VERTICAL' | 'HORIZONTAL' | 'BOTH';
   /** True for a main component: its layers are mirrored by every instance. */
   isComponent?: boolean;
+  /** A short note on a main component (what it is for), shown in Assets. */
+  description?: string;
   /** Set on an instance: id of the main component it follows. */
   componentId?: string;
   /** On a main component: the properties its instances can set. */
@@ -560,6 +562,7 @@ export interface StylePatch extends AutoLayoutProps {
   strokeSides?: [number, number, number, number] | null;
   devStatus?: DevStatus | null;
   devNote?: string | null;
+  description?: string | null;
   flowStart?: boolean | null;
   lockAspect?: boolean | null;
   exportSettings?: ExportSetting[] | null;

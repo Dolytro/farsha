@@ -137,3 +137,15 @@ describe('components', () => {
     expect(doc.instanceOf(doc.children(inst)[0]!.id)?.id).toBe(inst);
   });
 });
+
+describe('component description', () => {
+  it('is kept on the main, removed with null, and survives save and load', () => {
+    const { doc, main } = setup();
+    doc.setStyle(main, { description: 'Primary action' });
+    expect((doc.getNode(main) as { description?: string }).description).toBe('Primary action');
+    const copy = DesignDoc.fromState(doc.encodeState());
+    expect((copy.getNode(main) as { description?: string }).description).toBe('Primary action');
+    doc.setStyle(main, { description: null });
+    expect((doc.getNode(main) as { description?: string | null }).description ?? '').toBe('');
+  });
+});

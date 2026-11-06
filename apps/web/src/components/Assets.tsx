@@ -35,6 +35,7 @@ export function Assets() {
         <li key={n.id} className="layers__item assets__item" title={viewer ? undefined : "Click to place an instance"} onClick={() => !viewer && place(n.id)}>
           <span className="layers__type layers__type--component">❖</span>
           <span className="layers__name">{n.name}{n.type === "FRAME" && n.variantProps ? ` (${Object.entries(n.variantProps).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}</span>
+          {n.type === "FRAME" && n.description && <span className="layers__hint" title={n.description} style={{ opacity: 0.6, fontSize: 11, marginLeft: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 90 }}>{n.description}</span>}
         </li>
       ))}
     </ul>

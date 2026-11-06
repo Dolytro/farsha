@@ -300,7 +300,7 @@ Variables
 - ✅ Import and export as JSON (Export JSON / Import JSON in the Variables dialog; values by mode name, bad values repaired, imported variables are added as new ones). Still missing: explicit mode per frame
 
 Components
-- Instance swap (property and picker), nested instances, slots, component descriptions
+- ✅ Component descriptions (a Description box on a main component, shown in the Assets list). Still missing: instance swap (property and picker), nested instances, slots
 - Assets panel: search, drag onto the canvas, "Go to main component" from the panel
 
 Other
