@@ -13,6 +13,7 @@ export function Presenter() {
   const setPresenting = useEditor((s) => s.setPresenting);
   const showToast = useEditor((s) => s.showToast);
   const device = useEditor((s) => s.presentDevice);
+  const background = useEditor((s) => s.presentBackground);
   const doc = useEditor((s) => s.doc);
   const [current, setCurrent] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
@@ -182,7 +183,7 @@ export function Presenter() {
   const { scale, stageWidth, stageHeight } = frame ? stageLayout(frame, size, scrollMode) : { scale: 1, stageWidth: 0, stageHeight: 0 };
 
   return (
-    <div className="presenter" role="dialog" aria-label="Prototype">
+    <div className="presenter" role="dialog" aria-label="Prototype" style={{ background }}>
       <button className="presenter__close" onClick={() => setPresenting(null)} title="Exit (Esc)">
         ✕
       </button>

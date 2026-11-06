@@ -109,6 +109,9 @@ interface EditorState {
   /** Device bezel drawn around the prototype while presenting. */
   presentDevice: "none" | "phone" | "tablet";
   setPresentDevice: (d: "none" | "phone" | "tablet") => void;
+  /** Prototype settings: colour behind the frame while presenting. */
+  presentBackground: string;
+  setPresentBackground: (c: string) => void;
   /** Layer being renamed in the layers panel (F2 / Ctrl+R / double-click). */
   renaming: string | null;
   setRenaming: (id: string | null) => void;
@@ -201,6 +204,7 @@ export const useEditor = create<EditorState>((set) => ({
   prototypeMode: false,
   presenting: null,
   presentDevice: "none",
+  presentBackground: "#1E1E1E",
   renaming: null,
   setRenaming: (renaming) => set({ renaming }),
   menu: null,
@@ -215,6 +219,7 @@ export const useEditor = create<EditorState>((set) => ({
   setPrototypeMode: (on) => set((s) => (s.viewer ? s : { prototypeMode: on, devMode: on, tool: "select" })),
   setPresenting: (presenting) => set({ presenting }),
   setPresentDevice: (presentDevice) => set({ presentDevice }),
+  setPresentBackground: (presentBackground) => set({ presentBackground }),
   setTool: (tool) => set({ tool }),
   select: (selection) => set({ selection }),
   setPage: (id) =>

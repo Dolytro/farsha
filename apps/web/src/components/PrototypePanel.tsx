@@ -2,6 +2,8 @@ import type { Easing, Interaction, InteractionAction, InteractionTrigger, Overla
 import { flowsOf, prototypeFrames, startFrame, topFrameOf } from "../prototype";
 import { useEditor } from "../store";
 import { Select } from "./Select";
+import { HexInput } from "./HexInput";
+import { ColorSwatch } from "./ColorSwatch";
 
 const TRIGGERS: [InteractionTrigger, string][] = [
   ["ON_CLICK", "On click"],
@@ -56,6 +58,8 @@ export function PrototypePanel() {
   const showToast = useEditor((s) => s.showToast);
   const device = useEditor((s) => s.presentDevice);
   const setDevice = useEditor((s) => s.setPresentDevice);
+  const background = useEditor((s) => s.presentBackground);
+  const setBackground = useEditor((s) => s.setPresentBackground);
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
   const frames = prototypeFrames(doc);
@@ -83,6 +87,10 @@ export function PrototypePanel() {
           <option value="phone">Phone frame</option>
           <option value="tablet">Tablet frame</option>
         </Select>
+        <div className="fill-row" title="Colour behind the frame while presenting">
+          <ColorSwatch value={background} onChange={setBackground} />
+          <HexInput value={background} onChange={setBackground} />
+        </div>
         {flows.length > 0 && (
           <div className="flows" role="group" aria-label="Flows">
             {flows.map((f) => (
