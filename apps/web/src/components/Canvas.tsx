@@ -10,7 +10,7 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@farsha/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -25,7 +25,7 @@ import { loadDefaults, withDefaults } from "../defaults";
 type Drag =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
-  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box }
+  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
   | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
@@ -210,7 +210,7 @@ export function Canvas() {
         drag.current = { kind: "scale", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, snapshot: [box, ...doc.descendants(box.id)] };
         return;
       }
-      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height } };
+      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, flipX: !!box.flipX, flipY: !!box.flipY };
       return;
     }
     const labelId = el.dataset.labelId;
@@ -324,9 +324,17 @@ export function Canvas() {
     } else if (d.kind === "resize") {
       // Shift keeps the ratio (so does a layer with locked proportions), Alt resizes from the centre (Figma).
       const locked = !!doc.getNode(d.id)?.lockAspect;
-      const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey || locked, fromCenter: e.altKey });
-
+      const opts = { keepRatio: e.shiftKey || locked, fromCenter: e.altKey };
+      const flipping = useEditor.getState().prefs.flipWhileResizing;
+      const turned = flipping ? resizeBoxFlip(d.box, d.corner, dx, dy, opts) : { box: resizeBox(d.box, d.corner, dx, dy, opts), flipX: false, flipY: false };
+      const next = turned.box;
       doc.resizeNode(d.id, next);
+      if (flipping) {
+        const now = doc.getNode(d.id);
+        const wantX = d.flipX !== turned.flipX;
+        const wantY = d.flipY !== turned.flipY;
+        if (now && (!!now.flipX !== wantX || !!now.flipY !== wantY)) doc.setStyle(d.id, { flipX: wantX, flipY: wantY });
+      }
       const node = doc.getNode(d.id);
       if (node?.type === "TEXT") {
         // Figma: dragging the width gives auto height, dragging the height gives a fixed box.

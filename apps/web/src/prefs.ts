@@ -43,6 +43,8 @@ export interface Prefs {
   smartQuotes: boolean;
   /** Ctrl+Alt+Left / Right rotate the selection 1 degree (Shift: 15) (Figma: Use Ctrl+Alt+arrows to rotate). */
   arrowRotate: boolean;
+  /** Dragging a resize handle past the opposite side turns the layer over (Figma: Flip objects while resizing). */
+  flipWhileResizing: boolean;
   /** Arrow key nudge, and Shift + arrow nudge, in pixels. */
   nudge: number;
   bigNudge: number;
@@ -50,7 +52,7 @@ export interface Prefs {
 
 export const PREFS_KEY = "farsha.prefs";
 
-export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, renameDuplicates: false, keyboardZoomToSelection: false, ctrlClickMenu: false, smartQuotes: false, arrowRotate: false, nudge: 1, bigNudge: 10 };
+export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, renameDuplicates: false, keyboardZoomToSelection: false, ctrlClickMenu: false, smartQuotes: false, arrowRotate: false, flipWhileResizing: true, nudge: 1, bigNudge: 10 };
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
 const amount = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 && v <= 1000 ? v : fallback);
@@ -79,6 +81,7 @@ export function parsePrefs(text: string | null | undefined): Prefs {
     ctrlClickMenu: bool(raw.ctrlClickMenu, DEFAULT_PREFS.ctrlClickMenu),
     smartQuotes: bool(raw.smartQuotes, DEFAULT_PREFS.smartQuotes),
     arrowRotate: bool(raw.arrowRotate, DEFAULT_PREFS.arrowRotate),
+    flipWhileResizing: bool(raw.flipWhileResizing, DEFAULT_PREFS.flipWhileResizing),
     nudge: amount(raw.nudge, DEFAULT_PREFS.nudge),
     bigNudge: amount(raw.bigNudge, DEFAULT_PREFS.bigNudge),
   };
