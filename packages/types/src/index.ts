@@ -448,6 +448,8 @@ export interface EllipseNode extends BaseNode {
 
 export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED';
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH';
+/** Line style of an underline or strikethrough. Missing means solid. */
+export type TextDecorationStyle = 'SOLID' | 'DOTTED' | 'WAVY';
 export type TextCase = 'NONE' | 'UPPER' | 'LOWER' | 'TITLE';
 /** Every paragraph of a text layer starts with a bullet or a running number. */
 export type TextList = 'NONE' | 'BULLET' | 'NUMBER';
@@ -482,6 +484,7 @@ export interface TextNode extends BaseNode {
   italic?: boolean;
   /** Underline or strikethrough (Ctrl+U, Ctrl+Shift+X). Missing means none. */
   textDecoration?: TextDecoration;
+  textDecorationStyle?: TextDecorationStyle;
   /** Upper case, lower case or Title Case display of the characters. Missing means as typed. */
   textCase?: TextCase;
   /** Bulleted or numbered list of the paragraphs. Missing means a plain paragraph. */
@@ -602,6 +605,7 @@ export interface TextPatch {
   textAutoResize?: TextAutoResize;
   italic?: boolean;
   textDecoration?: TextDecoration;
+  textDecorationStyle?: TextDecorationStyle;
   textCase?: TextCase;
   textList?: TextList;
   paragraphSpacing?: number;

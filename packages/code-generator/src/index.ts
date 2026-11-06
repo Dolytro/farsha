@@ -78,8 +78,9 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     d.push(["line-height", node.lineHeight === "AUTO" ? "normal" : px(node.lineHeight)]);
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
     if (node.italic) d.push(["font-style", "italic"]);
-    if (node.textDecoration === "UNDERLINE") d.push(["text-decoration", "underline"]);
-    else if (node.textDecoration === "STRIKETHROUGH") d.push(["text-decoration", "line-through"]);
+    const decoStyle = node.textDecorationStyle === "DOTTED" ? " dotted" : node.textDecorationStyle === "WAVY" ? " wavy" : "";
+    if (node.textDecoration === "UNDERLINE") d.push(["text-decoration", `underline${decoStyle}`]);
+    else if (node.textDecoration === "STRIKETHROUGH") d.push(["text-decoration", `line-through${decoStyle}`]);
     if (node.textCase === "UPPER") d.push(["text-transform", "uppercase"]);
     else if (node.textCase === "LOWER") d.push(["text-transform", "lowercase"]);
     else if (node.textCase === "TITLE") d.push(["text-transform", "capitalize"]);

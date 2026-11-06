@@ -399,6 +399,8 @@ describe("text links", () => {
   it("underline linked text unless it has its own decoration", () => {
     expect(textFontStyle({ textLink: "https://x.dev" })).toEqual({ textDecoration: "underline" });
     expect(textFontStyle({ textLink: "https://x.dev", textDecoration: "STRIKETHROUGH" })).toEqual({ textDecoration: "line-through" });
+    expect(textFontStyle({ textDecoration: "UNDERLINE", textDecorationStyle: "WAVY" })).toEqual({ textDecoration: "underline wavy" });
+    expect(textFontStyle({ textDecoration: "STRIKETHROUGH", textDecorationStyle: "DOTTED" })).toEqual({ textDecoration: "line-through dotted" });
     expect(textFontStyle({})).toEqual({});
   });
 });

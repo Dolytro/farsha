@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@farsha/design-core";
-import type { TextAlign, TextAutoResize, TextCase, TextDirection, TextList, TextNode, TextVerticalAlign } from "@farsha/types";
+import type { TextAlign, TextAutoResize, TextCase, TextDecorationStyle, TextDirection, TextList, TextNode, TextVerticalAlign } from "@farsha/types";
 import { useState } from "react";
 import { fitText } from "../text-layout";
 import { TextStyleMenu, TextStylePill } from "./TextStyleMenu";
@@ -127,6 +127,13 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           </button>
         ))}
       </div>
+      {(node.textDecoration === "UNDERLINE" || node.textDecoration === "STRIKETHROUGH") && (
+        <Select className="field__select" aria-label="Decoration style" value={node.textDecorationStyle ?? "SOLID"} onChange={(e) => set({ textDecorationStyle: e.target.value as TextDecorationStyle })}>
+          <option value="SOLID">Solid line</option>
+          <option value="DOTTED">Dotted line</option>
+          <option value="WAVY">Wavy line</option>
+        </Select>
+      )}
       <div className="props__grid props__grid--gap">
         <Select className="field__select" aria-label="Text case" value={node.textCase ?? "NONE"} onChange={(e) => set({ textCase: e.target.value as TextCase })}>
           <option value="NONE">Original case</option>
