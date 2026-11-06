@@ -1,0 +1,280 @@
+// "Real tools" section: floating layers art next to the copy, on a tinted band.
+.site-tools {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 72px 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+  gap: 48px;
+  align-items: center;
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    padding: 72px 20px;
+  }
+
+  &__ring {
+    position: absolute;
+    left: -2%;
+    top: -6%;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    border: 1px solid #8a6bff88;
+  }
+
+  &__ring-2 {
+    position: absolute;
+    left: 1%;
+    top: 4%;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    border: 1px solid #8a6bff55;
+  }
+
+  &__ring-3 {
+    position: absolute;
+    left: 80%;
+    top: 50%;
+    width: 380px;
+    height: 380px;
+    border-radius: 50%;
+    border: 1px solid #ff4fa388;
+  }
+
+  &__ring-4 {
+    position: absolute;
+    left: 84%;
+    top: 58%;
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    border: 1px solid #ff4fa355;
+  }
+
+  &__art {
+    position: relative;
+    height: 420px;
+
+    @media (max-width: 900px) {
+      transform: scale(.78);
+      transform-origin: left top;
+      margin-bottom: -90px;
+    }
+  }
+
+  &__layer {
+    position: absolute;
+    left: 20px;
+    top: 150px;
+    width: 360px;
+    height: 210px;
+    border-radius: 20px;
+    background: linear-gradient(135deg,#4a37b8,#2a2060);
+    transform: perspective(900px) rotateX(55deg) rotateZ(-28deg);
+    box-shadow: 0 30px 60px #0008;
+  }
+
+  &__label {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #0e0d14e6;
+    color: #f2f0fa;
+    font-family: 'Geist Mono',monospace;
+    font-size: 12px;
+    letter-spacing: .06em;
+    white-space: nowrap;
+    box-shadow: 0 8px 20px #0006;
+  }
+
+  &__label--variant-1 {
+    left: 34px;
+    top: 330px;
+    border: 1px solid #7c5cff66;
+  }
+
+  &__label--variant-2 {
+    left: 10px;
+    bottom: 10px;
+    border: 1px solid #2de2c866;
+  }
+
+  &__label--variant-3 {
+    left: 10px;
+    bottom: 10px;
+    border: 1px solid #ffb02066;
+  }
+
+  &__label--variant-4 {
+    left: 0;
+    top: -32px;
+    border: 1px solid #8a6bff66;
+  }
+
+  &__label--variant-5 {
+    right: 30px;
+    top: -1px;
+    border: 1px solid #ff4fa366;
+  }
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #7c5cff;
+  }
+
+  &__layer-2 {
+    position: absolute;
+    left: 36px;
+    top: 40px;
+    width: 210px;
+    height: 170px;
+    border-radius: 18px;
+    background: linear-gradient(160deg,#ffffff,#d9d4f5);
+    transform: rotate(-8deg);
+    animation: layer 6s ease-in-out infinite;
+    overflow: hidden;
+    box-shadow: 0 20px 50px #0007;
+  }
+
+  &__dot-2 {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #2de2c8;
+  }
+
+  &__layer-grid {
+    position: absolute;
+    left: 210px;
+    top: 96px;
+    width: 200px;
+    height: 150px;
+    border-radius: 18px;
+    background: linear-gradient(160deg,#4a37b8,#2f2478);
+    transform: rotate(6deg);
+    animation: layer 6s -2s ease-in-out infinite;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 20px 50px #0007;
+  }
+
+  &__glyph {
+    font-family: 'Bricolage Grotesque',sans-serif;
+    font-weight: 800;
+    font-size: 64px;
+    color: #a592ff;
+    letter-spacing: -.03em;
+  }
+
+  &__dot-3 {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ffb020;
+  }
+
+  &__layer-3 {
+    position: absolute;
+    left: 150px;
+    top: 290px;
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 12px;
+    background: #17151f;
+    border: 1px solid #2a2640;
+    animation: layer 6s -4s ease-in-out infinite;
+  }
+
+  &__dot-4 {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #8a6bff;
+  }
+
+  &__icon-box {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #221f3a;
+    display: grid;
+    place-items: center;
+    color: #c9c4de;
+  }
+
+  &__icon-box-2 {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #6a46f2;
+    display: grid;
+    place-items: center;
+    color: #fff;
+  }
+
+  &__layer-4 {
+    position: absolute;
+    right: 30px;
+    top: 30px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: #ff4fa3;
+    animation: bob 4s ease-in-out infinite;
+  }
+
+  &__dot-5 {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ff4fa3;
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: 'Bricolage Grotesque',sans-serif;
+    font-weight: 800;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -.04em;
+
+    @media (max-width: 900px) {
+      font-size: 34px;
+      line-height: 1.04;
+    }
+  }
+
+  &__accent {
+    font-family: 'Instrument Serif',serif;
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  &__text {
+    margin: 0;
+    color: #c9c4de;
+    line-height: 26px;
+    max-width: 460px;
+    font-size: 16px;
+  }
+
+  &__more {
+    align-self: flex-start;
+  }
+}

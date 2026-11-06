@@ -1,0 +1,233 @@
+// "Figma is pro. Farsha is free." side by side table.
+.site-compare {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 72px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  position: relative;
+  isolation: isolate;
+
+  &__dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(#a592ff66 1.3px, transparent 1.8px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 78%);
+    mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 78%);
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -.04em;
+
+    @media (max-width: 900px) {
+      font-size: 34px;
+      line-height: 1.04;
+    }
+  }
+
+  &__accent {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  &__text {
+    margin: 0;
+    color: #c9c4de;
+    line-height: 26px;
+    max-width: 540px;
+    font-size: 16px;
+  }
+
+  // the rainbow border sits on the wrapper, so it stays put when the table scrolls sideways
+  &__wrap {
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
+      padding: 1.5px;
+      background: conic-gradient(from var(--ang), #7c5cff, #ff4fa3, #2de2c8, #ffb020, #7c5cff);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: rot 7s linear infinite;
+      pointer-events: none;
+      z-index: 3;
+    }
+  }
+
+  // the table has a slowly turning rainbow border; on small screens it scrolls sideways
+  &__table {
+    border: 1px solid #2a2640;
+    border-radius: 22px;
+    background: #100f1a;
+    overflow: hidden;
+    position: relative;
+
+
+    @media (max-width: 900px) {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    > * {
+      @media (max-width: 900px) {
+        min-width: 600px;
+      }
+    }
+  }
+
+  &__head-row {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 5fr);
+  }
+
+  &__head {
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: #b4aecb;
+  }
+
+  &__head-figma {
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  &__head-farsha {
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 18px;
+    background: linear-gradient(90deg, #7c5cff33, #ff4fa31f);
+  }
+
+  &__tag {
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid #34304a;
+    color: #b4aecb;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .1em;
+    font-weight: 500;
+  }
+
+  &__tag-free {
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #4fd19a24;
+    border: 1px solid #4fd19a66;
+    color: #7fe3b6;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .1em;
+    font-weight: 600;
+  }
+
+  &__tag-soon {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #ffb02022;
+    color: #ffb020;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .1em;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 5fr);
+    gap: 0;
+    border-top: 1px solid #2a2640;
+    align-items: stretch;
+    transition: background .25s, box-shadow .25s;
+
+    &:hover {
+      background: #ffffff0a;
+      box-shadow: inset 4px 0 0 #ff4fa3;
+    }
+  }
+
+  &__cell-label {
+    padding: 22px 28px;
+    color: #b4aecb;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  &__cell-figma {
+    padding: 22px 28px;
+    color: #c9c4de;
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  &__cell-farsha {
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 500;
+    background: linear-gradient(90deg, #7c5cff14, #ff4fa30d);
+  }
+
+  // on small screens every cell of the table gets tighter
+  &__head,
+  &__head-figma,
+  &__head-farsha,
+  &__cell-label,
+  &__cell-figma,
+  &__cell-farsha {
+    @media (max-width: 900px) {
+      padding: 14px 10px;
+      font-size: 13px;
+      gap: 6px;
+    }
+  }
+
+  &__check {
+    transition: transform .3s cubic-bezier(.3, 1.7, .4, 1);
+
+    @supports (animation-timeline: view()) {
+      animation: ckp .8s cubic-bezier(.3, 1.8, .4, 1) both;
+      animation-timeline: view();
+      animation-range: entry 30% entry 90%;
+    }
+  }
+
+  &__row:hover &__check {
+    transform: scale(1.3) rotate(8deg);
+  }
+}

@@ -1,0 +1,4 @@
+// Fade and slide up once when the page loads.
+.fx-rise {
+  animation: up .9s cubic-bezier(.2, .8, .2, 1) both;
+}

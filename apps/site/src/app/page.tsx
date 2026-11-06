@@ -1,7 +1,7 @@
 import { Landing } from "../components/landing/Landing";
 import { FAQ } from "../components/landing/faq-data";
 import { CONTACT_EMAIL, MAKER, REPO_URL, SOCIALS, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../lib/seo";
-import "../styles/landing.css";
+import "../styles/landing.scss";
 
 const jsonLd = {
   "@context": "https://schema.org",

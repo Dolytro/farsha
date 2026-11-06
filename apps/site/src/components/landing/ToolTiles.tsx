@@ -15,47 +15,19 @@ const TOOLS: [string, string, string, string][] = [
   ["Variables", "Ctrl+K", "M12 4a8 8 0 100 16 8 8 0 000-16zM12 4v16", "#4da3ff"],
 ];
 
+/** The twelve tool tiles. Each tile takes its colour from --c (and a soft version of it from --c-soft). */
 export function ToolTiles() {
   return (
     <>
       {TOOLS.map(([name, key, path, color], i) => (
-        <div
-          key={name}
-          className="tile tp"
-          style={
-            {
-              border: "1px solid #2a2640",
-              borderRadius: 14,
-              background: "#14121e",
-              padding: "18px 8px 14px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 12,
-              fontSize: 13,
-              fontWeight: 500,
-              "--i": i,
-              "--c": color,
-            } as CSSProperties
-          }
-        >
-          <span
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              display: "grid",
-              placeItems: "center",
-              color,
-              background: `${color}22`,
-            }}
-          >
+        <div key={name} className="site-parity__tile" style={{ "--i": i, "--c": color, "--c-soft": `${color}22` } as CSSProperties}>
+          <span className="site-parity__tile-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d={path} />
             </svg>
           </span>
           <span>{name}</span>
-          <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#a29cba" }}>{key}</span>
+          <span className="site-parity__tile-key">{key}</span>
         </div>
       ))}
     </>

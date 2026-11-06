@@ -1,0 +1,18 @@
+// Page-level rules for the landing page.
+
+// Hide anything that would scroll the page sideways on small screens.
+@media (max-width: 900px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
+
+// Respect the reduced motion setting: no animation or transition anywhere.
+// This is the one place that needs !important, because it has to beat every component rule.
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

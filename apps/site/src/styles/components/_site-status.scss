@@ -1,0 +1,264 @@
+// Roadmap: three cards (shipped, partial, next) on a tinted band. --c is the colour of each card.
+.site-status {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 72px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+
+  @media (max-width: 900px) {
+    padding: 72px 20px;
+  }
+
+  &__ring {
+    position: absolute;
+    left: -3%;
+    top: 30%;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    border: 1px solid #ffb02088;
+  }
+
+  &__ring-2 {
+    position: absolute;
+    left: 0%;
+    top: 40%;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    border: 1px solid #ffb02055;
+  }
+
+  &__ring-3 {
+    position: absolute;
+    left: 86%;
+    top: -4%;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    border: 1px solid #8a6bff77;
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -.04em;
+
+    @media (max-width: 900px) {
+      font-size: 34px;
+      line-height: 1.04;
+    }
+  }
+
+  &__accent {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  &__text {
+    margin: 0;
+    color: #c9c4de;
+    line-height: 26px;
+    max-width: 480px;
+    font-size: 16px;
+  }
+
+  &__cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+
+    @media (max-width: 900px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  &__card {
+    position: relative;
+    border: 1px solid #2a2640;
+    border-radius: 18px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: transform .4s cubic-bezier(.2, .8, .2, 1), box-shadow .4s, border-color .4s;
+
+    // a coloured border sweeps around the card on hover
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: 18px;
+      padding: 2px;
+      background: conic-gradient(from var(--ang), var(--c), #7c5cff, #2de2c8, #ffb020, var(--c));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity .35s;
+      animation: rot 3.5s linear infinite;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    &:hover {
+      transform: translateY(-10px);
+      border-color: var(--c);
+      box-shadow: 0 24px 56px color-mix(in srgb, var(--c) 28%, transparent);
+
+      &::before {
+        opacity: 1;
+      }
+    }
+
+    &--tone-1 {
+      background: linear-gradient(180deg, #4fd19a1a, #14121e 140px);
+    }
+
+    &--tone-2 {
+      background: linear-gradient(180deg, #ffb0201a, #14121e 140px);
+    }
+
+    &--tone-3 {
+      background: linear-gradient(180deg, #ff4fa31a, #14121e 140px);
+    }
+  }
+
+  &__card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #2a2640;
+  }
+
+  &__badge-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__pulse {
+    align-self: flex-start;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .12em;
+    font-weight: 500;
+    animation: pls 2.4s ease-out infinite;
+
+    &--tone-1 {
+      background: #4fd19a24;
+      border: 1px solid #4fd19a66;
+      color: #7fe3b6;
+    }
+
+    &--tone-2 {
+      background: #ffb02024;
+      border: 1px solid #ffb02066;
+      color: #ffc95c;
+    }
+
+    &--tone-3 {
+      background: #ff4fa324;
+      border: 1px solid #ff4fa366;
+      color: #ff86bf;
+    }
+  }
+
+  &__hint {
+    font-size: 12px;
+    color: #9a95b0;
+  }
+
+  &__figure,
+  &__figure-2,
+  &__figure-3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 40px;
+    line-height: 1;
+    letter-spacing: -.04em;
+  }
+
+  &__figure {
+    color: #7fe3b6;
+  }
+
+  &__figure-2 {
+    color: #ffc95c;
+  }
+
+  &__figure-3 {
+    color: #ff86bf;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 10px;
+    margin: 0 -10px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 20px;
+    color: #e8e4f7;
+    transition: background .25s, transform .25s;
+
+    &:hover {
+      background: color-mix(in srgb, var(--c) 14%, transparent);
+      transform: translateX(4px);
+    }
+  }
+
+  &__mark {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    transition: transform .35s cubic-bezier(.3, 1.6, .4, 1), background .25s;
+
+    &--tone-1 {
+      background: #4fd19a1f;
+      border: 1px solid #4fd19a44;
+    }
+
+    &--tone-2 {
+      background: #ffb0201f;
+      border: 1px solid #ffb02044;
+    }
+
+    &--tone-3 {
+      background: #ff4fa31f;
+      border: 1px solid #ff4fa344;
+    }
+  }
+
+  &__item:hover &__mark {
+    transform: scale(1.2) rotate(-8deg);
+    background: color-mix(in srgb, var(--c) 32%, transparent);
+  }
+}

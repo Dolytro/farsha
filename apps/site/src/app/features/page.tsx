@@ -16,13 +16,13 @@ export default function FeaturesPage() {
   return (
     <ContentPage path="/features" title={TITLE}>
       <h1>Farsha features</h1>
-      <p className="cp__lead">
+      <p className="content-page__lead">
         Farsha is a free, open source design tool that runs in your browser. It copies Figma&apos;s panel names, tool order and
         shortcuts, so if you know Figma you already know where things are. This page lists what works today.
       </p>
-      <div className="cp__actions">
-        <a className="cp__cta" href="/app">Open the editor</a>
-        <a className="cp__cta cp__cta--ghost" href="/figma-alternative">Farsha vs Figma</a>
+      <div className="content-page__actions">
+        <a className="content-page__cta" href="/app">Open the editor</a>
+        <a className="content-page__cta content-page__cta--ghost" href="/figma-alternative">Farsha vs Figma</a>
       </div>
 
       <h2>Design</h2>
@@ -61,7 +61,7 @@ export default function FeaturesPage() {
       </p>
 
       <h2>Not built yet</h2>
-      <div className="cp__note">
+      <div className="content-page__note">
         Live multi-user editing and cursors, per-person invites, share link passwords, publishing component libraries, branching and a
         full offline sync queue are not built yet. Follow progress in the{" "}
         <a href="https://github.com/Dolytro/farsha/blob/main/docs/FEATURE_GAP.md">feature gap list</a>.

@@ -1,0 +1,78 @@
+// One floating decorative shape. Colour, size and speed come from --c, --z and --ft.
+.ui-spark {
+  position: absolute;
+  display: block;
+  opacity: .92;
+  animation: spf var(--ft, 7s) ease-in-out infinite;
+
+  @supports (animation-timeline: view()) {
+    animation: spx 1s linear both, spf var(--ft, 7s) ease-in-out infinite;
+    animation-timeline: view(), auto;
+    animation-range: cover, normal;
+  }
+
+  &--circle {
+    width: var(--z);
+    height: var(--z);
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 55%, #fff));
+  }
+
+  &--square {
+    width: var(--z);
+    height: var(--z);
+    border-radius: 24%;
+    background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 55%, #fff));
+  }
+
+  &--triangle {
+    width: var(--z);
+    height: var(--z);
+    clip-path: polygon(50% 6%, 100% 94%, 0 94%);
+    background: linear-gradient(160deg, var(--c), color-mix(in srgb, var(--c) 55%, #000));
+  }
+
+  &--ring {
+    width: var(--z);
+    height: var(--z);
+    border-radius: 50%;
+    border: calc(var(--z) * .2) solid var(--c);
+  }
+
+  &--star {
+    width: var(--z);
+    height: var(--z);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    background: linear-gradient(150deg, var(--c), color-mix(in srgb, var(--c) 55%, #fff));
+  }
+
+  &--plus {
+    width: var(--z);
+    height: var(--z);
+    clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%);
+    background: linear-gradient(150deg, var(--c), color-mix(in srgb, var(--c) 55%, #fff));
+  }
+
+  &--diamond {
+    width: var(--z);
+    height: var(--z);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    background: linear-gradient(150deg, var(--c), color-mix(in srgb, var(--c) 55%, #000));
+  }
+
+  &--sparkle {
+    width: var(--z);
+    height: var(--z);
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    background: linear-gradient(150deg, var(--c), color-mix(in srgb, var(--c) 55%, #fff));
+  }
+
+  &--blob {
+    width: var(--z);
+    height: var(--z);
+    border-radius: 58% 42% 55% 45% / 48% 58% 42% 52%;
+    background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 55%, #fff));
+  }
+
+  // --pill and --half only exist inside a cluster, see ui-cluster.
+}

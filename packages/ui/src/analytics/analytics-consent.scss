@@ -1,0 +1,61 @@
+// Cookie consent dialog (bottom left) and the footer link that reopens it.
+.cookie-consent {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2147483000;
+  max-width: 380px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #17151f;
+  color: #f2f0fa;
+  border: 1px solid #34304a;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+  font-family: 'Geist', 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+
+  &__title {
+    margin: 0 0 6px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  &__text {
+    margin: 0 0 12px;
+  }
+
+  &__link {
+    color: #a99bff;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  // "Accept" and "Decline" look the same on purpose.
+  &__button {
+    flex: 1;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 8px;
+    background: #221f2e;
+    color: #f2f0fa;
+    border: 1px solid #5a5478;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+.cookie-settings-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

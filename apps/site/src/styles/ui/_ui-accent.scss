@@ -1,0 +1,10 @@
+// Serif italic words inside a heading get a moving rainbow fill.
+.ui-accent {
+  padding-right: .1em;
+  background: linear-gradient(90deg, #8a6bff, #ff4fa3, #ffb020, #2de2c8, #8a6bff);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gx 9s linear infinite;
+}
