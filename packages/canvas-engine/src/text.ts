@@ -57,11 +57,32 @@ export function textPlacement(n: { width: number; textAlign?: string; textDirect
   return right ? { x: n.width, anchor: "end", rtl } : { x: 0, anchor: "start", rtl };
 }
 
+/** The OpenType features a text layer can switch (a leading "-" turns a default-on feature off). */
+export const OPENTYPE_FEATURES: { tag: string; label: string }[] = [
+  { tag: "tnum", label: "Tabular numbers" },
+  { tag: "onum", label: "Old-style numbers" },
+  { tag: "lnum", label: "Lining numbers" },
+  { tag: "zero", label: "Slashed zero" },
+  { tag: "frac", label: "Fractions" },
+  { tag: "ss01", label: "Stylistic set 1" },
+  { tag: "ss02", label: "Stylistic set 2" },
+  { tag: "-liga", label: "No ligatures" },
+];
+
+/** CSS `font-feature-settings` of a text layer: only known features count (a shared file is untrusted). Undefined when there are none. */
+export function fontFeatureSettings(list: unknown): string | undefined {
+  if (!Array.isArray(list)) return undefined;
+  const known = new Set(OPENTYPE_FEATURES.map((f) => f.tag));
+  const parts = [...new Set(list.filter((t): t is string => typeof t === "string" && known.has(t)))].map((t) => (t.startsWith("-") ? `"${t.slice(1)}" 0` : `"${t}" 1`));
+  return parts.length ? parts.join(", ") : undefined;
+}
+
 /** SVG `font-style` / `text-decoration` values of a text layer (undefined when plain). */
-export function textFontStyle(n: { italic?: boolean; textDecoration?: string; textDecorationStyle?: string; textLink?: string; textCase?: string }): { fontStyle?: "italic"; textDecoration?: string; fontVariant?: "small-caps" } {
+export function textFontStyle(n: { italic?: boolean; textDecoration?: string; textDecorationStyle?: string; textLink?: string; textCase?: string; fontFeatures?: unknown }): { fontStyle?: "italic"; textDecoration?: string; fontVariant?: "small-caps"; style?: { fontFeatureSettings: string } } {
   const line = n.textDecoration === "UNDERLINE" || (n.textLink && !n.textDecoration) ? "underline" : n.textDecoration === "STRIKETHROUGH" ? "line-through" : "";
   const look = n.textDecorationStyle === "DOTTED" ? " dotted" : n.textDecorationStyle === "WAVY" ? " wavy" : "";
-  return { ...(n.italic ? { fontStyle: "italic" as const } : {}), ...(n.textCase === "SMALL_CAPS" ? { fontVariant: "small-caps" as const } : {}), ...(line ? { textDecoration: line + look } : {}) };
+  const features = fontFeatureSettings(n.fontFeatures);
+  return { ...(features ? { style: { fontFeatureSettings: features } } : {}), ...(n.italic ? { fontStyle: "italic" as const } : {}), ...(n.textCase === "SMALL_CAPS" ? { fontVariant: "small-caps" as const } : {}), ...(line ? { textDecoration: line + look } : {}) };
 }
 
 /** How far the text moves down inside a box taller than the text (Figma's vertical alignment). */

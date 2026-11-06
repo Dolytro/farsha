@@ -4,6 +4,7 @@ import { useState } from "react";
 import { fitText } from "../text-layout";
 import { TextStyleMenu, TextStylePill } from "./TextStyleMenu";
 import { Select } from "./Select";
+import { OPENTYPE_FEATURES } from "@farsha/canvas-engine";
 import { FontPicker } from "./FontPicker";
 
 export const FONTS: { label: string; stack: string }[] = [
@@ -134,6 +135,23 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           <option value="WAVY">Wavy line</option>
         </Select>
       )}
+      <details className="props__more">
+        <summary>OpenType features{node.fontFeatures?.length ? ` (${node.fontFeatures.length})` : ""}</summary>
+        {OPENTYPE_FEATURES.map((f) => (
+          <label className="props__check" key={f.tag}>
+            <input
+              type="checkbox"
+              aria-label={f.label}
+              checked={!!node.fontFeatures?.includes(f.tag)}
+              onChange={(e) => {
+                const rest = (node.fontFeatures ?? []).filter((t) => t !== f.tag);
+                set({ fontFeatures: e.target.checked ? [...rest, f.tag] : rest });
+              }}
+            />
+            {f.label}
+          </label>
+        ))}
+      </details>
       <div className="props__grid props__grid--gap">
         <Select className="field__select" aria-label="Text case" value={node.textCase ?? "NONE"} onChange={(e) => set({ textCase: e.target.value as TextCase })}>
           <option value="NONE">Original case</option>

@@ -531,6 +531,8 @@ export interface TextNode extends BaseNode {
   /** Underline or strikethrough (Ctrl+U, Ctrl+Shift+X). Missing means none. */
   textDecoration?: TextDecoration;
   textDecorationStyle?: TextDecorationStyle;
+  /** OpenType features switched on ("tnum", "zero", "frac", "ss01" ...) or off ("-liga"). Missing means the font's defaults. */
+  fontFeatures?: string[];
   /** Upper case, lower case or Title Case display of the characters. Missing means as typed. */
   textCase?: TextCase;
   /** Bulleted or numbered list of the paragraphs. Missing means a plain paragraph. */
@@ -655,6 +657,7 @@ export interface TextPatch {
   italic?: boolean;
   textDecoration?: TextDecoration;
   textDecorationStyle?: TextDecorationStyle;
+  fontFeatures?: string[];
   textCase?: TextCase;
   textList?: TextList;
   paragraphSpacing?: number;

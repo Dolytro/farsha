@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
 import { exportSvg } from "./svg-export";
 import { backgroundBlurOf, effectsFilter, shapeMarkup } from "./appearance";
-import { applyTextList, layoutText, textFontStyle, textPlacement } from "./text";
+import { applyTextList, fontFeatureSettings, layoutText, textFontStyle, textPlacement } from "./text";
 
 const solid = (color: string, opacity = 1) => [{ type: "SOLID" as const, color, opacity }];
 
@@ -293,6 +293,14 @@ describe("advanced strokes", () => {
     expect(svg).toContain('values="0"');
     const plain = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1 }] } as never });
     expect(exportSvg(doc, [plain])?.svg ?? "").not.toContain("<filter");
+  });
+
+
+  it("turns OpenType features into font-feature-settings and ignores unknown ones", () => {
+    expect(fontFeatureSettings(["tnum", "-liga", "evil\"; x", "tnum"])).toBe('"tnum" 1, "liga" 0');
+    expect(fontFeatureSettings([])).toBeUndefined();
+    expect(fontFeatureSettings("tnum")).toBeUndefined();
+    expect(textFontStyle({ fontFeatures: ["zero"] })).toEqual({ style: { fontFeatureSettings: '"zero" 1' } });
   });
 
   it("leaves a plain stroke plain", () => {

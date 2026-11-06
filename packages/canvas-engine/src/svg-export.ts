@@ -79,7 +79,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       const x = place.x;
       const { lines, starts, wordSpacing, lineGap, indent, lineHeight, height: textHeight } = layoutText(n, measure);
       const style = textFontStyle(n);
-      const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.fontVariant ? ' font-variant="small-caps"' : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;
+      const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.fontVariant ? ' font-variant="small-caps"' : ""}${style.style ? ` style="font-feature-settings:${style.style.fontFeatureSettings.replace(/"/g, "'")}"` : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;
       const spans = lines
         .flatMap((l, i) =>
           lineSegments(l, starts[i] ?? 0, n.runs).map((seg, j) => {
