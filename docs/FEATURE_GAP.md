@@ -260,7 +260,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 
 ### 12.2 Missing, free to build (P1, most used by designers)
 Menus and commands
-- Edit: ✅ Copy as text, Copy as CSS (all layers), Select all with same text properties / instance / variant. Still missing: animated SVG, Select all with same properties
+- Edit: ✅ Copy as text, Copy as CSS (all layers), Select all with same text properties / instance / variant. ✅ Select all matching properties (Ctrl+Alt+A, checked in the browser). Still missing: animated SVG
 - View: ✅ Show slices, Annotations (Shift+Y, the dev notes on the canvas), Pixel preview (Ctrl+Shift+P, crisp edges), Mask outlines, Frame outlines, Find previous / next frame (Home / End). Still missing: Additional labels, Minimize left bar, Toggle variables panel, Switch to Draw
 - ✅ Object > More layout options (Resize to fit, hug and fill width / height, lock and unlock aspect ratio; Suggest auto layout is the same as Add auto layout) and rotate / flip buttons in the Position section. Still missing in Object: Restore / Set default thumbnail, Main component (Push changes to main, Restore main component), Slots
 - Text: justified alignment, top / middle / bottom commands, Adjust (indent, font size / weight / line height / letter spacing steps), Title case + small caps
