@@ -205,3 +205,23 @@ describe("move out and push", () => {
     expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 400 })?.leave).toBeUndefined();
   });
 });
+
+describe("conditional", () => {
+  it("goes to the then or else frame depending on a variable", () => {
+    const { doc, home, detail } = setup();
+    const mode = doc.activeModeId();
+    const n = doc.createValueVariable("NUMBER", "Count", "3");
+    const go = (op: "EQ" | "NEQ" | "GT" | "LT", value: string, elseId?: string) =>
+      followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "CONDITIONAL", variableId: n, op, value, thenId: detail, elseId } })?.frame;
+    expect(go("EQ", "3")).toBe(detail);
+    expect(go("EQ", "4")).toBeUndefined();
+    expect(go("EQ", "4", detail)).toBe(detail);
+    expect(go("GT", "2")).toBe(detail);
+    expect(go("LT", "2")).toBeUndefined();
+    expect(go("NEQ", "2")).toBe(detail);
+    doc.setVariableValue(n, mode, "1");
+    expect(go("LT", "2")).toBe(detail);
+    const b = doc.createValueVariable("BOOLEAN", "On", "true");
+    expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "CONDITIONAL", variableId: b, op: "EQ", value: "True", thenId: detail } })?.frame).toBe(detail);
+  });
+});

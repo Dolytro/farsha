@@ -215,7 +215,9 @@ export type InteractionAction =
   /** Switch the variable mode (for example Light to Dark) while presenting; layers bound to variables follow it. */
   | { type: 'SET_MODE'; modeId: string }
   /** Set a variable (in the active mode) while presenting: a colour, a text, a number or "true" / "false". Undone when the presentation ends. */
-  | { type: 'SET_VARIABLE'; variableId: string; value: string };
+  | { type: 'SET_VARIABLE'; variableId: string; value: string }
+  /** If a variable (in the active mode) compares true to a value, go to one frame, else to another (or do nothing). */
+  | { type: 'CONDITIONAL'; variableId: string; op: 'EQ' | 'NEQ' | 'GT' | 'LT'; value: string; thenId: string; elseId?: string };
 
 export type OverlayPosition = 'CENTER' | 'TOP' | 'BOTTOM';
 

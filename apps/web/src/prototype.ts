@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@farsha/design-core";
-import type { Box, DesignNode, Easing, Interaction } from "@farsha/types";
+import type { Box, DesignNode, Easing, Interaction, InteractionAction } from "@farsha/types";
 import { topLevelFrames } from "./section-actions";
 
 /** Top-level frames of every page: the screens a prototype can navigate between. */
@@ -80,9 +80,25 @@ export function safeUrl(url: string): string | null {
   }
 }
 
+/** The frame a Conditional action leads to: its "then" frame when the variable compares true to the value, else its "else" frame (undefined when there is none). */
+export function conditionTarget(doc: DesignDoc, a: Extract<InteractionAction, { type: "CONDITIONAL" }>): string | undefined {
+  const v = doc.getColorVariable(a.variableId);
+  if (!v) return a.elseId;
+  const have = v.values[doc.activeModeId()] ?? Object.values(v.values)[0] ?? "";
+  const bothNumbers = have.trim() !== "" && a.value.trim() !== "" && Number.isFinite(Number(have)) && Number.isFinite(Number(a.value));
+  const same = bothNumbers ? Number(have) === Number(a.value) : have.trim().toLowerCase() === a.value.trim().toLowerCase();
+  const ok = a.op === "EQ" ? same : a.op === "NEQ" ? !same : bothNumbers && (a.op === "GT" ? Number(have) > Number(a.value) : Number(have) < Number(a.value));
+  return ok ? a.thenId : a.elseId;
+}
+
 /** Where an interaction leads: the next frame and the new history, or null when it does nothing (or only opens a web address). */
 export function followInteraction(doc: DesignDoc, current: string, history: string[], interaction: Interaction): { frame: string; history: string[] } | null {
-  const action = interaction.action;
+  let action = interaction.action;
+  if (action.type === "CONDITIONAL") {
+    const targetId = conditionTarget(doc, action);
+    if (!targetId) return null;
+    action = { type: "NAVIGATE", targetId };
+  }
   if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO" || action.type === "SET_MODE" || action.type === "SET_VARIABLE") return null;
   if (action.type === "BACK") {
     const prev = history[history.length - 1];

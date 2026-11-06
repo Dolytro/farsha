@@ -194,7 +194,7 @@ export function PrototypePanel() {
                   className="field__select field__select--wide"
                   aria-label="Action"
                   value={it.action.type}
-                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" || e.target.value === "SWAP_OVERLAY" ? { type: e.target.value, targetId: defaultTarget ?? "" } : e.target.value === "SCROLL_TO" ? { type: "SCROLL_TO", targetId: node?.id ?? "" } : e.target.value === "SET_MODE" ? { type: "SET_MODE", modeId: doc.activeModeId() } : e.target.value === "SET_VARIABLE" ? { type: "SET_VARIABLE", variableId: allVariables[0]?.id ?? "", value: allVariables[0] ? (allVariables[0].values[doc.activeModeId()] ?? "") : "" } : navigate() })}
+                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" || e.target.value === "SWAP_OVERLAY" ? { type: e.target.value, targetId: defaultTarget ?? "" } : e.target.value === "SCROLL_TO" ? { type: "SCROLL_TO", targetId: node?.id ?? "" } : e.target.value === "SET_MODE" ? { type: "SET_MODE", modeId: doc.activeModeId() } : e.target.value === "CONDITIONAL" ? { type: "CONDITIONAL", variableId: allVariables[0]?.id ?? "", op: "EQ", value: allVariables[0] ? (allVariables[0].values[doc.activeModeId()] ?? "") : "", thenId: defaultTarget ?? "" } : e.target.value === "SET_VARIABLE" ? { type: "SET_VARIABLE", variableId: allVariables[0]?.id ?? "", value: allVariables[0] ? (allVariables[0].values[doc.activeModeId()] ?? "") : "" } : navigate() })}
                 >
                   <option value="NAVIGATE">Navigate to</option>
                   <option value="BACK">Back</option>
@@ -204,6 +204,7 @@ export function PrototypePanel() {
                   <option value="SCROLL_TO">Scroll to</option>
                   <option value="SET_MODE">Set variable mode</option>
                   <option value="SET_VARIABLE">Set variable</option>
+                  <option value="CONDITIONAL">Conditional</option>
                   <option value="OPEN_URL">Open link</option>
                 </Select>
                 {(it.action.type === "NAVIGATE" || it.action.type === "OPEN_OVERLAY" || it.action.type === "SWAP_OVERLAY") && (
@@ -240,6 +241,46 @@ export function PrototypePanel() {
                     </label>
                   </>
                 )}
+                {it.action.type === "CONDITIONAL" && (() => {
+                  const c = it.action;
+                  const upd = (p: Partial<typeof c>) => patch({ action: { ...c, ...p } });
+                  return (
+                    <>
+                      <Select className="field__select field__select--wide" aria-label="If variable" value={c.variableId} onChange={(e) => upd({ variableId: e.target.value })}>
+                        {allVariables.length === 0 && <option value="">No variables yet</option>}
+                        {allVariables.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            If {v.name}
+                          </option>
+                        ))}
+                      </Select>
+                      <div className="props__grid props__grid--gap">
+                        <Select className="field__select" aria-label="Comparison" value={c.op} onChange={(e) => upd({ op: e.target.value as typeof c.op })}>
+                          <option value="EQ">is</option>
+                          <option value="NEQ">is not</option>
+                          <option value="GT">is greater than</option>
+                          <option value="LT">is less than</option>
+                        </Select>
+                        <input className="field__input" aria-label="Compare to" defaultValue={c.value} key={c.variableId} onBlur={(e) => upd({ value: e.currentTarget.value })} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
+                      </div>
+                      <Select className="field__select field__select--wide" aria-label="Then go to" value={c.thenId} onChange={(e) => upd({ thenId: e.target.value })}>
+                        {frames.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            Then: {f.name}
+                          </option>
+                        ))}
+                      </Select>
+                      <Select className="field__select field__select--wide" aria-label="Else go to" value={c.elseId ?? ""} onChange={(e) => upd({ elseId: e.target.value || undefined })}>
+                        <option value="">Else: do nothing</option>
+                        {frames.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            Else: {f.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </>
+                  );
+                })()}
                 {it.action.type === "SET_VARIABLE" && (
                   <>
                     <Select className="field__select field__select--wide" aria-label="Variable" value={it.action.variableId} onChange={(e) => patch({ action: { type: "SET_VARIABLE", variableId: e.target.value, value: allVariables.find((v) => v.id === e.target.value)?.values[doc.activeModeId()] ?? "" } })}>
