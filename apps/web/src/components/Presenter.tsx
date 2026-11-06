@@ -28,6 +28,28 @@ export function Presenter() {
   const dragFrom = useRef<{ x: number; y: number } | null>(null);
   const [transition, setTransition] = useState<{ name: string; durationMs: number; timing: string; n: number } | null>(null);
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
+  // variable modes switched by "Set variable mode" are only for the presentation: the file's own mode comes back afterwards
+  const [modeTick, setModeTick] = useState(0);
+  const startMode = useRef<string | null>(null);
+  const restoreMode = () => {
+    if (startMode.current && doc.activeModeId() !== startMode.current) {
+      try {
+        doc.setActiveMode(startMode.current);
+      } catch {
+        // the mode was deleted meanwhile: nothing to restore
+      }
+      setModeTick((n) => n + 1);
+    }
+  };
+  useEffect(() => {
+    if (!start) return;
+    startMode.current = doc.activeModeId();
+    return () => {
+      restoreMode();
+      startMode.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [start]);
 
   useEffect(() => {
     setCurrent(start);
@@ -38,9 +60,9 @@ export function Presenter() {
     setTween(null);
   }, [start]);
 
-  const frame = useMemo(() => (start && current && doc.hasNode(current) ? exportSvg(doc, [current], { measure: canvasMeasure }) : null), [doc, current, start]);
+  const frame = useMemo(() => (start && current && doc.hasNode(current) ? exportSvg(doc, [current], { measure: canvasMeasure }) : null), [doc, current, start, modeTick]);
   const spots = useMemo(() => (start && current && doc.hasNode(current) ? hotspotsIn(doc, current) : []), [doc, current, start]);
-  const overlayFrame = useMemo(() => (start && overlay && doc.hasNode(overlay) ? exportSvg(doc, [overlay], { measure: canvasMeasure }) : null), [doc, overlay, start]);
+  const overlayFrame = useMemo(() => (start && overlay && doc.hasNode(overlay) ? exportSvg(doc, [overlay], { measure: canvasMeasure }) : null), [doc, overlay, start, modeTick]);
   const overlaySpots = useMemo(() => (start && overlay && doc.hasNode(overlay) ? hotspotsIn(doc, overlay) : []), [doc, overlay, start]);
   const videos = useMemo(() => (start && current && doc.hasNode(current) ? videosIn(doc, current) : []), [doc, current, start]);
   const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start]);
@@ -75,6 +97,15 @@ export function Presenter() {
     }
     if (interaction.action.type === "CLOSE_OVERLAY") {
       setOverlay(null);
+      return;
+    }
+    if (interaction.action.type === "SET_MODE") {
+      try {
+        doc.setActiveMode(interaction.action.modeId);
+        setModeTick((n) => n + 1);
+      } catch {
+        showToast("That variable mode no longer exists");
+      }
       return;
     }
     if (interaction.action.type === "SCROLL_TO") {
@@ -137,6 +168,7 @@ export function Presenter() {
       if ((e.key === "r" || e.key === "R") && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // Figma: R restarts the prototype from its starting frame
         e.preventDefault();
+        restoreMode();
         setCurrent(start);
         setHistory([]);
         setOverlay(null);

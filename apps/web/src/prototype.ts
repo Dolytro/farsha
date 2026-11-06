@@ -83,7 +83,7 @@ export function safeUrl(url: string): string | null {
 /** Where an interaction leads: the next frame and the new history, or null when it does nothing (or only opens a web address). */
 export function followInteraction(doc: DesignDoc, current: string, history: string[], interaction: Interaction): { frame: string; history: string[] } | null {
   const action = interaction.action;
-  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO") return null;
+  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO" || action.type === "SET_MODE") return null;
   if (action.type === "BACK") {
     const prev = history[history.length - 1];
     return prev ? { frame: prev, history: history.slice(0, -1) } : null;

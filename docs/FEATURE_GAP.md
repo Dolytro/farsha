@@ -281,7 +281,7 @@ Design panel
 
 Prototype
 - Triggers: While pressing (Mouse enter / leave / down / up done ✅)
-- Actions: Set variable, Set variable mode, Conditional, Media controls (Scroll to and Swap overlay done ✅)
+- Actions: ✅ Set variable mode (`SET_MODE`, undone when the presentation ends). Still missing: Set variable, Conditional, Media controls (Scroll to and Swap overlay done ✅)
 - Overlay position, dim and close on outside click done ✅
 - Animations: Move in / out, Push, Slide out (easing curves and spring done ✅)
 - Scrolling: fixed (sticky) layers (horizontal and both done ✅)

@@ -187,3 +187,11 @@ describe("present scale", () => {
     expect(actual.stageWidth).toBe(400);
   });
 });
+
+describe("set variable mode", () => {
+  it("does not navigate", () => {
+    const { doc, home } = setup();
+    const mode = doc.activeModeId();
+    expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "SET_MODE", modeId: mode } })).toBeNull();
+  });
+});

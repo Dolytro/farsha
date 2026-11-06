@@ -185,7 +185,7 @@ export function PrototypePanel() {
                   className="field__select field__select--wide"
                   aria-label="Action"
                   value={it.action.type}
-                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" || e.target.value === "SWAP_OVERLAY" ? { type: e.target.value, targetId: defaultTarget ?? "" } : e.target.value === "SCROLL_TO" ? { type: "SCROLL_TO", targetId: node?.id ?? "" } : navigate() })}
+                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" || e.target.value === "SWAP_OVERLAY" ? { type: e.target.value, targetId: defaultTarget ?? "" } : e.target.value === "SCROLL_TO" ? { type: "SCROLL_TO", targetId: node?.id ?? "" } : e.target.value === "SET_MODE" ? { type: "SET_MODE", modeId: doc.activeModeId() } : navigate() })}
                 >
                   <option value="NAVIGATE">Navigate to</option>
                   <option value="BACK">Back</option>
@@ -193,6 +193,7 @@ export function PrototypePanel() {
                   <option value="SWAP_OVERLAY">Swap overlay</option>
                   <option value="CLOSE_OVERLAY">Close overlay</option>
                   <option value="SCROLL_TO">Scroll to</option>
+                  <option value="SET_MODE">Set variable mode</option>
                   <option value="OPEN_URL">Open link</option>
                 </Select>
                 {(it.action.type === "NAVIGATE" || it.action.type === "OPEN_OVERLAY" || it.action.type === "SWAP_OVERLAY") && (
@@ -228,6 +229,15 @@ export function PrototypePanel() {
                       Dim the background
                     </label>
                   </>
+                )}
+                {it.action.type === "SET_MODE" && (
+                  <Select className="field__select field__select--wide" aria-label="Variable mode" value={it.action.modeId} onChange={(e) => patch({ action: { type: "SET_MODE", modeId: e.target.value } })}>
+                    {doc.modes().map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </Select>
                 )}
                 {it.action.type === "SCROLL_TO" && (
                   <Select className="field__select field__select--wide" aria-label="Scroll to layer" value={it.action.targetId} onChange={(e) => patch({ action: { type: "SCROLL_TO", targetId: e.target.value } })}>

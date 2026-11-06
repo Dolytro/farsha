@@ -207,7 +207,9 @@ export type InteractionAction =
   | { type: 'SWAP_OVERLAY'; targetId: string; dim?: boolean; closeOnOutside?: boolean; position?: OverlayPosition }
   | { type: 'CLOSE_OVERLAY' }
   /** Scroll the frame so that a layer comes into view. */
-  | { type: 'SCROLL_TO'; targetId: string };
+  | { type: 'SCROLL_TO'; targetId: string }
+  /** Switch the variable mode (for example Light to Dark) while presenting; layers bound to variables follow it. */
+  | { type: 'SET_MODE'; modeId: string };
 
 export type OverlayPosition = 'CENTER' | 'TOP' | 'BOTTOM';
 
