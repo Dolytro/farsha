@@ -80,6 +80,37 @@ export function hslToRgb({ h, s, l }: Hsl): Rgb {
 export const hexToHsv = (hex: string): Hsv => rgbToHsv(hexToRgb(hex));
 export const hsvToHex = (hsv: Hsv): string => rgbToHex(hsvToRgb(hsv));
 
+/** A colour as CSS text: "rgb(17, 34, 51)". */
+export const cssColor = (hex: string): string => {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+/**
+ * Read a colour typed as CSS: "#abc", "#aabbcc", "rgb(1, 2, 3)", "rgb(1 2 3)", "hsl(210, 50%, 40%)" or "hsb(210, 50%, 40%)".
+ * Returns "#rrggbb", or null when the text is not one of those.
+ */
+export function parseCssColor(input: string): string | null {
+  const hex = normalizeHex(input);
+  if (hex) return hex;
+  const m = /^(rgba?|hsla?|hsb)\(\s*([^)]*)\)$/i.exec(input.trim());
+  if (!m) return null;
+  const parts = m[2]!.split(/[\s,/]+/).filter(Boolean);
+  if (parts.length < 3 || parts.length > 4) return null;
+  const nums = parts.slice(0, 3).map((p) => (/^-?\d+(\.\d+)?%?$/.test(p) ? { v: parseFloat(p), pct: p.endsWith("%") } : null));
+  if (nums.some((n) => !n)) return null;
+  const [a, b, c] = nums as { v: number; pct: boolean }[];
+  const kind = m[1]!.toLowerCase();
+  if (kind.startsWith("rgb")) {
+    const ch = (n: { v: number; pct: boolean }) => (n.pct ? (n.v / 100) * 255 : n.v);
+    return rgbToHex({ r: ch(a!), g: ch(b!), b: ch(c!) });
+  }
+  const h = a!.v;
+  const s = clamp(b!.v, 0, 100) / 100;
+  const x = clamp(c!.v, 0, 100) / 100;
+  return kind === "hsb" ? hsvToHex({ h, s, v: x }) : rgbToHex(hslToRgb({ h, s, l: x }));
+}
+
 /** Every solid colour used on the page (fills and strokes), lower case, most used first: the picker's "On this page" list. */
 export function usedColors(paintLists: unknown[][]): string[] {
   const counts = new Map<string, number>();
