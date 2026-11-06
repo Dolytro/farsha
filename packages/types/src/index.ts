@@ -217,6 +217,8 @@ export type InteractionAction =
   /** Set a variable (in the active mode) while presenting: a colour, a text, a number or "true" / "false". Undone when the presentation ends. */
   | { type: 'SET_VARIABLE'; variableId: string; value: string }
   /** If a variable (in the active mode) compares true to a value, go to one frame, else to another (or do nothing). */
+  /** Interactive component: while presenting, the layer (an instance) turns into another main component, usually another variant of its set. Undone when the presentation ends. */
+  | { type: 'CHANGE_TO'; componentId: string }
   | { type: 'CONDITIONAL'; variableId: string; op: 'EQ' | 'NEQ' | 'GT' | 'LT'; value: string; thenId: string; elseId?: string };
 
 export type OverlayPosition = 'CENTER' | 'TOP' | 'BOTTOM';

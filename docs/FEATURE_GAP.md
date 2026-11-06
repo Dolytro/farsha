@@ -286,7 +286,7 @@ Prototype
 - Animations: ✅ Move out and Push (all four sides; the old frame is drawn over the new one while it leaves). Still missing: Move in (same as Slide in here), Slide out (easing curves and spring done ✅)
 - Scrolling: fixed (sticky) layers (horizontal and both done ✅)
 - Prototype settings: ✅ restart (R while presenting) and hotspot hints (the clickable areas flash when a click hits nothing). ✅ named flows (`flowName` on a starting frame, "Flows" buttons in the Prototype tab present one flow, the canvas label shows the name). ✅ background colour (Prototype tab, kept for this session only). ✅ scale options (fit, fill, 100%; fill and 100% crop a frame bigger than the window). Still missing: a flow picker inside the Present screen, Set variable action
-- Interactive components (variant switching on interaction)
+- ✅ Interactive components: a "Change to" action turns an instance into another component or variant while presenting (undone afterwards). Still missing: variant switching on hover as a component-level setting
 
 Dev Mode
 - Code for iOS (SwiftUI, UIKit) and Android (Compose, XML)

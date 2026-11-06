@@ -99,7 +99,7 @@ export function followInteraction(doc: DesignDoc, current: string, history: stri
     if (!targetId) return null;
     action = { type: "NAVIGATE", targetId };
   }
-  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO" || action.type === "SET_MODE" || action.type === "SET_VARIABLE") return null;
+  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO" || action.type === "SET_MODE" || action.type === "SET_VARIABLE" || action.type === "CHANGE_TO") return null;
   if (action.type === "BACK") {
     const prev = history[history.length - 1];
     return prev ? { frame: prev, history: history.slice(0, -1) } : null;

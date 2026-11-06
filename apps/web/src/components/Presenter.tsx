@@ -35,7 +35,18 @@ export function Presenter() {
   const startMode = useRef<string | null>(null);
   // variables changed by "Set variable": their original values, put back when the presentation ends or restarts
   const varBackup = useRef(new Map<string, Record<string, string>>());
+  // instances turned into another component by "Change to": their original component, put back like the variables
+  const instBackup = useRef(new Map<string, string>());
   const restoreMode = () => {
+    for (const [id, componentId] of instBackup.current) {
+      try {
+        if (doc.hasNode(id)) doc.swapInstance(id, componentId);
+      } catch {
+        // the instance or its component was deleted meanwhile: nothing to restore
+      }
+    }
+    if (instBackup.current.size) setModeTick((n) => n + 1);
+    instBackup.current.clear();
     for (const [id, values] of varBackup.current) {
       for (const [modeId, value] of Object.entries(values)) {
         try {
@@ -76,11 +87,11 @@ export function Presenter() {
   }, [start]);
 
   const frame = useMemo(() => (start && current && doc.hasNode(current) ? exportSvg(doc, [current], { measure: canvasMeasure }) : null), [doc, current, start, modeTick]);
-  const spots = useMemo(() => (start && current && doc.hasNode(current) ? hotspotsIn(doc, current) : []), [doc, current, start]);
+  const spots = useMemo(() => (start && current && doc.hasNode(current) ? hotspotsIn(doc, current) : []), [doc, current, start, modeTick]);
   const overlayFrame = useMemo(() => (start && overlay && doc.hasNode(overlay) ? exportSvg(doc, [overlay], { measure: canvasMeasure }) : null), [doc, overlay, start, modeTick]);
-  const overlaySpots = useMemo(() => (start && overlay && doc.hasNode(overlay) ? hotspotsIn(doc, overlay) : []), [doc, overlay, start]);
-  const videos = useMemo(() => (start && current && doc.hasNode(current) ? videosIn(doc, current) : []), [doc, current, start]);
-  const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start]);
+  const overlaySpots = useMemo(() => (start && overlay && doc.hasNode(overlay) ? hotspotsIn(doc, overlay) : []), [doc, overlay, start, modeTick]);
+  const videos = useMemo(() => (start && current && doc.hasNode(current) ? videosIn(doc, current) : []), [doc, current, start, modeTick]);
+  const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start, modeTick]);
 
   /** Smart animate: tween the paired layers of the next frame from where they were in this one. */
   const startTween = (from: string, to: string, durationMs: number, easing?: Easing) => {
@@ -102,7 +113,7 @@ export function Presenter() {
   };
 
   /** Run an interaction: open its address, or change frame with its transition. */
-  const run = (interaction: Interaction) => {
+  const run = (interaction: Interaction, layerId?: string) => {
     if (!current) return;
     if (interaction.action.type === "OPEN_URL") {
       const url = safeUrl(interaction.action.url);
@@ -112,6 +123,21 @@ export function Presenter() {
     }
     if (interaction.action.type === "CLOSE_OVERLAY") {
       setOverlay(null);
+      return;
+    }
+    if (interaction.action.type === "CHANGE_TO") {
+      const n = layerId ? doc.getNode(layerId) : undefined;
+      if (n?.type !== "FRAME" || !n.componentId) {
+        showToast("Change to only works on an instance");
+        return;
+      }
+      try {
+        if (!instBackup.current.has(n.id)) instBackup.current.set(n.id, n.componentId);
+        doc.swapInstance(n.id, interaction.action.componentId);
+        setModeTick((x) => x + 1);
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Couldn't change the component");
+      }
       return;
     }
     if (interaction.action.type === "SET_VARIABLE") {
@@ -170,12 +196,12 @@ export function Presenter() {
   };
 
   /** Mouse handlers of a hotspot: click, hover, or a drag of more than 10 pixels. */
-  const spotEvents = (interaction: Interaction) => {
-    if (interaction.trigger === "ON_CLICK") return { onClick: () => run(interaction) };
-    if (interaction.trigger === "ON_HOVER" || interaction.trigger === "ON_MOUSE_ENTER") return { onMouseEnter: () => run(interaction) };
-    if (interaction.trigger === "ON_MOUSE_LEAVE") return { onMouseLeave: () => run(interaction) };
-    if (interaction.trigger === "ON_MOUSE_DOWN") return { onPointerDown: () => run(interaction) };
-    if (interaction.trigger === "ON_MOUSE_UP") return { onPointerUp: () => run(interaction) };
+  const spotEvents = (interaction: Interaction, layerId?: string) => {
+    if (interaction.trigger === "ON_CLICK") return { onClick: () => run(interaction, layerId) };
+    if (interaction.trigger === "ON_HOVER" || interaction.trigger === "ON_MOUSE_ENTER") return { onMouseEnter: () => run(interaction, layerId) };
+    if (interaction.trigger === "ON_MOUSE_LEAVE") return { onMouseLeave: () => run(interaction, layerId) };
+    if (interaction.trigger === "ON_MOUSE_DOWN") return { onPointerDown: () => run(interaction, layerId) };
+    if (interaction.trigger === "ON_MOUSE_UP") return { onPointerUp: () => run(interaction, layerId) };
     if (interaction.trigger === "ON_DRAG") {
       return {
         onPointerDown: (e: React.PointerEvent) => {
@@ -184,7 +210,7 @@ export function Presenter() {
         onPointerUp: (e: React.PointerEvent) => {
           const from = dragFrom.current;
           dragFrom.current = null;
-          if (from && Math.hypot(e.clientX - from.x, e.clientY - from.y) > 10) run(interaction);
+          if (from && Math.hypot(e.clientX - from.x, e.clientY - from.y) > 10) run(interaction, layerId);
         },
       };
     }
@@ -216,7 +242,7 @@ export function Presenter() {
       const bound = auto.find((a) => a.interaction.trigger === "ON_KEY" && a.interaction.key === e.key);
       if (bound) {
         e.preventDefault();
-        run(bound.interaction);
+        run(bound.interaction, bound.id);
       } else if (e.key === "Backspace" || e.key === "ArrowLeft") {
         e.preventDefault();
         setHistory((h) => {
@@ -239,7 +265,7 @@ export function Presenter() {
   // After-delay interactions start when their frame appears.
   useEffect(() => {
     if (!start) return;
-    const timers = auto.filter((a) => a.interaction.trigger === "AFTER_DELAY").map((a) => setTimeout(() => run(a.interaction), Math.max(0, a.interaction.delayMs ?? 0)));
+    const timers = auto.filter((a) => a.interaction.trigger === "AFTER_DELAY").map((a) => setTimeout(() => run(a.interaction, a.id), Math.max(0, a.interaction.delayMs ?? 0)));
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [start, auto, current]);
@@ -290,7 +316,7 @@ export function Presenter() {
               key={`${h.id}-${i}`}
               className={`presenter__hotspot${hints ? " presenter__hotspot--hint" : ""}`}
               style={{ left: h.box.x * scale, top: h.box.y * scale, width: h.box.width * scale, height: h.box.height * scale }}
-              {...spotEvents(h.interaction)}
+              {...spotEvents(h.interaction, h.id)}
             />
           ))}
           </div>
@@ -308,7 +334,7 @@ export function Presenter() {
                     key={`o-${h.id}-${i}`}
                     className={`presenter__hotspot${hints ? " presenter__hotspot--hint" : ""}`}
                     style={{ left: h.box.x * scale, top: h.box.y * scale, width: h.box.width * scale, height: h.box.height * scale }}
-                    {...spotEvents(h.interaction)}
+                    {...spotEvents(h.interaction, h.id)}
                   />
                 ))}
               </div>
