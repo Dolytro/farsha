@@ -1542,6 +1542,12 @@ body {
   &__hotspot {
     position: absolute;
     cursor: pointer;
+
+    &--hint {
+      background: rgba(13, 153, 255, 0.25);
+      outline: 2px solid rgba(13, 153, 255, 0.9);
+      border-radius: 4px;
+    }
   }
 
   &__empty {

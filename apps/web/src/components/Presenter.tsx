@@ -16,6 +16,8 @@ export function Presenter() {
   const doc = useEditor((s) => s.doc);
   const [current, setCurrent] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [hints, setHints] = useState(false);
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [overlay, setOverlay] = useState<string | null>(null);
   const [tween, setTween] = useState<{ svg: string; width: number; height: number } | null>(null);
   const tweenRun = useRef(0);
@@ -130,6 +132,17 @@ export function Presenter() {
         else setPresenting(null);
         return;
       }
+      if ((e.key === "r" || e.key === "R") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Figma: R restarts the prototype from its starting frame
+        e.preventDefault();
+        setCurrent(start);
+        setHistory([]);
+        setOverlay(null);
+        setTransition(null);
+        tweenRun.current++;
+        setTween(null);
+        return;
+      }
       const bound = auto.find((a) => a.interaction.trigger === "ON_KEY" && a.interaction.key === e.key);
       if (bound) {
         e.preventDefault();
@@ -177,6 +190,13 @@ export function Presenter() {
         <div
           key={transition?.n ?? 0}
           className={`presenter__stage${device !== "none" ? ` presenter__stage--${device}` : ""}`}
+          onClick={(e) => {
+            // Figma flashes the clickable areas when a click hits nothing
+            if ((e.target as HTMLElement).closest(".presenter__hotspot")) return;
+            setHints(true);
+            clearTimeout(hintTimer.current);
+            hintTimer.current = setTimeout(() => setHints(false), 700);
+          }}
           style={{ width: stageWidth, height: stageHeight, animation: transition ? `${transition.name} ${transition.durationMs}ms ${transition.timing} both` : undefined }}
         >
           <div className="presenter__scroll" ref={scrollRef} style={{ height: stageHeight, width: stageWidth, overflowY: scrollMode === "VERTICAL" || scrollMode === "BOTH" ? "auto" : "hidden", overflowX: scrollMode === "HORIZONTAL" || scrollMode === "BOTH" ? "auto" : "hidden" }}>
@@ -191,7 +211,7 @@ export function Presenter() {
           {spots.map((h, i) => (
             <div
               key={`${h.id}-${i}`}
-              className="presenter__hotspot"
+              className={`presenter__hotspot${hints ? " presenter__hotspot--hint" : ""}`}
               style={{ left: h.box.x * scale, top: h.box.y * scale, width: h.box.width * scale, height: h.box.height * scale }}
               {...spotEvents(h.interaction)}
             />
@@ -209,7 +229,7 @@ export function Presenter() {
                 {overlaySpots.map((h, i) => (
                   <div
                     key={`o-${h.id}-${i}`}
-                    className="presenter__hotspot"
+                    className={`presenter__hotspot${hints ? " presenter__hotspot--hint" : ""}`}
                     style={{ left: h.box.x * scale, top: h.box.y * scale, width: h.box.width * scale, height: h.box.height * scale }}
                     {...spotEvents(h.interaction)}
                   />
