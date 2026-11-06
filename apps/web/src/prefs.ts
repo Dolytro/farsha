@@ -39,6 +39,8 @@ export interface Prefs {
   keyboardZoomToSelection: boolean;
   /** Ctrl + click on the canvas opens the right-click menu. */
   ctrlClickMenu: boolean;
+  /** Typing " or ' in a text layer gives curly quotes (Figma: Use smart quotes). */
+  smartQuotes: boolean;
   /** Arrow key nudge, and Shift + arrow nudge, in pixels. */
   nudge: number;
   bigNudge: number;
@@ -46,7 +48,7 @@ export interface Prefs {
 
 export const PREFS_KEY = "farsha.prefs";
 
-export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, renameDuplicates: false, keyboardZoomToSelection: false, ctrlClickMenu: false, nudge: 1, bigNudge: 10 };
+export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, renameDuplicates: false, keyboardZoomToSelection: false, ctrlClickMenu: false, smartQuotes: false, nudge: 1, bigNudge: 10 };
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
 const amount = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 && v <= 1000 ? v : fallback);
@@ -73,6 +75,7 @@ export function parsePrefs(text: string | null | undefined): Prefs {
     renameDuplicates: bool(raw.renameDuplicates, DEFAULT_PREFS.renameDuplicates),
     keyboardZoomToSelection: bool(raw.keyboardZoomToSelection, DEFAULT_PREFS.keyboardZoomToSelection),
     ctrlClickMenu: bool(raw.ctrlClickMenu, DEFAULT_PREFS.ctrlClickMenu),
+    smartQuotes: bool(raw.smartQuotes, DEFAULT_PREFS.smartQuotes),
     nudge: amount(raw.nudge, DEFAULT_PREFS.nudge),
     bigNudge: amount(raw.bigNudge, DEFAULT_PREFS.bigNudge),
   };

@@ -264,7 +264,7 @@ Menus and commands
 - View: ✅ Show slices, Annotations (Shift+Y, the dev notes on the canvas), Pixel preview (Ctrl+Shift+P, crisp edges), Mask outlines, Frame outlines, Find previous / next frame (Home / End). Still missing: Additional labels, Minimize left bar, Toggle variables panel, Switch to Draw
 - ✅ Object > More layout options (Resize to fit, hug and fill width / height, lock and unlock aspect ratio; Suggest auto layout is the same as Add auto layout) and rotate / flip buttons in the Position section. Still missing in Object: Restore / Set default thumbnail, Main component (Push changes to main, Restore main component), Slots
 - Text: justified alignment, top / middle / bottom commands, Adjust (indent, font size / weight / line height / letter spacing steps), Title case + small caps
-- Preferences: ✅ Highlight layers on hover, Show dimensions on objects, Right-click and drag to pan. ✅ Rename duplicated layers (Preferences: Card 1 becomes Card 2). Still missing: Hide canvas UI during changes, Use smart quotes, Flip objects while resizing, Keyboard zooms into selection, Use Ctrl+Alt+arrows to rotate, Color profile, Keyboard layout, Accessibility
+- Preferences: ✅ Highlight layers on hover, Show dimensions on objects, Right-click and drag to pan. ✅ Rename duplicated layers (Preferences: Card 1 becomes Card 2). ✅ Use smart quotes (off by default; curly quotes while typing in a text layer, but a quote typed over a selection stays straight). Still missing: Hide canvas UI during changes, Flip objects while resizing, Keyboard zooms into selection, Use Ctrl+Alt+arrows to rotate, Color profile, Keyboard layout, Accessibility
 
 Design panel
 - ✅ Frame size presets (Phone, Tablet, Desktop, Presentation, Watch, Paper) in the Layout section

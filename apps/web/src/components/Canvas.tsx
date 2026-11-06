@@ -11,6 +11,7 @@ import { gridRects, maskMarkup } from "@farsha/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
 import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
 import { isVideoFile, videoUrl } from "../video";
@@ -85,6 +86,7 @@ export function Canvas() {
   const view = useEditor((s) => s.view);
   const prototypeMode = useEditor((s) => s.prototypeMode);
   const spellCheck = useEditor((s) => s.prefs.spellCheck);
+  const smartQuotes = useEditor((s) => s.prefs.smartQuotes);
   const hoverHighlight = useEditor((s) => s.prefs.hoverHighlight);
   const showDimensions = useEditor((s) => s.prefs.showDimensions);
   const rightPanMoved = useRef(false);
@@ -889,8 +891,12 @@ export function Canvas() {
                 onPointerDown={(e) => e.stopPropagation()}
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => {
-                  doc.setText(editNode.id, { characters: e.target.value, runs: adjustRuns(editNode.runs, editNode.characters, e.target.value) });
+                  const el = e.currentTarget;
+                  const value = smartQuotes ? smartQuote(editNode.characters, el.value, el.selectionStart) : el.value;
+                  doc.setText(editNode.id, { characters: value, runs: adjustRuns(editNode.runs, editNode.characters, value) });
                   fitText(doc, editNode.id);
+                  const caret = el.selectionStart;
+                  requestAnimationFrame(() => el.setSelectionRange(caret, caret));
                 }}
                 onBlur={() => setEditing(null)}
                 onKeyDown={(e) => {
