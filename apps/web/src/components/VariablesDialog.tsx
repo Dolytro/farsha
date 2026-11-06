@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useEditor } from "../store";
 import { HexInput } from "./HexInput";
 import { fitText } from "../text-layout";
+import { exportVariables, importVariables, parseVariables } from "../variable-json";
 
 /** Colour variables and their modes: one row per variable, one column per mode (for example Light and Dark). */
 export function VariablesDialog() {
@@ -39,6 +40,29 @@ export function VariablesDialog() {
     } catch (err) {
       useEditor.getState().showToast(err instanceof Error ? err.message : "Couldn't do that");
     }
+  };
+
+  const exportJson = () => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(exportVariables(doc), null, 2)], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "variables.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const importJson = (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 2_000_000) return useEditor.getState().showToast("That file is too big for a variables file");
+    void file.text().then((text) => {
+      try {
+        const n = importVariables(doc, parseVariables(text));
+        useEditor.getState().showToast(n === 1 ? "Imported 1 variable" : `Imported ${n} variables`);
+      } catch (err) {
+        useEditor.getState().showToast(err instanceof Error ? err.message : "Couldn't import that file");
+      }
+    });
   };
 
   return (
@@ -161,6 +185,15 @@ export function VariablesDialog() {
         <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9") : tab === "text" ? doc.createTextVariable(`Text ${variables.length + 1}`, "Text") : doc.createValueVariable(tab === "number" ? "NUMBER" : "BOOLEAN", `${tab === "number" ? "Number" : "Boolean"} ${variables.length + 1}`, tab === "number" ? "0" : "true")))}>
           {tab === "color" ? "+ Add color variable" : tab === "text" ? "+ Add text variable" : tab === "number" ? "+ Add number variable" : "+ Add boolean variable"}
         </button>
+        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+          <button className="props__button" onClick={exportJson}>
+            Export JSON
+          </button>
+          <label className="props__button" style={{ textAlign: "center", cursor: "pointer" }}>
+            Import JSON
+            <input type="file" accept="application/json,.json" hidden onChange={(e) => { importJson(e.target.files?.[0]); e.target.value = ""; }} />
+          </label>
+        </div>
         <p className="dialog__note">The highlighted mode is the one shown on the canvas. Layers bound to a variable follow it.</p>
       </div>
     </div>
