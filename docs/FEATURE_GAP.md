@@ -307,7 +307,7 @@ Other
 - Plugins and widgets: a small sandboxed plugin API (large)
 - Figma Draw tools (brush, marker, highlighter) and the Switch to Draw mode
 - Import: PDF, Sketch, .fig (partial)
-- ✅ Autosave history entries (every 10 minutes of editing, in the browser). Still missing: named versions with descriptions
+- ✅ Autosave history entries (every 10 minutes of editing, in the browser). ✅ version descriptions (a Description box when saving a version). Still missing: version history shared through Drive
 
 ### 12.3 Needs a server (cannot be free and offline, documented, not planned)
 Live cursors, observation mode, cursor chat, audio, comment notifications and @mentions, branching and merging, team and shared libraries,
