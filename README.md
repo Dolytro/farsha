@@ -85,6 +85,10 @@ To report a security problem, see [SECURITY.md](SECURITY.md).
 
 Farsha is free and will stay free. Starring the repo, reporting bugs and sending pull requests help a lot.
 
+## Star history
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Dolytro/farsha&type=Date)](https://star-history.com/#Dolytro/farsha&Date)
+
 ## Community
 
 - Follow Farsha news from [Dolytro](https://dolytro.com): [Facebook](https://www.facebook.com/share/1CfyyzePHR/), [YouTube](https://youtube.com/@dolytro), [Instagram](https://www.instagram.com/dolytro.ig/), [X](https://x.com/dolytro), [Threads](https://www.threads.net/@dolytro.ig), [TikTok](https://www.tiktok.com/@dolytro), [Pinterest](https://www.pinterest.com/dolytro_/)
