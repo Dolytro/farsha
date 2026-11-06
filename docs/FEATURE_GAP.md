@@ -256,7 +256,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Increase / decrease font size, weight, line height, letter spacing (indentation not yet) | Ctrl+Shift+> / < , Ctrl+Alt+> / < , Alt+Shift+> / < , Alt+> / < , Ctrl+] / [ | ✅ same |
 | Zoom to previous / next frame | Shift+N / N | check |
 | Paste to replace | Ctrl+Shift+R | Ctrl+Alt+Shift+V (browser reserves Ctrl+Shift+R) |
-| Delete and heal | Shift+Backspace | menu only |
+| Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
 Menus and commands

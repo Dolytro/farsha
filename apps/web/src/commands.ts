@@ -423,6 +423,7 @@ export function buildCommands(): Command[] {
     {
       id: "vector-delete-heal",
       label: "Delete and heal",
+      shortcut: `${SHIFT}Backspace`,
       keywords: "vector point remove anchor",
       run: () => {
         const { editingPath, editingPoint } = state();
