@@ -25,6 +25,14 @@ const TRANSITIONS: [TransitionType, string][] = [
   ["SLIDE_IN_RIGHT", "Slide in from right"],
   ["SLIDE_IN_TOP", "Slide in from top"],
   ["SLIDE_IN_BOTTOM", "Slide in from bottom"],
+  ["MOVE_OUT_LEFT", "Move out to left"],
+  ["MOVE_OUT_RIGHT", "Move out to right"],
+  ["MOVE_OUT_TOP", "Move out to top"],
+  ["MOVE_OUT_BOTTOM", "Move out to bottom"],
+  ["PUSH_LEFT", "Push from left"],
+  ["PUSH_RIGHT", "Push from right"],
+  ["PUSH_TOP", "Push from top"],
+  ["PUSH_BOTTOM", "Push from bottom"],
 ];
 
 const EASINGS: [Easing, string][] = [

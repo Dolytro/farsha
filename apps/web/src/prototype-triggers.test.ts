@@ -195,3 +195,13 @@ describe("set variable mode", () => {
     expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "SET_MODE", modeId: mode } })).toBeNull();
   });
 });
+
+describe("move out and push", () => {
+  it("names the animations of the new and the leaving frame", async () => {
+    const { transitionAnimation } = await import("./prototype");
+    expect(transitionAnimation({ type: "MOVE_OUT_LEFT", durationMs: 400 })).toMatchObject({ name: "presenter-hold", leave: "presenter-out-left", durationMs: 400 });
+    expect(transitionAnimation({ type: "PUSH_LEFT", durationMs: 400 })).toMatchObject({ name: "presenter-slide-left", leave: "presenter-out-right" });
+    expect(transitionAnimation({ type: "PUSH_TOP", durationMs: 400 })).toMatchObject({ name: "presenter-slide-top", leave: "presenter-out-bottom" });
+    expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 400 })?.leave).toBeUndefined();
+  });
+});

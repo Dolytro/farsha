@@ -283,7 +283,7 @@ Prototype
 - Triggers: While pressing (Mouse enter / leave / down / up done ✅)
 - Actions: ✅ Set variable mode (`SET_MODE`, undone when the presentation ends). Still missing: Set variable, Conditional, Media controls (Scroll to and Swap overlay done ✅)
 - Overlay position, dim and close on outside click done ✅
-- Animations: Move in / out, Push, Slide out (easing curves and spring done ✅)
+- Animations: ✅ Move out and Push (all four sides; the old frame is drawn over the new one while it leaves). Still missing: Move in (same as Slide in here), Slide out (easing curves and spring done ✅)
 - Scrolling: fixed (sticky) layers (horizontal and both done ✅)
 - Prototype settings: ✅ restart (R while presenting) and hotspot hints (the clickable areas flash when a click hits nothing). ✅ named flows (`flowName` on a starting frame, "Flows" buttons in the Prototype tab present one flow, the canvas label shows the name). ✅ background colour (Prototype tab, kept for this session only). ✅ scale options (fit, fill, 100%; fill and 100% crop a frame bigger than the window). Still missing: a flow picker inside the Present screen, Set variable action
 - Interactive components (variant switching on interaction)

@@ -904,6 +904,33 @@ textarea:focus-visible {
   to { transform: none; opacity: 1; }
 }
 
+@keyframes presenter-hold {
+  from { opacity: 1; }
+  to { opacity: 1; }
+}
+@keyframes presenter-out-left {
+  to { transform: translateX(-100%); }
+}
+@keyframes presenter-out-right {
+  to { transform: translateX(100%); }
+}
+@keyframes presenter-out-top {
+  to { transform: translateY(-100%); }
+}
+@keyframes presenter-out-bottom {
+  to { transform: translateY(100%); }
+}
+// The frame that is leaving: drawn over the new one, centred like the stage.
+.presenter__leaving {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
 // Prototype overlays: the overlay frame sits centred on a dimmed backdrop.
 .presenter__overlay {
   position: absolute;

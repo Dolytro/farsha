@@ -148,10 +148,23 @@ export function easingFn(e: Easing | undefined): (t: number) => number {
 }
 
 /** CSS keyframes name, duration and timing function for a transition (null for an instant change). */
-export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string } | null {
+export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string; leave?: string } | null {
   if (!t || t.type === "INSTANT" || t.type === "SMART_ANIMATE") return null;
-  const name = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" }[t.type];
-  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)), timing: easingCss(t.easing) };
+  const names: Record<string, string> = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" };
+  // Move out: the old frame leaves toward a side and reveals the new one. Push: the new frame comes in from a side and pushes the old one out the opposite way.
+  const opposite: Record<string, string> = { left: "right", right: "left", top: "bottom", bottom: "top" };
+  const side = t.type.split("_").pop()!.toLowerCase();
+  let name = names[t.type];
+  let leave: string | undefined;
+  if (t.type.startsWith("MOVE_OUT_")) {
+    name = "presenter-hold";
+    leave = `presenter-out-${side}`;
+  } else if (t.type.startsWith("PUSH_")) {
+    name = `presenter-slide-${side}`;
+    leave = `presenter-out-${opposite[side] ?? side}`;
+  }
+  if (!name) return null;
+  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)), timing: easingCss(t.easing), ...(leave ? { leave } : {}) };
 }
 
 /** How big the prototype stage is in a window: fit the whole frame, or (vertical scrolling) fit the width and scroll the rest. */

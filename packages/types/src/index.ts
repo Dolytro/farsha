@@ -224,7 +224,7 @@ export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'ON_DRAG' | 'ON_MOUSE
 export type Easing = 'LINEAR' | 'EASE_IN' | 'EASE_OUT' | 'EASE_IN_OUT' | 'SPRING';
 
 /** How the next frame appears. */
-export type TransitionType = 'INSTANT' | 'SMART_ANIMATE' | 'DISSOLVE' | 'SLIDE_IN_LEFT' | 'SLIDE_IN_RIGHT' | 'SLIDE_IN_TOP' | 'SLIDE_IN_BOTTOM';
+export type TransitionType = 'INSTANT' | 'SMART_ANIMATE' | 'DISSOLVE' | 'SLIDE_IN_LEFT' | 'SLIDE_IN_RIGHT' | 'SLIDE_IN_TOP' | 'SLIDE_IN_BOTTOM' | 'MOVE_OUT_LEFT' | 'MOVE_OUT_RIGHT' | 'MOVE_OUT_TOP' | 'MOVE_OUT_BOTTOM' | 'PUSH_LEFT' | 'PUSH_RIGHT' | 'PUSH_TOP' | 'PUSH_BOTTOM';
 
 export interface Interaction {
   trigger: InteractionTrigger;

@@ -30,6 +30,8 @@ export function Presenter() {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   // variable modes switched by "Set variable mode" are only for the presentation: the file's own mode comes back afterwards
   const [modeTick, setModeTick] = useState(0);
+  // the old frame while it moves out (Move out and Push transitions)
+  const [leaving, setLeaving] = useState<{ svg: string; width: number; height: number; scale: number; stageWidth: number; stageHeight: number; name: string; ms: number; timing: string; n: number } | null>(null);
   const startMode = useRef<string | null>(null);
   const restoreMode = () => {
     if (startMode.current && doc.activeModeId() !== startMode.current) {
@@ -129,6 +131,11 @@ export function Presenter() {
     if (interaction.transition?.type === "SMART_ANIMATE") startTween(current, next.frame, interaction.transition.durationMs, interaction.transition.easing);
     const anim = transitionAnimation(interaction.transition);
     setTransition(anim ? { ...anim, n: Date.now() } : null);
+    if (anim?.leave && frame) {
+      const n = Date.now();
+      setLeaving({ svg: frame.svg, width: frame.width, height: frame.height, scale, stageWidth, stageHeight, name: anim.leave, ms: anim.durationMs, timing: anim.timing, n });
+      setTimeout(() => setLeaving((l) => (l && l.n === n ? null : l)), anim.durationMs + 50);
+    } else setLeaving(null);
     setCurrent(next.frame);
     setHistory(next.history);
   };
@@ -220,6 +227,13 @@ export function Presenter() {
       <button className="presenter__close" onClick={() => setPresenting(null)} title="Exit (Esc)">
         ✕
       </button>
+      {leaving && (
+        <div className="presenter__leaving" key={`leave-${leaving.n}`} style={{ width: leaving.stageWidth, height: leaving.stageHeight }}>
+          <div style={{ width: leaving.stageWidth, height: leaving.stageHeight, animation: `${leaving.name} ${leaving.ms}ms ${leaving.timing} both` }}>
+            <div className="presenter__frame" style={{ width: leaving.width, height: leaving.height, transform: `scale(${leaving.scale})` }} dangerouslySetInnerHTML={{ __html: leaving.svg }} />
+          </div>
+        </div>
+      )}
       {frame ? (
         <div
           key={transition?.n ?? 0}
