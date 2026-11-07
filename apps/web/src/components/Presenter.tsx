@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Easing, Interaction, OverlayPosition } from "@farsha/types";
 import { exportSvg } from "@farsha/canvas-engine";
 import { canvasMeasure } from "../text-layout";
-import { easingFn, followInteraction, hotspotsIn, layerBoxIn, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
+import { easingFn, followInteraction, hotspotsIn, layerBoxIn, mediaState, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
 import { frameAt, matchLayers, scratchCopy } from "../smart-animate";
 import { videoUrl } from "../video";
 import { useEditor } from "../store";
@@ -24,6 +24,7 @@ export function Presenter() {
   const [tween, setTween] = useState<{ svg: string; width: number; height: number } | null>(null);
   const tweenRun = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef(new Map<string, HTMLVideoElement>());
   const [overlayCfg, setOverlayCfg] = useState<{ dim: boolean; closeOnOutside: boolean; position: OverlayPosition }>({ dim: true, closeOnOutside: true, position: "CENTER" });
   const dragFrom = useRef<{ x: number; y: number } | null>(null);
   const [transition, setTransition] = useState<{ name: string; durationMs: number; timing: string; n: number } | null>(null);
@@ -163,6 +164,20 @@ export function Presenter() {
       } catch {
         showToast("That variable mode no longer exists");
       }
+      return;
+    }
+    if (interaction.action.type === "MEDIA") {
+      const a = interaction.action;
+      const el = videoRefs.current.get(a.targetId);
+      if (!el) {
+        showToast("The video to control is not in this frame");
+        return;
+      }
+      const next = mediaState(a.op, { paused: el.paused, muted: el.muted, time: el.currentTime, duration: el.duration }, a.seconds);
+      el.muted = next.muted;
+      if (next.time !== el.currentTime) el.currentTime = next.time;
+      if (next.paused) el.pause();
+      else void el.play().catch(() => undefined);
       return;
     }
     if (interaction.action.type === "SCROLL_TO") {
@@ -308,7 +323,7 @@ export function Presenter() {
           {videos.map((v) => {
             const src = videoUrl(doc, v.assetId);
             return src ? (
-              <video key={`video-${v.id}`} src={src} autoPlay muted loop playsInline controls style={{ position: "absolute", left: v.box.x * scale, top: v.box.y * scale, width: v.box.width * scale, height: v.box.height * scale, objectFit: "cover", background: "#000" }} />
+              <video key={`video-${v.id}`} ref={(el) => { if (el) videoRefs.current.set(v.id, el); else videoRefs.current.delete(v.id); }} src={src} autoPlay muted loop playsInline controls style={{ position: "absolute", left: v.box.x * scale, top: v.box.y * scale, width: v.box.width * scale, height: v.box.height * scale, objectFit: "cover", background: "#000" }} />
             ) : null;
           })}
           {spots.map((h, i) => (

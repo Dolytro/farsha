@@ -256,9 +256,13 @@ export type InteractionAction =
   /** If a variable (in the active mode) compares true to a value, go to one frame, else to another (or do nothing). */
   /** Interactive component: while presenting, the layer (an instance) turns into another main component, usually another variant of its set. Undone when the presentation ends. */
   | { type: 'CHANGE_TO'; componentId: string }
+  /** Control a video layer while presenting (Figma's Media controls): play, pause, mute, or skip. */
+  | { type: 'MEDIA'; targetId: string; op: MediaOp; /** Skip length in seconds (default 10). */ seconds?: number }
   | { type: 'CONDITIONAL'; variableId: string; op: 'EQ' | 'NEQ' | 'GT' | 'LT'; value: string; thenId: string; elseId?: string };
 
 export type OverlayPosition = 'CENTER' | 'TOP' | 'BOTTOM';
+
+export type MediaOp = 'PLAY' | 'PAUSE' | 'TOGGLE_PLAY' | 'MUTE' | 'UNMUTE' | 'TOGGLE_MUTE' | 'SKIP_FORWARD' | 'SKIP_BACK';
 
 /** What starts an interaction in a prototype (Figma: On click, While hovering, On drag, After delay, Key / gamepad). */
 export type InteractionTrigger = 'ON_CLICK' | 'ON_HOVER' | 'ON_DRAG' | 'ON_MOUSE_ENTER' | 'ON_MOUSE_LEAVE' | 'ON_MOUSE_DOWN' | 'ON_MOUSE_UP' | 'AFTER_DELAY' | 'ON_KEY';

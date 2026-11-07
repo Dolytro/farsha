@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@farsha/design-core";
-import type { Box, DesignNode, Easing, Interaction, InteractionAction } from "@farsha/types";
+import type { Box, DesignNode, Easing, Interaction, InteractionAction, MediaOp } from "@farsha/types";
 import { topLevelFrames } from "./section-actions";
 
 /** Top-level frames of every page: the screens a prototype can navigate between. */
@@ -99,7 +99,7 @@ export function followInteraction(doc: DesignDoc, current: string, history: stri
     if (!targetId) return null;
     action = { type: "NAVIGATE", targetId };
   }
-  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO" || action.type === "SET_MODE" || action.type === "SET_VARIABLE" || action.type === "CHANGE_TO") return null;
+  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO" || action.type === "SET_MODE" || action.type === "SET_VARIABLE" || action.type === "CHANGE_TO" || action.type === "MEDIA") return null;
   if (action.type === "BACK") {
     const prev = history[history.length - 1];
     return prev ? { frame: prev, history: history.slice(0, -1) } : null;
@@ -267,4 +267,25 @@ export function videosIn(doc: DesignDoc, frameId: string): VideoSpot[] {
     if (abs) out.push({ id: n.id, assetId: n.videoAssetId, box: { x: abs.x - origin.x, y: abs.y - origin.y, width: abs.width, height: abs.height } });
   }
   return out;
+}
+
+/** The state of a video after a media control: playing or paused, muted or not, and the playback time (skips stay between 0 and the length). */
+export function mediaState(
+  op: MediaOp,
+  now: { paused: boolean; muted: boolean; time: number; duration: number },
+  seconds = 10,
+): { paused: boolean; muted: boolean; time: number } {
+  const skip = Number.isFinite(seconds) && seconds > 0 ? Math.min(3600, seconds) : 10;
+  const length = Number.isFinite(now.duration) && now.duration > 0 ? now.duration : Infinity;
+  const clamp = (t: number) => Math.min(length, Math.max(0, t));
+  let { paused, muted, time } = now;
+  if (op === "PLAY") paused = false;
+  else if (op === "PAUSE") paused = true;
+  else if (op === "TOGGLE_PLAY") paused = !paused;
+  else if (op === "MUTE") muted = true;
+  else if (op === "UNMUTE") muted = false;
+  else if (op === "TOGGLE_MUTE") muted = !muted;
+  else if (op === "SKIP_FORWARD") time = clamp(time + skip);
+  else if (op === "SKIP_BACK") time = clamp(time - skip);
+  return { paused, muted, time };
 }

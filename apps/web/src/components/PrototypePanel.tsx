@@ -1,4 +1,4 @@
-import type { Easing, Interaction, InteractionAction, InteractionTrigger, OverlayPosition, TransitionType } from "@farsha/types";
+import type { Easing, Interaction, InteractionAction, InteractionTrigger, MediaOp, OverlayPosition, TransitionType } from "@farsha/types";
 import { flowsOf, prototypeFrames, startFrame, topFrameOf } from "../prototype";
 import { useEditor } from "../store";
 import { Select } from "./Select";
@@ -33,6 +33,17 @@ const TRANSITIONS: [TransitionType, string][] = [
   ["PUSH_RIGHT", "Push from right"],
   ["PUSH_TOP", "Push from top"],
   ["PUSH_BOTTOM", "Push from bottom"],
+];
+
+const MEDIA_OPS: [MediaOp, string][] = [
+  ["TOGGLE_PLAY", "Play / pause"],
+  ["PLAY", "Play"],
+  ["PAUSE", "Pause"],
+  ["TOGGLE_MUTE", "Mute / unmute"],
+  ["MUTE", "Mute"],
+  ["UNMUTE", "Unmute"],
+  ["SKIP_FORWARD", "Skip forward"],
+  ["SKIP_BACK", "Skip back"],
 ];
 
 const EASINGS: [Easing, string][] = [
@@ -75,6 +86,7 @@ export function PrototypePanel() {
   const frames = prototypeFrames(doc);
   const flows = flowsOf(doc);
   const allMains = doc.pages().flatMap((p) => doc.descendants(p.id)).filter((n) => n.type === "FRAME" && n.isComponent);
+  const allVideos = doc.pages().flatMap((p) => doc.descendants(p.id)).filter((n) => n.type === "RECTANGLE" && !!n.videoAssetId);
   const allVariables = [...doc.colorVariables(), ...doc.textVariables(), ...doc.valueVariables("NUMBER"), ...doc.valueVariables("BOOLEAN")];
 
   const present = () => {
@@ -195,7 +207,7 @@ export function PrototypePanel() {
                   className="field__select field__select--wide"
                   aria-label="Action"
                   value={it.action.type}
-                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" || e.target.value === "SWAP_OVERLAY" ? { type: e.target.value, targetId: defaultTarget ?? "" } : e.target.value === "SCROLL_TO" ? { type: "SCROLL_TO", targetId: node?.id ?? "" } : e.target.value === "SET_MODE" ? { type: "SET_MODE", modeId: doc.activeModeId() } : e.target.value === "CHANGE_TO" ? { type: "CHANGE_TO", componentId: allMains.find((m) => m.id !== (node as { componentId?: string } | undefined)?.componentId)?.id ?? "" } : e.target.value === "CONDITIONAL" ? { type: "CONDITIONAL", variableId: allVariables[0]?.id ?? "", op: "EQ", value: allVariables[0] ? (allVariables[0].values[doc.activeModeId()] ?? "") : "", thenId: defaultTarget ?? "" } : e.target.value === "SET_VARIABLE" ? { type: "SET_VARIABLE", variableId: allVariables[0]?.id ?? "", value: allVariables[0] ? (allVariables[0].values[doc.activeModeId()] ?? "") : "" } : navigate() })}
+                  onChange={(e) => patch({ action: e.target.value === "BACK" ? { type: "BACK" } : e.target.value === "OPEN_URL" ? { type: "OPEN_URL", url: "https://" } : e.target.value === "CLOSE_OVERLAY" ? { type: "CLOSE_OVERLAY" } : e.target.value === "OPEN_OVERLAY" || e.target.value === "SWAP_OVERLAY" ? { type: e.target.value, targetId: defaultTarget ?? "" } : e.target.value === "SCROLL_TO" ? { type: "SCROLL_TO", targetId: node?.id ?? "" } : e.target.value === "SET_MODE" ? { type: "SET_MODE", modeId: doc.activeModeId() } : e.target.value === "CHANGE_TO" ? { type: "CHANGE_TO", componentId: allMains.find((m) => m.id !== (node as { componentId?: string } | undefined)?.componentId)?.id ?? "" } : e.target.value === "MEDIA" ? { type: "MEDIA", targetId: allVideos[0]?.id ?? "", op: "TOGGLE_PLAY" } : e.target.value === "CONDITIONAL" ? { type: "CONDITIONAL", variableId: allVariables[0]?.id ?? "", op: "EQ", value: allVariables[0] ? (allVariables[0].values[doc.activeModeId()] ?? "") : "", thenId: defaultTarget ?? "" } : e.target.value === "SET_VARIABLE" ? { type: "SET_VARIABLE", variableId: allVariables[0]?.id ?? "", value: allVariables[0] ? (allVariables[0].values[doc.activeModeId()] ?? "") : "" } : navigate() })}
                 >
                   <option value="NAVIGATE">Navigate to</option>
                   <option value="BACK">Back</option>
@@ -207,6 +219,7 @@ export function PrototypePanel() {
                   <option value="SET_VARIABLE">Set variable</option>
                   <option value="CONDITIONAL">Conditional</option>
                   <option value="CHANGE_TO">Change to</option>
+                  <option value="MEDIA">Media controls</option>
                   <option value="OPEN_URL">Open link</option>
                 </Select>
                 {(it.action.type === "NAVIGATE" || it.action.type === "OPEN_OVERLAY" || it.action.type === "SWAP_OVERLAY") && (
@@ -332,6 +345,35 @@ export function PrototypePanel() {
                     ))}
                   </Select>
                 )}
+                {it.action.type === "MEDIA" && (() => {
+                  const m = it.action;
+                  const upd = (p: Partial<typeof m>) => patch({ action: { ...m, ...p } });
+                  return (
+                    <>
+                      <Select className="field__select field__select--wide" aria-label="Video layer" value={m.targetId} onChange={(e) => upd({ targetId: e.target.value })}>
+                        {allVideos.length === 0 && <option value="">No video layers yet</option>}
+                        {allVideos.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.name}
+                          </option>
+                        ))}
+                      </Select>
+                      <Select className="field__select field__select--wide" aria-label="Media control" value={m.op} onChange={(e) => upd({ op: e.target.value as MediaOp })}>
+                        {MEDIA_OPS.map(([op, label]) => (
+                          <option key={op} value={op}>
+                            {label}
+                          </option>
+                        ))}
+                      </Select>
+                      {(m.op === "SKIP_FORWARD" || m.op === "SKIP_BACK") && (
+                        <label className="field" title="Skip length in seconds">
+                          <span className="field__label">s</span>
+                          <input className="field__input" type="number" min={1} max={3600} aria-label="Skip seconds" value={m.seconds ?? 10} onChange={(e) => Number.isFinite(Number(e.target.value)) && upd({ seconds: Math.min(3600, Math.max(1, Number(e.target.value))) })} />
+                        </label>
+                      )}
+                    </>
+                  );
+                })()}
                 {it.action.type === "OPEN_URL" && (
                   <label className="field">
                     <span className="field__label">URL</span>

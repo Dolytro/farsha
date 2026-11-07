@@ -281,7 +281,7 @@ Design panel
 
 Prototype
 - Triggers: While pressing (Mouse enter / leave / down / up done ✅)
-- Actions: ✅ Set variable mode (`SET_MODE`, undone when the presentation ends). ✅ Set variable (colour, text, number or boolean, in the active mode; undone when the presentation ends or restarts). ✅ Conditional (if a variable is / is not / is greater / less than a value, go to one frame, else to another; one condition, navigation only). Still missing: several conditions, Media controls (Scroll to and Swap overlay done ✅)
+- Actions: ✅ Set variable mode (`SET_MODE`, undone when the presentation ends). ✅ Set variable (colour, text, number or boolean, in the active mode; undone when the presentation ends or restarts). ✅ Conditional (if a variable is / is not / is greater / less than a value, go to one frame, else to another; one condition, navigation only). ✅ Media controls (play, pause, play / pause, mute, unmute, mute / unmute, skip forward / back by N seconds on a video layer while presenting; the video is chosen from the video layers of the file). Still missing: several conditions (Scroll to and Swap overlay done ✅)
 - Overlay position, dim and close on outside click done ✅
 - Animations: ✅ Move out and Push (all four sides; the old frame is drawn over the new one while it leaves). Still missing: Move in (same as Slide in here), Slide out (easing curves and spring done ✅)
 - Scrolling: fixed (sticky) layers (horizontal and both done ✅)
