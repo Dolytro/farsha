@@ -4,6 +4,7 @@ import { useEditor } from "../store";
 import { HexInput } from "./HexInput";
 import { fitText } from "../text-layout";
 import { exportVariables, importVariables, parseVariables } from "../variable-json";
+import { groupVariables, joinName, splitName } from "../variable-groups";
 
 /** Colour variables and their modes: one row per variable, one column per mode (for example Light and Dark). */
 export function VariablesDialog() {
@@ -125,9 +126,11 @@ export function VariablesDialog() {
             </button>
           </div>
           {variables.length === 0 && <p className="dialog__note">{tab === "color" ? "No variables yet. Add one, then bind a fill or stroke to it with the ◆ button." : tab === "text" ? "No text variables yet. Add one, then pick it in the Variable field of a text layer." : "None yet. Add one, then bind it to a property in the Variables section of the Design panel."}</p>}
-          {variables.map((v) => (
+          {groupVariables(variables).flatMap((g) => [
+            ...(g.path ? [<div className="vars__group" key={`group-${g.path}`} style={{ fontWeight: 600, fontSize: 12, opacity: 0.75, padding: "8px 0 2px" }}>{g.path}</div>] : []),
+            ...g.items.map(({ variable: v, leaf }) => (
             <div className="vars__row" key={v.id} style={{ gridTemplateColumns: `minmax(120px, 1.4fr) repeat(${modes.length}, minmax(110px, 1fr)) 24px` }}>
-              <input className="dialog__input" aria-label="Variable name" defaultValue={v.name} key={v.name} onBlur={(e) => e.currentTarget.value !== v.name && run(() => (tab === "color" ? doc.updateColorVariable(v.id, { name: e.currentTarget.value }) : tab === "text" ? doc.updateTextVariable(v.id, { name: e.currentTarget.value }) : doc.updateValueVariable(v.id, { name: e.currentTarget.value })))} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
+              <input className="dialog__input" aria-label="Variable name" title={g.path ? `In the group ${g.path}. Type a / to make a subgroup.` : "Type a / in the name to put it in a group, like brand/primary"} defaultValue={leaf} key={v.name} onBlur={(e) => { const name = joinName(splitName(v.name).path, e.currentTarget.value); if (name && name !== v.name) run(() => (tab === "color" ? doc.updateColorVariable(v.id, { name }) : tab === "text" ? doc.updateTextVariable(v.id, { name }) : doc.updateValueVariable(v.id, { name }))); else e.currentTarget.value = leaf; }} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
               {modes.map((m) => {
                 const value = v.values[m.id] ?? (tab === "color" ? "#000000" : tab === "number" ? "0" : tab === "boolean" ? "false" : "");
                 if (tab === "number") {
@@ -180,7 +183,8 @@ export function VariablesDialog() {
                 −
               </button>
             </div>
-          ))}
+          )),
+          ])}
         </div>
         <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9") : tab === "text" ? doc.createTextVariable(`Text ${variables.length + 1}`, "Text") : doc.createValueVariable(tab === "number" ? "NUMBER" : "BOOLEAN", `${tab === "number" ? "Number" : "Boolean"} ${variables.length + 1}`, tab === "number" ? "0" : "true")))}>
           {tab === "color" ? "+ Add color variable" : tab === "text" ? "+ Add text variable" : tab === "number" ? "+ Add number variable" : "+ Add boolean variable"}
