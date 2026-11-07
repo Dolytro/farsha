@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@farsha/design-core";
-import type { Box, DesignNode, Easing, Interaction, InteractionAction, MediaOp } from "@farsha/types";
+import type { Box, ConditionClause, DesignNode, Easing, Interaction, InteractionAction, MediaOp } from "@farsha/types";
 import { topLevelFrames } from "./section-actions";
 
 /** Top-level frames of every page: the screens a prototype can navigate between. */
@@ -80,14 +80,23 @@ export function safeUrl(url: string): string | null {
   }
 }
 
-/** The frame a Conditional action leads to: its "then" frame when the variable compares true to the value, else its "else" frame (undefined when there is none). */
-export function conditionTarget(doc: DesignDoc, a: Extract<InteractionAction, { type: "CONDITIONAL" }>): string | undefined {
-  const v = doc.getColorVariable(a.variableId);
-  if (!v) return a.elseId;
+export const MAX_EXTRA_CONDITIONS = 5;
+
+/** Whether one comparison holds right now (the variable in the active mode; a missing variable never holds). Two numbers compare as numbers, anything else as text without regard to case. */
+export function conditionHolds(doc: DesignDoc, c: ConditionClause): boolean {
+  const v = doc.getColorVariable(c.variableId);
+  if (!v) return false;
   const have = doc.resolveVariableValue(v, doc.activeModeId());
-  const bothNumbers = have.trim() !== "" && a.value.trim() !== "" && Number.isFinite(Number(have)) && Number.isFinite(Number(a.value));
-  const same = bothNumbers ? Number(have) === Number(a.value) : have.trim().toLowerCase() === a.value.trim().toLowerCase();
-  const ok = a.op === "EQ" ? same : a.op === "NEQ" ? !same : bothNumbers && (a.op === "GT" ? Number(have) > Number(a.value) : Number(have) < Number(a.value));
+  const bothNumbers = have.trim() !== "" && c.value.trim() !== "" && Number.isFinite(Number(have)) && Number.isFinite(Number(c.value));
+  const same = bothNumbers ? Number(have) === Number(c.value) : have.trim().toLowerCase() === c.value.trim().toLowerCase();
+  return c.op === "EQ" ? same : c.op === "NEQ" ? !same : bothNumbers && (c.op === "GT" ? Number(have) > Number(c.value) : Number(have) < Number(c.value));
+}
+
+/** The frame a Conditional action leads to: its "then" frame when its conditions hold (all of them, or any of them with join OR), else its "else" frame (undefined when there is none). */
+export function conditionTarget(doc: DesignDoc, a: Extract<InteractionAction, { type: "CONDITIONAL" }>): string | undefined {
+  const clauses: ConditionClause[] = [{ variableId: a.variableId, op: a.op, value: a.value }, ...(Array.isArray(a.more) ? a.more.slice(0, MAX_EXTRA_CONDITIONS) : [])];
+  const results = clauses.map((c) => conditionHolds(doc, c));
+  const ok = a.join === "OR" ? results.some(Boolean) : results.every(Boolean);
   return ok ? a.thenId : a.elseId;
 }
 

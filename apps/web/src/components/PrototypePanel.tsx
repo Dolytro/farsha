@@ -1,5 +1,5 @@
 import type { Easing, Interaction, InteractionAction, InteractionTrigger, MediaOp, OverlayPosition, TransitionType } from "@farsha/types";
-import { flowsOf, prototypeFrames, startFrame, topFrameOf } from "../prototype";
+import { MAX_EXTRA_CONDITIONS, flowsOf, prototypeFrames, startFrame, topFrameOf } from "../prototype";
 import { useEditor } from "../store";
 import { Select } from "./Select";
 import { HexInput } from "./HexInput";
@@ -289,6 +289,41 @@ export function PrototypePanel() {
                         </Select>
                         <input className="field__input" aria-label="Compare to" defaultValue={c.value} key={c.variableId} onBlur={(e) => upd({ value: e.currentTarget.value })} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
                       </div>
+                      {(c.more ?? []).length > 0 && (
+                        <Select className="field__select field__select--wide" aria-label="Combine conditions" value={c.join ?? "AND"} onChange={(e) => upd({ join: e.target.value === "OR" ? "OR" : "AND" })}>
+                          <option value="AND">All conditions must hold</option>
+                          <option value="OR">Any condition can hold</option>
+                        </Select>
+                      )}
+                      {(c.more ?? []).map((m, mi) => {
+                        const setMore = (p: Partial<typeof m> | null) => upd({ more: (c.more ?? []).flatMap((x, xi) => (xi !== mi ? [x] : p ? [{ ...x, ...p }] : [])) });
+                        return (
+                          <div key={mi} className="props__grid props__grid--gap">
+                            <Select className="field__select" aria-label={`Variable of condition ${mi + 2}`} value={m.variableId} onChange={(e) => setMore({ variableId: e.target.value })}>
+                              {allVariables.map((v) => (
+                                <option key={v.id} value={v.id}>
+                                  {v.name}
+                                </option>
+                              ))}
+                            </Select>
+                            <Select className="field__select" aria-label={`Comparison of condition ${mi + 2}`} value={m.op} onChange={(e) => setMore({ op: e.target.value as typeof m.op })}>
+                              <option value="EQ">is</option>
+                              <option value="NEQ">is not</option>
+                              <option value="GT">is greater than</option>
+                              <option value="LT">is less than</option>
+                            </Select>
+                            <input className="field__input" aria-label={`Compare condition ${mi + 2} to`} defaultValue={m.value} key={m.variableId} onBlur={(e) => setMore({ value: e.currentTarget.value })} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
+                            <button className="props__add" title="Remove this condition" aria-label={`Remove condition ${mi + 2}`} onClick={() => setMore(null)}>
+                              −
+                            </button>
+                          </div>
+                        );
+                      })}
+                      {(c.more ?? []).length < MAX_EXTRA_CONDITIONS && allVariables.length > 0 && (
+                        <button className="props__link" aria-label="Add condition" onClick={() => upd({ more: [...(c.more ?? []), { variableId: allVariables[0]!.id, op: "EQ", value: doc.resolveVariableValue(allVariables[0]!, doc.activeModeId()) }] })}>
+                          + Add condition
+                        </button>
+                      )}
                       <Select className="field__select field__select--wide" aria-label="Then go to" value={c.thenId} onChange={(e) => upd({ thenId: e.target.value })}>
                         {frames.map((f) => (
                           <option key={f.id} value={f.id}>
@@ -309,7 +344,7 @@ export function PrototypePanel() {
                 })()}
                 {it.action.type === "SET_VARIABLE" && (
                   <>
-                    <Select className="field__select field__select--wide" aria-label="Variable" value={it.action.variableId} onChange={(e) => patch({ action: { type: "SET_VARIABLE", variableId: e.target.value, value: allVariables.find((v) => v.id === e.target.value)?.values[doc.activeModeId()] ?? "" } })}>
+                    <Select className="field__select field__select--wide" aria-label="Variable" value={it.action.variableId} onChange={(e) => patch({ action: { type: "SET_VARIABLE", variableId: e.target.value, value: (() => { const nv = allVariables.find((v) => v.id === e.target.value); return nv ? doc.resolveVariableValue(nv, doc.activeModeId()) : ""; })() } })}>
                       {allVariables.length === 0 && <option value="">No variables yet</option>}
                       {allVariables.map((v) => (
                         <option key={v.id} value={v.id}>

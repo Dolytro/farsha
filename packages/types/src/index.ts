@@ -258,7 +258,16 @@ export type InteractionAction =
   | { type: 'CHANGE_TO'; componentId: string }
   /** Control a video layer while presenting (Figma's Media controls): play, pause, mute, or skip. */
   | { type: 'MEDIA'; targetId: string; op: MediaOp; /** Skip length in seconds (default 10). */ seconds?: number }
-  | { type: 'CONDITIONAL'; variableId: string; op: 'EQ' | 'NEQ' | 'GT' | 'LT'; value: string; thenId: string; elseId?: string };
+  | { type: 'CONDITIONAL'; variableId: string; op: ConditionOp; value: string; /** More conditions, up to 5; all of them (AND, default) or any of them (OR) must hold together with the first. */ more?: ConditionClause[]; join?: 'AND' | 'OR'; thenId: string; elseId?: string };
+
+export type ConditionOp = 'EQ' | 'NEQ' | 'GT' | 'LT';
+
+/** One comparison of a Conditional action: a variable, how to compare it, and the value to compare to. */
+export interface ConditionClause {
+  variableId: string;
+  op: ConditionOp;
+  value: string;
+}
 
 export type OverlayPosition = 'CENTER' | 'TOP' | 'BOTTOM';
 
