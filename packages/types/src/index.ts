@@ -326,6 +326,8 @@ export interface BaseNode {
   devNote?: string;
   /** Dev Mode: links to tickets, specs or code for this layer. */
   devResources?: DevResource[];
+  /** Dev Mode (Code Connect style): on a main component, the code developers use for it; its instances show this snippet. */
+  codeSnippet?: string;
   /** Prototype: this top-level frame is where a flow starts (Figma's flow starting point). */
   flowStart?: boolean;
   /** Name of the flow that starts at this frame. Missing means "Flow 1", "Flow 2" and so on. */
@@ -641,6 +643,7 @@ export interface StylePatch extends AutoLayoutProps {
   devStatus?: DevStatus | null;
   devNote?: string | null;
   devResources?: DevResource[] | null;
+  codeSnippet?: string | null;
   description?: string | null;
   flowStart?: boolean | null;
   flowName?: string | null;

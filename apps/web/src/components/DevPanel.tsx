@@ -8,8 +8,9 @@ import { zoomFit } from "../actions";
 import { layersWithDevStatus } from "../dev-status";
 import { cssVariableBlock, variablesUsed } from "../variable-code";
 import type { DesignDoc } from "@farsha/design-core";
-import type { DevResource, DevStatus } from "@farsha/types";
+import type { DesignNode, DevResource, DevStatus } from "@farsha/types";
 import { addResource, cleanResources } from "../dev-resources";
+import { cleanSnippet, codeConnectFor } from "../code-connect";
 
 const LANGS: { id: Language; label: string }[] = [
   { id: "css", label: "CSS" },
@@ -74,6 +75,8 @@ export function DevPanel() {
       </section>
 
       <DevResources doc={doc} id={node.id} resources={node.devResources} />
+
+      <CodeConnectSection doc={doc} node={node} />
 
       {(() => {
         const bm = boxModelOf(node);
@@ -257,6 +260,54 @@ function DevResources({ doc, id, resources }: { doc: DesignDoc; id: string; reso
           +
         </button>
       </div>
+    </section>
+  );
+}
+
+/** Code Connect style mapping: write the code for a main component once, and every instance shows it in Dev Mode. */
+function CodeConnectSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
+  const [copied, setCopied] = useState(false);
+  const isMain = node.type === "FRAME" && !!node.isComponent;
+  const mapped = codeConnectFor(doc, node);
+  if (!isMain && !mapped) return null;
+  const copy = async () => {
+    if (!mapped) return;
+    try {
+      await navigator.clipboard.writeText(mapped.snippet);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      /* clipboard unavailable; the code stays selectable in the block */
+    }
+  };
+  return (
+    <section className="props__section">
+      <h3 className="props__heading">Component code</h3>
+      {isMain ? (
+        <textarea
+          key={node.id}
+          className="field__input field__input--wide field__input--area"
+          rows={5}
+          aria-label="Component code snippet"
+          placeholder="Code developers use for this component, for example <Button variant=&quot;primary&quot; />"
+          defaultValue={node.codeSnippet ?? ""}
+          onKeyDown={(e) => e.stopPropagation()}
+          onBlur={(e) => {
+            const next = cleanSnippet(e.currentTarget.value);
+            if (next !== (node.codeSnippet ?? null)) doc.setStyle(node.id, { codeSnippet: next });
+          }}
+        />
+      ) : (
+        mapped && (
+          <>
+            <p className="props__hint">From the main component {mapped.mainName}</p>
+            <pre className="dev__code" aria-label="Component code">{mapped.snippet}</pre>
+            <button className="props__button" onClick={copy}>
+              {copied ? "Copied" : "Copy code"}
+            </button>
+          </>
+        )
+      )}
     </section>
   );
 }
