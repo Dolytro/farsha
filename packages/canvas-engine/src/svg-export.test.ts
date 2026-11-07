@@ -323,6 +323,15 @@ describe("advanced strokes", () => {
     expect(svg).toContain('<feComposite in="k0" in2="SourceAlpha" operator="out" result="s0"/>');
   });
 
+  it("repeats a picture at its own size in Tile mode", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 200, height: 100, fills: [{ type: "IMAGE", assetId, scaleMode: "TILE", imageWidth: 32, imageHeight: 16, tileScale: 2, opacity: 1 }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain('width="64" height="32"');
+    expect(svg).toContain('preserveAspectRatio="none"');
+  });
+
   it("turns OpenType features into font-feature-settings and ignores unknown ones", () => {
     expect(fontFeatureSettings(["tnum", "-liga", "evil\"; x", "tnum"])).toBe('"tnum" 1, "liga" 0');
     expect(fontFeatureSettings([])).toBeUndefined();

@@ -57,13 +57,18 @@ export interface GradientPaint {
   blendMode?: BlendMode;
 }
 
-export type ImageScaleMode = 'FILL' | 'FIT' | 'STRETCH';
+export type ImageScaleMode = 'FILL' | 'FIT' | 'STRETCH' | 'TILE';
 
 export interface ImagePaint {
   type: 'IMAGE';
   /** Reference to an asset stored in the document; null until an image is chosen. */
   assetId: string | null;
   scaleMode: ImageScaleMode;
+  /** Pixel size of the picture, remembered so Tile mode can repeat it at its natural size. */
+  imageWidth?: number;
+  imageHeight?: number;
+  /** Tile mode only: size of one tile as a multiple of the picture's own size (default 1). */
+  tileScale?: number;
   opacity: number;
   blendMode?: BlendMode;
   /** Colour adjustments of the picture, each from -100 to 100 (0 or missing leaves it as it is). */

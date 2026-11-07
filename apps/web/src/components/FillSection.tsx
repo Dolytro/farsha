@@ -14,7 +14,7 @@ import { BLEND_MODES } from "../blend-modes";
 
 type Kind = Paint["type"];
 const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial", GRADIENT_ANGULAR: "Angular", GRADIENT_DIAMOND: "Diamond", IMAGE: "Image" };
-const SCALE_LABEL: Record<ImageScaleMode, string> = { FILL: "Fill", FIT: "Fit", STRETCH: "Stretch" };
+const SCALE_LABEL: Record<ImageScaleMode, string> = { FILL: "Fill", FIT: "Fit", STRETCH: "Stretch", TILE: "Tile" };
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
@@ -196,7 +196,7 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
       const image = await readImage(file);
       const assetId = doc.addAsset(image.mime, image.bytes);
       doc.stopCapturing();
-      setPaint({ ...paint, assetId });
+      setPaint({ ...paint, assetId, imageWidth: image.width, imageHeight: image.height });
       doc.stopCapturing();
     } catch (err) {
       showToast(err instanceof Error ? `Couldn't add the image: ${err.message}` : "Couldn't add the image");
@@ -211,6 +211,24 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
           </option>
         ))}
       </Select>
+      {paint.scaleMode === "TILE" && (
+        <label className="field field--gap" title="Tile size (% of the picture's own size)">
+          <span className="field__label field__label--text">Tile</span>
+          <input
+            className="field__input"
+            type="number"
+            min={1}
+            max={1000}
+            aria-label="Tile scale"
+            value={Math.round((paint.tileScale ?? 1) * 100)}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (!Number.isFinite(v) || e.target.value === "") return;
+              setPaint({ ...paint, tileScale: Math.min(1000, Math.max(1, v)) / 100 });
+            }}
+          />
+        </label>
+      )}
       <label className="props__link props__file">
         {paint.assetId ? "Change image" : "Choose image"}
         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void choose(e.target.files?.[0])} />

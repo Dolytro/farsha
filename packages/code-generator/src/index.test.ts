@@ -246,3 +246,11 @@ describe("angular and diamond gradient css", () => {
     expect(paintCss({ type: "GRADIENT_DIAMOND", stops, angle: 0, opacity: 1 })).toMatch(/^radial-gradient\(closest-side, /);
   });
 });
+
+describe("tiled image fills", () => {
+  it("repeats the picture at its own size times the tile scale", () => {
+    expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "TILE", imageWidth: 32, imageHeight: 16, tileScale: 2, opacity: 1 })).toBe("url(image) 0 0 / 64px 32px repeat");
+    expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "TILE", opacity: 1 })).toBe("url(image) 0 0 / 256px 256px repeat");
+    expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "FIT", opacity: 1 })).toBe("url(image) center / contain no-repeat");
+  });
+});
