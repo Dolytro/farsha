@@ -254,3 +254,67 @@ describe("tiled image fills", () => {
     expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "FIT", opacity: 1 })).toBe("url(image) center / contain no-repeat");
   });
 });
+
+describe("SwiftUI", () => {
+  it("makes a View struct with a ZStack, offsets, a rounded fill and a font", () => {
+    const { doc, frame } = setup();
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "swiftui");
+    expect(code).toContain("import SwiftUI");
+    expect(code).toContain("struct Card: View {");
+    expect(code).toContain("ZStack(alignment: .topLeading) {");
+    expect(code).toContain("RoundedRectangle(cornerRadius: 8).fill(Color(red: 0.22, green: 0.545, blue: 1))");
+    expect(code).toContain(".offset(x: 20, y: 30)");
+    expect(code).toContain('Text("Buy <now>")');
+    expect(code).toContain(".fontWeight(.semibold)");
+    expect(code).toContain(".frame(width: 300, height: 200, alignment: .topLeading)");
+  });
+
+  it("turns auto layout into stacks with spacing and padding", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const row = doc.createNode("FRAME", { parentId: page, props: { name: "Row", width: 200, height: 40, layoutMode: "HORIZONTAL", itemSpacing: 12, paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8, counterAxisAlign: "CENTER" } as never });
+    doc.createNode("ELLIPSE", { parentId: row, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#ff0000", opacity: 0.5 }] } });
+    const code = generateCode(doc.getNode(row)!, (id) => doc.children(id), "swiftui");
+    expect(code).toContain("HStack(alignment: .center, spacing: 12) {");
+    expect(code).toContain(".padding(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))");
+    expect(code).toContain("Ellipse().fill(Color(red: 1, green: 0, blue: 0).opacity(0.5))");
+    expect(code).not.toContain(".offset(");
+  });
+
+  it("writes gradients, strokes and drop shadows", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("RECTANGLE", {
+      parentId: page,
+      props: {
+        name: "Banner",
+        width: 100,
+        height: 50,
+        fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#000000", opacity: 1 }, { position: 1, color: "#ffffff", opacity: 1 }] }],
+        strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }],
+        strokeWidth: 2,
+        effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }],
+      } as never,
+    });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "swiftui");
+    expect(code).toContain("LinearGradient(gradient: Gradient(stops: [.init(color: Color(red: 0, green: 0, blue: 0), location: 0), .init(color: Color(red: 1, green: 1, blue: 1), location: 1)]), startPoint: UnitPoint(x: 0.5, y: 0), endPoint: UnitPoint(x: 0.5, y: 1))");
+    expect(code).toContain(".overlay(Rectangle().stroke(Color(red: 0, green: 1, blue: 0), lineWidth: 2))");
+    expect(code).toContain(".shadow(color: Color(red: 0, green: 0, blue: 0).opacity(0.25), radius: 4, x: 0, y: 4)");
+  });
+
+  it("escapes quotes and new lines in text", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("TEXT", { parentId: page, props: { name: "T", characters: 'Say "hi"\nthere\\' } });
+    expect(generateCode(doc.getNode(id)!, (i) => doc.children(i), "swiftui")).toContain('Text("Say \\"hi\\"\\nthere\\\\")');
+  });
+
+  it("never names the struct after a SwiftUI type or starts it with a digit", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("RECTANGLE", { parentId: page, props: { name: "Rectangle", width: 10, height: 10 } });
+    const b = doc.createNode("FRAME", { parentId: page, props: { name: "2 columns", width: 10, height: 10 } });
+    expect(generateCode(doc.getNode(a)!, (i) => doc.children(i), "swiftui")).toContain("struct RectangleView: View {");
+    expect(generateCode(doc.getNode(b)!, (i) => doc.children(i), "swiftui")).toContain("struct V2Columns: View {");
+  });
+});

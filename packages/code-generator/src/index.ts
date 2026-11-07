@@ -1,6 +1,9 @@
 import { cssBlendMode, paintColor, type DesignNode, type Paint } from "@farsha/types";
+import { generateSwiftUI } from "./swiftui";
 
-export type Language = "css" | "html" | "react" | "tailwind";
+export { generateSwiftUI, swiftColor, swiftPaint } from "./swiftui";
+
+export type Language = "css" | "html" | "react" | "tailwind" | "swiftui";
 export type Decl = [prop: string, value: string];
 export type ChildrenOf = (id: string) => DesignNode[];
 
@@ -232,6 +235,7 @@ function jsx(w: Walked, depth: number): string {
 
 /** Generate code for a node and its visible descendants in the requested language. */
 export function generateCode(node: DesignNode, children: ChildrenOf, language: Language): string {
+  if (language === "swiftui") return generateSwiftUI(node, children);
   const root = walk(node, children, false, new Map());
   switch (language) {
     case "css":
@@ -242,5 +246,7 @@ export function generateCode(node: DesignNode, children: ChildrenOf, language: L
       return html(root, 0, (w) => w.decls.map(tailwindClass).join(" "));
     case "react":
       return `export function ${pascal(node.name)}() {\n  return (\n${jsx(root, 2)}\n  );\n}`;
+    default:
+      return "";
   }
 }

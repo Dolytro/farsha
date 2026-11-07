@@ -12,6 +12,7 @@ const LANGS: { id: Language; label: string }[] = [
   { id: "html", label: "HTML" },
   { id: "react", label: "React" },
   { id: "tailwind", label: "Tailwind" },
+  { id: "swiftui", label: "SwiftUI" },
 ];
 
 const n = (v: number) => `${Math.round(v * 100) / 100}`;

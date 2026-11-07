@@ -289,7 +289,7 @@ Prototype
 - ✅ Interactive components: a "Change to" action turns an instance into another component or variant while presenting (undone afterwards). Still missing: variant switching on hover as a component-level setting
 
 Dev Mode
-- Code for iOS (SwiftUI, UIKit) and Android (Compose, XML)
+- ✅ Code for iOS in SwiftUI (a SwiftUI tab in the Dev panel: stacks from auto layout, ZStack with offsets, shapes with fills, gradients, strokes, shadows, blur, text fonts; image / vector layers are placeholders, inner shadows and several fills per layer are not covered). Still missing: UIKit, and Android (Compose, XML)
 - ✅ Box-model visual (border and padding) in Layer properties (Dev tab, for frames and shapes with a stroke or auto layout padding)
 - Ready-for-dev list in the left panel, annotations shown on the canvas, dev resources links
 - Code Connect style mapping (a local mapping of components to snippets)
