@@ -4,6 +4,8 @@ import { useEditor } from "../store";
 import { ExportSection } from "./ExportSection";
 import { Select } from "./Select";
 import { boxModelOf } from "../box-model";
+import { zoomFit } from "../actions";
+import { layersWithDevStatus } from "../dev-status";
 import { cssVariableBlock, variablesUsed } from "../variable-code";
 import type { DevStatus } from "@farsha/types";
 
@@ -25,7 +27,7 @@ export function DevPanel() {
   const [copied, setCopied] = useState(false);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
 
-  if (!node) return <p className="props__empty">Select a layer to inspect</p>;
+  if (!node) return <ReadyForDev />;
 
   const code = generateCode(node, (id) => doc.children(id), lang);
   const abs = doc.absoluteBox(node.id);
@@ -164,6 +166,43 @@ export function DevPanel() {
         <pre className="dev__code"><code>{code}</code></pre>
       </section>
       {node.type !== "PAGE" && <ExportSection doc={doc} ids={[node.id]} />}
+    </div>
+  );
+}
+
+/** What the Dev panel shows with nothing selected: the layers on this page marked Ready for dev or Completed. */
+function ReadyForDev() {
+  const { doc, pageId } = useEditor();
+  useEditor((s) => s.version);
+  const list = layersWithDevStatus(doc, pageId);
+  const go = (id: string) => {
+    const s = useEditor.getState();
+    s.select([id]);
+    const v = zoomFit(doc, pageId, [id]);
+    if (v) s.setViewport({ ...v, zoom: Math.min(v.zoom, 2) });
+  };
+  const group = (status: DevStatus, title: string, color: string) => {
+    const items = list.filter((e) => e.status === status);
+    if (!items.length) return null;
+    return (
+      <section className="props__section" aria-label={title}>
+        <h3 className="props__heading">
+          <span style={{ color }}>{status === "READY" ? "●" : "✓"}</span> {title} ({items.length})
+        </h3>
+        {items.map((e) => (
+          <button key={e.id} className="props__link devready__item" style={{ display: "block", width: "100%", textAlign: "left" }} onClick={() => go(e.id)}>
+            {e.name}
+          </button>
+        ))}
+      </section>
+    );
+  };
+  if (!list.length) return <p className="props__empty">Select a layer to inspect. Layers you mark Ready for dev are listed here.</p>;
+  return (
+    <div className="dev">
+      {group("READY", "Ready for dev", "#14ae5c")}
+      {group("COMPLETED", "Completed", "#7a5af8")}
+      <p className="props__empty">Select a layer to inspect</p>
     </div>
   );
 }
