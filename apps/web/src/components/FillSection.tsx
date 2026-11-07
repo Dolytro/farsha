@@ -215,7 +215,7 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
         {paint.assetId ? "Change image" : "Choose image"}
         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void choose(e.target.files?.[0])} />
       </label>
-      {(["exposure", "contrast", "saturation", "temperature", "tint"] as const).map((key) => (
+      {(["exposure", "contrast", "saturation", "temperature", "tint", "highlights", "shadows"] as const).map((key) => (
         <label className="field field--gap" key={key} title={`Image ${key} (-100 to 100)`}>
           <span className="field__label field__label--text">{key[0]!.toUpperCase() + key.slice(1)}</span>
           <input

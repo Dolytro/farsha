@@ -140,7 +140,7 @@ export function shapeGeometry(n: DesignNode, extra: string): string {
 const geometry = shapeGeometry;
 
 /**
- * The `<filter>` that applies image adjustments (exposure, contrast, saturation, temperature, tint: each -100 to 100) to a picture, or "" when there is nothing to adjust.
+ * The `<filter>` that applies image adjustments (exposure, contrast, saturation, temperature, tint, highlights, shadows: each -100 to 100) to a picture, or "" when there is nothing to adjust.
  * Exposure and contrast become one linear slope and intercept per colour channel; saturation is a colour matrix.
  */
 export function imageAdjustFilter(id: string, adj: unknown): string {
@@ -152,14 +152,24 @@ export function imageAdjustFilter(id: string, adj: unknown): string {
   const saturation = read(a.saturation);
   const temperature = read(a.temperature);
   const tint = read(a.tint);
-  if (!exposure && !contrast && !saturation && !temperature && !tint) return "";
+  const highlights = read(a.highlights);
+  const shadows = read(a.shadows);
+  if (!exposure && !contrast && !saturation && !temperature && !tint && !highlights && !shadows) return "";
   const gain = 2 ** (exposure / 50);
   const factor = (100 + contrast) / 100;
   const intercept = num(0.5 - 0.5 * factor);
   // Temperature warms red and cools blue; tint pushes green against magenta.
   const channelGain: Record<string, number> = { R: 1 + 0.3 * (temperature / 100), G: 1 - 0.3 * (tint / 100), B: 1 - 0.3 * (temperature / 100) };
   const fn = ["R", "G", "B"].map((c) => `<feFunc${c} type="linear" slope="${num(gain * factor * channelGain[c]!, 1)}" intercept="${intercept}"/>`).join("");
-  return `<filter id="${id}" color-interpolation-filters="sRGB"><feComponentTransfer>${fn}</feComponentTransfer>${saturation ? `<feColorMatrix type="saturate" values="${num((100 + saturation) / 100, 1)}"/>` : ""}</filter>`;
+  // Shadows lift or crush the dark end of the tone curve, highlights the bright end (a five point table).
+  let tone = "";
+  if (highlights || shadows) {
+    const table = [0, 0.25, 0.5, 0.75, 1]
+      .map((x) => num(Math.min(1, Math.max(0, x + 0.25 * (shadows / 100) * (1 - x) ** 2 + 0.25 * (highlights / 100) * x ** 2))))
+      .join(" ");
+    tone = `<feComponentTransfer>${["R", "G", "B"].map((c) => `<feFunc${c} type="table" tableValues="${table}"/>`).join("")}</feComponentTransfer>`;
+  }
+  return `<filter id="${id}" color-interpolation-filters="sRGB"><feComponentTransfer>${fn}</feComponentTransfer>${tone}${saturation ? `<feColorMatrix type="saturate" values="${num((100 + saturation) / 100, 1)}"/>` : ""}</filter>`;
 }
 
 /** Fill and stroke of a rectangle, frame or ellipse. Inside/outside strokes are clipped/masked double-width strokes. */

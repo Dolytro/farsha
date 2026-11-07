@@ -78,6 +78,10 @@ export interface ImageAdjustments {
   temperature?: number;
   /** Greener (negative) to more magenta (positive). */
   tint?: number;
+  /** Darkens (negative) or lifts (positive) the bright parts. */
+  highlights?: number;
+  /** Darkens (negative) or lifts (positive) the dark parts. */
+  shadows?: number;
 }
 
 export type Paint = SolidPaint | GradientPaint | ImagePaint;
