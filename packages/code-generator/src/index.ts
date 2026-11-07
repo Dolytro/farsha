@@ -1,9 +1,11 @@
 import { cssBlendMode, paintColor, type DesignNode, type Paint } from "@farsha/types";
+import { generateCompose } from "./compose";
 import { generateSwiftUI } from "./swiftui";
 
 export { generateSwiftUI, swiftColor, swiftPaint } from "./swiftui";
+export { composeColor, composePaint, generateCompose } from "./compose";
 
-export type Language = "css" | "html" | "react" | "tailwind" | "swiftui";
+export type Language = "css" | "html" | "react" | "tailwind" | "swiftui" | "compose";
 export type Decl = [prop: string, value: string];
 export type ChildrenOf = (id: string) => DesignNode[];
 
@@ -236,6 +238,7 @@ function jsx(w: Walked, depth: number): string {
 /** Generate code for a node and its visible descendants in the requested language. */
 export function generateCode(node: DesignNode, children: ChildrenOf, language: Language): string {
   if (language === "swiftui") return generateSwiftUI(node, children);
+  if (language === "compose") return generateCompose(node, children);
   const root = walk(node, children, false, new Map());
   switch (language) {
     case "css":

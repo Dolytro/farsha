@@ -318,3 +318,54 @@ describe("SwiftUI", () => {
     expect(generateCode(doc.getNode(b)!, (i) => doc.children(i), "swiftui")).toContain("struct V2Columns: View {");
   });
 });
+
+describe("Jetpack Compose", () => {
+  it("makes a composable with a Box, offsets, a rounded background and text arguments", () => {
+    const { doc, frame } = setup();
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "compose");
+    expect(code).toContain("@Composable\nfun Card() {");
+    expect(code).toContain("import androidx.compose.material3.Text");
+    expect(code).toContain(".offset(x = 20.dp, y = 30.dp)");
+    expect(code).toContain(".size(120.dp, 44.dp)");
+    expect(code).toContain(".background(Color(0xFF388BFF), RoundedCornerShape(8.dp))");
+    expect(code).toContain('text = "Buy <now>",');
+    expect(code).toContain("fontWeight = FontWeight.SemiBold,");
+  });
+
+  it("turns auto layout into Row / Column with spacing and padding", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const row = doc.createNode("FRAME", { parentId: page, props: { name: "Row", width: 200, height: 40, layoutMode: "HORIZONTAL", itemSpacing: 12, paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8, counterAxisAlign: "CENTER" } as never });
+    doc.createNode("ELLIPSE", { parentId: row, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#ff0000", opacity: 0.5 }] } });
+    const code = generateCode(doc.getNode(row)!, (id) => doc.children(id), "compose");
+    expect(code).toContain("fun RowLayout() {");
+    expect(code).toContain("horizontalArrangement = Arrangement.spacedBy(12.dp),");
+    expect(code).toContain("verticalAlignment = Alignment.CenterVertically");
+    expect(code).toContain(".padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 4.dp)");
+    expect(code).toContain(".background(Color(0x80FF0000), CircleShape)");
+    expect(code).not.toContain(".offset(");
+  });
+
+  it("writes gradients, borders and shadows, and escapes strings", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("RECTANGLE", {
+      parentId: page,
+      props: {
+        name: "Banner",
+        width: 100,
+        height: 50,
+        fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#000000", opacity: 1 }, { position: 1, color: "#ffffff", opacity: 1 }] }],
+        strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }],
+        strokeWidth: 2,
+        effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }],
+      } as never,
+    });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "compose");
+    expect(code).toContain(".background(Brush.linearGradient(0f to Color(0xFF000000), 1f to Color(0xFFFFFFFF), start = Offset(50f, 0f), end = Offset(50f, 50f)), RectangleShape)");
+    expect(code).toContain(".border(2.dp, Color(0xFF00FF00), RectangleShape)");
+    expect(code).toContain(".shadow(elevation = 4.dp, shape = RectangleShape, ambientColor = Color(0x40000000), spotColor = Color(0x40000000))");
+    const t = doc.createNode("TEXT", { parentId: page, props: { name: "T", characters: 'Cost $5 "x"\n' } });
+    expect(generateCode(doc.getNode(t)!, (i) => doc.children(i), "compose")).toContain('text = "Cost \\$5 \\"x\\"\\n",');
+  });
+});
