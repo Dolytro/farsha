@@ -247,7 +247,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Outline stroke | Ctrl+Alt+O | ✅ same |
 | Union / Subtract / Intersect / Exclude selection | Alt+Shift+U / S / I / E | ✅ same |
 | Open layers / libraries / design / prototype panel | Alt+1 / 2 / 8 / 9 | ✅ same |
-| Find next / previous | Ctrl+Shift+F / Ctrl+Shift+D | Enter / Shift+Enter inside Find |
+| Find next / previous | Ctrl+Shift+F / Ctrl+Shift+D | ✅ same while the Find bar is open (Enter / Shift+Enter also work) |
 | Rename layer | Ctrl+R | ✅ same |
 | Find previous / next frame | Home / End | ✅ same |
 | Create link | Ctrl+Shift+U | ✅ same (whole text) |

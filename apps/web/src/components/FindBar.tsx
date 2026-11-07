@@ -41,12 +41,21 @@ export function FindBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, matchCase, open]);
 
+  const step = (d: 1 | -1) => show(stepIndex(index, results.length, d));
+  const stepRef = useRef(step);
+  stepRef.current = step;
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
         setOpen(false);
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && (e.code === "KeyF" || e.code === "KeyD")) {
+        // Figma's "Find next / previous" (Ctrl+Shift+F / Ctrl+Shift+D) while the find bar is open
+        e.preventDefault();
+        e.stopPropagation();
+        stepRef.current(e.code === "KeyF" ? 1 : -1);
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -54,7 +63,6 @@ export function FindBar() {
   }, [open, setOpen]);
 
   if (!open) return null;
-  const step = (d: 1 | -1) => show(stepIndex(index, results.length, d));
   const count = results.length ? `${index >= 0 ? index + 1 : 0} of ${results.length}` : query.trim() ? "No results" : "";
   const toast = (m: string) => useEditor.getState().showToast(m);
 
@@ -77,10 +85,10 @@ export function FindBar() {
           }}
         />
         <span className="findbar__count">{count}</span>
-        <button className="icon-btn" title="Previous match (Shift+Enter)" aria-label="Previous match" disabled={!results.length} onClick={() => step(-1)}>
+        <button className="icon-btn" title="Previous match (Shift+Enter, Ctrl+Shift+D)" aria-label="Previous match" disabled={!results.length} onClick={() => step(-1)}>
           ↑
         </button>
-        <button className="icon-btn" title="Next match (Enter)" aria-label="Next match" disabled={!results.length} onClick={() => step(1)}>
+        <button className="icon-btn" title="Next match (Enter, Ctrl+Shift+F)" aria-label="Next match" disabled={!results.length} onClick={() => step(1)}>
           ↓
         </button>
         <button className={`icon-btn${matchCase ? " icon-btn--on" : ""}`} title="Match case" aria-pressed={matchCase} onClick={() => setMatchCase(!matchCase)}>
