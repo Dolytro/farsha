@@ -2,6 +2,7 @@ import { ColorSwatch } from "./ColorSwatch";
 import { useEffect, useState } from "react";
 import { useEditor } from "../store";
 import { HexInput } from "./HexInput";
+import { Select } from "./Select";
 import { fitText } from "../text-layout";
 import { exportVariables, importVariables, parseVariables } from "../variable-json";
 import { groupVariables, joinName, splitName } from "../variable-groups";
@@ -13,6 +14,7 @@ export function VariablesDialog() {
   const doc = useEditor((s) => s.doc);
   useEditor((s) => s.version);
   const [renamingMode, setRenamingMode] = useState<string | null>(null);
+  const [picking, setPicking] = useState<string | null>(null);
   const [tab, setTab] = useState<"color" | "text" | "number" | "boolean">("color");
 
   useEffect(() => {
@@ -132,6 +134,31 @@ export function VariablesDialog() {
             <div className="vars__row" key={v.id} style={{ gridTemplateColumns: `minmax(120px, 1.4fr) repeat(${modes.length}, minmax(110px, 1fr)) 24px` }}>
               <input className="dialog__input" aria-label="Variable name" title={g.path ? `In the group ${g.path}. Type a / to make a subgroup.` : "Type a / in the name to put it in a group, like brand/primary"} defaultValue={leaf} key={v.name} onBlur={(e) => { const name = joinName(splitName(v.name).path, e.currentTarget.value); if (name && name !== v.name) run(() => (tab === "color" ? doc.updateColorVariable(v.id, { name }) : tab === "text" ? doc.updateTextVariable(v.id, { name }) : doc.updateValueVariable(v.id, { name }))); else e.currentTarget.value = leaf; }} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
               {modes.map((m) => {
+                const aliasId = doc.variableAlias(v.id, m.id);
+                const slot = `${v.id}:${m.id}`;
+                if (aliasId || picking === slot) {
+                  return (
+                    <Select
+                      key={m.id}
+                      className="field__select"
+                      aria-label={`Alias in ${m.name}`}
+                      title="This value follows another variable"
+                      value={aliasId ?? ""}
+                      onChange={(e) => {
+                        setPicking(null);
+                        run(() => doc.setVariableAlias(v.id, m.id, e.target.value || null));
+                      }}
+                    >
+                      <option value="">{aliasId ? "Detach (use its value)" : "Choose a variable…"}</option>
+                      {variables.filter((o) => o.id !== v.id).map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.name}
+                        </option>
+                      ))}
+                    </Select>
+                  );
+                }
+                const valueEl = (() => {
                 const value = v.values[m.id] ?? (tab === "color" ? "#000000" : tab === "number" ? "0" : tab === "boolean" ? "false" : "");
                 if (tab === "number") {
                   return (
@@ -176,6 +203,17 @@ export function VariablesDialog() {
                   <span className="fill-row" key={m.id}>
                     <ColorSwatch value={value} onChange={(color) => run(() => doc.updateColorVariable(v.id, { modeId: m.id, color }))} />
                     <HexInput value={value} onChange={(color) => run(() => doc.updateColorVariable(v.id, { modeId: m.id, color }))} />
+                  </span>
+                );
+              })();
+                return (
+                  <span className="vars__cell" key={m.id} style={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
+                    <span style={{ flex: 1, minWidth: 0 }}>{valueEl}</span>
+                    {variables.length > 1 && (
+                      <button className="props__add" title="Make this value follow another variable" aria-label={`Make alias in ${m.name}`} onClick={() => setPicking(slot)}>
+                        ⛓
+                      </button>
+                    )}
                   </span>
                 );
               })}

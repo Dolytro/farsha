@@ -11,6 +11,8 @@ export const LOCAL_ORIGIN = 'farsha:local';
 const INIT_ORIGIN = 'farsha:init';
 /** Asset writes are not part of undo history: undoing a paste removes the layer, not the stored bytes. */
 const ASSET_ORIGIN = 'farsha:asset';
+/** A variable value that points to another variable (an alias) starts with this marker, which never appears in a real value. */
+const ALIAS_PREFIX = '\u0001alias:';
 
 export interface StoredAsset {
   mime: string;
@@ -183,7 +185,7 @@ export class DesignDoc {
             const { variableId: _gone, ...rest } = p;
             return rest;
           }
-          const color = v.values[mode] ?? Object.values(v.values)[0] ?? p.color;
+          const color = this.resolveVariableValue(v, mode) || p.color;
           if (color === p.color) return p;
           changed = true;
           return { ...p, color };
@@ -203,7 +205,7 @@ export class DesignDoc {
             const v = this.variableMap.get(textVar);
             if (!v || v.kind !== 'STRING') map.delete('textVariableId');
             else {
-              const text = v.values[mode] ?? Object.values(v.values)[0] ?? '';
+              const text = this.resolveVariableValue(v, mode);
               if (map.get('characters') !== text) map.set('characters', text);
             }
           }
@@ -1267,7 +1269,7 @@ export class DesignDoc {
       const v = this.variableMap.get(varId);
       if (!v) continue; // a deleted variable just releases the property
       kept[prop] = varId;
-      const raw = v.values[mode] ?? Object.values(v.values)[0] ?? '';
+      const raw = this.resolveVariableValue(v, mode);
       const next = v.kind === 'BOOLEAN' ? raw === 'true' : Number(raw);
       if (typeof next === 'number' && !Number.isFinite(next)) continue;
       if (map.get(prop) !== next) map.set(prop, next);
@@ -1309,7 +1311,7 @@ export class DesignDoc {
     }
     const v = this.variableMap.get(variableId);
     if (!v || v.kind !== 'STRING') throw new Error('Text variable not found');
-    this.setText(nodeId, { textVariableId: variableId, characters: v.values[this.activeModeId()] ?? Object.values(v.values)[0] ?? '' });
+    this.setText(nodeId, { textVariableId: variableId, characters: this.resolveVariableValue(v, this.activeModeId()) });
   }
 
   getColorVariable(id: string): ColorVariable | undefined {
@@ -1348,7 +1350,85 @@ export class DesignDoc {
   }
 
   deleteColorVariable(id: string): void {
-    this.transact(() => this.variableMap.delete(id));
+    this.transact(() => {
+      // variables that pointed to this one keep the value they showed
+      const gone = this.variableMap.get(id);
+      if (gone) {
+        for (const other of [...this.variableMap.values()]) {
+          if (other.id === id || !Object.values(other.values).some((raw) => DesignDoc.aliasTarget(raw) === id)) continue;
+          const values = Object.fromEntries(Object.entries(other.values).map(([mode, raw]) => [mode, DesignDoc.aliasTarget(raw) === id ? this.resolveVariableValue(other, mode) : raw]));
+          this.variableMap.set(other.id, { ...other, values });
+        }
+      }
+      this.variableMap.delete(id);
+    });
+  }
+
+  /** The variable id an alias value points to, or null for an ordinary value. */
+  static aliasTarget(raw: unknown): string | null {
+    return typeof raw === 'string' && raw.startsWith(ALIAS_PREFIX) ? raw.slice(ALIAS_PREFIX.length) : null;
+  }
+
+  /** The variable a variable is an alias of in one mode (null when that mode holds its own value). */
+  variableAlias(id: string, modeId: string): string | null {
+    const v = this.variableMap.get(id);
+    const target = v ? DesignDoc.aliasTarget(v.values[modeId]) : null;
+    return target && this.variableMap.has(target) ? target : null;
+  }
+
+  /** The value a variable shows in a mode, following aliases (same kind only). A broken or looping alias shows the variable's own first plain value. */
+  resolveVariableValue(v: ColorVariable, modeId: string, hops = 0): string {
+    const own = v.values[modeId] ?? Object.values(v.values)[0] ?? '';
+    const target = DesignDoc.aliasTarget(own);
+    if (target === null) return own;
+    const next = hops < 10 ? this.variableMap.get(target) : undefined;
+    if (!next || next.id === v.id || (next.kind ?? 'COLOR') !== (v.kind ?? 'COLOR')) return this.plainValue(v);
+    return this.resolveVariableValue(next, modeId, hops + 1);
+  }
+
+  private plainValue(v: ColorVariable): string {
+    const plain = Object.values(v.values).find((raw) => DesignDoc.aliasTarget(raw) === null);
+    return plain ?? (v.kind === 'STRING' ? '' : v.kind === 'NUMBER' ? '0' : v.kind === 'BOOLEAN' ? 'false' : '#000000');
+  }
+
+  /** Make a variable an alias of another variable of the same kind in one mode (or pass null to keep the value it shows now). Throws for a different kind or a loop. */
+  setVariableAlias(id: string, modeId: string, targetId: string | null): void {
+    const v = this.variableMap.get(id);
+    if (!v) throw new Error('Variable not found');
+    if (!this.modes().some((m) => m.id === modeId)) throw new Error('Mode not found');
+    if (targetId === null) {
+      const shown = this.resolveVariableValue(v, modeId);
+      this.transact(() => this.variableMap.set(id, { ...v, values: { ...v.values, [modeId]: shown } }));
+      return;
+    }
+    const target = this.variableMap.get(targetId);
+    if (!target) throw new Error('Variable not found');
+    if (targetId === id) throw new Error('A variable cannot be an alias of itself');
+    if ((target.kind ?? 'COLOR') !== (v.kind ?? 'COLOR')) throw new Error('An alias must be a variable of the same type');
+    // a loop: the target (in any mode) eventually points back to this variable
+    const seen = new Set<string>();
+    const stack = [targetId];
+    while (stack.length) {
+      const cur = stack.pop()!;
+      if (cur === id) throw new Error('That alias would loop back to this variable');
+      if (seen.has(cur)) continue;
+      seen.add(cur);
+      for (const raw of Object.values(this.variableMap.get(cur)?.values ?? {})) {
+        const t = DesignDoc.aliasTarget(raw);
+        if (t) stack.push(t);
+      }
+    }
+    this.transact(() => this.variableMap.set(id, { ...v, values: { ...v.values, [modeId]: ALIAS_PREFIX + targetId } }));
+  }
+
+  /** Put back the raw values a variable had (aliases included), for example after a prototype changed them. Unknown modes are skipped. */
+  restoreVariableValues(id: string, values: Record<string, string>): void {
+    const v = this.variableMap.get(id);
+    if (!v) return;
+    const known = new Set(this.modes().map((m) => m.id));
+    const next = { ...v.values };
+    for (const [mode, raw] of Object.entries(values)) if (known.has(mode) && typeof raw === 'string') next[mode] = raw;
+    this.transact(() => this.variableMap.set(id, { ...v, values: next }));
   }
 
   /** Bind one solid fill or stroke of a layer to a colour variable (or pass null to keep its colour and detach). */
@@ -1365,7 +1445,7 @@ export class DesignDoc {
     } else {
       const v = this.variableMap.get(variableId);
       if (!v || (v.kind && v.kind !== 'COLOR')) throw new Error('Variable not found');
-      next = { ...paint, variableId, color: v.values[this.activeModeId()] ?? paint.color };
+      next = { ...paint, variableId, color: this.resolveVariableValue(v, this.activeModeId()) || paint.color };
     }
     this.setStyle(nodeId, { [key]: (paints as Paint[]).map((p, i) => (i === index ? next : p)) } as StylePatch);
   }

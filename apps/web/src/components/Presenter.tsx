@@ -48,15 +48,7 @@ export function Presenter() {
     }
     if (instBackup.current.size) setModeTick((n) => n + 1);
     instBackup.current.clear();
-    for (const [id, values] of varBackup.current) {
-      for (const [modeId, value] of Object.entries(values)) {
-        try {
-          doc.setVariableValue(id, modeId, value);
-        } catch {
-          // the variable or mode was deleted meanwhile: nothing to restore
-        }
-      }
-    }
+    for (const [id, values] of varBackup.current) doc.restoreVariableValues(id, values);
     if (varBackup.current.size) setModeTick((n) => n + 1);
     varBackup.current.clear();
     if (startMode.current && doc.activeModeId() !== startMode.current) {

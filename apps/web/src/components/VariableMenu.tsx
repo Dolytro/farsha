@@ -36,7 +36,7 @@ export function VariableButton({ doc, onPick }: { doc: DesignDoc; onPick: (varia
                 setOpen(false);
               }}
             >
-              <span className="stylemenu__swatch" style={{ background: v.values[mode] ?? Object.values(v.values)[0] }} />
+              <span className="stylemenu__swatch" style={{ background: doc.resolveVariableValue(v, mode) }} />
               {v.name}
             </button>
           ))}
@@ -61,7 +61,7 @@ export function VariableChip({ doc, variableId, onDetach }: { doc: DesignDoc; va
   const mode = doc.activeModeId();
   return (
     <div className="stylepill">
-      <span className="stylemenu__swatch" style={{ background: v?.values[mode] ?? Object.values(v?.values ?? {})[0] ?? "transparent" }} />
+      <span className="stylemenu__swatch" style={{ background: v ? doc.resolveVariableValue(v, mode) : "transparent" }} />
       <span className="stylepill__name">{v?.name ?? "Missing variable"}</span>
       <button className="props__add" title="Detach variable" onClick={onDetach}>
         −

@@ -19,7 +19,7 @@ export function exportVariables(doc: DesignDoc): VariablesFile {
   return {
     version: 1,
     modes: modes.map((m) => m.name),
-    variables: all.map((v) => ({ name: v.name, type: kindOf(v), values: Object.fromEntries(modes.map((m) => [m.name, v.values[m.id] ?? ""])) })),
+    variables: all.map((v) => ({ name: v.name, type: kindOf(v), values: Object.fromEntries(modes.map((m) => [m.name, doc.resolveVariableValue(v, m.id)])) })),
   };
 }
 

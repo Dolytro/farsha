@@ -34,7 +34,7 @@ export function variablesUsed(doc: DesignDoc, node: DesignNode): VariableUse[] {
       if (p.type !== "SOLID" || !p.variableId) continue;
       const v = doc.getColorVariable(p.variableId);
       if (!v || out.some((o) => o.id === v.id && o.role === role)) continue;
-      out.push({ id: v.id, name: v.name, cssName: cssVariableName(v.name), role, values: modes.map((m) => ({ mode: m.name, color: v.values[m.id] ?? "" })) });
+      out.push({ id: v.id, name: v.name, cssName: cssVariableName(v.name), role, values: modes.map((m) => ({ mode: m.name, color: doc.resolveVariableValue(v, m.id) })) });
     }
   }
   return out;

@@ -84,7 +84,7 @@ export function safeUrl(url: string): string | null {
 export function conditionTarget(doc: DesignDoc, a: Extract<InteractionAction, { type: "CONDITIONAL" }>): string | undefined {
   const v = doc.getColorVariable(a.variableId);
   if (!v) return a.elseId;
-  const have = v.values[doc.activeModeId()] ?? Object.values(v.values)[0] ?? "";
+  const have = doc.resolveVariableValue(v, doc.activeModeId());
   const bothNumbers = have.trim() !== "" && a.value.trim() !== "" && Number.isFinite(Number(have)) && Number.isFinite(Number(a.value));
   const same = bothNumbers ? Number(have) === Number(a.value) : have.trim().toLowerCase() === a.value.trim().toLowerCase();
   const ok = a.op === "EQ" ? same : a.op === "NEQ" ? !same : bothNumbers && (a.op === "GT" ? Number(have) > Number(a.value) : Number(have) < Number(a.value));
