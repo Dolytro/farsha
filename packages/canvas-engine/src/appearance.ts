@@ -140,7 +140,7 @@ export function shapeGeometry(n: DesignNode, extra: string): string {
 const geometry = shapeGeometry;
 
 /**
- * The `<filter>` that applies image adjustments (exposure, contrast, saturation: each -100 to 100) to a picture, or "" when there is nothing to adjust.
+ * The `<filter>` that applies image adjustments (exposure, contrast, saturation, temperature, tint: each -100 to 100) to a picture, or "" when there is nothing to adjust.
  * Exposure and contrast become one linear slope and intercept per colour channel; saturation is a colour matrix.
  */
 export function imageAdjustFilter(id: string, adj: unknown): string {
@@ -150,12 +150,15 @@ export function imageAdjustFilter(id: string, adj: unknown): string {
   const exposure = read(a.exposure);
   const contrast = read(a.contrast);
   const saturation = read(a.saturation);
-  if (!exposure && !contrast && !saturation) return "";
+  const temperature = read(a.temperature);
+  const tint = read(a.tint);
+  if (!exposure && !contrast && !saturation && !temperature && !tint) return "";
   const gain = 2 ** (exposure / 50);
   const factor = (100 + contrast) / 100;
-  const slope = num(gain * factor, 1);
   const intercept = num(0.5 - 0.5 * factor);
-  const fn = ["R", "G", "B"].map((c) => `<feFunc${c} type="linear" slope="${slope}" intercept="${intercept}"/>`).join("");
+  // Temperature warms red and cools blue; tint pushes green against magenta.
+  const channelGain: Record<string, number> = { R: 1 + 0.3 * (temperature / 100), G: 1 - 0.3 * (tint / 100), B: 1 - 0.3 * (temperature / 100) };
+  const fn = ["R", "G", "B"].map((c) => `<feFunc${c} type="linear" slope="${num(gain * factor * channelGain[c]!, 1)}" intercept="${intercept}"/>`).join("");
   return `<filter id="${id}" color-interpolation-filters="sRGB"><feComponentTransfer>${fn}</feComponentTransfer>${saturation ? `<feColorMatrix type="saturate" values="${num((100 + saturation) / 100, 1)}"/>` : ""}</filter>`;
 }
 

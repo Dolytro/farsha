@@ -296,6 +296,16 @@ describe("advanced strokes", () => {
   });
 
 
+  it("warms and tints an image through per-channel slopes", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1, adjustments: { temperature: 100, tint: -100 } }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain('<feFuncR type="linear" slope="1.3"');
+    expect(svg).toContain('<feFuncG type="linear" slope="1.3"');
+    expect(svg).toContain('<feFuncB type="linear" slope="0.7"');
+  });
+
   it("turns OpenType features into font-feature-settings and ignores unknown ones", () => {
     expect(fontFeatureSettings(["tnum", "-liga", "evil\"; x", "tnum"])).toBe('"tnum" 1, "liga" 0');
     expect(fontFeatureSettings([])).toBeUndefined();

@@ -74,6 +74,10 @@ export interface ImageAdjustments {
   exposure?: number;
   contrast?: number;
   saturation?: number;
+  /** Cooler (negative) to warmer (positive). */
+  temperature?: number;
+  /** Greener (negative) to more magenta (positive). */
+  tint?: number;
 }
 
 export type Paint = SolidPaint | GradientPaint | ImagePaint;
