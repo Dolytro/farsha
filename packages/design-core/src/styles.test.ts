@@ -119,6 +119,21 @@ describe('effect styles', () => {
   });
 });
 
+describe('effect style names', () => {
+  it('renames a style, keeps layers linked, and ignores a blank name', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10 } });
+    const id = doc.createEffectStyle('Soft', [{ type: 'LAYER_BLUR', radius: 4, visible: true }] as never);
+    doc.applyEffectStyle(a, id);
+    doc.updateEffectStyle(id, { name: '  Card shadow ' });
+    expect(doc.getEffectStyle(id)?.name).toBe('Card shadow');
+    doc.updateEffectStyle(id, { name: '   ' });
+    expect(doc.getEffectStyle(id)?.name).toBe('Card shadow');
+    expect((doc.getNode(a) as unknown as { effectStyleId?: string }).effectStyleId).toBe(id);
+  });
+});
+
 describe('grid styles', () => {
   it('frames follow a grid style and editing the grids detaches them', () => {
     const doc = new DesignDoc();

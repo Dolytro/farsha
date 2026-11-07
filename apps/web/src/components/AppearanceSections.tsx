@@ -249,6 +249,29 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
           )}
         </div>
       )}
+      {style && (
+        <input
+          key={`${style.id}:${style.name}`}
+          className="field__input field--gap"
+          style={{ width: "100%" }}
+          aria-label="Effect style name"
+          title="Rename this effect style"
+          defaultValue={style.name}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") e.currentTarget.blur();
+            else if (e.key === "Escape") {
+              e.currentTarget.value = style.name;
+              e.currentTarget.blur();
+            }
+          }}
+          onBlur={(e) => {
+            const name = e.currentTarget.value.trim();
+            if (name && name !== style.name) doc.updateEffectStyle(style.id, { name });
+            else e.currentTarget.value = style.name;
+          }}
+        />
+      )}
       {effects.map((e, i) => (
         <div className="effect" key={i}>
           <div className="effect__head">
