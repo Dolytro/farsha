@@ -10,6 +10,21 @@ export const SETTING_SCALES = [0.5, 1, 1.5, 2, 3, 4] as const;
 
 export const newSetting = (): ExportSetting => ({ format: "PNG", scale: 1, suffix: "" });
 
+export type ExportPresetName = "iOS" | "Android";
+export const EXPORT_PRESET_NAMES: ExportPresetName[] = ["iOS", "Android"];
+
+/** The settings an export preset adds: iOS is 1x, 2x and 3x PNG; Android is mdpi to xxxhdpi PNG (1, 1.5, 2, 3, 4x). */
+export function exportPreset(name: ExportPresetName): ExportSetting[] {
+  if (name === "iOS") return [1, 2, 3].map((scale) => ({ format: "PNG", scale, suffix: scale === 1 ? "" : `@${scale}x` }));
+  return ([["mdpi", 1], ["hdpi", 1.5], ["xhdpi", 2], ["xxhdpi", 3], ["xxxhdpi", 4]] as const).map(([dpi, scale]) => ({ format: "PNG", scale, suffix: `-${dpi}` }));
+}
+
+/** Adds a preset's settings to a list, skipping any that the list already has (same format, scale and suffix). */
+export function addPreset(list: ExportSetting[], name: ExportPresetName): ExportSetting[] {
+  const has = (x: ExportSetting) => list.some((y) => y.format === x.format && y.scale === x.scale && y.suffix === x.suffix);
+  return [...list, ...exportPreset(name).filter((x) => !has(x))];
+}
+
 const EXT: Record<ExportSettingFormat, string> = { PNG: "png", JPG: "jpg", WEBP: "webp", SVG: "svg", PDF: "pdf" };
 const MIME: Record<"PNG" | "JPG" | "WEBP", "image/png" | "image/jpeg" | "image/webp"> = { PNG: "image/png", JPG: "image/jpeg", WEBP: "image/webp" };
 

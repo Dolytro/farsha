@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanSettings, newSetting, settingFileName } from "./export-settings";
+import { addPreset, cleanSettings, exportPreset, newSetting, settingFileName } from "./export-settings";
 
 describe("settingFileName", () => {
   it("uses the suffix, or @Nx for a scale other than 1", () => {
@@ -25,5 +25,20 @@ describe("cleanSettings", () => {
     expect(cleanSettings([{ format: "GIF", scale: 1, suffix: "" }, null, 5, { scale: 1 }])).toEqual([]);
     expect(cleanSettings("nope")).toEqual([]);
     expect(newSetting()).toEqual({ format: "PNG", scale: 1, suffix: "" });
+  });
+});
+
+describe("export presets", () => {
+  it("iOS is 1x, 2x and 3x PNG with @Nx suffixes", () => {
+    expect(exportPreset("iOS").map((x) => [x.scale, x.suffix, x.format])).toEqual([[1, "", "PNG"], [2, "@2x", "PNG"], [3, "@3x", "PNG"]]);
+  });
+  it("Android is mdpi to xxxhdpi", () => {
+    expect(exportPreset("Android").map((x) => [x.scale, x.suffix])).toEqual([[1, "-mdpi"], [1.5, "-hdpi"], [2, "-xhdpi"], [3, "-xxhdpi"], [4, "-xxxhdpi"]]);
+  });
+  it("adding a preset keeps existing settings and skips duplicates", () => {
+    const once = addPreset([newSetting()], "iOS");
+    expect(once).toHaveLength(3);
+    expect(addPreset(once, "iOS")).toHaveLength(3);
+    expect(addPreset([], "Android")).toHaveLength(5);
   });
 });

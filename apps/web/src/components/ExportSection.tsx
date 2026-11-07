@@ -3,7 +3,7 @@ import type { DesignDoc } from "@farsha/design-core";
 import { EXPORT_SCALES } from "../exporting";
 import { exportAs, type ExportChoice } from "../pdf-export";
 import { exportPage, pageLayerIds } from "../page-export";
-import { SETTING_FORMATS, SETTING_SCALES, exportWithSettings, newSetting } from "../export-settings";
+import { EXPORT_PRESET_NAMES, SETTING_FORMATS, SETTING_SCALES, addPreset, exportWithSettings, newSetting, type ExportPresetName } from "../export-settings";
 import type { ExportSetting, ExportSettingFormat } from "@farsha/types";
 import { useEditor } from "../store";
 import { Select } from "./Select";
@@ -39,6 +39,14 @@ function LayerExport({ doc, id }: { doc: DesignDoc; id: string }) {
           +
         </button>
       </h3>
+      <Select className="field__select field__select--wide field--gap" aria-label="Export preset" title="Add the settings of an export preset" value="" onChange={(e) => e.target.value && save(addPreset(list, e.target.value as ExportPresetName))}>
+        <option value="">Add preset…</option>
+        {EXPORT_PRESET_NAMES.map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </Select>
       {list.map((s, i) => (
         <div className="export-row" key={i}>
           <Select className="field__select" aria-label="Export scale" value={s.scale} disabled={s.format === "SVG" || s.format === "PDF"} onChange={(e) => patch(i, { scale: Number(e.target.value) })}>
