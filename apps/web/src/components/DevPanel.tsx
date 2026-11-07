@@ -7,7 +7,9 @@ import { boxModelOf } from "../box-model";
 import { zoomFit } from "../actions";
 import { layersWithDevStatus } from "../dev-status";
 import { cssVariableBlock, variablesUsed } from "../variable-code";
-import type { DevStatus } from "@farsha/types";
+import type { DesignDoc } from "@farsha/design-core";
+import type { DevResource, DevStatus } from "@farsha/types";
+import { addResource, cleanResources } from "../dev-resources";
 
 const LANGS: { id: Language; label: string }[] = [
   { id: "css", label: "CSS" },
@@ -70,6 +72,8 @@ export function DevPanel() {
           onChange={(e) => doc.setStyle(node.id, { devNote: e.target.value || null })}
         />
       </section>
+
+      <DevResources doc={doc} id={node.id} resources={node.devResources} />
 
       {(() => {
         const bm = boxModelOf(node);
@@ -204,5 +208,55 @@ function ReadyForDev() {
       {group("COMPLETED", "Completed", "#7a5af8")}
       <p className="props__empty">Select a layer to inspect</p>
     </div>
+  );
+}
+
+/** Dev resources: links to tickets, specs or code kept on the layer. Only http(s) addresses are accepted and opened. */
+function DevResources({ doc, id, resources }: { doc: DesignDoc; id: string; resources: unknown }) {
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const list = cleanResources(resources);
+  const save = (next: DevResource[]) => doc.setStyle(id, { devResources: next.length ? next : null });
+  const add = () => {
+    const next = addResource(list, name, url);
+    if (!next) {
+      useEditor.getState().showToast("Add a web link that starts with http:// or https://");
+      return;
+    }
+    save(next);
+    setName("");
+    setUrl("");
+  };
+  return (
+    <section className="props__section">
+      <h3 className="props__heading">Dev resources</h3>
+      {list.map((r, i) => (
+        <div className="fill-row" key={r.url}>
+          <a className="props__link" href={r.url} target="_blank" rel="noopener noreferrer" title={r.url} style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {r.name}
+          </a>
+          <button className="props__add" title="Remove this link" aria-label={`Remove ${r.name}`} onClick={() => save(list.filter((_, j) => j !== i))}>
+            −
+          </button>
+        </div>
+      ))}
+      <div className="fill-row">
+        <input className="field__input" aria-label="Resource name" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
+        <input
+          className="field__input"
+          aria-label="Resource link"
+          placeholder="https://"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") add();
+          }}
+        />
+        <button className="props__add" title="Add link" aria-label="Add resource" onClick={add}>
+          +
+        </button>
+      </div>
+    </section>
   );
 }

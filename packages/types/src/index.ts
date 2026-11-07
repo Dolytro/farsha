@@ -283,6 +283,12 @@ export interface Interaction {
 /** Figma's Dev Mode status of a layer. */
 export type DevStatus = 'READY' | 'COMPLETED';
 
+/** A link attached to a layer for developers (web addresses only). */
+export interface DevResource {
+  name: string;
+  url: string;
+}
+
 /** One way a layer is exported: format, scale and a file name suffix (Figma's export settings). */
 export type ExportSettingFormat = 'PNG' | 'JPG' | 'WEBP' | 'SVG' | 'PDF';
 export interface ExportSetting {
@@ -314,6 +320,8 @@ export interface BaseNode {
   devStatus?: DevStatus;
   /** Dev Mode: a note for developers. */
   devNote?: string;
+  /** Dev Mode: links to tickets, specs or code for this layer. */
+  devResources?: DevResource[];
   /** Prototype: this top-level frame is where a flow starts (Figma's flow starting point). */
   flowStart?: boolean;
   /** Name of the flow that starts at this frame. Missing means "Flow 1", "Flow 2" and so on. */
@@ -628,6 +636,7 @@ export interface StylePatch extends AutoLayoutProps {
   strokeSides?: [number, number, number, number] | null;
   devStatus?: DevStatus | null;
   devNote?: string | null;
+  devResources?: DevResource[] | null;
   description?: string | null;
   flowStart?: boolean | null;
   flowName?: string | null;
