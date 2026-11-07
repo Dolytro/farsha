@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
+import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, STROKE_STYLE_KEYS, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type Paint, type StrokeStyle, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -51,6 +51,7 @@ export class DesignDoc {
   private readonly styles: Y.Map<FillStyle>;
   private readonly textStyleMap: Y.Map<TextStyle>;
   private readonly effectStyleMap: Y.Map<EffectStyle>;
+  private readonly strokeStyleMap: Y.Map<StrokeStyle>;
   private readonly gridStyleMap: Y.Map<GridStyle>;
   private readonly commentMap: Y.Map<Comment>;
   private readonly variableMap: Y.Map<ColorVariable>;
@@ -95,6 +96,11 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
+    this.strokeStyleMap = ydoc.getMap('strokeStyles') as Y.Map<StrokeStyle>;
+    this.strokeStyleMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
     this.styles.observe(() => {
       this.version++;
       this.listeners.forEach((fn) => fn());
@@ -104,7 +110,7 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
-    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.effectStyleMap, this.gridStyleMap, this.variableMap, this.modeMap], {
+    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.effectStyleMap, this.strokeStyleMap, this.gridStyleMap, this.variableMap, this.modeMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
     });
@@ -253,6 +259,20 @@ export class DesignDoc {
             const style = this.effectStyleMap.get(effectStyleId);
             if (!style) map.delete('effectStyleId');
             else if (JSON.stringify(map.get('effects')) !== JSON.stringify(style.effects)) map.set('effects', style.effects);
+          }
+          const strokeStyleId = map.get('strokeStyleId') as string | undefined;
+          if (strokeStyleId) {
+            const style = this.strokeStyleMap.get(strokeStyleId);
+            if (!style) map.delete('strokeStyleId');
+            else {
+              for (const key of STROKE_STYLE_KEYS) {
+                const want = style[key];
+                if (JSON.stringify(map.get(key)) !== JSON.stringify(want)) {
+                  if (want === undefined) map.delete(key);
+                  else map.set(key, want);
+                }
+              }
+            }
           }
           const gridStyleId = map.get('gridStyleId') as string | undefined;
           if (gridStyleId) {
@@ -1067,6 +1087,57 @@ export class DesignDoc {
     this.setProps(nodeId, { effects: style.effects, effectStyleId: styleId });
   }
 
+  // ---------- stroke styles ----------
+
+  strokeStyles(): StrokeStyle[] {
+    return [...this.strokeStyleMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getStrokeStyle(id: string): StrokeStyle | undefined {
+    return this.strokeStyleMap.get(id);
+  }
+
+  /** Create a stroke style from the stroke properties of a layer. Throws for a layer without a stroke. */
+  createStrokeStyleFrom(name: string, nodeId: string): string {
+    const node = this.requireNode(nodeId) as unknown as Record<string, unknown>;
+    if (!Array.isArray(node.strokes) || !node.strokes.length) throw new Error('This layer has no stroke to make a style from');
+    const style: Record<string, unknown> = { id: nanoid(), name: name.trim() || 'Stroke style' };
+    for (const key of STROKE_STYLE_KEYS) if (node[key] !== undefined) style[key] = structuredClone(node[key]);
+    if (typeof style.strokeWidth !== 'number') style.strokeWidth = 1;
+    this.transact(() => this.strokeStyleMap.set(style.id as string, style as unknown as StrokeStyle));
+    return style.id as string;
+  }
+
+  updateStrokeStyle(id: string, patch: { name?: string }): void {
+    const style = this.strokeStyleMap.get(id);
+    if (!style) throw new Error('Style not found');
+    this.transact(() => this.strokeStyleMap.set(id, { ...style, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}) }));
+  }
+
+  deleteStrokeStyle(id: string): void {
+    this.transact(() => this.strokeStyleMap.delete(id));
+  }
+
+  /** Give a layer a stroke style (its stroke now follows the style), or pass null to detach it. */
+  applyStrokeStyle(nodeId: string, styleId: string | null): void {
+    const node = this.requireNode(nodeId) as unknown as Record<string, unknown>;
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('strokeStyleId'));
+      return;
+    }
+    const style = this.strokeStyleMap.get(styleId);
+    if (!style) throw new Error('Style not found');
+    if (!('strokes' in node)) throw new Error('This layer cannot have a stroke');
+    const props: Record<string, unknown> = { strokeStyleId: styleId };
+    for (const key of STROKE_STYLE_KEYS) if (style[key] !== undefined) props[key] = structuredClone(style[key]);
+    this.setProps(nodeId, props);
+    // properties the style does not set go back to their defaults
+    this.transact(() => {
+      const map = this.nodes.get(nodeId)!;
+      for (const key of STROKE_STYLE_KEYS) if (style[key] === undefined) map.delete(key);
+    });
+  }
+
   // ---------- grid styles ----------
 
   gridStyles(): GridStyle[] {
@@ -1582,6 +1653,7 @@ export class DesignDoc {
       if ('fills' in patch && !('fillStyleId' in patch)) map.delete('fillStyleId');
       if ('layoutGrids' in patch && !('gridStyleId' in patch)) map.delete('gridStyleId');
       if ('effects' in patch && !('effectStyleId' in patch)) map.delete('effectStyleId');
+      if (STROKE_STYLE_KEYS.some((k) => k in patch) && !('strokeStyleId' in patch)) map.delete('strokeStyleId');
       if (TEXT_STYLE_KEYS.some((k) => k in patch) && !('textStyleId' in patch)) map.delete('textStyleId');
       if (!follows) return;
       const isRoot = map.get('componentId') !== undefined;

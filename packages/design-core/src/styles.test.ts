@@ -170,3 +170,47 @@ describe('grid styles', () => {
     expect(() => doc.applyGridStyle(rect, id)).toThrow();
   });
 });
+
+describe('stroke styles', () => {
+  const stroke = [{ type: 'SOLID', color: '#ff0000', opacity: 1 }] as never;
+  it('creates a style from a layer, applies it, and follows later changes', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10, strokes: stroke, strokeWidth: 3, strokeDash: [4, 2], strokeCap: 'ROUND' } as never });
+    const b = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10 } });
+    const id = doc.createStrokeStyleFrom('Dashed red', a);
+    expect(doc.getStrokeStyle(id)).toMatchObject({ name: 'Dashed red', strokeWidth: 3, strokeDash: [4, 2], strokeCap: 'ROUND' });
+    doc.applyStrokeStyle(b, id);
+    expect(doc.getNode(b)).toMatchObject({ strokeStyleId: id, strokeWidth: 3, strokeDash: [4, 2], strokeCap: 'ROUND' });
+    expect((doc.getNode(b) as unknown as { strokes: { color: string }[] }).strokes[0]!.color).toBe('#ff0000');
+  });
+
+  it('editing the stroke by hand detaches the layer, and a style without a dash clears it', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10, strokes: stroke, strokeWidth: 2 } as never });
+    const b = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10, strokes: stroke, strokeWidth: 1, strokeDash: [5, 5] } as never });
+    const id = doc.createStrokeStyleFrom('Plain', a);
+    doc.applyStrokeStyle(b, id);
+    expect((doc.getNode(b) as unknown as { strokeDash?: number[] }).strokeDash).toBeUndefined();
+    doc.setStyle(b, { strokeWidth: 9 });
+    expect((doc.getNode(b) as unknown as { strokeStyleId?: string }).strokeStyleId).toBeUndefined();
+    expect(doc.getStrokeStyle(id)?.strokeWidth).toBe(2);
+  });
+
+  it('deleting a style leaves layers with their stroke, renaming ignores blanks, and a layer without a stroke cannot make a style', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10, strokes: stroke, strokeWidth: 2 } as never });
+    const plain = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10 } });
+    expect(() => doc.createStrokeStyleFrom('x', plain)).toThrow(/no stroke/);
+    const id = doc.createStrokeStyleFrom('Thin', a);
+    doc.applyStrokeStyle(a, id);
+    doc.updateStrokeStyle(id, { name: ' Hairline ' });
+    doc.updateStrokeStyle(id, { name: '  ' });
+    expect(doc.getStrokeStyle(id)?.name).toBe('Hairline');
+    doc.deleteStrokeStyle(id);
+    expect((doc.getNode(a) as unknown as { strokeStyleId?: string }).strokeStyleId).toBeUndefined();
+    expect((doc.getNode(a) as unknown as { strokeWidth: number }).strokeWidth).toBe(2);
+  });
+});

@@ -39,6 +39,64 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
           </button>
         )}
       </h3>
+      {(doc.strokeStyles().length > 0 || strokes.length > 0) && (() => {
+        const styles = doc.strokeStyles();
+        const style = node.strokeStyleId ? doc.getStrokeStyle(node.strokeStyleId) : undefined;
+        return (
+          <>
+            <div className="fill-row fill-row--gap">
+              <Select
+                className="field__select field__select--wide"
+                aria-label="Stroke style"
+                title="Stroke style"
+                value={style?.id ?? "NONE"}
+                onChange={(e) => {
+                  doc.stopCapturing();
+                  if (e.target.value === "NEW") doc.applyStrokeStyle(node.id, doc.createStrokeStyleFrom(`Stroke style ${styles.length + 1}`, node.id));
+                  else doc.applyStrokeStyle(node.id, e.target.value === "NONE" ? null : e.target.value);
+                  doc.stopCapturing();
+                }}
+              >
+                <option value="NONE">No stroke style</option>
+                {styles.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+                {strokes.length > 0 && !style && <option value="NEW">+ Create style from stroke</option>}
+              </Select>
+              {style && (
+                <button className="props__add" title="Delete this stroke style (layers keep their stroke)" onClick={() => doc.deleteStrokeStyle(style.id)}>
+                  −
+                </button>
+              )}
+            </div>
+            {style && (
+              <input
+                key={`${style.id}:${style.name}`}
+                className="field__input field--gap"
+                style={{ width: "100%" }}
+                aria-label="Stroke style name"
+                title="Rename this stroke style"
+                defaultValue={style.name}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Enter") e.currentTarget.blur();
+                  else if (e.key === "Escape") {
+                    e.currentTarget.value = style.name;
+                    e.currentTarget.blur();
+                  }
+                }}
+                onBlur={(e) => {
+                  const name = e.currentTarget.value.trim();
+                  if (name && name !== style.name) doc.updateStrokeStyle(style.id, { name });
+                  else e.currentTarget.value = style.name;
+                }}
+              />
+            )}
+          </>
+        );
+      })()}
       {strokes.map((_, k) => strokes.length - 1 - k).map((i) => {
         const stroke = strokes[i]!;
         const replace = (p: Paint) => setStrokes(strokes.map((s, j) => (j === i ? p : s)));

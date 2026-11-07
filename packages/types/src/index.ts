@@ -209,6 +209,22 @@ export interface FillStyle {
   paints: Paint[];
 }
 
+/** The stroke properties a stroke style carries. */
+export const STROKE_STYLE_KEYS = ['strokes', 'strokeWidth', 'strokeAlign', 'strokeDash', 'strokeCap', 'strokeJoin', 'strokeMiterAngle'] as const;
+
+/** A reusable stroke (colour, weight, position, dashes, caps, joins): layers that use it follow it. */
+export interface StrokeStyle {
+  id: string;
+  name: string;
+  strokes: Paint[];
+  strokeWidth: number;
+  strokeAlign?: StrokeAlign;
+  strokeDash?: number[];
+  strokeCap?: StrokeCap;
+  strokeJoin?: StrokeJoin;
+  strokeMiterAngle?: number;
+}
+
 /** A reusable set of layout grids: frames that use it follow it. */
 export interface GridStyle {
   id: string;
@@ -353,6 +369,8 @@ export interface BaseNode {
   effects?: Effect[];
   /** The effect style this layer follows; its effects are the style's. */
   effectStyleId?: string;
+  /** The stroke style this layer follows; its stroke properties are the style's. */
+  strokeStyleId?: string;
   /** Missing means NORMAL. */
   blendMode?: BlendMode;
   constraintH?: Constraint;
@@ -649,6 +667,7 @@ export interface StylePatch extends AutoLayoutProps {
   cornerRadii?: [number, number, number, number] | null;
   cornerSmoothing?: number;
   strokeSides?: [number, number, number, number] | null;
+  strokeStyleId?: string | null;
   devStatus?: DevStatus | null;
   devNote?: string | null;
   devResources?: DevResource[] | null;
