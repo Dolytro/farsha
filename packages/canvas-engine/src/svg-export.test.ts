@@ -314,6 +314,15 @@ describe("advanced strokes", () => {
     expect(svg).toContain('type="table" tableValues="0.25 0.38 0.5 0.63 0.75"');
   });
 
+  it("cuts the layer out of a drop shadow when it is not shown behind transparent areas", () => {
+    const doc = new DesignDoc();
+    const make = (showBehind?: boolean) => doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, effects: [{ type: "DROP_SHADOW", x: 2, y: 2, blur: 4, color: "#000000", opacity: 0.5, visible: true, ...(showBehind === undefined ? {} : { showBehind }) }] } as never });
+    expect(exportSvg(doc, [make()])?.svg ?? "").not.toContain('operator="out"');
+    expect(exportSvg(doc, [make(true)])?.svg ?? "").not.toContain('operator="out"');
+    const svg = exportSvg(doc, [make(false)])?.svg ?? "";
+    expect(svg).toContain('<feComposite in="k0" in2="SourceAlpha" operator="out" result="s0"/>');
+  });
+
   it("turns OpenType features into font-feature-settings and ignores unknown ones", () => {
     expect(fontFeatureSettings(["tnum", "-liga", "evil\"; x", "tnum"])).toBe('"tnum" 1, "liga" 0');
     expect(fontFeatureSettings([])).toBeUndefined();

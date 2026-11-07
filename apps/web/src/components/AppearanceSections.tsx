@@ -292,6 +292,12 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
                 {numField(i, "B", "blur", e.blur, 0)}
                 {numField(i, "S", "spread", e.spread ?? 0)}
               </div>
+              {e.type === "DROP_SHADOW" && (
+                <label className="props__check" title="Show the shadow behind transparent areas of the layer">
+                  <input type="checkbox" aria-label="Show behind transparent areas" checked={e.showBehind !== false} onChange={(ev) => patch(i, { showBehind: ev.target.checked })} />
+                  <span>Show behind transparent areas</span>
+                </label>
+              )}
               <div className="fill-row">
                 <ColorSwatch value={e.color} onChange={(color) => patch(i, { color })} />
                 <HexInput value={e.color} onChange={(color) => patch(i, { color })} />

@@ -103,6 +103,8 @@ export interface ShadowEffect {
   blur: number;
   /** Grows (positive) or shrinks (negative) the shadow shape before it is blurred. Missing means 0. */
   spread?: number;
+  /** Drop shadow only: false cuts the shadow away where the layer itself is, so it never shows through transparent parts. Missing means true. */
+  showBehind?: boolean;
   /** CSS hex colour */
   color: string;
   opacity: number;

@@ -53,8 +53,10 @@ export function effectsFilter(n: DesignNode): { id: string; markup: string } | n
         `<feGaussianBlur in="${base}" stdDeviation="${num(Math.max(0, e.blur) / 2)}" result="b${i}"/>`,
         `<feOffset in="b${i}" dx="${num(e.x)}" dy="${num(e.y)}" result="o${i}"/>`,
         `<feFlood flood-color="${hex(e.color)}" flood-opacity="${unit(e.opacity)}" result="c${i}"/>`,
-        `<feComposite in="c${i}" in2="o${i}" operator="in" result="s${i}"/>`,
+        `<feComposite in="c${i}" in2="o${i}" operator="in" result="${e.showBehind === false ? `k${i}` : `s${i}`}"/>`,
       );
+      // "Show behind transparent areas" off: the shape's own area is cut out of the shadow
+      if (e.showBehind === false) parts.push(`<feComposite in="k${i}" in2="SourceAlpha" operator="out" result="s${i}"/>`);
       under.push(`s${i}`);
     } else if (e.type === "INNER_SHADOW") {
       const spread = Number.isFinite(e.spread) ? (e.spread as number) : 0;
