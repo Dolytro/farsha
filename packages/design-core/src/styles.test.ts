@@ -134,6 +134,21 @@ describe('effect style names', () => {
   });
 });
 
+describe('grid style names', () => {
+  it('renames a style, keeps frames linked, and ignores a blank name', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const f = doc.createNode('FRAME', { parentId: page, props: { width: 100, height: 100 } });
+    const id = doc.createGridStyle('Base', [{ type: 'GRID', size: 8, color: '#ff0000', opacity: 0.1, visible: true }] as never);
+    doc.applyGridStyle(f, id);
+    doc.updateGridStyle(id, { name: ' 8pt grid ' });
+    expect(doc.getGridStyle(id)?.name).toBe('8pt grid');
+    doc.updateGridStyle(id, { name: '' });
+    expect(doc.getGridStyle(id)?.name).toBe('8pt grid');
+    expect((doc.getNode(f) as unknown as { gridStyleId?: string }).gridStyleId).toBe(id);
+  });
+});
+
 describe('grid styles', () => {
   it('frames follow a grid style and editing the grids detaches them', () => {
     const doc = new DesignDoc();

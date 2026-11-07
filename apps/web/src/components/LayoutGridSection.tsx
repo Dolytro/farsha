@@ -74,6 +74,29 @@ export function LayoutGridSection({ doc, node }: { doc: DesignDoc; node: DesignN
           )}
         </div>
       )}
+      {style && (
+        <input
+          key={`${style.id}:${style.name}`}
+          className="field__input field--gap"
+          style={{ width: "100%" }}
+          aria-label="Grid style name"
+          title="Rename this grid style"
+          defaultValue={style.name}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") e.currentTarget.blur();
+            else if (e.key === "Escape") {
+              e.currentTarget.value = style.name;
+              e.currentTarget.blur();
+            }
+          }}
+          onBlur={(e) => {
+            const name = e.currentTarget.value.trim();
+            if (name && name !== style.name) doc.updateGridStyle(style.id, { name });
+            else e.currentTarget.value = style.name;
+          }}
+        />
+      )}
       {grids.length === 0 && <p className="props__hint">No layout grid yet. Click + to add a 10 px grid, then change its type to Columns or Rows. Shift+G shows or hides the grids.</p>}
       {grids.map((g, i) => (
         <div className="grid-item" key={i}>
