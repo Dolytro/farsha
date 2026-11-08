@@ -1,3 +1,4 @@
+import { FillRow, convertPaint } from "./FillSection";
 import { ColorSwatch } from "./ColorSwatch";
 import type { DesignDoc } from "@farsha/design-core";
 import { paintColor, type DesignNode, type Effect, type LineEnd, type Paint, type StrokeAlign, type StrokeCap, type StrokeJoin } from "@farsha/types";
@@ -101,8 +102,21 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
         const stroke = strokes[i]!;
         const replace = (p: Paint) => setStrokes(strokes.map((s, j) => (j === i ? p : s)));
         const bound = stroke.type === "SOLID" && stroke.variableId;
+        // a gradient stroke is edited like a gradient fill (stops, angle), limited to solid, linear and radial
+        if (stroke.type === "GRADIENT_LINEAR" || stroke.type === "GRADIENT_RADIAL") {
+          return (
+            <FillRow key={i} doc={doc} nodeId={node.id} paint={stroke} setPaint={replace} remove={() => setStrokes(strokes.filter((_, j) => j !== i))} kinds={["SOLID", "GRADIENT_LINEAR", "GRADIENT_RADIAL"]} />
+          );
+        }
         return (
           <div key={i}>
+            {!bound && (
+              <Select className="field__select field__select--wide" aria-label="Stroke paint type" title="Paint type of this stroke" value="SOLID" onChange={(e) => replace(convertPaint(stroke, e.target.value as "GRADIENT_LINEAR" | "GRADIENT_RADIAL"))}>
+                <option value="SOLID">Solid</option>
+                <option value="GRADIENT_LINEAR">Linear</option>
+                <option value="GRADIENT_RADIAL">Radial</option>
+              </Select>
+            )}
             {bound ? <VariableChip doc={doc} variableId={stroke.variableId!} onDetach={() => doc.bindPaintVariable(node.id, "strokes", i, null)} /> : null}
             <div className="fill-row fill-row--gap">
               {!bound && (

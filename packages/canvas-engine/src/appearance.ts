@@ -263,8 +263,17 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
       `<mask id="sm-${id}" maskUnits="userSpaceOnUse" x="${num(-w)}" y="${num(-w)}" width="${num(n.width + w * 2)}" height="${num(n.height + w * 2)}">` +
       `<rect x="${num(-w)}" y="${num(-w)}" width="${num(n.width + w * 2)}" height="${num(n.height + w * 2)}" fill="#fff"/>${geometry(n, ' fill="#000"')}</mask>`;
   }
-  for (const stroke of strokes) {
-    const base = ` fill="none" stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}"${strokeExtras(n)}`;
+  for (const [si, stroke] of strokes.entries()) {
+    // a linear or radial gradient stroke is painted with the gradient (over the layer's box); other kinds use their first colour
+    let strokeDef = "";
+    let strokePaint = hex(paintColor(stroke));
+    if (isGradient(stroke)) {
+      const gid = `sg-${id}-${si}`;
+      strokeDef = gradientDef(gid, stroke);
+      strokePaint = `url(#${gid})`;
+    }
+    out += strokeDef;
+    const base = ` fill="none" stroke="${strokePaint}" stroke-opacity="${unit(stroke.opacity)}"${strokeExtras(n)}`;
     if (align === "INSIDE") out += geometry(n, `${base} stroke-width="${num(w * 2)}" clip-path="url(#sc-${id})"`);
     else if (align === "OUTSIDE") out += geometry(n, `${base} stroke-width="${num(w * 2)}" mask="url(#sm-${id})"`);
     else out += geometry(n, `${base} stroke-width="${num(w)}"`);
@@ -364,6 +373,7 @@ export function textFill(n: DesignNode): { defs: string; fill: string } {
 }
 
 const vectorGradientId = (n: DesignNode) => `vg-${safeId(n.id)}`;
+const vectorStrokeGradientId = (n: DesignNode) => `vgs-${safeId(n.id)}`;
 
 /** True for a VECTOR drawn with the Line / Arrow / Polygon / Star tools: it has its own fill and stroke instead of baked-in markup attributes. */
 export function isDrawnVector(n: DesignNode): boolean {
@@ -377,7 +387,7 @@ export function vectorPaintAttrs(n: DesignNode): string {
   const stroke = n.strokes?.[0];
   const parts = [fill ? `fill="${isGradient(fill) ? `url(#${vectorGradientId(n)})` : hex(paintColor(fill))}" fill-opacity="${unit(fill.opacity)}"` : 'fill="none"'];
   if (stroke) {
-    parts.push(`stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}" stroke-width="${num(Math.max(0, n.strokeWidth ?? 1))}"${strokeExtras(n, "ROUND", "ROUND")}`);
+    parts.push(`stroke="${isGradient(stroke) ? `url(#${vectorStrokeGradientId(n)})` : hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}" stroke-width="${num(Math.max(0, n.strokeWidth ?? 1))}"${strokeExtras(n, "ROUND", "ROUND")}`);
     if (n.strokeStartCap && n.strokeStartCap !== "NONE") parts.push(`marker-start="url(#${markerId(n, "s")})"`);
     if (n.strokeEndCap && n.strokeEndCap !== "NONE") parts.push(`marker-end="url(#${markerId(n, "e")})"`);
   }
@@ -415,7 +425,8 @@ const MARKER_SHAPES: Record<Exclude<LineEnd, "NONE">, (c: string) => string> = {
 export function vectorMarkerDefs(n: DesignNode): string {
   if (n.type !== "VECTOR") return "";
   const fill = n.fills?.[0];
-  const gradient = isGradient(fill) ? gradientDef(vectorGradientId(n), fill) : "";
+  const strokePaint = n.strokes?.[0];
+  const gradient = (isGradient(fill) ? gradientDef(vectorGradientId(n), fill) : "") + (isGradient(strokePaint) ? gradientDef(vectorStrokeGradientId(n), strokePaint) : "");
   if (!n.strokes?.[0]) return gradient;
   const color = hex(paintColor(n.strokes[0]));
   // arrowheads grow with the stroke but are never smaller than 8 px

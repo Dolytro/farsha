@@ -598,3 +598,22 @@ describe("text colours per range", () => {
     expect(svg).not.toContain("onload");
   });
 });
+
+describe("gradient strokes", () => {
+  const gradient = { type: "GRADIENT_LINEAR" as const, angle: 90, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] };
+  it("paints a shape stroke with the gradient", () => {
+    const { doc, rect } = setup();
+    doc.setStyle(rect, { strokes: [gradient] });
+    const out = exportSvg(doc, [rect])!.svg;
+    expect(out).toMatch(/<linearGradient id="sg-[^"]+-0"/);
+    expect(out).toMatch(/stroke="url\(#sg-[^"]+-0\)"/);
+    expect(out).toContain('stop-color="#0000ff"');
+  });
+  it("each stroke of a layer gets its own gradient and plain ones stay colours", () => {
+    const { doc, rect } = setup();
+    doc.setStyle(rect, { strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }, gradient] });
+    const out = exportSvg(doc, [rect])!.svg;
+    expect(out).toContain('stroke="#00ff00"');
+    expect(out).toMatch(/stroke="url\(#sg-[^"]+-1\)"/);
+  });
+});

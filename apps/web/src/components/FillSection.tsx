@@ -87,7 +87,8 @@ export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
   );
 }
 
-function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDoc; nodeId: string; paint: Paint; setPaint: (p: Paint) => void; remove: () => void; bind?: (variableId: string | null) => void }) {
+/** One paint with its type picker and editor. `kinds` limits the types offered (strokes: solid and linear / radial gradients) and then hides the fill-only controls (blend mode, video). */
+export function FillRow({ doc, nodeId, paint, setPaint, remove, bind, kinds }: { doc: DesignDoc; nodeId: string; paint: Paint; setPaint: (p: Paint) => void; remove: () => void; bind?: (variableId: string | null) => void; kinds?: Kind[] }) {
   const setStops = (g: GradientPaint, stops: GradientStop[]) => setPaint({ ...g, stops });
   return (
     <div className="fill-item">
@@ -101,25 +102,25 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
             else setPaint({ ...convertPaint(paint, e.target.value as Kind), ...(paint.blendMode ? { blendMode: paint.blendMode } : {}) } as Paint);
           }}
         >
-          {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
+          {(kinds ?? (Object.keys(KIND_LABEL) as Kind[])).map((k) => (
             <option key={k} value={k}>
               {KIND_LABEL[k]}
             </option>
           ))}
-          {doc.getNode(nodeId)?.type === "RECTANGLE" && <option value="VIDEO">Video</option>}
+          {!kinds && doc.getNode(nodeId)?.type === "RECTANGLE" && <option value="VIDEO">Video</option>}
         </Select>
         {bind && paint.type === "SOLID" && !paint.variableId && <VariableButton doc={doc} use={doc.getNode(nodeId)?.type === "TEXT" ? "TEXT_FILL" : "FILL"} onPick={bind} />}
         <button className="props__add" title="Remove fill" onClick={remove}>
           −
         </button>
       </div>
-      <Select className="field__select field__select--wide" aria-label="Fill blend mode" title="Blend mode of this fill" value={paint.blendMode ?? "NORMAL"} onChange={(e) => setPaint({ ...paint, blendMode: e.target.value === "NORMAL" ? undefined : (e.target.value as BlendMode) })}>
+      {!kinds && <Select className="field__select field__select--wide" aria-label="Fill blend mode" title="Blend mode of this fill" value={paint.blendMode ?? "NORMAL"} onChange={(e) => setPaint({ ...paint, blendMode: e.target.value === "NORMAL" ? undefined : (e.target.value as BlendMode) })}>
         {BLEND_MODES.map(([mode, label]) => (
           <option key={mode} value={mode}>
             {label}
           </option>
         ))}
-      </Select>
+      </Select>}
       {paint.type === "SOLID" && paint.variableId && bind && <VariableChip doc={doc} variableId={paint.variableId} onDetach={() => bind(null)} />}
 
       {paint.type === "IMAGE" ? (
