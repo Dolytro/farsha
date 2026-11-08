@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Dragging a layer inside an auto layout frame reorders it: it takes the slot under the pointer (one layer at a time; it snaps into place when the mouse is released).
 - ✅ Reorder pages by dragging one onto another in the page list (one undo step).
 - ✅ Ellipse arc: Start, Sweep and Ratio fields in an Arc section for ellipses (pie, ring, ring sector; canvas and SVG / PNG export). Boolean operations and flatten follow the arc (a ring with a hole is one outline with a slit); CSS code and hit-testing still treat it as a full ellipse; no handles on the canvas.
 Menus and commands

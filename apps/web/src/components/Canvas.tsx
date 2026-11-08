@@ -15,6 +15,7 @@ import { startShapeParams } from "../shape-params";
 import { groupBox, resizeGroup, rotateGroup, type GroupItem, type TurnItem } from "../multi-resize";
 import { snapBoxToPixels, snapMoveToPixels } from "../pixel-snap";
 import { componentSetFrames } from "../component-set-frames";
+import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -371,7 +372,25 @@ export function Canvas() {
       // Snap to pixel grid: the first layer lands on a whole pixel (the others keep their distance to it), unless a smart guide already holds it
       const first = Object.values(d.origins)[0];
       if (first && !aligned && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap) ({ dx, dy } = snapMoveToPixels(first, { dx, dy }));
-      for (const [id, o] of Object.entries(d.origins)) doc.setPosition(id, o.x + dx, o.y + dy);
+      // A layer inside an auto layout frame is reordered by dragging instead of being moved: it takes the slot the pointer is over
+      let reordering = false;
+      const draggedIds = Object.keys(d.origins);
+      const dragged = draggedIds.length === 1 ? doc.getNode(draggedIds[0]!) : undefined;
+      const layoutParent = dragged?.parentId ? doc.getNode(dragged.parentId) : undefined;
+      if (dragged && layoutParent?.type === "FRAME" && (layoutParent.layoutMode === "HORIZONTAL" || layoutParent.layoutMode === "VERTICAL") && dragged.layoutPositioning !== "ABSOLUTE") {
+        const horizontal = layoutParent.layoutMode === "HORIZONTAL";
+        const order = doc.children(layoutParent.id).map((c) => c.id);
+        const others = doc.children(layoutParent.id).filter((c) => c.id !== dragged.id && c.visible && c.layoutPositioning !== "ABSOLUTE");
+        const centres = others.map((c) => {
+          const b = doc.absoluteBox(c.id);
+          return b ? (horizontal ? b.x + b.width / 2 : b.y + b.height / 2) : 0;
+        });
+        const slot = insertionIndex(centres, horizontal ? w.x : w.y);
+        const target = reorderTarget(order, dragged.id, others.map((c) => c.id), slot);
+        if (target !== null) doc.reorderNode(dragged.id, target);
+        reordering = true;
+      }
+      if (!reordering) for (const [id, o] of Object.entries(d.origins)) doc.setPosition(id, o.x + dx, o.y + dy);
     } else if (d.kind === "rotate") {
       const turned = ((Math.atan2(w.y - d.cy, w.x - d.cx) - d.start) * 180) / Math.PI;
       const next = d.base + turned;
