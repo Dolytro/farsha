@@ -108,4 +108,18 @@ describe('variable collections', () => {
     doc.setActiveMode(dark);
     expect(doc.resolveVariableValue(doc.getColorVariable(alias)!, 'default')).toBe('#999999');
   });
+
+  it('undo takes a new collection (with its mode and variables) back out', () => {
+    const { doc } = setup();
+    doc.stopCapturing();
+    const brand = doc.addCollection('Brand');
+    doc.createColorVariable('primary', '#ff0000', brand);
+    doc.stopCapturing();
+    doc.undo();
+    expect(doc.variablesIn(brand)).toEqual([]);
+    expect(doc.collections().map((c) => c.id)).toEqual(['default']);
+    expect(doc.modes(brand)).toEqual([]);
+    doc.redo();
+    expect(doc.collections()).toHaveLength(2);
+  });
 });
