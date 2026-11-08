@@ -391,7 +391,13 @@ export function Layers() {
                 select([target.select]);
                 const at = rows.findIndex((r) => r.id === target.select);
                 if (at >= 0) list.scrollTop = scrollToRow(at, rowHeight, list.scrollTop, list.clientHeight);
-                requestAnimationFrame(() => requestAnimationFrame(() => list.querySelector<HTMLElement>('[aria-selected="true"]')?.focus()));
+                // the row may only be drawn after the list has scrolled to it: try for a few frames
+                const focusSelected = (tries: number) => {
+                  const row = list.querySelector<HTMLElement>('[aria-selected="true"]');
+                  if (row) row.focus();
+                  else if (tries > 0) requestAnimationFrame(() => focusSelected(tries - 1));
+                };
+                requestAnimationFrame(() => focusSelected(10));
               }
             }}
           >
