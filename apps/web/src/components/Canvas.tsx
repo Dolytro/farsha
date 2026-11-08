@@ -14,7 +14,7 @@ import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } fr
 import { startShapeParams } from "../shape-params";
 import { groupBox, resizeGroup, type GroupItem } from "../multi-resize";
 import { snapBoxToPixels, snapMoveToPixels } from "../pixel-snap";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -104,6 +104,8 @@ export function Canvas() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Box | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  const editRef = useRef<HTMLTextAreaElement | null>(null);
+  const [editSel, setEditSel] = useState<[number, number]>([0, 0]);
   const [altDown, setAltDown] = useState(false);
   const [changing, setChanging] = useState(false);
   const z = viewport.zoom;
@@ -643,6 +645,7 @@ export function Canvas() {
                     x={j === 0 ? textPlacement(n).x + (textPlacement(n).anchor === "start" && !textPlacement(n).rtl ? layout.indent[i] ?? 0 : 0) : undefined}
                     dy={j === 0 && i ? lineHeightPx(n) + (layout.lineGap[i] ?? 0) : undefined}
                     wordSpacing={layout.wordSpacing[i] || undefined}
+                    fill={seg.color}
                     fontWeight={seg.bold ? 700 : undefined}
                     fontStyle={seg.italic ? "italic" : undefined}
                     textDecoration={seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : undefined}
@@ -981,7 +984,9 @@ export function Canvas() {
           {editing && editNode?.type === "TEXT" && editBox && (
             <foreignObject x={editBox.x} y={editBox.y} width={Math.max(editBox.width + 24, 160)} height={Math.max(editBox.height, editNode.fontSize * 1.6) + 8}>
               <textarea
+                ref={editRef}
                 className="canvas__text-edit"
+                onSelect={(e) => setEditSel([e.currentTarget.selectionStart, e.currentTarget.selectionEnd])}
                 autoFocus
                 rows={1}
                 spellCheck={spellCheck}
@@ -1017,6 +1022,55 @@ export function Canvas() {
                   }
                 }}
               />
+            </foreignObject>
+          )}
+          {editing && editNode?.type === "TEXT" && editBox && (
+            // Colour for the selected characters: preset swatches that keep the focus in the text box, so the selection survives the click
+            <foreignObject x={editBox.x} y={editBox.y - 34 / z} width={300 / z} height={30 / z}>
+              <div className="textcolors" role="toolbar" aria-label="Text colour" style={{ transform: `scale(${1 / z})`, transformOrigin: "0 0", width: 300, height: 30 }} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.preventDefault()}>
+                {["#000000", "#ffffff", "#ef4444", "#f59e0b", "#22c55e", "#0ea5e9", "#8b5cf6", "#ec4899"].map((c) => {
+                  const [a, b] = editSel;
+                  const current = rangeColor(editNode.runs, editNode.characters.length, a, b);
+                  return (
+                    <button
+                      key={c}
+                      className={`textcolors__swatch${current === c ? " textcolors__swatch--on" : ""}`}
+                      style={{ background: c }}
+                      disabled={a === b}
+                      title={a === b ? "Select some characters first" : `Colour the selected characters ${c}`}
+                      aria-label={`Text colour ${c}`}
+                      onClick={() => {
+                        const el = editRef.current;
+                        const from = el ? el.selectionStart : a;
+                        const to = el ? el.selectionEnd : b;
+                        if (from === to) return;
+                        doc.stopCapturing();
+                        doc.setText(editNode.id, { runs: setRangeColor(editNode.runs, editNode.characters.length, from, to, c) });
+                        doc.stopCapturing();
+                        fitText(doc, editNode.id);
+                      }}
+                    />
+                  );
+                })}
+                <button
+                  className="textcolors__reset"
+                  disabled={editSel[0] === editSel[1]}
+                  title="Back to the layer's own colour"
+                  aria-label="Reset text colour"
+                  onClick={() => {
+                    const el = editRef.current;
+                    const from = el ? el.selectionStart : editSel[0];
+                    const to = el ? el.selectionEnd : editSel[1];
+                    if (from === to) return;
+                    doc.stopCapturing();
+                    doc.setText(editNode.id, { runs: setRangeColor(editNode.runs, editNode.characters.length, from, to, null) });
+                    doc.stopCapturing();
+                    fitText(doc, editNode.id);
+                  }}
+                >
+                  A⃠
+                </button>
+              </div>
             </foreignObject>
           )}
         </g>

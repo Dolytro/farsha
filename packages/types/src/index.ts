@@ -630,6 +630,8 @@ export interface TextRun {
   italic?: boolean;
   underline?: boolean;
   strikethrough?: boolean;
+  /** Colour of these characters as #rrggbb; missing means the layer's own fill. */
+  color?: string;
 }
 export type TextVerticalAlign = 'TOP' | 'CENTER' | 'BOTTOM';
 

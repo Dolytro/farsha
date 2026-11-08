@@ -573,3 +573,15 @@ describe("mask types", () => {
     expect(svg).toMatch(/<mask[^>]*>[^]*#336699[^]*<\/mask>/);
   });
 });
+
+describe("text colours per range", () => {
+  it("draws coloured characters in their own fill and ignores an unsafe colour", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("TEXT", { parentId: page, props: { characters: "Hello", runs: [{ start: 0, end: 2, color: "#FF0000" }, { start: 3, end: 5, color: 'x" onload="y' }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain('fill="#ff0000"');
+    expect(svg).toContain(">He</tspan>");
+    expect(svg).not.toContain("onload");
+  });
+});

@@ -198,6 +198,25 @@ export interface TextSegment {
   italic?: boolean;
   underline?: boolean;
   strikethrough?: boolean;
+  /** #rrggbb, only when these characters have a colour of their own. */
+  color?: string;
+}
+
+const HEX6 = /^#[0-9a-fA-F]{6}$/;
+/** A run colour that is safe to put in markup (a shared file is untrusted), lower-cased; undefined for anything else. */
+export function runColor(c: unknown): string | undefined {
+  return typeof c === "string" && HEX6.test(c) ? c.toLowerCase() : undefined;
+}
+
+/** The colour of every character: the last run that colours it wins. */
+function colorPerChar(runs: TextRun[] | undefined, length: number): (string | undefined)[] {
+  const per: (string | undefined)[] = Array.from({ length }, () => undefined);
+  for (const r of runs ?? []) {
+    const c = runColor(r.color);
+    if (!c) continue;
+    for (let i = Math.max(0, r.start); i < Math.min(length, r.end); i++) per[i] = c;
+  }
+  return per;
 }
 
 type Flag = "bold" | "italic" | "underline" | "strikethrough";
@@ -238,15 +257,21 @@ export function lineSegments(line: string, from: number, runs: TextRun[] | undef
     }
     return f;
   };
+  const colorAt = (i: number): string | undefined => {
+    let c: string | undefined;
+    for (const r of runs) if (i >= r.start && i < r.end) c = runColor(r.color) ?? c;
+    return c;
+  };
   const segments: TextSegment[] = [];
   let curKey = "";
   for (let j = 0; j < line.length; j++) {
     const f = flagAt(from + j);
-    const k = flagKey(f);
+    const color = colorAt(from + j);
+    const k = `${flagKey(f)}${color ?? ""}`;
     if (segments.length && k === curKey) segments[segments.length - 1]!.text += line[j]!;
     else {
       curKey = k;
-      segments.push({ text: line[j]!, ...withFlags(f) });
+      segments.push({ text: line[j]!, ...withFlags(f), ...(color ? { color } : {}) });
     }
   }
   return segments;
@@ -266,22 +291,50 @@ export function setRangeStyle(runs: TextRun[] | undefined, length: number, start
   const e = Math.min(length, Math.max(start, end));
   const per = flagsPerChar(runs, length);
   for (let i = s; i < e; i++) per[i]![flag] = on;
+  return rebuildRuns(per, colorPerChar(runs, length));
+}
+
+/** One run per stretch of equal style and colour; stretches with neither are left out. */
+function rebuildRuns(per: Flags[], colors: (string | undefined)[]): TextRun[] {
   const out: TextRun[] = [];
   let open: TextRun | null = null;
   let openKey = "";
-  for (let i = 0; i < length; i++) {
-    const k = flagKey(per[i]!);
+  for (let i = 0; i < per.length; i++) {
+    const k = `${flagKey(per[i]!)}${colors[i] ?? ""}`;
     if (open && k !== openKey) {
       out.push(open);
       open = null;
     }
     if (!open && k !== "0000") {
-      open = { start: i, end: i + 1, ...withFlags(per[i]!) };
+      open = { start: i, end: i + 1, ...withFlags(per[i]!), ...(colors[i] ? { color: colors[i] } : {}) };
       openKey = k;
     } else if (open) open.end = i + 1;
   }
   if (open) out.push(open);
   return out;
+}
+
+/** The colour shared by every character of [start, end), or undefined when there is none or they differ. */
+export function rangeColor(runs: TextRun[] | undefined, length: number, start: number, end: number): string | undefined {
+  const s = Math.max(0, Math.min(start, end));
+  const e = Math.min(length, Math.max(start, end));
+  if (e <= s) return undefined;
+  const per = colorPerChar(runs, length);
+  const first = per[s];
+  for (let i = s; i < e; i++) if (per[i] !== first) return undefined;
+  return first;
+}
+
+/** Colour [start, end) (a #rrggbb string), or pass null to give those characters the layer's own colour back. */
+export function setRangeColor(runs: TextRun[] | undefined, length: number, start: number, end: number, color: string | null): TextRun[] {
+  const s = Math.max(0, Math.min(start, end));
+  const e = Math.min(length, Math.max(start, end));
+  const per = flagsPerChar(runs, length);
+  const colors = colorPerChar(runs, length);
+  const next = color === null ? undefined : runColor(color);
+  if (color !== null && !next) return rebuildRuns(per, colors);
+  for (let i = s; i < e; i++) colors[i] = next;
+  return rebuildRuns(per, colors);
 }
 
 /** Keep the runs on the right characters when the text is edited: what follows the changed part moves, runs inside it grow or shrink. */

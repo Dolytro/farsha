@@ -84,7 +84,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
         .flatMap((l, i) =>
           lineSegments(l, starts[i] ?? 0, n.runs).map((seg, j) => {
             const deco = seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : "";
-            const look = `${seg.bold ? ' font-weight="700"' : ""}${seg.italic ? ' font-style="italic"' : ""}${deco ? ` text-decoration="${deco}"` : ""}`;
+            const look = `${seg.bold ? ' font-weight="700"' : ""}${seg.italic ? ' font-style="italic"' : ""}${deco ? ` text-decoration="${deco}"` : ""}${seg.color ? ` fill="${seg.color}"` : ""}`;
             const startX = x + (place.anchor === "start" && !place.rtl ? indent[i] ?? 0 : 0);
             const pos = j === 0 ? ` x="${num(startX)}" dy="${i ? num(lineHeight + (lineGap[i] ?? 0)) : 0}"${wordSpacing[i] ? ` word-spacing="${num(wordSpacing[i]!)}"` : ""}` : "";
             return `<tspan${pos}${look}>${esc(seg.text)}</tspan>`;

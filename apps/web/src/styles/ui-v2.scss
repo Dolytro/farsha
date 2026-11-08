@@ -1465,3 +1465,41 @@ textarea:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* Colour bar above the text editor (rich text colour for the selected characters). */
+.textcolors {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--c-panel, #fff);
+  border: 1px solid var(--c-border, #ddd);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+.textcolors__swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(128, 128, 128, 0.6);
+  cursor: pointer;
+}
+.textcolors__swatch:disabled,
+.textcolors__reset:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.textcolors__swatch--on {
+  outline: 2px solid var(--c-accent, #0d99ff);
+  outline-offset: 1px;
+}
+.textcolors__reset {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--c-text, inherit);
+  cursor: pointer;
+  font-size: 13px;
+}
