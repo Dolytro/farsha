@@ -12,7 +12,7 @@ import { gridRects, maskMarkup } from "@farsha/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
 import { startShapeParams } from "../shape-params";
-import { groupBox, resizeGroup, type GroupItem } from "../multi-resize";
+import { groupBox, resizeGroup, rotateGroup, type GroupItem, type TurnItem } from "../multi-resize";
 import { snapBoxToPixels, snapMoveToPixels } from "../pixel-snap";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
@@ -31,6 +31,7 @@ type Drag =
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
   | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean; offset: { x: number; y: number }; targets: Box[]; rotation: number }
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
+  | { kind: "multirotate"; wx: number; wy: number; items: TurnItem[]; cx: number; cy: number; start: number }
   | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
@@ -210,6 +211,18 @@ export function Canvas() {
       }
       return;
     }
+    if (el.dataset.rotate && selection.length > 1 && !viewer) {
+      // Several layers turn together round the middle of the box that holds them
+      const items = selection.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n && !n.locked).map((n) => ({ id: n.id, x: n.x, y: n.y, width: n.width, height: n.height, rotation: n.rotation }));
+      const union = unionBox(selection.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b));
+      if (union && items.length === selection.length && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1) {
+        const cx = union.x + union.width / 2;
+        const cy = union.y + union.height / 2;
+        doc.stopCapturing();
+        drag.current = { kind: "multirotate", wx: w.x, wy: w.y, items, cx, cy, start: Math.atan2(w.y - cy, w.x - cx) };
+      }
+      return;
+    }
     if (el.dataset.rotate && selection[0]) {
       // Rotating: the angle between the pointer and the layer's centre decides the rotation.
       const node = doc.getNode(selection[0])!;
@@ -365,6 +378,10 @@ export function Canvas() {
     } else if (d.kind === "scale") {
       const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: true, fromCenter: e.altKey });
       doc.patchNodes(buildScaleUpdates(d.snapshot, next));
+    } else if (d.kind === "multirotate") {
+      const raw = ((Math.atan2(w.y - d.cy, w.x - d.cx) - d.start) * 180) / Math.PI;
+      const turned = e.shiftKey ? Math.round(raw / 15) * 15 : raw;
+      doc.patchNodes(rotateGroup(d.items, turned));
     } else if (d.kind === "gradient") {
       const node = doc.getNode(d.id);
       if (node && "fills" in node && Array.isArray(node.fills)) {
@@ -775,6 +792,8 @@ export function Canvas() {
   // Several layers of one parent, none locked or turned: the box around them gets resize handles
   const multiResizable =
     selection.length > 1 && !devMode && !viewer && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1 && selection.every((id) => { const n = doc.getNode(id); return !!n && !n.locked && !n.rotation; });
+  // Several layers of one parent, none locked: they can be turned together
+  const multiTurnable = selection.length > 1 && !devMode && !viewer && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1 && selection.every((id) => !doc.getNode(id)?.locked);
   // The handle of a gradient fill (the top one): a dot on the edge of the layer in the direction of the gradient
   const gradientHandle = (() => {
     if (!selNode || !sel || devMode || viewer || rotated || selNode.flipX || selNode.flipY || !("fills" in selNode) || !Array.isArray(selNode.fills)) return null;
@@ -955,7 +974,7 @@ export function Canvas() {
             <g>
               <g transform={rotated && selNode ? `rotate(${selNode.rotation} ${sel.x + sel.width / 2} ${sel.y + sel.height / 2})` : undefined}>
               <rect x={sel.x} y={sel.y} width={sel.width} height={sel.height} fill="none" stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />
-              {selection.length === 1 && !devMode && !viewer &&
+              {(selection.length === 1 || multiTurnable) && !devMode && !viewer &&
                 // Invisible discs just outside the corners rotate the layer (Shift snaps to 15 degrees).
                 corners.map(({ c, x, y }) => (
                   <circle

@@ -33,3 +33,31 @@ export function resizeGroup(items: GroupItem[], from: Box, to: Box): Record<stri
   }
   return out;
 }
+
+export interface TurnItem extends GroupItem {
+  rotation: number;
+}
+
+/**
+ * Turning several layers together (Figma): every layer swings round the middle of the box that holds them by `degrees`
+ * and also turns by that much itself, so the group keeps its shape. Returns the new position and rotation of each layer.
+ */
+export function rotateGroup(items: TurnItem[], degrees: number): Record<string, { x: number; y: number; rotation: number }> {
+  const box = groupBox(items);
+  if (!box) return {};
+  const gx = box.x + box.width / 2;
+  const gy = box.y + box.height / 2;
+  const a = (degrees * Math.PI) / 180;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  const round = (v: number) => Math.round(v * 100) / 100;
+  const out: Record<string, { x: number; y: number; rotation: number }> = {};
+  for (const i of items) {
+    const cx = i.x + i.width / 2 - gx;
+    const cy = i.y + i.height / 2 - gy;
+    const nx = gx + cx * cos - cy * sin;
+    const ny = gy + cx * sin + cy * cos;
+    out[i.id] = { x: round(nx - i.width / 2), y: round(ny - i.height / 2), rotation: round(((i.rotation + degrees) % 360 + 360) % 360) };
+  }
+  return out;
+}

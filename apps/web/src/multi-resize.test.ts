@@ -38,3 +38,41 @@ describe("resizeGroup", () => {
     expect(resizeGroup(items, from, from)).toEqual({ a: { x: 0, y: 0, width: 20, height: 10 }, b: { x: 40, y: 30, width: 60, height: 20 } });
   });
 });
+
+import { rotateGroup } from "./multi-resize";
+
+describe("rotateGroup", () => {
+  const items = [
+    { id: "a", x: 0, y: 0, width: 20, height: 20, rotation: 0 },
+    { id: "b", x: 80, y: 0, width: 20, height: 20, rotation: 10 },
+  ];
+
+  it("a quarter turn swings the layers round the middle of the group", () => {
+    const r = rotateGroup(items, 90);
+    // the group's middle is (50, 10); a (centre 10, 10) goes to (50, -30); b (centre 90, 10) goes to (50, 50)
+    expect(r.a).toEqual({ x: 40, y: -40, rotation: 90 });
+    expect(r.b).toEqual({ x: 40, y: 40, rotation: 100 });
+  });
+
+  it("no turn changes nothing, and a full turn comes back", () => {
+    const none = rotateGroup(items, 0);
+    expect(none.a).toEqual({ x: 0, y: 0, rotation: 0 });
+    const full = rotateGroup(items, 360);
+    expect(full.b!.x).toBeCloseTo(80, 1);
+    expect(full.b!.rotation).toBe(10);
+  });
+
+  it("keeps rotations between 0 and 360, also for negative turns", () => {
+    expect(rotateGroup(items, -30).a!.rotation).toBe(330);
+    expect(rotateGroup([{ id: "z", x: 0, y: 0, width: 10, height: 10, rotation: 350 }], 20).z!.rotation).toBe(10);
+  });
+
+  it("a single layer just turns in place", () => {
+    const r = rotateGroup([{ id: "s", x: 10, y: 10, width: 30, height: 20, rotation: 0 }], 45);
+    expect(r.s).toEqual({ x: 10, y: 10, rotation: 45 });
+  });
+
+  it("is empty for no layers", () => {
+    expect(rotateGroup([], 30)).toEqual({});
+  });
+});
