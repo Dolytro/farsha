@@ -660,3 +660,49 @@ describe("class and component names", () => {
     expect(generateCode(doc.getNode(id)!, (n) => doc.children(n), "react")).toContain("export function C3DCard()");
   });
 });
+
+describe("Flutter output", () => {
+  const build = () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { name: "Card", width: 200, height: 100, cornerRadius: 12, fills: [{ type: "SOLID", color: "#112233", opacity: 1 }], strokes: [{ type: "SOLID", color: "#ff0000", opacity: 1 }], strokeWidth: 2, effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }] } as never });
+    doc.setStyle(frame, { layoutMode: "HORIZONTAL", itemSpacing: 8, paddingLeft: 10, paddingTop: 10, paddingRight: 10, paddingBottom: 10 } as never);
+    doc.createNode("TEXT", { parentId: frame, props: { characters: "It's $5", fontSize: 14, fontWeight: 600, fills: [{ type: "SOLID", color: "#ffffff", opacity: 1 }] } as never });
+    doc.createNode("ELLIPSE", { parentId: frame, props: { width: 20, height: 20, fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }] } as never });
+    return generateCode(doc.getNode(frame)!, (id) => doc.children(id), "flutter");
+  };
+  it("writes a StatelessWidget with a Container, a Row and a Text", () => {
+    const code = build();
+    expect(code).toContain("import 'package:flutter/material.dart';");
+    expect(code).toContain("class CardWidget extends StatelessWidget");
+    expect(code).toContain("Container(");
+    expect(code).toContain("Row(");
+    expect(code).toContain("spacing: 8,");
+    expect(code).toContain("Padding(");
+    expect(code).toContain("EdgeInsets.fromLTRB(10, 10, 10, 10)");
+    expect(code).toContain("Text(");
+  });
+  it("writes decoration: colour, radius, border, shadow, gradient and a circle", () => {
+    const code = build();
+    expect(code).toContain("color: Color(0xFF112233)");
+    expect(code).toContain("BorderRadius.circular(12)");
+    expect(code).toContain("Border.all(color: Color(0xFFFF0000), width: 2)");
+    expect(code).toContain("BoxShadow(color: Color(0x40000000), offset: Offset(0, 4), blurRadius: 8)");
+    expect(code).toContain("LinearGradient(");
+    expect(code).toContain("shape: BoxShape.circle");
+  });
+  it("escapes quotes and dollar signs in text and keeps the brackets balanced", () => {
+    const code = build();
+    expect(code).toContain("'It\\'s \\$5'");
+    const count = (c: string) => code.split(c).length - 1;
+    expect(count("(")).toBe(count(")"));
+    expect(count("[")).toBe(count("]"));
+    expect(count("{")).toBe(count("}"));
+  });
+  it("never names the class after a widget it uses", async () => {
+    const { flutterClassName } = await import("./flutter");
+    expect(flutterClassName("Text")).toBe("TextWidget");
+    expect(flutterClassName("3D card")).toBe("C3DCardWidget");
+    expect(flutterClassName("Login widget")).toBe("LoginWidget");
+  });
+});

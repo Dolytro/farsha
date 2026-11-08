@@ -22,6 +22,7 @@ const LANGS: { id: Language; label: string }[] = [
   { id: "uikit", label: "UIKit" },
   { id: "compose", label: "Compose" },
   { id: "androidxml", label: "Android XML" },
+  { id: "flutter", label: "Flutter" },
 ];
 
 const n = (v: number) => `${Math.round(v * 100) / 100}`;
