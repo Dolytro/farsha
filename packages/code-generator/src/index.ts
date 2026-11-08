@@ -98,6 +98,8 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   if (node.type === "TEXT") {
     const fill = node.fills[0];
     if (fill) d.push(["color", toRgba(paintColor(fill), fill.opacity)]);
+    // gradient text: the gradient is the background, clipped to the letters
+    if (fill && fill.type !== "SOLID" && fill.type !== "IMAGE") d.push(["background", paintCss(fill)], ["-webkit-background-clip", "text"], ["background-clip", "text"], ["-webkit-text-fill-color", "transparent"]);
     d.push(["font-family", node.fontFamily], ["font-size", px(node.fontSize)], ["font-weight", String(node.fontWeight)]);
     d.push(["line-height", node.lineHeight === "AUTO" ? "normal" : px(node.lineHeight)]);
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);

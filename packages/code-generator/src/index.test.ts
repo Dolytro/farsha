@@ -596,3 +596,21 @@ describe("text stroke in CSS", () => {
     expect(d["paint-order"]).toBe("stroke fill");
   });
 });
+
+describe("gradient text in CSS", () => {
+  it("clips the gradient to the letters", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Hi", fontSize: 20, fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }] } as never });
+    const d = Object.fromEntries(declarations(doc.getNode(id)!));
+    expect(d.background).toContain("linear-gradient");
+    expect(d["-webkit-background-clip"]).toBe("text");
+    expect(d["-webkit-text-fill-color"]).toBe("transparent");
+  });
+  it("a plain colour stays a colour", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Hi", fontSize: 20, fills: [{ type: "SOLID", color: "#00ff00", opacity: 1 }] } as never });
+    const d = Object.fromEntries(declarations(doc.getNode(id)!));
+    expect(d.color).toBe("#00ff00");
+    expect(d).not.toHaveProperty("background");
+  });
+});
