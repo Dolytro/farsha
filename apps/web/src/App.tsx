@@ -223,9 +223,17 @@ export function App() {
   // Shared link: load the file once. Editor: autosave to Drive while signed in.
   useEffect(() => {
     if (route.kind === "viewer") {
+      const wanted = route.nodeId;
       void loadShared(route.fileId).then(() => {
         const s = useEditor.getState();
-        const v = zoomFit(s.doc, s.pageId, []);
+        // a link to a layer opens on it: its page, selected and zoomed to
+        const target = wanted && s.doc.hasNode(wanted) ? wanted : undefined;
+        const page = target ? s.doc.pages().find((p) => p.id === target || s.doc.isAncestor(p.id, target)) : undefined;
+        if (target && page) {
+          if (page.id !== s.pageId) s.setPage(page.id);
+          s.select([target]);
+        }
+        const v = zoomFit(s.doc, page?.id ?? s.pageId, target && page ? [target] : []);
         if (v) s.setViewport(v);
       });
       return;

@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Share link to one layer: the Share dialog has "Open on the selected layer" (adds `?node=<layer id>`); the viewer then opens on that layer's page, selects it and zooms to it.
 - ✅ View > Zoom to 50% and Zoom to 200% (also in the Actions palette), next to Zoom to 100% (Shift+0).
 - ✅ Layers list: Shift+click selects the range from the layer clicked before, Ctrl / Cmd+click adds or removes one (like Figma; on the canvas Shift+click still adds or removes).
 - ✅ Design panel for several layers: X, Y, W, H of the box round them (moving and scaling them together; layers of different frames can only be moved), opacity and corner radius ("Mixed" when they differ) one fill for all, one stroke colour and weight for all, and font size and weight for the text layers among them. Effects and the other text settings are still only for one layer at a time.

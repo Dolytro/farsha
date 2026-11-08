@@ -13,6 +13,9 @@ export function ShareDialog() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const selection = useEditor((st) => st.selection);
+  const [toLayer, setToLayer] = useState(false);
+  const layerId = selection.length === 1 ? selection[0] : undefined;
 
   const fileId = drive.fileId;
 
@@ -46,7 +49,7 @@ export function ShareDialog() {
       setShared(on);
     });
 
-  const url = fileId ? shareUrl(window.location.origin, fileId, mode) : "";
+  const url = fileId ? shareUrl(window.location.origin, fileId, mode, toLayer ? layerId : undefined) : "";
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
@@ -96,6 +99,12 @@ export function ShareDialog() {
                     <option value="inspect">Inspect (Google sign-in required)</option>
                   </Select>
                 </div>
+                {layerId && (
+                  <label className="modal__row">
+                    <input type="checkbox" checked={toLayer} onChange={(e) => setToLayer(e.target.checked)} />
+                    <span>Open on the selected layer</span>
+                  </label>
+                )}
                 <div className="modal__row">
                   <input className="modal__link" readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
                   <button className="dev__copy" onClick={() => void copy()}>
