@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, type PointerEvent, type ReactElement } fro
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
 import { startShapeParams } from "../shape-params";
 import { groupBox, resizeGroup, type GroupItem } from "../multi-resize";
+import { snapBoxToPixels, snapMoveToPixels } from "../pixel-snap";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -328,6 +329,7 @@ export function Canvas() {
     let dx = w.x - d.wx;
     let dy = w.y - d.wy;
     if (d.kind === "move") {
+      let aligned = false;
       if (d.startBox && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping) {
         const page = doc.getNode(pageId);
         const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
@@ -338,7 +340,11 @@ export function Canvas() {
         dx += snap.dx;
         dy += snap.dy;
         setGuides(snap.guides);
+        aligned = snap.guides.length > 0;
       } else setGuides([]);
+      // Snap to pixel grid: the first layer lands on a whole pixel (the others keep their distance to it), unless a smart guide already holds it
+      const first = Object.values(d.origins)[0];
+      if (first && !aligned && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap) ({ dx, dy } = snapMoveToPixels(first, { dx, dy }));
       for (const [id, o] of Object.entries(d.origins)) doc.setPosition(id, o.x + dx, o.y + dy);
     } else if (d.kind === "rotate") {
       const turned = ((Math.atan2(w.y - d.cy, w.x - d.cx) - d.start) * 180) / Math.PI;
@@ -378,6 +384,7 @@ export function Canvas() {
         next = { x: snapped.box.x - d.offset.x, y: snapped.box.y - d.offset.y, width: snapped.box.width, height: snapped.box.height };
         setGuides(snapped.guides);
       } else setGuides([]);
+      if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation && !(opts.keepRatio && !locked)) next = snapBoxToPixels(next);
       doc.resizeNode(d.id, next);
       if (flipping) {
         const now = doc.getNode(d.id);
@@ -395,12 +402,13 @@ export function Canvas() {
     } else if (d.kind === "line") {
       placeLine(d, w.x, w.y, e.shiftKey);
     } else if (d.kind === "draw") {
-      doc.resizeNode(d.id, {
+      const drawn = {
         x: Math.min(d.wx, w.x) - d.px,
         y: Math.min(d.wy, w.y) - d.py,
         width: Math.max(1, Math.abs(dx)),
         height: Math.max(1, Math.abs(dy)),
-      });
+      };
+      doc.resizeNode(d.id, !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap ? snapBoxToPixels(drawn) : drawn);
     } else {
       const box = { x: Math.min(d.wx, w.x), y: Math.min(d.wy, w.y), width: Math.abs(dx), height: Math.abs(dy) };
       setMarquee(box);

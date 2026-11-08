@@ -69,3 +69,11 @@ describe("reduce motion preference", () => {
     expect(parsePrefs(JSON.stringify({ reduceMotion: "yes" })).reduceMotion).toBe(false);
   });
 });
+
+describe("snap to pixel grid preference", () => {
+  it("is on by default and can be switched off", () => {
+    expect(parsePrefs(null).pixelSnap).toBe(true);
+    expect(parsePrefs(JSON.stringify({ pixelSnap: false })).pixelSnap).toBe(false);
+    expect(parsePrefs(JSON.stringify({ pixelSnap: "no" })).pixelSnap).toBe(true);
+  });
+});

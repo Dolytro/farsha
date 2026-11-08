@@ -25,6 +25,8 @@ export interface Prefs {
   wheelZoom: boolean;
   /** Layers snap to other layers and guides while moving. */
   snapping: boolean;
+  /** Moving, resizing and drawing put edges on whole pixels (Figma: Snap to pixel grid). */
+  pixelSnap: boolean;
   /** Underline misspelled words while typing in a text layer (the browser's spell checker). */
   spellCheck: boolean;
   /** Outline the layer under the pointer. */
@@ -56,7 +58,7 @@ export interface Prefs {
 
 export const PREFS_KEY = "farsha.prefs";
 
-export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, renameDuplicates: false, keyboardZoomToSelection: false, ctrlClickMenu: false, smartQuotes: false, arrowRotate: false, flipWhileResizing: true, hideUiWhileChanging: false, reduceMotion: false, nudge: 1, bigNudge: 10 };
+export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, pixelSnap: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, renameDuplicates: false, keyboardZoomToSelection: false, ctrlClickMenu: false, smartQuotes: false, arrowRotate: false, flipWhileResizing: true, hideUiWhileChanging: false, reduceMotion: false, nudge: 1, bigNudge: 10 };
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
 const amount = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 && v <= 1000 ? v : fallback);
@@ -76,6 +78,7 @@ export function parsePrefs(text: string | null | undefined): Prefs {
     invertZoom: bool(raw.invertZoom, DEFAULT_PREFS.invertZoom),
     wheelZoom: bool(raw.wheelZoom, DEFAULT_PREFS.wheelZoom),
     snapping: bool(raw.snapping, DEFAULT_PREFS.snapping),
+    pixelSnap: bool(raw.pixelSnap, DEFAULT_PREFS.pixelSnap),
     spellCheck: bool(raw.spellCheck, DEFAULT_PREFS.spellCheck),
     hoverHighlight: bool(raw.hoverHighlight, DEFAULT_PREFS.hoverHighlight),
     showDimensions: bool(raw.showDimensions, DEFAULT_PREFS.showDimensions),
