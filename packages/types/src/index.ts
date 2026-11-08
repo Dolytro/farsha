@@ -190,6 +190,14 @@ export interface Comment {
 export interface VariableMode {
   id: string;
   name: string;
+  /** The collection the mode belongs to; missing means the first collection. */
+  collectionId?: string;
+}
+
+/** A set of variables that share the same modes (Figma's variable collection). */
+export interface VariableCollection {
+  id: string;
+  name: string;
 }
 
 /** A named colour with one value per mode. Paints bound to it show the value of the active mode. */
@@ -258,6 +266,8 @@ export interface ColorVariable {
   values: Record<string, string>;
   /** The property groups (number variables) or kinds of paint (colour variables) it may be used for. Missing or empty means all of them. */
   scopes?: VariableScope[];
+  /** The collection the variable belongs to; missing means the first collection. */
+  collectionId?: string;
 }
 
 /** A reusable colour: layers that use it get its paints as their fills. */

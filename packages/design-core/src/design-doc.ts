@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { BOOLEAN_BINDABLE, COLOR_SCOPES, NUMBER_BINDABLE, NUMBER_SCOPES, STROKE_STYLE_KEYS, TEXT_STYLE_KEYS, variableAllowsProperty, variableAllowsUse, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type Paint, type VariableScope, type StrokeStyle, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
+import { BOOLEAN_BINDABLE, COLOR_SCOPES, NUMBER_BINDABLE, NUMBER_SCOPES, STROKE_STYLE_KEYS, TEXT_STYLE_KEYS, variableAllowsProperty, variableAllowsUse, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type VariableCollection, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type Paint, type VariableScope, type StrokeStyle, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -22,6 +22,7 @@ export interface StoredAsset {
 type NodeMap = Y.Map<unknown>;
 
 /** Keys that describe the instance link; never copied from the main component and never overridden. */
+const DEFAULT_COLLECTION = 'default';
 const INSTANCE_KEYS = new Set(['id', 'type', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent', 'componentSetId', 'variantProps', 'componentProps', 'propValues']);
 /** Keys of an instance's own root that belong to the instance (its place on the canvas and its name). */
 const ROOT_KEYS = new Set(['x', 'y', 'name', 'orderKey']);
@@ -56,6 +57,7 @@ export class DesignDoc {
   private readonly commentMap: Y.Map<Comment>;
   private readonly variableMap: Y.Map<ColorVariable>;
   private readonly modeMap: Y.Map<VariableMode & { order: number }>;
+  private readonly collectionMap: Y.Map<VariableCollection & { order: number }>;
   private readonly undoManager: Y.UndoManager;
   private readonly listeners = new Set<() => void>();
   private nodeCache = new Map<string, DesignNode>();
@@ -75,7 +77,8 @@ export class DesignDoc {
     });
     this.variableMap = ydoc.getMap('variables') as Y.Map<ColorVariable>;
     this.modeMap = ydoc.getMap('variableModes') as Y.Map<VariableMode & { order: number }>;
-    for (const map of [this.variableMap, this.modeMap, this.meta]) {
+    this.collectionMap = ydoc.getMap('variableCollections') as Y.Map<VariableCollection & { order: number }>;
+    for (const map of [this.variableMap, this.modeMap, this.collectionMap, this.meta]) {
       map.observe(() => {
         this.version++;
         this.listeners.forEach((fn) => fn());
@@ -110,7 +113,7 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
-    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.effectStyleMap, this.strokeStyleMap, this.gridStyleMap, this.variableMap, this.modeMap], {
+    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.effectStyleMap, this.strokeStyleMap, this.gridStyleMap, this.variableMap, this.modeMap, this.collectionMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
     });
@@ -179,8 +182,7 @@ export class DesignDoc {
     if (!this.variableMap.size && ![...this.nodes.values()].some((m) => this.hasBoundPaint(m) || !!m.get('textVariableId') || !!m.get('varBindings'))) return;
     this.syncing = true;
     try {
-      const active = this.activeModeId();
-      const resolve = (paints: unknown, mode: string): Paint[] | null => {
+      const resolve = (paints: unknown, nodeId: string): Paint[] | null => {
         if (!Array.isArray(paints)) return null;
         let changed = false;
         const next = (paints as Paint[]).map((p) => {
@@ -191,7 +193,7 @@ export class DesignDoc {
             const { variableId: _gone, ...rest } = p;
             return rest;
           }
-          const color = this.resolveVariableValue(v, mode) || p.color;
+          const color = this.resolveVariableValue(v, this.modeForVariable(nodeId, v)) || p.color;
           if (color === p.color) return p;
           changed = true;
           return { ...p, color };
@@ -200,9 +202,9 @@ export class DesignDoc {
       };
       this.transact(() => {
         for (const map of this.nodes.values()) {
-          const mode = this.modeFor(map.get('id') as string, active);
+          const nodeId = map.get('id') as string;
           for (const key of ['fills', 'strokes']) {
-            const next = resolve(map.get(key), mode);
+            const next = resolve(map.get(key), nodeId);
             if (next) map.set(key, next);
           }
           if (map.get('varBindings')) this.applyBindings(map.get('id') as string);
@@ -211,7 +213,7 @@ export class DesignDoc {
             const v = this.variableMap.get(textVar);
             if (!v || v.kind !== 'STRING') map.delete('textVariableId');
             else {
-              const text = this.resolveVariableValue(v, mode);
+              const text = this.resolveVariableValue(v, this.modeForVariable(nodeId, v));
               if (map.get('characters') !== text) map.set('characters', text);
             }
           }
@@ -222,17 +224,27 @@ export class DesignDoc {
     }
   }
 
-  /** The variable mode a layer shows: the explicit mode of the closest frame (or itself) that has one, else the active mode. */
+  /** The variable mode a layer shows for the first collection: the explicit mode of the closest frame (or itself) that has one, else the active mode. */
   private modeFor(id: string, active: string): string {
-    const known = (m: unknown): m is string => typeof m === 'string' && this.modes().some((x) => x.id === m);
+    return this.explicitModeIn(id, DEFAULT_COLLECTION) ?? active;
+  }
+
+  /** The explicit mode of the closest frame (or the layer itself) whose explicit mode belongs to the collection. */
+  private explicitModeIn(id: string, collectionId: string): string | undefined {
     for (let cur: string | null | undefined = id, hops = 0; cur && hops < 200; hops++) {
       const map = this.nodes.get(cur);
       if (!map) break;
       const explicit = map.get('explicitMode');
-      if (known(explicit)) return explicit;
+      if (typeof explicit === 'string' && this.modeExists(explicit) && this.modeCollection(explicit) === collectionId) return explicit;
       cur = map.get('parentId') as string | null | undefined;
     }
-    return active;
+    return undefined;
+  }
+
+  /** The mode a layer shows a variable in: the explicit mode for the variable's collection, else that collection's active mode. */
+  private modeForVariable(nodeId: string, v: ColorVariable): string {
+    const cid = v.collectionId ?? DEFAULT_COLLECTION;
+    return this.explicitModeIn(nodeId, cid) ?? this.activeModeId(cid);
   }
 
   private hasBoundPaint(map: NodeMap): boolean {
@@ -1296,16 +1308,70 @@ export class DesignDoc {
 
   // ---------- colour variables ----------
 
-  /** The modes in order; a document without any has the single implicit mode "Mode 1". */
-  modes(): VariableMode[] {
-    const list = [...this.modeMap.values()].sort((a, b) => a.order - b.order).map(({ id, name }) => ({ id, name }));
-    return list.length ? list : [{ id: 'default', name: 'Mode 1' }];
+  /** The collections in order; the first one always exists (a document without any has "Collection 1"). */
+  collections(): VariableCollection[] {
+    const stored = [...this.collectionMap.values()].sort((a, b) => a.order - b.order).map(({ id, name }) => ({ id, name }));
+    return [{ id: DEFAULT_COLLECTION, name: this.meta.get('defaultCollectionName') || 'Collection 1' }, ...stored];
   }
 
-  activeModeId(): string {
-    const id = this.meta.get('activeMode');
-    const modes = this.modes();
-    return id && modes.some((m) => m.id === id) ? id : modes[0]!.id;
+  addCollection(name: string): string {
+    const id = nanoid();
+    this.transact(() => {
+      const order = Math.max(-1, ...[...this.collectionMap.values()].map((c) => c.order)) + 1;
+      this.collectionMap.set(id, { id, name: name.trim() || `Collection ${order + 2}`, order });
+      const modeOrder = Math.max(-1, ...[...this.modeMap.values()].map((m) => m.order)) + 1;
+      this.modeMap.set(`${id}-m0`, { id: `${id}-m0`, name: 'Mode 1', order: modeOrder, collectionId: id });
+    });
+    return id;
+  }
+
+  renameCollection(id: string, name: string): void {
+    const clean = name.trim();
+    if (!clean) return;
+    if (id === DEFAULT_COLLECTION) {
+      this.transact(() => this.meta.set('defaultCollectionName', clean));
+      return;
+    }
+    const c = this.collectionMap.get(id);
+    if (c) this.transact(() => this.collectionMap.set(id, { ...c, name: clean }));
+  }
+
+  /** Remove a collection with its modes and variables (the first collection cannot be removed). Layers bound to a deleted variable keep their value. */
+  deleteCollection(id: string): void {
+    if (id === DEFAULT_COLLECTION || !this.collectionMap.has(id)) throw new Error('That collection cannot be removed');
+    this.transact(() => {
+      for (const v of [...this.variableMap.values()]) if (v.collectionId === id) this.variableMap.delete(v.id);
+      for (const m of [...this.modeMap.values()]) if (m.collectionId === id) this.modeMap.delete(m.id);
+      this.collectionMap.delete(id);
+      this.meta.delete(`activeMode:${id}`);
+    });
+  }
+
+  /** The collection a mode belongs to. */
+  modeCollection(modeId: string): string {
+    return this.modeMap.get(modeId)?.collectionId ?? DEFAULT_COLLECTION;
+  }
+
+  /** True when the mode exists in any collection. */
+  modeExists(modeId: string): boolean {
+    return this.modeMap.has(modeId) || (modeId === 'default' && ![...this.modeMap.values()].some((m) => (m.collectionId ?? DEFAULT_COLLECTION) === DEFAULT_COLLECTION));
+  }
+
+  /** The variables of one collection (all kinds). */
+  variablesIn(collectionId: string): ColorVariable[] {
+    return [...this.variableMap.values()].filter((v) => (v.collectionId ?? DEFAULT_COLLECTION) === collectionId);
+  }
+
+  /** The modes of a collection in order; the first collection of a document without any has the single implicit mode "Mode 1". */
+  modes(collectionId: string = DEFAULT_COLLECTION): VariableMode[] {
+    const list = [...this.modeMap.values()].filter((m) => (m.collectionId ?? DEFAULT_COLLECTION) === collectionId).sort((a, b) => a.order - b.order).map(({ id, name }) => ({ id, name }));
+    return list.length ? list : collectionId === DEFAULT_COLLECTION ? [{ id: 'default', name: 'Mode 1' }] : [];
+  }
+
+  activeModeId(collectionId: string = DEFAULT_COLLECTION): string {
+    const id = this.meta.get(collectionId === DEFAULT_COLLECTION ? 'activeMode' : `activeMode:${collectionId}`);
+    const modes = this.modes(collectionId);
+    return id && modes.some((m) => m.id === id) ? id : (modes[0]?.id ?? 'default');
   }
 
   /** Canvas colour of a page (Figma's page Background); undefined means the default. */
@@ -1322,19 +1388,22 @@ export class DesignDoc {
   }
 
   setActiveMode(id: string): void {
-    if (!this.modes().some((m) => m.id === id)) throw new Error('Mode not found');
-    this.transact(() => this.meta.set('activeMode', id));
+    if (!this.modeExists(id)) throw new Error('Mode not found');
+    const cid = this.modeCollection(id);
+    this.transact(() => this.meta.set(cid === DEFAULT_COLLECTION ? 'activeMode' : `activeMode:${cid}`, id));
   }
 
-  /** Add a mode; every variable starts with the value it has in the active mode. */
-  addMode(name: string): string {
+  /** Add a mode to a collection; every variable of that collection starts with the value it has in the active mode. */
+  addMode(name: string, collectionId: string = DEFAULT_COLLECTION): string {
+    if (collectionId !== DEFAULT_COLLECTION && !this.collectionMap.has(collectionId)) throw new Error('Collection not found');
     const id = nanoid();
-    const base = this.activeModeId();
+    const base = this.activeModeId(collectionId);
     this.transact(() => {
-      if (!this.modeMap.size) this.modeMap.set('default', { id: 'default', name: 'Mode 1', order: 0 });
+      if (collectionId === DEFAULT_COLLECTION && ![...this.modeMap.values()].some((m) => (m.collectionId ?? DEFAULT_COLLECTION) === DEFAULT_COLLECTION)) this.modeMap.set('default', { id: 'default', name: 'Mode 1', order: Math.max(-1, ...[...this.modeMap.values()].map((m) => m.order)) + 1 });
       const order = Math.max(-1, ...[...this.modeMap.values()].map((m) => m.order)) + 1;
-      this.modeMap.set(id, { id, name: name.trim() || `Mode ${order + 1}`, order });
-      for (const v of this.variableMap.values()) this.variableMap.set(v.id, { ...v, values: { ...v.values, [id]: v.values[base] ?? Object.values(v.values)[0] ?? (v.kind === 'STRING' ? '' : v.kind === 'NUMBER' ? '0' : v.kind === 'BOOLEAN' ? 'false' : '#000000') } });
+      const count = this.modes(collectionId).length;
+      this.modeMap.set(id, { id, name: name.trim() || `Mode ${count + 1}`, order, ...(collectionId === DEFAULT_COLLECTION ? {} : { collectionId }) });
+      for (const v of this.variablesIn(collectionId)) this.variableMap.set(v.id, { ...v, values: { ...v.values, [id]: v.values[base] ?? Object.values(v.values)[0] ?? (v.kind === 'STRING' ? '' : v.kind === 'NUMBER' ? '0' : v.kind === 'BOOLEAN' ? 'false' : '#000000') } });
     });
     return id;
   }
@@ -1345,16 +1414,18 @@ export class DesignDoc {
     else if (!mode && id === 'default' && name.trim()) this.transact(() => this.modeMap.set('default', { id: 'default', name: name.trim(), order: 0 }));
   }
 
-  /** Remove a mode (the last one cannot be removed). */
+  /** Remove a mode (the last one of a collection cannot be removed). */
   deleteMode(id: string): void {
-    if (this.modes().length < 2) throw new Error('A collection needs at least one mode');
+    const cid = this.modeCollection(id);
+    if (this.modes(cid).length < 2) throw new Error('A collection needs at least one mode');
     this.transact(() => {
       this.modeMap.delete(id);
-      for (const v of this.variableMap.values()) {
+      for (const v of this.variablesIn(cid)) {
         const { [id]: _dropped, ...values } = v.values;
         this.variableMap.set(v.id, { ...v, values });
       }
-      if (this.meta.get('activeMode') === id) this.meta.delete('activeMode');
+      const key = cid === DEFAULT_COLLECTION ? 'activeMode' : `activeMode:${cid}`;
+      if (this.meta.get(key) === id) this.meta.delete(key);
     });
   }
 
@@ -1367,9 +1438,9 @@ export class DesignDoc {
     return [...this.variableMap.values()].filter((v) => v.kind === kind).sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  createValueVariable(kind: 'NUMBER' | 'BOOLEAN', name: string, value: string): string {
+  createValueVariable(kind: 'NUMBER' | 'BOOLEAN', name: string, value: string, collectionId: string = DEFAULT_COLLECTION): string {
     const id = nanoid();
-    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || (kind === 'NUMBER' ? 'Number' : 'Boolean'), kind, values: Object.fromEntries(this.modes().map((m) => [m.id, value])) }));
+    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || (kind === 'NUMBER' ? 'Number' : 'Boolean'), kind, values: Object.fromEntries(this.modes(collectionId).map((m) => [m.id, value])), ...this.collectionField(collectionId) }));
     return id;
   }
 
@@ -1420,13 +1491,12 @@ export class DesignDoc {
     const map = this.nodes.get(nodeId);
     const bindings = map?.get('varBindings') as Record<string, string> | undefined | null;
     if (!map || !bindings) return;
-    const mode = this.modeFor(nodeId, this.activeModeId());
     const kept: Record<string, string> = {};
     for (const [prop, varId] of Object.entries(bindings)) {
       const v = this.variableMap.get(varId);
       if (!v) continue; // a deleted variable just releases the property
       kept[prop] = varId;
-      const raw = this.resolveVariableValue(v, mode);
+      const raw = this.resolveVariableValue(v, this.modeForVariable(nodeId, v));
       const next = v.kind === 'BOOLEAN' ? raw === 'true' : Number(raw);
       if (typeof next === 'number' && !Number.isFinite(next)) continue;
       if (map.get(prop) !== next) map.set(prop, next);
@@ -1434,14 +1504,21 @@ export class DesignDoc {
     if (Object.keys(kept).length !== Object.keys(bindings).length) map.set('varBindings', Object.keys(kept).length ? kept : null);
   }
 
+  /** The collectionId field to store on a new variable (nothing for the first collection); throws for an unknown collection. */
+  private collectionField(collectionId: string): { collectionId?: string } {
+    if (collectionId === DEFAULT_COLLECTION) return {};
+    if (!this.collectionMap.has(collectionId)) throw new Error('Collection not found');
+    return { collectionId };
+  }
+
   /** Text variables: a text per mode that text layers can follow. */
   textVariables(): ColorVariable[] {
     return [...this.variableMap.values()].filter((v) => v.kind === 'STRING').sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  createTextVariable(name: string, text: string): string {
+  createTextVariable(name: string, text: string, collectionId: string = DEFAULT_COLLECTION): string {
     const id = nanoid();
-    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Text', kind: 'STRING', values: Object.fromEntries(this.modes().map((m) => [m.id, text])) }));
+    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Text', kind: 'STRING', values: Object.fromEntries(this.modes(collectionId).map((m) => [m.id, text])), ...this.collectionField(collectionId) }));
     return id;
   }
 
@@ -1468,16 +1545,16 @@ export class DesignDoc {
     }
     const v = this.variableMap.get(variableId);
     if (!v || v.kind !== 'STRING') throw new Error('Text variable not found');
-    this.setText(nodeId, { textVariableId: variableId, characters: this.resolveVariableValue(v, this.activeModeId()) });
+    this.setText(nodeId, { textVariableId: variableId, characters: this.resolveVariableValue(v, this.modeForVariable(nodeId, v)) });
   }
 
   getColorVariable(id: string): ColorVariable | undefined {
     return this.variableMap.get(id);
   }
 
-  createColorVariable(name: string, color: string): string {
+  createColorVariable(name: string, color: string, collectionId: string = DEFAULT_COLLECTION): string {
     const id = nanoid();
-    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Color', values: Object.fromEntries(this.modes().map((m) => [m.id, color])) }));
+    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Color', values: Object.fromEntries(this.modes(collectionId).map((m) => [m.id, color])), ...this.collectionField(collectionId) }));
     return id;
   }
 
@@ -1497,7 +1574,7 @@ export class DesignDoc {
   setVariableValue(id: string, modeId: string, value: string): void {
     const v = this.variableMap.get(id);
     if (!v) throw new Error('Variable not found');
-    if (!this.modes().some((m) => m.id === modeId)) throw new Error('Mode not found');
+    if (!this.modeExists(modeId)) throw new Error('Mode not found');
     if (v.kind === 'STRING') this.updateTextVariable(id, { modeId, text: value });
     else if (v.kind === 'NUMBER' || v.kind === 'BOOLEAN') this.updateValueVariable(id, { modeId, value });
     else {
@@ -1535,7 +1612,8 @@ export class DesignDoc {
 
   /** The value a variable shows in a mode, following aliases (same kind only). A broken or looping alias shows the variable's own first plain value. */
   resolveVariableValue(v: ColorVariable, modeId: string, hops = 0): string {
-    const own = v.values[modeId] ?? Object.values(v.values)[0] ?? '';
+    // a mode of another collection has no value here: use the active mode of this variable's own collection
+    const own = v.values[modeId] ?? v.values[this.activeModeId(v.collectionId ?? DEFAULT_COLLECTION)] ?? Object.values(v.values)[0] ?? '';
     const target = DesignDoc.aliasTarget(own);
     if (target === null) return own;
     const next = hops < 10 ? this.variableMap.get(target) : undefined;
@@ -1552,7 +1630,7 @@ export class DesignDoc {
   setVariableAlias(id: string, modeId: string, targetId: string | null): void {
     const v = this.variableMap.get(id);
     if (!v) throw new Error('Variable not found');
-    if (!this.modes().some((m) => m.id === modeId)) throw new Error('Mode not found');
+    if (!this.modeExists(modeId)) throw new Error('Mode not found');
     if (targetId === null) {
       const shown = this.resolveVariableValue(v, modeId);
       this.transact(() => this.variableMap.set(id, { ...v, values: { ...v.values, [modeId]: shown } }));
@@ -1582,7 +1660,7 @@ export class DesignDoc {
   restoreVariableValues(id: string, values: Record<string, string>): void {
     const v = this.variableMap.get(id);
     if (!v) return;
-    const known = new Set(this.modes().map((m) => m.id));
+    const known = new Set(Object.keys(v.values));
     const next = { ...v.values };
     for (const [mode, raw] of Object.entries(values)) if (known.has(mode) && typeof raw === 'string') next[mode] = raw;
     this.transact(() => this.variableMap.set(id, { ...v, values: next }));
@@ -1603,7 +1681,7 @@ export class DesignDoc {
       const v = this.variableMap.get(variableId);
       if (!v || (v.kind && v.kind !== 'COLOR')) throw new Error('Variable not found');
       if (!variableAllowsUse(v, key === 'strokes' ? 'STROKE' : node.type === 'TEXT' ? 'TEXT_FILL' : 'FILL')) throw new Error(`The scope of ${v.name} does not include this use`);
-      next = { ...paint, variableId, color: this.resolveVariableValue(v, this.activeModeId()) || paint.color };
+      next = { ...paint, variableId, color: this.resolveVariableValue(v, this.modeForVariable(nodeId, v)) || paint.color };
     }
     this.setStyle(nodeId, { [key]: (paints as Paint[]).map((p, i) => (i === index ? next : p)) } as StylePatch);
   }

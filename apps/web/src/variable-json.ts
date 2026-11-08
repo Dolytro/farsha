@@ -15,7 +15,8 @@ const kindOf = (v: ColorVariable): VariableType => v.kind ?? "COLOR";
 /** The variables of a document as a plain object: values are listed by mode name, so another file can read them. */
 export function exportVariables(doc: DesignDoc): VariablesFile {
   const modes = doc.modes();
-  const all: ColorVariable[] = [...doc.colorVariables(), ...doc.textVariables(), ...doc.valueVariables("NUMBER"), ...doc.valueVariables("BOOLEAN")];
+  // the file holds one set of modes, so only the first collection is exported
+  const all: ColorVariable[] = [...doc.colorVariables(), ...doc.textVariables(), ...doc.valueVariables("NUMBER"), ...doc.valueVariables("BOOLEAN")].filter((v) => !v.collectionId);
   return {
     version: 1,
     modes: modes.map((m) => m.name),

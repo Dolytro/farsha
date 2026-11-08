@@ -372,11 +372,11 @@ export function PrototypePanel() {
                 )}
                 {it.action.type === "SET_MODE" && (
                   <Select className="field__select field__select--wide" aria-label="Variable mode" value={it.action.modeId} onChange={(e) => patch({ action: { type: "SET_MODE", modeId: e.target.value } })}>
-                    {doc.modes().map((m) => (
+                    {doc.collections().flatMap((c, _i, all) => doc.modes(c.id).map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.name}
+                        {all.length > 1 ? `${c.name} / ${m.name}` : m.name}
                       </option>
-                    ))}
+                    )))}
                   </Select>
                 )}
                 {it.action.type === "SCROLL_TO" && (

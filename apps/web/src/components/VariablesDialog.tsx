@@ -19,6 +19,8 @@ export function VariablesDialog() {
   const [renamingMode, setRenamingMode] = useState<string | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
   const [tab, setTab] = useState<"color" | "text" | "number" | "boolean">("color");
+  const [collectionId, setCollectionId] = useState("default");
+  const [renamingCollection, setRenamingCollection] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -33,9 +35,12 @@ export function VariablesDialog() {
   }, [open, setOpen]);
 
   if (!open) return null;
-  const modes = doc.modes();
-  const active = doc.activeModeId();
-  const variables = tab === "color" ? doc.colorVariables() : tab === "text" ? doc.textVariables() : doc.valueVariables(tab === "number" ? "NUMBER" : "BOOLEAN");
+  const collections = doc.collections();
+  const collection = collections.find((c) => c.id === collectionId) ?? collections[0]!;
+  const modes = doc.modes(collection.id);
+  const active = doc.activeModeId(collection.id);
+  const allOfKind = tab === "color" ? doc.colorVariables() : tab === "text" ? doc.textVariables() : doc.valueVariables(tab === "number" ? "NUMBER" : "BOOLEAN");
+  const variables = allOfKind.filter((v) => (v.collectionId ?? "default") === collection.id);
   const run = (fn: () => void) => {
     try {
       doc.stopCapturing();
@@ -79,6 +84,52 @@ export function VariablesDialog() {
           <button className="icon-btn" aria-label="Close" onClick={() => setOpen(false)}>
             ✕
           </button>
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 0 8px" }}>
+          {renamingCollection ? (
+            <input
+              className="dialog__input"
+              aria-label="Collection name"
+              autoFocus
+              defaultValue={collection.name}
+              onFocus={(e) => e.currentTarget.select()}
+              onBlur={(e) => {
+                setRenamingCollection(false);
+                run(() => doc.renameCollection(collection.id, e.currentTarget.value));
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+              }}
+            />
+          ) : (
+            <Select className="field__select field__select--wide" aria-label="Variable collection" value={collection.id} onChange={(e) => setCollectionId(e.target.value)}>
+              {collections.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          )}
+          <button className="props__button" title="Rename this collection" onClick={() => setRenamingCollection(true)}>
+            Rename
+          </button>
+          <button className="props__button" title="Add a collection with its own modes" onClick={() => run(() => setCollectionId(doc.addCollection("")))}>
+            + Collection
+          </button>
+          {collection.id !== "default" && (
+            <button
+              className="props__button"
+              title="Delete this collection with its modes and variables"
+              onClick={() => {
+                const id = collection.id;
+                setCollectionId("default");
+                run(() => doc.deleteCollection(id));
+              }}
+            >
+              Delete
+            </button>
+          )}
         </div>
         <div className="seg" role="tablist" aria-label="Variable type">
           <button className={`seg__btn${tab === "color" ? " seg__btn--active" : ""}`} role="tab" aria-selected={tab === "color"} onClick={() => setTab("color")}>
@@ -126,7 +177,7 @@ export function VariablesDialog() {
                 )}
               </span>
             ))}
-            <button className="props__add" title="Add mode" onClick={() => run(() => void doc.addMode(""))}>
+            <button className="props__add" title="Add mode" onClick={() => run(() => void doc.addMode("", collection.id))}>
               +
             </button>
           </div>
@@ -153,9 +204,9 @@ export function VariablesDialog() {
                       }}
                     >
                       <option value="">{aliasId ? "Detach (use its value)" : "Choose a variable…"}</option>
-                      {variables.filter((o) => o.id !== v.id).map((o) => (
+                      {allOfKind.filter((o) => o.id !== v.id).map((o) => (
                         <option key={o.id} value={o.id}>
-                          {o.name}
+                          {(o.collectionId ?? "default") === collection.id ? o.name : `${collections.find((c) => c.id === (o.collectionId ?? "default"))?.name ?? "Other"} / ${o.name}`}
                         </option>
                       ))}
                     </Select>
@@ -259,7 +310,7 @@ export function VariablesDialog() {
             : []),
           ])}
         </div>
-        <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9") : tab === "text" ? doc.createTextVariable(`Text ${variables.length + 1}`, "Text") : doc.createValueVariable(tab === "number" ? "NUMBER" : "BOOLEAN", `${tab === "number" ? "Number" : "Boolean"} ${variables.length + 1}`, tab === "number" ? "0" : "true")))}>
+        <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9", collection.id) : tab === "text" ? doc.createTextVariable(`Text ${variables.length + 1}`, "Text", collection.id) : doc.createValueVariable(tab === "number" ? "NUMBER" : "BOOLEAN", `${tab === "number" ? "Number" : "Boolean"} ${variables.length + 1}`, tab === "number" ? "0" : "true", collection.id)))}>
           {tab === "color" ? "+ Add color variable" : tab === "text" ? "+ Add text variable" : tab === "number" ? "+ Add number variable" : "+ Add boolean variable"}
         </button>
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>

@@ -34,7 +34,7 @@ export function Presenter() {
   const [modeTick, setModeTick] = useState(0);
   // the old frame while it moves out (Move out and Push transitions)
   const [leaving, setLeaving] = useState<{ svg: string; width: number; height: number; scale: number; stageWidth: number; stageHeight: number; name: string; under: boolean; ms: number; timing: string; n: number } | null>(null);
-  const startMode = useRef<string | null>(null);
+  const startMode = useRef<Record<string, string> | null>(null);
   // variables changed by "Set variable": their original values, put back when the presentation ends or restarts
   const varBackup = useRef(new Map<string, Record<string, string>>());
   // instances turned into another component by "Change to": their original component, put back like the variables
@@ -52,18 +52,23 @@ export function Presenter() {
     for (const [id, values] of varBackup.current) doc.restoreVariableValues(id, values);
     if (varBackup.current.size) setModeTick((n) => n + 1);
     varBackup.current.clear();
-    if (startMode.current && doc.activeModeId() !== startMode.current) {
-      try {
-        doc.setActiveMode(startMode.current);
-      } catch {
-        // the mode was deleted meanwhile: nothing to restore
+    if (startMode.current) {
+      let restored = false;
+      for (const [collectionId, modeId] of Object.entries(startMode.current)) {
+        if (doc.activeModeId(collectionId) === modeId) continue;
+        try {
+          doc.setActiveMode(modeId);
+          restored = true;
+        } catch {
+          // the mode was deleted meanwhile: nothing to restore
+        }
       }
-      setModeTick((n) => n + 1);
+      if (restored) setModeTick((n) => n + 1);
     }
   };
   useEffect(() => {
     if (!start) return;
-    startMode.current = doc.activeModeId();
+    startMode.current = Object.fromEntries(doc.collections().map((c) => [c.id, doc.activeModeId(c.id)]));
     return () => {
       restoreMode();
       startMode.current = null;
@@ -144,7 +149,7 @@ export function Presenter() {
       }
       try {
         if (!varBackup.current.has(v.id)) varBackup.current.set(v.id, { ...v.values });
-        doc.setVariableValue(v.id, doc.activeModeId(), a.value);
+        doc.setVariableValue(v.id, doc.activeModeId(v.collectionId ?? "default"), a.value);
         setModeTick((n) => n + 1);
       } catch (err) {
         showToast(err instanceof Error ? err.message : "Couldn't set the variable");
