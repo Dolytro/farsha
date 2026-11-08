@@ -631,3 +631,29 @@ describe("text with several fills", () => {
     expect(out).toMatch(/<linearGradient id="tg-[^"]+-1"/);
   });
 });
+
+describe("text strokes", () => {
+  it("outlines the letters with the first stroke", () => {
+    const { doc, text } = setup();
+    doc.setStyle(text, { strokes: solid("#ff0000"), strokeWidth: 3 });
+    const out = exportSvg(doc, [text])!.svg;
+    expect(out).toContain('stroke="#ff0000"');
+    expect(out).toContain('stroke-width="3"');
+    expect(out).not.toContain("paint-order");
+  });
+  it("an outside stroke is twice as wide and drawn behind the fill", () => {
+    const { doc, text } = setup();
+    doc.setStyle(text, { strokes: solid("#ff0000"), strokeWidth: 3, strokeAlign: "OUTSIDE" });
+    const out = exportSvg(doc, [text])!.svg;
+    expect(out).toContain('stroke-width="6"');
+    expect(out).toContain('paint-order="stroke"');
+  });
+  it("a gradient stroke gets a definition and no stroke means no attributes", () => {
+    const { doc, text } = setup();
+    expect(exportSvg(doc, [text])!.svg).not.toContain("stroke=");
+    doc.setStyle(text, { strokes: [{ type: "GRADIENT_LINEAR", angle: 0, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }], strokeWidth: 2 });
+    const out = exportSvg(doc, [text])!.svg;
+    expect(out).toMatch(/<linearGradient id="ts-/);
+    expect(out).toMatch(/stroke="url\(#ts-/);
+  });
+});

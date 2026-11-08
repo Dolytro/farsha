@@ -24,12 +24,13 @@ const newEffect = (type: Effect["type"]): Effect =>
 
 /** Strokes are stored bottom to top and listed top first; position and weight are shared by all of them. */
 export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
-  if (!("strokes" in node) || !node.strokes) return null;
-  const strokes = node.strokes;
+  // text layers can be outlined too (their `strokes` key starts missing)
+  if (node.type !== "TEXT" && (!("strokes" in node) || !node.strokes)) return null;
+  const strokes: Paint[] = ("strokes" in node && node.strokes) || [];
   const align = ("strokeAlign" in node ? node.strokeAlign : undefined) ?? "CENTER";
   const setStrokes = (next: Paint[]) => doc.setStyle(node.id, { strokes: next });
   // Drawn vectors take one stroke; frames, rectangles and ellipses can stack several.
-  const canAdd = node.type !== "VECTOR" || strokes.length === 0;
+  const canAdd = (node.type !== "VECTOR" && node.type !== "TEXT") || strokes.length === 0;
   return (
     <section className="props__section">
       <h3 className="props__heading props__heading--row">
@@ -192,7 +193,7 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
           )}
         </>
       )}
-      {strokes.length > 0 && (
+      {strokes.length > 0 && node.type !== "TEXT" && (
         <div className="props__grid props__grid--gap">
           <label className="field" title="Dash length in pixels (0 = solid line)">
             <span className="field__label">Dash</span>

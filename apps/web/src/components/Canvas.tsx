@@ -20,7 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -728,10 +728,12 @@ export function Canvas() {
       // several fills draw the text once per fill, bottom first
       const fills = textFills(n);
       const tf = textFill(n);
+      const ts = textStroke(n);
       return (
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
           {fills.map((f, fi) => f.defs && <defs key={`defs-${fi}`} dangerouslySetInnerHTML={{ __html: f.defs }} />)}
+          {ts?.defs && <defs dangerouslySetInnerHTML={{ __html: ts.defs }} />}
           {(fills.length > 1 ? fills : [{ defs: tf.defs, fill: tf.fill, opacity: 1 }]).map((f, fi) => (
             <text
               key={`fill-${fi}`}
@@ -744,6 +746,7 @@ export function Canvas() {
               letterSpacing={n.letterSpacing || undefined}
               fill={f.defs ? f.fill : fills.length > 1 ? f.fill : color}
               fillOpacity={fills.length > 1 && f.opacity !== 1 ? f.opacity : undefined}
+            {...(ts ? { stroke: ts.stroke, strokeWidth: ts.width, strokeOpacity: ts.opacity !== 1 ? ts.opacity : undefined, strokeLinejoin: "round" as const, paintOrder: ts.behind ? "stroke" : undefined } : {})}
               fontFamily={n.fontFamily}
               fontSize={n.fontSize}
               fontWeight={n.fontWeight}

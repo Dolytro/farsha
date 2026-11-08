@@ -1,6 +1,6 @@
 import type { DesignDoc } from "@farsha/design-core";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@farsha/types";
-import { textFill, textFills, effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
+import { textFill, textFills, textStroke, effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
@@ -73,7 +73,8 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     case "TEXT": {
       const tf = textFill(n);
       const textFillAttrs = tf.defs ? ` fill="${tf.fill}"` : fillAttrs;
-      const tfDefs = tf.defs ? `<defs>${tf.defs}</defs>` : "";
+      const tsForDefs = textStroke(n);
+      const tfDefs = tf.defs || tsForDefs?.defs ? `<defs>${tf.defs}${tsForDefs?.defs ?? ""}</defs>` : "";
       const place = textPlacement(n);
       const anchor = `${place.anchor === "start" && !place.rtl ? "" : ` text-anchor="${place.anchor}"`}${place.rtl ? ' direction="rtl" unicode-bidi="plaintext"' : ""}`;
       const x = place.x;
@@ -100,9 +101,11 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
       }
       // several fills: the text is drawn once per fill, bottom first
       const fills = textFills(n);
-      const one = (fillAttrsOf: string) => `<text x="${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrsOf} xml:space="preserve">${spans}</text>`;
+      const ts = textStroke(n);
+      const strokeAttrs = ts ? ` stroke="${ts.stroke}" stroke-width="${num(ts.width)}"${ts.opacity !== 1 ? ` stroke-opacity="${num(ts.opacity)}"` : ""} stroke-linejoin="round"${ts.behind ? ' paint-order="stroke"' : ""}` : "";
+      const one = (fillAttrsOf: string) => `<text x=""${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrsOf}${strokeAttrs} xml:space="preserve">${spans}</text>`;
       if (fills.length > 1) {
-        const defs = fills.filter((f) => f.defs).map((f) => f.defs).join("");
+        const defs = fills.filter((f) => f.defs).map((f) => f.defs).join("") + (tsForDefs?.defs ?? "");
         return `<g transform="${transform}"${opacity}>${defs ? `<defs>${defs}</defs>` : ""}${fills.map((f) => one(` fill="${f.fill}"${f.opacity !== 1 ? ` fill-opacity="${num(f.opacity)}"` : ""}`)).join("")}</g>`;
       }
       return `<g transform="${transform}"${opacity}>${tfDefs}${one(textFillAttrs)}</g>`;

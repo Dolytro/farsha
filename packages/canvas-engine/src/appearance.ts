@@ -384,6 +384,26 @@ export function textFills(n: DesignNode): { defs: string; fill: string; opacity:
   });
 }
 
+/**
+ * The outline of a text layer: its first stroke as presentation values. An outside stroke is drawn twice as wide behind the
+ * fill (only the outer half shows); centred and inside strokes are drawn centred over the fill.
+ */
+export function textStroke(n: DesignNode): { defs: string; stroke: string; width: number; opacity: number; behind: boolean } | null {
+  if (n.type !== "TEXT") return null;
+  const p = n.strokes?.[0];
+  const w = Math.max(0, n.strokeWidth ?? 1);
+  if (!p || w <= 0 || p.type === "IMAGE") return null;
+  let defs = "";
+  let stroke = hex(paintColor(p));
+  if (isGradient(p)) {
+    const id = `ts-${safeId(n.id)}`;
+    defs = gradientDef(id, p);
+    stroke = `url(#${id})`;
+  }
+  const outside = n.strokeAlign === "OUTSIDE";
+  return { defs, stroke, width: outside ? w * 2 : w, opacity: Number(unit(p.opacity)), behind: outside };
+}
+
 const vectorGradientId = (n: DesignNode) => `vg-${safeId(n.id)}`;
 const vectorStrokeGradientId = (n: DesignNode) => `vgs-${safeId(n.id)}`;
 

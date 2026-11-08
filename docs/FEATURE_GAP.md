@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Strokes on text (a Stroke section on text layers: colour or gradient, weight, Center / Outside; Inside is drawn like Center; only the first stroke is drawn, no dash or caps; canvas and SVG / PNG export).
 - ✅ Enter on a selected text layer opens its text editor (Esc closes it); Enter on anything else still selects the children.
 - ✅ Layers panel: Alt+click on a chevron opens (or closes) the layer and everything inside it.
 - ✅ Layers panel: Alt+click on a layer's eye shows only that layer (everything else on the page is hidden; Alt+click again brings them back).

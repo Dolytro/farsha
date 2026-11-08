@@ -692,6 +692,10 @@ export interface TextNode extends BaseNode {
   /** Where the text sits inside a box taller than the text. Missing means top. */
   textVerticalAlign?: TextVerticalAlign;
   fills: Paint[];
+  /** Outline of the letters (Figma's text stroke); the first stroke is drawn. Missing means none. */
+  strokes?: Paint[];
+  strokeWidth?: number;
+  strokeAlign?: StrokeAlign;
 }
 
 export interface ImageNode extends BaseNode {
