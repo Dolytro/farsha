@@ -311,6 +311,10 @@ export function App() {
         // Enter on a pen path edits its points
         e.preventDefault();
         s.setEditingPath(selection[0]!);
+      } else if (key === "enter" && !mod && !e.altKey && !e.shiftKey && selection.length === 1 && !s.viewer && !s.devMode && doc.getNode(selection[0]!)?.type === "TEXT") {
+        // Enter on a text layer edits its text (Figma)
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("farsha:edit-text", { detail: selection[0] }));
       } else if (key === "enter" && !mod && !e.altKey && selection.length && !s.viewer) {
         // Enter selects the children, Shift+Enter the parent
         e.preventDefault();

@@ -115,6 +115,15 @@ export function Canvas() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Box | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  // Enter on a selected text layer (handled in App) asks the canvas to open the text editor
+  useEffect(() => {
+    const onEdit = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (typeof id === "string" && useEditor.getState().doc.getNode(id)?.type === "TEXT") setEditing(id);
+    };
+    window.addEventListener("farsha:edit-text", onEdit);
+    return () => window.removeEventListener("farsha:edit-text", onEdit);
+  }, []);
   const editRef = useRef<HTMLTextAreaElement | null>(null);
   const movePoint = useRef<{ x: number; y: number } | null>(null);
   const [editSel, setEditSel] = useState<[number, number]>([0, 0]);
