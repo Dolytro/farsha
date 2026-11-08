@@ -224,4 +224,8 @@ describe("conditional", () => {
     const b = doc.createValueVariable("BOOLEAN", "On", "true");
     expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "CONDITIONAL", variableId: b, op: "EQ", value: "True", thenId: detail } })?.frame).toBe(detail);
   });
+  it("Move in comes in from a side and Slide out leaves toward one", () => {
+    expect(transitionAnimation({ type: "MOVE_IN_TOP", durationMs: 300 })).toMatchObject({ name: "presenter-slide-top" });
+    expect(transitionAnimation({ type: "SLIDE_OUT_RIGHT", durationMs: 300 })).toMatchObject({ name: "presenter-hold", leave: "presenter-out-right" });
+  });
 });

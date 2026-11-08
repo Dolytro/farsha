@@ -175,13 +175,13 @@ export function easingFn(e: Easing | undefined): (t: number) => number {
 /** CSS keyframes name, duration and timing function for a transition (null for an instant change). */
 export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string; leave?: string } | null {
   if (!t || t.type === "INSTANT" || t.type === "SMART_ANIMATE") return null;
-  const names: Record<string, string> = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" };
+  const names: Record<string, string> = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom", MOVE_IN_LEFT: "presenter-slide-left", MOVE_IN_RIGHT: "presenter-slide-right", MOVE_IN_TOP: "presenter-slide-top", MOVE_IN_BOTTOM: "presenter-slide-bottom" };
   // Move out: the old frame leaves toward a side and reveals the new one. Push: the new frame comes in from a side and pushes the old one out the opposite way.
   const opposite: Record<string, string> = { left: "right", right: "left", top: "bottom", bottom: "top" };
   const side = t.type.split("_").pop()!.toLowerCase();
   let name = names[t.type];
   let leave: string | undefined;
-  if (t.type.startsWith("MOVE_OUT_")) {
+  if (t.type.startsWith("MOVE_OUT_") || t.type.startsWith("SLIDE_OUT_")) {
     name = "presenter-hold";
     leave = `presenter-out-${side}`;
   } else if (t.type.startsWith("PUSH_")) {
