@@ -657,11 +657,17 @@ export function buildCommands(): Command[] {
       label: "Switch to next variable mode",
       keywords: "light dark theme",
       run: () => {
+        // every collection with more than one mode moves on to its next mode
         const d = doc();
-        const modes = d.modes();
-        const next = modes[(modes.findIndex((m) => m.id === d.activeModeId()) + 1) % modes.length]!;
-        d.setActiveMode(next.id);
-        state().showToast(`Mode: ${next.name}`);
+        const names: string[] = [];
+        for (const c of d.collections()) {
+          const modes = d.modes(c.id);
+          if (modes.length < 2) continue;
+          const next = modes[(modes.findIndex((m) => m.id === d.activeModeId(c.id)) + 1) % modes.length]!;
+          d.setActiveMode(next.id);
+          names.push(d.collections().length > 1 ? `${c.name}: ${next.name}` : next.name);
+        }
+        state().showToast(names.length ? `Mode: ${names.join(", ")}` : "No variable mode to switch to");
       },
     },
     ...(["light", "dark", "system"] as const).map(
