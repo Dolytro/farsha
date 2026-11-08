@@ -229,6 +229,22 @@ export function variableAllowsProperty(v: { scopes?: string[] }, prop: string): 
   return !scope || v.scopes.includes(scope);
 }
 
+/** Where a colour variable may be used (its scope). */
+export const COLOR_SCOPES = ['FILL', 'TEXT_FILL', 'STROKE'] as const;
+export type ColorScope = (typeof COLOR_SCOPES)[number];
+export type VariableScope = NumberScope | ColorScope;
+
+export const COLOR_SCOPE_LABEL: Record<ColorScope, string> = {
+  FILL: 'Shape and frame fills',
+  TEXT_FILL: 'Text fills',
+  STROKE: 'Strokes',
+};
+
+/** Whether a colour variable may be used for a kind of paint: always without a scope, otherwise only for the kinds in its scope. */
+export function variableAllowsUse(v: { scopes?: string[] }, use: ColorScope): boolean {
+  return !v.scopes?.length || v.scopes.includes(use);
+}
+
 export interface ColorVariable {
   id: string;
   name: string;
@@ -236,8 +252,8 @@ export interface ColorVariable {
   kind?: 'COLOR' | 'STRING' | 'NUMBER' | 'BOOLEAN';
   /** Hex colour per mode id (the text for a text variable, a number as text for a number variable, "true" or "false" for a boolean). */
   values: Record<string, string>;
-  /** Number variables only: the property groups it may be bound to. Missing or empty means all of them. */
-  scopes?: NumberScope[];
+  /** The property groups (number variables) or kinds of paint (colour variables) it may be used for. Missing or empty means all of them. */
+  scopes?: VariableScope[];
 }
 
 /** A reusable colour: layers that use it get its paints as their fills. */

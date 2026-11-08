@@ -174,3 +174,35 @@ describe('setVariableValue', () => {
     expect(() => doc.setVariableValue(c, 'nomode', '#112233')).toThrow();
   });
 });
+
+describe('colour variable scopes', () => {
+  it('limits a colour variable to some kinds of paint', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const rect = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10, fills: [{ type: 'SOLID', color: '#000000', opacity: 1 }], strokes: [{ type: 'SOLID', color: '#000000', opacity: 1 }] } as never });
+    const text = doc.createNode('TEXT', { parentId: page, props: { characters: 'Hi', fills: [{ type: 'SOLID', color: '#000000', opacity: 1 }] } as never });
+    const brand = doc.createColorVariable('brand', '#336699');
+    doc.setVariableScopes(brand, ['STROKE']);
+    expect(doc.getColorVariable(brand)!.scopes).toEqual(['STROKE']);
+    expect(() => doc.bindPaintVariable(rect, 'fills', 0, brand)).toThrow(/scope/);
+    expect(() => doc.bindPaintVariable(text, 'fills', 0, brand)).toThrow(/scope/);
+    doc.bindPaintVariable(rect, 'strokes', 0, brand);
+    expect((doc.getNode(rect) as unknown as { strokes: { color: string }[] }).strokes[0]!.color).toBe('#336699');
+  });
+
+  it('separates text fills from shape fills, drops scopes of the wrong kind, and refuses text variables', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const rect = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10, fills: [{ type: 'SOLID', color: '#000000', opacity: 1 }] } as never });
+    const text = doc.createNode('TEXT', { parentId: page, props: { characters: 'Hi', fills: [{ type: 'SOLID', color: '#000000', opacity: 1 }] } as never });
+    const ink = doc.createColorVariable('ink', '#111111');
+    doc.setVariableScopes(ink, ['TEXT_FILL', 'SIZE', 'nope']);
+    expect(doc.getColorVariable(ink)!.scopes).toEqual(['TEXT_FILL']);
+    doc.bindPaintVariable(text, 'fills', 0, ink);
+    expect(() => doc.bindPaintVariable(rect, 'fills', 0, ink)).toThrow(/scope/);
+    doc.setVariableScopes(ink, ['FILL', 'TEXT_FILL', 'STROKE']);
+    expect(doc.getColorVariable(ink)!.scopes).toBeUndefined();
+    const label = doc.createTextVariable('label', 'x');
+    expect(() => doc.setVariableScopes(label, ['FILL'])).toThrow(/number and colour/);
+  });
+});

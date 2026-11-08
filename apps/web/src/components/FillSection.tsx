@@ -108,7 +108,7 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
           ))}
           {doc.getNode(nodeId)?.type === "RECTANGLE" && <option value="VIDEO">Video</option>}
         </Select>
-        {bind && paint.type === "SOLID" && !paint.variableId && <VariableButton doc={doc} onPick={bind} />}
+        {bind && paint.type === "SOLID" && !paint.variableId && <VariableButton doc={doc} use={doc.getNode(nodeId)?.type === "TEXT" ? "TEXT_FILL" : "FILL"} onPick={bind} />}
         <button className="props__add" title="Remove fill" onClick={remove}>
           −
         </button>

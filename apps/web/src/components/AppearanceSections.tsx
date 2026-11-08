@@ -109,7 +109,7 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
                 <>
                   <ColorSwatch value={paintColor(stroke)} onChange={(color) => replace({ type: "SOLID", color, opacity: stroke.opacity })} />
                   <HexInput value={paintColor(stroke)} onChange={(color) => replace({ type: "SOLID", color, opacity: stroke.opacity })} />
-                  {stroke.type === "SOLID" && <VariableButton doc={doc} onPick={(variableId) => doc.bindPaintVariable(node.id, "strokes", i, variableId)} />}
+                  {stroke.type === "SOLID" && <VariableButton doc={doc} use="STROKE" onPick={(variableId) => doc.bindPaintVariable(node.id, "strokes", i, variableId)} />}
                 </>
               )}
               <input

@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { useEditor } from "../store";
 import { HexInput } from "./HexInput";
 import { Select } from "./Select";
-import { NUMBER_SCOPES, NUMBER_SCOPE_LABEL } from "@farsha/types";
+import { COLOR_SCOPES, COLOR_SCOPE_LABEL, NUMBER_SCOPES, NUMBER_SCOPE_LABEL } from "@farsha/types";
+
+const SCOPE_LABEL: Record<string, string> = { ...NUMBER_SCOPE_LABEL, ...COLOR_SCOPE_LABEL };
 import { fitText } from "../text-layout";
 import { exportVariables, importVariables, parseVariables } from "../variable-json";
 import { groupVariables, joinName, splitName } from "../variable-groups";
@@ -223,34 +225,37 @@ export function VariablesDialog() {
               </button>
             </div>
             )),
-          ...(tab === "number"
-            ? g.items.map(({ variable: v }) => (
+          ...(tab === "number" || tab === "color"
+            ? g.items.map(({ variable: v }) => {
+                const ALL: readonly string[] = tab === "number" ? NUMBER_SCOPES : COLOR_SCOPES;
+                return (
                 <details key={`scope-${v.id}`} className="vars__scope" style={{ margin: "0 0 6px 4px", fontSize: 12 }}>
                   <summary aria-label={`Scope of ${v.name}`} style={{ cursor: "pointer", opacity: 0.75 }}>
-                    {v.name}: {v.scopes?.length ? v.scopes.map((x) => NUMBER_SCOPE_LABEL[x]).join(", ") : "can be used for anything"}
+                    {v.name}: {v.scopes?.length ? v.scopes.map((x) => SCOPE_LABEL[x] ?? x).join(", ") : "can be used for anything"}
                   </summary>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 10, padding: "4px 0" }}>
-                    {NUMBER_SCOPES.map((scope) => {
-                      const on = !v.scopes?.length || v.scopes.includes(scope);
+                    {ALL.map((scope) => {
+                      const on = !v.scopes?.length || (v.scopes as string[]).includes(scope);
                       return (
                         <label key={scope} className="props__check">
                           <input
                             type="checkbox"
-                            aria-label={`${v.name} for ${NUMBER_SCOPE_LABEL[scope]}`}
+                            aria-label={`${v.name} for ${SCOPE_LABEL[scope]}`}
                             checked={on}
                             onChange={(e) => {
-                              const current: string[] = v.scopes?.length ? [...v.scopes] : [...NUMBER_SCOPES];
+                              const current: string[] = v.scopes?.length ? [...v.scopes] : [...ALL];
                               const next = e.target.checked ? [...current, scope] : current.filter((x) => x !== scope);
-                              run(() => doc.setVariableScopes(v.id, next.length ? next : [...NUMBER_SCOPES]));
+                              run(() => doc.setVariableScopes(v.id, next.length ? next : [...ALL]));
                             }}
                           />
-                          {NUMBER_SCOPE_LABEL[scope]}
+                          {SCOPE_LABEL[scope]}
                         </label>
                       );
                     })}
                   </div>
                 </details>
-              ))
+                );
+              })
             : []),
           ])}
         </div>

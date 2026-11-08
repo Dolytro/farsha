@@ -122,7 +122,7 @@ describe('variable scopes', () => {
     doc.setVariableScopes(n, ['SIZE', 'CORNER_RADIUS', 'OPACITY', 'SPACING', 'FONT_SIZE', 'STROKE_WIDTH', 'ROTATION']);
     expect(doc.getColorVariable(n)!.scopes).toBeUndefined();
     const b = doc.createValueVariable('BOOLEAN', 'b', 'true');
-    expect(() => doc.setVariableScopes(b, ['SIZE'])).toThrow(/number variables/);
+    expect(() => doc.setVariableScopes(b, ['SIZE'])).toThrow(/number and colour/);
     expect(() => doc.setVariableScopes('missing', ['SIZE'])).toThrow();
   });
 

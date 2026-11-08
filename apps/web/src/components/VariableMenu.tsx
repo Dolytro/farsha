@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { DesignDoc } from "@farsha/design-core";
+import { variableAllowsUse, type ColorScope } from "@farsha/types";
 import { useEditor } from "../store";
 
 /** The "Apply variable" button next to a solid colour: pick a colour variable to bind the colour to. */
-export function VariableButton({ doc, onPick }: { doc: DesignDoc; onPick: (variableId: string) => void }) {
+export function VariableButton({ doc, onPick, use = "FILL" }: { doc: DesignDoc; onPick: (variableId: string) => void; use?: ColorScope }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLSpanElement>(null);
   const mode = doc.activeModeId();
-  const variables = doc.colorVariables();
+  const variables = doc.colorVariables().filter((v) => variableAllowsUse(v, use));
 
   useEffect(() => {
     if (!open) return;

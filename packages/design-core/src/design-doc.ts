@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, NUMBER_SCOPES, STROKE_STYLE_KEYS, TEXT_STYLE_KEYS, variableAllowsProperty, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type NumberScope, type Paint, type StrokeStyle, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
+import { BOOLEAN_BINDABLE, COLOR_SCOPES, NUMBER_BINDABLE, NUMBER_SCOPES, STROKE_STYLE_KEYS, TEXT_STYLE_KEYS, variableAllowsProperty, variableAllowsUse, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type Paint, type VariableScope, type StrokeStyle, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -1343,13 +1343,15 @@ export class DesignDoc {
     );
   }
 
-  /** Limit a number variable to some groups of properties (an empty list means all). Throws for anything but a number variable. */
+  /** Limit a number variable to some groups of properties, or a colour variable to some kinds of paint (an empty list means no limit). Throws for text and boolean variables. */
   setVariableScopes(id: string, scopes: string[]): void {
     const v = this.variableMap.get(id);
-    if (!v || v.kind !== 'NUMBER') throw new Error('Only number variables have a scope');
-    const clean = [...new Set(scopes)].filter((x): x is NumberScope => (NUMBER_SCOPES as readonly string[]).includes(x));
+    const isColor = !!v && (!v.kind || v.kind === 'COLOR');
+    if (!v || (v.kind !== 'NUMBER' && !isColor)) throw new Error('Only number and colour variables have a scope');
+    const all: readonly string[] = v.kind === 'NUMBER' ? NUMBER_SCOPES : COLOR_SCOPES;
+    const clean = [...new Set(scopes)].filter((x): x is VariableScope => all.includes(x));
     const { scopes: _old, ...rest } = v;
-    this.transact(() => this.variableMap.set(id, clean.length && clean.length < NUMBER_SCOPES.length ? { ...rest, scopes: clean } : rest));
+    this.transact(() => this.variableMap.set(id, clean.length && clean.length < all.length ? { ...rest, scopes: clean } : rest));
   }
 
   /** Make a property of a layer follow a number or boolean variable (or pass null to keep the value it has now and detach). */
@@ -1556,6 +1558,7 @@ export class DesignDoc {
     } else {
       const v = this.variableMap.get(variableId);
       if (!v || (v.kind && v.kind !== 'COLOR')) throw new Error('Variable not found');
+      if (!variableAllowsUse(v, key === 'strokes' ? 'STROKE' : node.type === 'TEXT' ? 'TEXT_FILL' : 'FILL')) throw new Error(`The scope of ${v.name} does not include this use`);
       next = { ...paint, variableId, color: this.resolveVariableValue(v, this.activeModeId()) || paint.color };
     }
     this.setStyle(nodeId, { [key]: (paints as Paint[]).map((p, i) => (i === index ? next : p)) } as StylePatch);
