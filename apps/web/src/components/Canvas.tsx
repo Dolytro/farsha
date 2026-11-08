@@ -17,6 +17,7 @@ import { snapBoxToPixels, snapMoveToPixels } from "../pixel-snap";
 import { componentSetFrames } from "../component-set-frames";
 import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
+import { lockAxis } from "../axis-lock";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -359,6 +360,8 @@ export function Canvas() {
     let dy = w.y - d.wy;
     if (d.kind === "move") movePoint.current = w;
     if (d.kind === "move") {
+      // Shift keeps the layers on one line
+      if (e.shiftKey) ({ dx, dy } = lockAxis(dx, dy));
       let aligned = false;
       if (d.startBox && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping) {
         const page = doc.getNode(pageId);
