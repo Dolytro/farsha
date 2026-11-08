@@ -40,6 +40,15 @@ export function MultiSection({ doc, ids }: { doc: DesignDoc; ids: string[] }) {
   const firstFills = nodes.filter((n) => "fills" in n && Array.isArray(n.fills)).map((n) => ("fills" in n ? ((n.fills as Paint[])[0] ?? null) : null));
   const solid = firstFills.every((f) => f && f.type === "SOLID") && firstFills.length > 0 ? commonValue(firstFills.map((f) => (f ? paintColor(f).toLowerCase() : ""))) : null;
   const applyFill = (color: string) => setCommonStyle(doc, ids, "fills", [{ type: "SOLID", color, opacity: 1 }]);
+  const withStroke = nodes.filter((n) => "strokes" in n && Array.isArray(n.strokes));
+  const firstStrokes = withStroke.map((n) => ("strokes" in n ? ((n.strokes as Paint[])[0] ?? null) : null));
+  const strokeColor = firstStrokes.length && firstStrokes.every((f) => f && f.type === "SOLID") ? commonValue(firstStrokes.map((f) => (f ? paintColor(f).toLowerCase() : ""))) : null;
+  const weight = withStroke.length ? commonValue(withStroke.map((n) => ("strokeWidth" in n ? (n.strokeWidth ?? 0) : 0))) : null;
+  const applyStroke = (color: string) => {
+    setCommonStyle(doc, ids, "strokes", [{ type: "SOLID", color, opacity: 1 }]);
+    // a layer that had no stroke weight would draw nothing: give it 1 px
+    for (const n of withStroke) if (!("strokeWidth" in n) || !n.strokeWidth) setCommonStyle(doc, [n.id], "strokeWidth", 1);
+  };
   return (
     <>
       <section className="props__section">
@@ -94,6 +103,38 @@ export function MultiSection({ doc, ids }: { doc: DesignDoc; ids: string[] }) {
           )}
         </div>
       </section>
+      {withStroke.length > 0 && (
+        <section className="props__section">
+          <h3 className="props__heading">Stroke</h3>
+          <div className="fill-row">
+            {firstStrokes.every((f) => !f) ? (
+              <button className="props__add" title="Add a black stroke to every selected layer" aria-label="Add stroke to the selection" onClick={() => applyStroke("#000000")}>
+                +
+              </button>
+            ) : (
+              <>
+                <ColorSwatch value={strokeColor ?? "#000000"} onChange={applyStroke} />
+                {strokeColor ? <HexInput value={strokeColor} onChange={applyStroke} /> : <span className="fill-row__hex" title="The layers have different strokes: pick a colour to give them all the same one">Mixed</span>}
+              </>
+            )}
+            <label className="field" title="Stroke weight of every selected layer">
+              <span className="field__label">▭</span>
+              <input
+                className="field__input"
+                type="number"
+                min={0}
+                aria-label="Stroke weight of the selection"
+                placeholder="Mixed"
+                value={weight ?? ""}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (e.target.value !== "" && Number.isFinite(v)) setCommonStyle(doc, ids, "strokeWidth", Math.max(0, v));
+                }}
+              />
+            </label>
+          </div>
+        </section>
+      )}
       {firstFills.length > 0 && (
         <section className="props__section">
           <h3 className="props__heading">Fill</h3>
