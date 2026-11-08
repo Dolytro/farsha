@@ -20,6 +20,7 @@ const LANGS: { id: Language; label: string }[] = [
   { id: "swiftui", label: "SwiftUI" },
   { id: "uikit", label: "UIKit" },
   { id: "compose", label: "Compose" },
+  { id: "androidxml", label: "Android XML" },
 ];
 
 const n = (v: number) => `${Math.round(v * 100) / 100}`;

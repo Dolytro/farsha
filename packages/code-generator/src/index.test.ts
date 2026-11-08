@@ -479,3 +479,72 @@ describe("UIKit", () => {
     expect(code).toContain("addSubview(");
   });
 });
+
+describe("Android XML", () => {
+  it("makes a FrameLayout with margins and a drawable for the rounded fill", () => {
+    const { doc, frame } = setup();
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "androidxml");
+    expect(code).toContain("<!-- res/layout/card.xml -->");
+    expect(code).toContain("<FrameLayout");
+    expect(code).toContain('xmlns:android="http://schemas.android.com/apk/res/android"');
+    expect(code).toContain('android:layout_width="300dp"');
+    expect(code).toContain('android:layout_marginStart="20dp"');
+    expect(code).toContain('android:layout_marginTop="30dp"');
+    expect(code).toContain('android:background="@drawable/button_bg"');
+    expect(code).toContain("<!-- res/drawable/button_bg.xml -->");
+    expect(code).toContain('<solid android:color="#FF388BFF" />');
+    expect(code).toContain('<corners android:radius="8dp" />');
+    expect(code).toContain('android:text="Buy &lt;now&gt;"');
+    expect(code).toContain('android:textStyle="bold"');
+    expect(code).toContain('android:textSize="16sp"');
+  });
+
+  it("turns auto layout into a LinearLayout with padding, gravity and gap margins", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const row = doc.createNode("FRAME", { parentId: page, props: { name: "Row", width: 200, height: 40, layoutMode: "HORIZONTAL", itemSpacing: 12, paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8, counterAxisAlign: "CENTER" } as never });
+    doc.createNode("ELLIPSE", { parentId: row, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#ff0000", opacity: 0.5 }] } });
+    doc.createNode("ELLIPSE", { parentId: row, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#00ff00", opacity: 1 }] } });
+    const code = generateCode(doc.getNode(row)!, (id) => doc.children(id), "androidxml");
+    expect(code).toContain("<LinearLayout");
+    expect(code).toContain('android:orientation="horizontal"');
+    expect(code).toContain('android:paddingStart="8dp"');
+    expect(code).toContain('android:gravity="start|center_vertical"');
+    expect(code.match(/android:layout_marginStart="12dp"/g)).toHaveLength(1); // only the second dot
+    expect(code).toContain('<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">');
+    expect(code).toContain('<solid android:color="#80FF0000" />');
+    expect(code).toContain("res/drawable/dot_2_bg.xml");
+  });
+
+  it("writes gradients, strokes and elevation, and snaps the gradient angle", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("RECTANGLE", {
+      parentId: page,
+      props: {
+        name: "Banner",
+        width: 100,
+        height: 50,
+        fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#000000", opacity: 1 }, { position: 0.5, color: "#888888", opacity: 1 }, { position: 1, color: "#ffffff", opacity: 1 }] }],
+        strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }],
+        strokeWidth: 2,
+        effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }],
+      } as never,
+    });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "androidxml");
+    expect(code).toContain('android:startColor="#FF000000"');
+    expect(code).toContain('android:centerColor="#FF888888"');
+    expect(code).toContain('android:endColor="#FFFFFFFF"');
+    expect(code).toContain('android:angle="270"'); // top to bottom in Farsha is 270 for Android
+    expect(code).toContain('<stroke android:width="2dp" android:color="#FF00FF00" />');
+    expect(code).toContain('android:elevation="4dp"');
+  });
+
+  it("a single text layer is its own TextView with the namespace on it", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("TEXT", { parentId: page, props: { name: "Title", characters: "Hi" } });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "androidxml");
+    expect(code).toMatch(/<TextView\s+xmlns:android=/);
+  });
+});
