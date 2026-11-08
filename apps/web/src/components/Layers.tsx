@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
+import { rowWindow, scrollToRow } from "../virtual-rows";
 import type { DesignNode } from "@farsha/types";
 import { useEditor } from "../store";
 import { addPage, deletePage, duplicatePage, movePage } from "../pages";
@@ -77,6 +78,32 @@ export function Layers() {
   const [drop, setDrop] = useState<{ id: string; where: DropWhere } | null>(null);
   const dragging = useRef<string[]>([]);
   const rows = layerRows(doc, pageId, collapsed, query, kind);
+  // Only the rows in view are drawn (a file can have thousands of layers): the list tracks its own scroll position and height
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const [scroll, setScroll] = useState({ top: 0, height: 600 });
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      setScroll((s) => (s.top === el.scrollTop && s.height === el.clientHeight ? s : { top: el.scrollTop, height: el.clientHeight }));
+    };
+    const queue = () => {
+      if (!frame) frame = requestAnimationFrame(read);
+    };
+    read();
+    el.addEventListener("scroll", queue, { passive: true });
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(queue) : null;
+    observer?.observe(el);
+    return () => {
+      el.removeEventListener("scroll", queue);
+      observer?.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  });
+  const rowHeight = Number.parseFloat(typeof document !== "undefined" ? getComputedStyle(document.documentElement).getPropertyValue("--row-h") : "") || 24;
+  const visible = rowWindow(rows.length, rowHeight, scroll.top, scroll.height);
 
   const toggleCollapsed = (id: string) =>
     setCollapsed((c) => {
@@ -92,7 +119,7 @@ export function Layers() {
     return f < 0.5 ? "before" : "after";
   };
 
-  const renderRow = ({ id, depth, hasChildren }: LayerRow): ReactElement | null => {
+  const renderRow = ({ id, depth, hasChildren }: LayerRow, index: number): ReactElement | null => {
     const n = doc.getNode(id);
     if (!n) return null;
     return (
@@ -102,6 +129,8 @@ export function Layers() {
         tabIndex={selection[0] === n.id || (!selection.length && rows[0]?.id === n.id) ? 0 : -1}
         aria-selected={selection.includes(n.id)}
         aria-level={depth + 1}
+        aria-setsize={rows.length}
+        aria-posinset={index + 1}
         aria-expanded={hasChildren ? !collapsed.has(n.id) : undefined}
         aria-label={`${n.name}, ${n.type.toLowerCase()}${n.visible ? "" : ", hidden"}${n.locked ? ", locked" : ""}`}
         className={`layers__item${selection.includes(n.id) ? " layers__item--selected" : ""}${n.visible ? "" : " layers__item--hidden"}${drop?.id === n.id ? ` layers__item--drop-${drop.where}` : ""}`}
@@ -338,6 +367,7 @@ export function Layers() {
             </button>
           </div>
           <ul
+            ref={listRef}
             className="layers__list"
             role="tree"
             aria-label="Layers"
@@ -359,10 +389,16 @@ export function Layers() {
               if (target.toggle) toggleCollapsed(target.toggle.id);
               if (target.select) {
                 select([target.select]);
-                requestAnimationFrame(() => list.querySelector<HTMLElement>('[aria-selected="true"]')?.focus());
+                const at = rows.findIndex((r) => r.id === target.select);
+                if (at >= 0) list.scrollTop = scrollToRow(at, rowHeight, list.scrollTop, list.clientHeight);
+                requestAnimationFrame(() => requestAnimationFrame(() => list.querySelector<HTMLElement>('[aria-selected="true"]')?.focus()));
               }
             }}
-          >{rows.map(renderRow)}</ul>
+          >
+            {visible.before > 0 && <li role="presentation" aria-hidden style={{ height: visible.before, listStyle: "none" }} />}
+            {rows.slice(visible.start, visible.end).map((r, i) => renderRow(r, visible.start + i))}
+            {visible.after > 0 && <li role="presentation" aria-hidden style={{ height: visible.after, listStyle: "none" }} />}
+          </ul>
         </>
       )}
     </aside>

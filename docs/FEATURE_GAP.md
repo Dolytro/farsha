@@ -160,7 +160,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 
 ## 11. Quality
 
-- Performance: SVG renderer slows with thousands of nodes; no Canvas / WebGL path yet.
+- Performance: SVG renderer slows with thousands of nodes (the 7 500 node Landing board of the starter file drags at about 2 frames a second: most of the time is the browser painting the blurs and gradients); no Canvas / WebGL path yet. Done: the layers list draws only the rows in view (`virtual-rows.ts`), and text widths are remembered between redraws (`canvasMeasure`).
 - Text: wrapping uses canvas measureText in the browser (an estimate in exports); limited fonts, no Google Fonts yet.
 - Images are stored inline in the document (no separate asset pipeline).
 - Accessibility: ✅ the layers list is a tree (roles, levels, expanded and selected states, Up / Down / Left / Right / Home / End / Enter keys) and the canvas announces the page and selection; Reduce motion preference. Still minimal: moving layers and editing properties from the keyboard alone, canvas content for screen readers.

@@ -4,12 +4,25 @@ import { layoutText, type Measure } from "@farsha/canvas-engine";
 let ctx: CanvasRenderingContext2D | null | undefined;
 
 /** Real text width from the browser's canvas, so wrapping and auto sizing match what is drawn. */
+// Every redraw measures every word of every text layer again, and measuring is the slow part of a redraw: widths are remembered by font and text.
+// They are forgotten when a web font finishes loading, because the widths measured before it arrived belong to the fallback font.
+const widths = new Map<string, number>();
+const MAX_REMEMBERED = 40000;
+if (typeof document !== "undefined" && document.fonts?.addEventListener) document.fonts.addEventListener("loadingdone", () => widths.clear());
+
 export const canvasMeasure: Measure = (text, f) => {
   if (ctx === undefined) ctx = document.createElement("canvas").getContext("2d");
   if (!ctx) return text.length * (f.size * 0.56 + f.letterSpacing);
-  ctx.font = `${f.weight} ${f.size}px ${f.family}`;
-  (ctx as CanvasRenderingContext2D & { fontVariantCaps?: string }).fontVariantCaps = f.smallCaps ? "small-caps" : "normal";
-  return ctx.measureText(text).width + f.letterSpacing * text.length;
+  const key = `${f.weight}|${f.size}|${f.smallCaps ? 1 : 0}|${f.family}|${text}`;
+  let width = widths.get(key);
+  if (width === undefined) {
+    ctx.font = `${f.weight} ${f.size}px ${f.family}`;
+    (ctx as CanvasRenderingContext2D & { fontVariantCaps?: string }).fontVariantCaps = f.smallCaps ? "small-caps" : "normal";
+    width = ctx.measureText(text).width;
+    if (widths.size >= MAX_REMEMBERED) widths.clear();
+    widths.set(key, width);
+  }
+  return width + f.letterSpacing * text.length;
 };
 
 /** Apply the layer's auto-resize mode: auto width fits both sides, auto height keeps the width and fits the height. */
