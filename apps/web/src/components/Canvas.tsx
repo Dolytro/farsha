@@ -12,6 +12,7 @@ import { gridRects, maskMarkup } from "@farsha/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
 import { startShapeParams } from "../shape-params";
+import { groupBox, resizeGroup, type GroupItem } from "../multi-resize";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -28,6 +29,7 @@ type Drag =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
   | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean }
+  | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
   | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
@@ -206,6 +208,16 @@ export function Canvas() {
       return;
     }
     const corner = el.dataset.corner as Handle | undefined;
+    if (corner && selection.length > 1 && !viewer) {
+      // Several layers: the box around them resizes and every layer follows it (layers must share a parent so their positions are comparable)
+      const items = selection.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n && !n.locked).map((n) => ({ id: n.id, x: n.x, y: n.y, width: n.width, height: n.height }));
+      const box = groupBox(items);
+      if (box && items.length === selection.length && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1) {
+        doc.stopCapturing();
+        drag.current = { kind: "multiresize", corner, wx: w.x, wy: w.y, box, items };
+      }
+      return;
+    }
     if (corner && selection[0]) {
       const box = doc.getNode(selection[0])!;
       doc.stopCapturing();
@@ -326,6 +338,19 @@ export function Canvas() {
     } else if (d.kind === "scale") {
       const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: true, fromCenter: e.altKey });
       doc.patchNodes(buildScaleUpdates(d.snapshot, next));
+    } else if (d.kind === "multiresize") {
+      const to = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
+      const next = resizeGroup(d.items, d.box, to);
+      for (const [id, box] of Object.entries(next)) {
+        const before = d.items.find((i) => i.id === id)!;
+        doc.resizeNode(id, box);
+        const node = doc.getNode(id);
+        if (node?.type === "TEXT") {
+          if (box.height !== before.height) doc.setText(id, { textAutoResize: "NONE" });
+          else if (box.width !== before.width && (node.textAutoResize ?? "WIDTH_AND_HEIGHT") === "WIDTH_AND_HEIGHT") doc.setText(id, { textAutoResize: "HEIGHT" });
+          fitText(doc, id);
+        }
+      }
     } else if (d.kind === "resize") {
       // Shift keeps the ratio (so does a layer with locked proportions), Alt resizes from the centre (Figma).
       const locked = !!doc.getNode(d.id)?.lockAspect;
@@ -693,6 +718,9 @@ export function Canvas() {
   const CURSORS: Record<Handle, string> = { n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize", nw: "nwse-resize", se: "nwse-resize", ne: "nesw-resize", sw: "nesw-resize" };
   const selNode = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
   const rotated = !!selNode && !!selNode.rotation;
+  // Several layers of one parent, none locked or turned: the box around them gets resize handles
+  const multiResizable =
+    selection.length > 1 && !devMode && !viewer && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1 && selection.every((id) => { const n = doc.getNode(id); return !!n && !n.locked && !n.rotation; });
   const corners: { c: Handle; x: number; y: number }[] = sel
     ? [
         { c: "nw", x: sel.x, y: sel.y },
@@ -875,7 +903,7 @@ export function Canvas() {
                     style={{ cursor: "alias" }}
                   />
                 ))}
-              {selection.length === 1 && !devMode && !rotated &&
+              {(selection.length === 1 || multiResizable) && !devMode && !rotated &&
                 // Invisible strips along the four sides, so every edge can be dragged like in Figma.
                 ([
                   ["n", sel.x, sel.y - hs / 2, sel.width, hs],
@@ -885,7 +913,7 @@ export function Canvas() {
                 ] as [Handle, number, number, number, number][]).map(([h, x, y, w, ht]) => (
                   <rect key={h} className="canvas__handle" data-corner={h} x={x} y={y} width={w} height={ht} fill="transparent" style={{ cursor: CURSORS[h] }} />
                 ))}
-              {selection.length === 1 && !devMode && !rotated &&
+              {(selection.length === 1 || multiResizable) && !devMode && !rotated &&
                 corners.map(({ c, x, y }) => (
                   <rect
                     key={c}
