@@ -13,7 +13,7 @@ import { useEffect, useRef, useState, type PointerEvent, type ReactElement } fro
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
 import { startShapeParams } from "../shape-params";
 import { groupBox, resizeGroup, type GroupItem } from "../multi-resize";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -28,7 +28,7 @@ import { loadDefaults, withDefaults } from "../defaults";
 type Drag =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
-  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean }
+  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean; offset: { x: number; y: number }; targets: Box[] }
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
@@ -226,7 +226,16 @@ export function Canvas() {
         drag.current = { kind: "scale", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, snapshot: [box, ...doc.descendants(box.id)] };
         return;
       }
-      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, flipX: !!box.flipX, flipY: !!box.flipY };
+      // Smart guides while resizing: the box is in its parent's coordinates, the other layers and the parent frame are in canvas coordinates
+      const abs = doc.absoluteBox(box.id);
+      const parent = box.parentId ? doc.getNode(box.parentId) : undefined;
+      const targets = (box.parentId ? doc.children(box.parentId) : [])
+        .filter((n) => n.visible && n.id !== box.id)
+        .map((n) => doc.absoluteBox(n.id))
+        .filter((b): b is Box => !!b);
+      const parentBox = parent && parent.type !== "PAGE" && parent.type !== "DOCUMENT" ? doc.absoluteBox(parent.id) : undefined;
+      if (parentBox) targets.push(parentBox);
+      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, flipX: !!box.flipX, flipY: !!box.flipY, offset: abs ? { x: abs.x - box.x, y: abs.y - box.y } : { x: 0, y: 0 }, targets };
       return;
     }
     const labelId = el.dataset.labelId;
@@ -357,7 +366,18 @@ export function Canvas() {
       const opts = { keepRatio: e.shiftKey || locked, fromCenter: e.altKey };
       const flipping = useEditor.getState().prefs.flipWhileResizing;
       const turned = flipping ? resizeBoxFlip(d.box, d.corner, dx, dy, opts) : { box: resizeBox(d.box, d.corner, dx, dy, opts), flipX: false, flipY: false };
-      const next = turned.box;
+      let next = turned.box;
+      // Edges snap to other layers and ruler guides unless Ctrl is held; not while the ratio is kept, resizing from the centre, or flipping
+      if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping && !opts.keepRatio && !opts.fromCenter && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation) {
+        const page = doc.getNode(pageId);
+        const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const snapped = snapResize({ x: next.x + d.offset.x, y: next.y + d.offset.y, width: next.width, height: next.height }, d.corner, d.targets, 5 / viewport.zoom, {
+          xs: guideList.filter((g) => g.axis === "x").map((g) => g.position),
+          ys: guideList.filter((g) => g.axis === "y").map((g) => g.position),
+        });
+        next = { x: snapped.box.x - d.offset.x, y: snapped.box.y - d.offset.y, width: snapped.box.width, height: snapped.box.height };
+        setGuides(snapped.guides);
+      } else setGuides([]);
       doc.resizeNode(d.id, next);
       if (flipping) {
         const now = doc.getNode(d.id);

@@ -38,3 +38,37 @@ describe("snapMove", () => {
     expect(r.guides.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+import { snapResize } from "./snap";
+
+describe("snapResize", () => {
+  const target = { x: 200, y: 0, width: 100, height: 100 };
+
+  it("snaps the right edge dragged by an east handle and leaves the left edge", () => {
+    const r = snapResize({ x: 100, y: 0, width: 97, height: 50 }, "e", [target], 5);
+    expect(r.box).toEqual({ x: 100, y: 0, width: 100, height: 50 });
+    expect(r.guides.some((g) => g.x1 === 200 && g.x2 === 200)).toBe(true);
+  });
+
+  it("snaps the left edge dragged by a west handle and keeps the right edge fixed", () => {
+    const r = snapResize({ x: 203, y: 0, width: 97, height: 50 }, "w", [target], 5);
+    expect(r.box.x).toBe(200);
+    expect(r.box.x + r.box.width).toBe(300);
+  });
+
+  it("snaps both edges of a corner handle, to centres as well", () => {
+    const r = snapResize({ x: 0, y: 0, width: 248, height: 52 }, "se", [target], 5);
+    expect(r.box.width).toBe(250); // the target's centre line
+    expect(r.box.height).toBe(50); // the target's middle line
+  });
+
+  it("does nothing out of range, never touches edges that are not dragged, and keeps sizes at 1 or more", () => {
+    expect(snapResize({ x: 0, y: 0, width: 150, height: 50 }, "e", [target], 5).box.width).toBe(150);
+    expect(snapResize({ x: 0, y: 0, width: 197, height: 52 }, "e", [target], 5).box.height).toBe(52);
+    expect(snapResize({ x: 0, y: 0, width: 2, height: 50 }, "e", [{ x: -3, y: 0, width: 1, height: 1 }], 10).box.width).toBeGreaterThanOrEqual(1);
+  });
+
+  it("also snaps to ruler guides", () => {
+    expect(snapResize({ x: 0, y: 0, width: 118, height: 40 }, "e", [], 5, { xs: [120] }).box.width).toBe(120);
+  });
+});

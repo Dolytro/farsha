@@ -58,3 +58,44 @@ export function snapMove(moving: Box, targets: Box[], threshold: number, extra: 
   }
   return { dx, dy, guides };
 }
+
+/**
+ * Snap the edges being dragged by a resize handle to the left / centre / right and top / middle / bottom lines of other boxes.
+ * Only the moving edges snap (an east handle moves the right edge, a north-west handle the left and top edges); the opposite edges stay put.
+ * `box` and `targets` share one coordinate space. Guides mark the lines the edges ended up on.
+ */
+export function snapResize(box: Box, handle: string, targets: Box[], threshold: number, extra: { xs?: number[]; ys?: number[] } = {}): { box: Box; guides: Guide[] } {
+  const hx = handle.includes("w") ? -1 : handle.includes("e") ? 1 : 0;
+  const hy = handle.includes("n") ? -1 : handle.includes("s") ? 1 : 0;
+  const xs = [...targets.flatMap((t) => lines(t.x, t.width)), ...(extra.xs ?? [])];
+  const ys = [...targets.flatMap((t) => lines(t.y, t.height)), ...(extra.ys ?? [])];
+  let { x, y, width, height } = box;
+  if (hx) {
+    const d = best([hx > 0 ? x + width : x], xs, threshold);
+    if (d && hx > 0) width = Math.max(1, width + d);
+    else if (d) {
+      const w = Math.max(1, width - d);
+      x += width - w;
+      width = w;
+    }
+  }
+  if (hy) {
+    const d = best([hy > 0 ? y + height : y], ys, threshold);
+    if (d && hy > 0) height = Math.max(1, height + d);
+    else if (d) {
+      const h = Math.max(1, height - d);
+      y += height - h;
+      height = h;
+    }
+  }
+  const out: Box = { x, y, width, height };
+  const guides: Guide[] = [];
+  const eps = 1e-6;
+  const edgesX = hx ? [hx > 0 ? x + width : x] : [];
+  const edgesY = hy ? [hy > 0 ? y + height : y] : [];
+  for (const t of targets) {
+    for (const mx of edgesX) for (const tx of lines(t.x, t.width)) if (Math.abs(mx - tx) < eps) guides.push({ x1: tx, x2: tx, y1: Math.min(y, t.y), y2: Math.max(y + height, t.y + t.height) });
+    for (const my of edgesY) for (const ty of lines(t.y, t.height)) if (Math.abs(my - ty) < eps) guides.push({ y1: ty, y2: ty, x1: Math.min(x, t.x), x2: Math.max(x + width, t.x + t.width) });
+  }
+  return { box: out, guides };
+}
