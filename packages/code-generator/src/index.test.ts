@@ -390,3 +390,92 @@ describe("grid flow CSS", () => {
     expect(declarations(doc.getNode(id)!, {}).find(([p]) => p === "display")?.[1]).toBe("flex");
   });
 });
+
+describe("UIKit", () => {
+  it("makes a UIView subclass that builds frames, a label and a rounded view in setup()", () => {
+    const { doc, frame } = setup();
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "uikit");
+    expect(code).toContain("import UIKit");
+    expect(code).toContain("final class Card: UIView {");
+    expect(code).toContain("private func setup() {");
+    expect(code).toContain("let button = UIView()");
+    expect(code).toContain("button.backgroundColor = UIColor(red: 0.22, green: 0.545, blue: 1, alpha: 1)");
+    expect(code).toContain("button.layer.cornerRadius = 8");
+    expect(code).toContain("button.frame = CGRect(x: 20, y: 30, width: 120, height: 44)");
+    expect(code).toContain("addSubview(button)");
+    expect(code).toContain("let buyNow = UILabel()");
+    expect(code).toContain('buyNow.text = "Buy <now>"');
+    expect(code).toContain(".semibold");
+  });
+
+  it("turns auto layout into a UIStackView with spacing and margins", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const row = doc.createNode("FRAME", { parentId: page, props: { name: "Row", width: 200, height: 40, layoutMode: "HORIZONTAL", itemSpacing: 12, paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8, counterAxisAlign: "CENTER" } as never });
+    const inner = doc.createNode("FRAME", { parentId: row, props: { name: "Chip", width: 30, height: 20, layoutMode: "VERTICAL", paddingLeft: 3 } as never });
+    doc.createNode("ELLIPSE", { parentId: inner, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#ff0000", opacity: 0.5 }] } });
+    const code = generateCode(doc.getNode(row)!, (id) => doc.children(id), "uikit");
+    expect(code).toContain("let stack = UIStackView()");
+    expect(code).toContain("stack.axis = .horizontal");
+    expect(code).toContain("stack.spacing = 12");
+    expect(code).toContain("let chip = UIStackView()");
+    expect(code).toContain("chip.axis = .vertical");
+    expect(code).toContain("chip.isLayoutMarginsRelativeArrangement = true");
+    expect(code).toContain("stack.addArrangedSubview(chip)");
+    expect(code).toContain("dot.layer.cornerRadius = 5");
+    expect(code).toContain("chip.addArrangedSubview(dot)");
+    expect(code).toContain("stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8)");
+    // the chip hugs its content: 3 of margin plus the 10 wide dot
+    expect(code).toContain("chip.widthAnchor.constraint(equalToConstant: 13).isActive = true");
+  });
+
+  it("writes gradients, borders and shadows", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const parent = doc.createNode("FRAME", { parentId: page, props: { name: "Host", width: 200, height: 100 } });
+    doc.createNode("RECTANGLE", {
+      parentId: parent,
+      props: {
+        name: "Banner",
+        width: 100,
+        height: 50,
+        opacity: 0.5,
+        fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#000000", opacity: 1 }, { position: 1, color: "#ffffff", opacity: 1 }] }],
+        strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }],
+        strokeWidth: 2,
+        effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }],
+      } as never,
+    });
+    const code = generateCode(doc.getNode(parent)!, (i) => doc.children(i), "uikit");
+    expect(code).toContain("let bannerGradient = CAGradientLayer()");
+    expect(code).toContain("bannerGradient.startPoint = CGPoint(x: 0.5, y: 0)");
+    expect(code).toContain("bannerGradient.endPoint = CGPoint(x: 0.5, y: 1)");
+    expect(code).toContain("banner.layer.insertSublayer(bannerGradient, at: 0)");
+    expect(code).toContain("banner.layer.borderWidth = 2");
+    expect(code).toContain("banner.layer.shadowOpacity = 0.25");
+    expect(code).toContain("banner.layer.shadowRadius = 4");
+    expect(code).toContain("banner.alpha = 0.5");
+  });
+
+  it("escapes text, avoids UIKit class names, and gives repeated names unique variables", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const root = doc.createNode("FRAME", { parentId: page, props: { name: "UIView", width: 100, height: 100 } });
+    doc.createNode("TEXT", { parentId: root, props: { name: "T", characters: 'Say "hi"' } });
+    doc.createNode("TEXT", { parentId: root, props: { name: "T", characters: 'Say "hi"' } });
+    const code = generateCode(doc.getNode(root)!, (i) => doc.children(i), "uikit");
+    expect(code).toContain("final class UIViewView: UIView {");
+    expect(code).toContain('.text = "Say \\"hi\\""');
+    expect(code).toContain("let sayHi = UILabel()");
+    expect(code).toContain("let sayHi2 = UILabel()");
+  });
+
+  it("a single text layer becomes the only subview", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("TEXT", { parentId: page, props: { name: "Title", characters: "Hi" } });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "uikit");
+    expect(code).toContain("final class Title: UIView {");
+    expect(code).toContain("addSubview(");
+  });
+});
