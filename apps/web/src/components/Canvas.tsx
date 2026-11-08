@@ -18,6 +18,7 @@ import { componentSetFrames } from "../component-set-frames";
 import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
+import { drawBox } from "../draw-box";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -470,12 +471,8 @@ export function Canvas() {
     } else if (d.kind === "line") {
       placeLine(d, w.x, w.y, e.shiftKey);
     } else if (d.kind === "draw") {
-      const drawn = {
-        x: Math.min(d.wx, w.x) - d.px,
-        y: Math.min(d.wy, w.y) - d.py,
-        width: Math.max(1, Math.abs(dx)),
-        height: Math.max(1, Math.abs(dy)),
-      };
+      const raw = drawBox({ x: d.wx, y: d.wy }, w, { shift: e.shiftKey, alt: e.altKey });
+      const drawn = { x: raw.x - d.px, y: raw.y - d.py, width: raw.width, height: raw.height };
       doc.resizeNode(d.id, !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap ? snapBoxToPixels(drawn) : drawn);
     } else {
       const box = { x: Math.min(d.wx, w.x), y: Math.min(d.wy, w.y), width: Math.abs(dx), height: Math.abs(dy) };
