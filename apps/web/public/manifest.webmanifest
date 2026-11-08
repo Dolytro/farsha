@@ -1,0 +1,11 @@
+{
+  "name": "Farsha",
+  "short_name": "Farsha",
+  "description": "A free, open source design tool that feels like Figma.",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#0e0d14",
+  "theme_color": "#0e0d14",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

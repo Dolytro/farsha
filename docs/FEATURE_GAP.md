@@ -126,7 +126,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Import SVG / images / drag and drop files | ❌ | P1 |
 | Version history, restore | 🟡 | Save a named version (Ctrl+Alt+S, Actions, cloud menu → Version history), list, restore (the current state is saved first), delete; newest 30 kept in this browser per file. Automatic versions done (an "Autosave" version every 10 minutes of editing, the newest 10 kept, marked Auto). Missing: versions on Drive (shared across devices), visual compare |
 | Branching (menu: Create branch) | ❌ | P3 |
-| Offline editing and sync queue | ❌ | P3 |
+| Offline editing and sync queue | 🟡 | A service worker (`apps/web/public/sw.js`, registered in production only) caches the editor so it opens without a network after the first visit (pages network first, hashed assets cache first, fonts and the starter file stale while revalidate); the working copy was already saved in the browser. Checked with a production build: reload with the network off still shows the editor. Missing: a sync queue for Drive saves while offline |
 
 ## 9. Sharing and collaboration
 
