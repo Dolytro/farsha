@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Reorder pages by dragging one onto another in the page list (one undo step).
 - ✅ Ellipse arc: Start, Sweep and Ratio fields in an Arc section for ellipses (pie, ring, ring sector; canvas and SVG / PNG export). Boolean operations and flatten follow the arc (a ring with a hole is one outline with a slit); CSS code and hit-testing still treat it as a full ellipse; no handles on the canvas.
 Menus and commands
 - Edit: ✅ Copy as text, Copy as CSS (all layers), Select all with same text properties / instance / variant. ✅ Select all matching properties (Ctrl+Alt+A, checked in the browser). Still missing: animated SVG

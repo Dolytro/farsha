@@ -1536,3 +1536,8 @@ textarea:focus-visible {
 .cdiagram__line--on:hover {
   background: var(--c-accent, #0d99ff);
 }
+
+/* Dragging a page onto another one puts it in that place. */
+.pages__item--drop {
+  box-shadow: inset 0 2px 0 var(--c-accent, #0d99ff);
+}

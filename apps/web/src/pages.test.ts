@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { addPage, adjacentPage, deletePage, duplicatePage, nextCopyPageName, nextPageName } from "./pages";
+import { addPage, adjacentPage, deletePage, duplicatePage, movePage, nextCopyPageName, nextPageName } from "./pages";
 
 describe("pages", () => {
   it("adds pages with unique names", () => {
@@ -68,5 +68,45 @@ describe("duplicatePage", () => {
     const { doc, page } = withLayers();
     duplicatePage(doc, page);
     expect(nextCopyPageName(doc, "Page 1")).toBe("Page 1 copy 2");
+  });
+});
+
+describe("movePage", () => {
+  const names = (doc: DesignDoc) => doc.pages().map((p) => p.name);
+  function three() {
+    const doc = new DesignDoc();
+    const a = doc.pages()[0]!.id;
+    const b = addPage(doc);
+    const c = addPage(doc);
+    return { doc, a, b, c };
+  }
+
+  it("moves a page down and up the list", () => {
+    const { doc, a, c } = three();
+    const first = names(doc);
+    expect(movePage(doc, a, 2)).toBe(true);
+    expect(names(doc)).toEqual([first[1], first[2], first[0]]);
+    expect(movePage(doc, c, 0)).toBe(true); // c was in the middle
+    expect(doc.pages()[0]!.id).toBe(c);
+  });
+
+  it("returns false when the page is already there, or unknown, and clamps the index", () => {
+    const { doc, a, c } = three();
+    const before = names(doc);
+    expect(movePage(doc, a, 0)).toBe(false);
+    expect(movePage(doc, "missing", 1)).toBe(false);
+    expect(names(doc)).toEqual(before);
+    expect(movePage(doc, a, 99)).toBe(true);
+    expect(doc.pages().map((p) => p.id)[2]).toBe(a);
+    expect(movePage(doc, c, -5)).toBe(true);
+    expect(doc.pages()[0]!.id).toBe(c);
+  });
+
+  it("is one undo step", () => {
+    const { doc, a } = three();
+    const before = doc.pages().map((p) => p.id);
+    movePage(doc, a, 2);
+    doc.undo();
+    expect(doc.pages().map((p) => p.id)).toEqual(before);
   });
 });

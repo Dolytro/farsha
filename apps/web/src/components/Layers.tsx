@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
 import type { DesignNode } from "@farsha/types";
 import { useEditor } from "../store";
-import { addPage, deletePage, duplicatePage } from "../pages";
+import { addPage, deletePage, duplicatePage, movePage } from "../pages";
 import { zoomFit } from "../actions";
 import { Select } from "./Select";
 import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow, treeKeyTarget, type TreeKey } from "../layers-tree";
@@ -58,6 +58,8 @@ export function Layers() {
     if (!doc.hasNode(pageId)) setPage(doc.pages()[0]!.id);
   });
 
+  const pageDrag = useRef<string | null>(null);
+  const [pageDrop, setPageDrop] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const collapseTick = useEditor((s) => s.collapseTick);
   // "Collapse layers" (Alt+L) folds every layer that has children.
@@ -228,7 +230,30 @@ export function Layers() {
         {pages.map((p) => (
           <li
             key={p.id}
-            className={`pages__item${p.id === pageId ? " pages__item--current" : ""}`}
+            className={`pages__item${p.id === pageId ? " pages__item--current" : ""}${pageDrop === p.id ? " pages__item--drop" : ""}`}
+            draggable={canEdit && renamingPage !== p.id}
+            onDragStart={(e) => {
+              pageDrag.current = p.id;
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", p.name);
+            }}
+            onDragOver={(e) => {
+              if (!pageDrag.current || pageDrag.current === p.id) return;
+              e.preventDefault();
+              setPageDrop(p.id);
+            }}
+            onDragLeave={() => setPageDrop((d) => (d === p.id ? null : d))}
+            onDrop={(e) => {
+              e.preventDefault();
+              const dragged = pageDrag.current;
+              pageDrag.current = null;
+              setPageDrop(null);
+              if (dragged && dragged !== p.id) movePage(doc, dragged, pages.findIndex((x) => x.id === p.id));
+            }}
+            onDragEnd={() => {
+              pageDrag.current = null;
+              setPageDrop(null);
+            }}
             onClick={() => setPage(p.id)}
             onDoubleClick={() => canEdit && setRenamingPage(p.id)}
           >
