@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useEditor } from "../store";
 import { HexInput } from "./HexInput";
 import { Select } from "./Select";
+import { NUMBER_SCOPES, NUMBER_SCOPE_LABEL } from "@farsha/types";
 import { fitText } from "../text-layout";
 import { exportVariables, importVariables, parseVariables } from "../variable-json";
 import { groupVariables, joinName, splitName } from "../variable-groups";
@@ -221,7 +222,36 @@ export function VariablesDialog() {
                 −
               </button>
             </div>
-          )),
+            )),
+          ...(tab === "number"
+            ? g.items.map(({ variable: v }) => (
+                <details key={`scope-${v.id}`} className="vars__scope" style={{ margin: "0 0 6px 4px", fontSize: 12 }}>
+                  <summary aria-label={`Scope of ${v.name}`} style={{ cursor: "pointer", opacity: 0.75 }}>
+                    {v.name}: {v.scopes?.length ? v.scopes.map((x) => NUMBER_SCOPE_LABEL[x]).join(", ") : "can be used for anything"}
+                  </summary>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, padding: "4px 0" }}>
+                    {NUMBER_SCOPES.map((scope) => {
+                      const on = !v.scopes?.length || v.scopes.includes(scope);
+                      return (
+                        <label key={scope} className="props__check">
+                          <input
+                            type="checkbox"
+                            aria-label={`${v.name} for ${NUMBER_SCOPE_LABEL[scope]}`}
+                            checked={on}
+                            onChange={(e) => {
+                              const current: string[] = v.scopes?.length ? [...v.scopes] : [...NUMBER_SCOPES];
+                              const next = e.target.checked ? [...current, scope] : current.filter((x) => x !== scope);
+                              run(() => doc.setVariableScopes(v.id, next.length ? next : [...NUMBER_SCOPES]));
+                            }}
+                          />
+                          {NUMBER_SCOPE_LABEL[scope]}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </details>
+              ))
+            : []),
           ])}
         </div>
         <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9") : tab === "text" ? doc.createTextVariable(`Text ${variables.length + 1}`, "Text") : doc.createValueVariable(tab === "number" ? "NUMBER" : "BOOLEAN", `${tab === "number" ? "Number" : "Boolean"} ${variables.length + 1}`, tab === "number" ? "0" : "true")))}>

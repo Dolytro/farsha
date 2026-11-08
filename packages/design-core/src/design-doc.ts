@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, STROKE_STYLE_KEYS, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type Paint, type StrokeStyle, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
+import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, NUMBER_SCOPES, STROKE_STYLE_KEYS, TEXT_STYLE_KEYS, variableAllowsProperty, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type NumberScope, type Paint, type StrokeStyle, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -1343,6 +1343,15 @@ export class DesignDoc {
     );
   }
 
+  /** Limit a number variable to some groups of properties (an empty list means all). Throws for anything but a number variable. */
+  setVariableScopes(id: string, scopes: string[]): void {
+    const v = this.variableMap.get(id);
+    if (!v || v.kind !== 'NUMBER') throw new Error('Only number variables have a scope');
+    const clean = [...new Set(scopes)].filter((x): x is NumberScope => (NUMBER_SCOPES as readonly string[]).includes(x));
+    const { scopes: _old, ...rest } = v;
+    this.transact(() => this.variableMap.set(id, clean.length && clean.length < NUMBER_SCOPES.length ? { ...rest, scopes: clean } : rest));
+  }
+
   /** Make a property of a layer follow a number or boolean variable (or pass null to keep the value it has now and detach). */
   bindProperty(nodeId: string, prop: string, variableId: string | null): void {
     const node = this.requireNode(nodeId) as unknown as Record<string, unknown>;
@@ -1353,6 +1362,7 @@ export class DesignDoc {
       const numeric = (NUMBER_BINDABLE as readonly string[]).includes(prop);
       const boolean = (BOOLEAN_BINDABLE as readonly string[]).includes(prop);
       if (!v || !(numeric ? v.kind === 'NUMBER' : boolean ? v.kind === 'BOOLEAN' : false)) throw new Error('That variable cannot drive this property');
+      if (!variableAllowsProperty(v, prop)) throw new Error(`The scope of ${v.name} does not include this property`);
       bindings[prop] = variableId;
     }
     this.setProps(nodeId, { varBindings: Object.keys(bindings).length ? bindings : null });

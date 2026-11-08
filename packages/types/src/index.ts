@@ -193,6 +193,42 @@ export interface VariableMode {
 export const NUMBER_BINDABLE = ['width', 'height', 'cornerRadius', 'opacity', 'itemSpacing', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'fontSize', 'strokeWidth', 'rotation'] as const;
 export const BOOLEAN_BINDABLE = ['visible'] as const;
 
+/** Groups of properties a number variable can be limited to (its scope). */
+export const NUMBER_SCOPES = ['SIZE', 'CORNER_RADIUS', 'OPACITY', 'SPACING', 'FONT_SIZE', 'STROKE_WIDTH', 'ROTATION'] as const;
+export type NumberScope = (typeof NUMBER_SCOPES)[number];
+
+export const NUMBER_SCOPE_LABEL: Record<NumberScope, string> = {
+  SIZE: 'Width and height',
+  CORNER_RADIUS: 'Corner radius',
+  OPACITY: 'Opacity',
+  SPACING: 'Gap and padding',
+  FONT_SIZE: 'Font size',
+  STROKE_WIDTH: 'Stroke weight',
+  ROTATION: 'Rotation',
+};
+
+const SCOPE_OF_PROP: Record<string, NumberScope> = {
+  width: 'SIZE',
+  height: 'SIZE',
+  cornerRadius: 'CORNER_RADIUS',
+  opacity: 'OPACITY',
+  itemSpacing: 'SPACING',
+  paddingLeft: 'SPACING',
+  paddingRight: 'SPACING',
+  paddingTop: 'SPACING',
+  paddingBottom: 'SPACING',
+  fontSize: 'FONT_SIZE',
+  strokeWidth: 'STROKE_WIDTH',
+  rotation: 'ROTATION',
+};
+
+/** Whether a variable may be bound to a property: always for a variable without a scope, otherwise only for the properties in its scope. */
+export function variableAllowsProperty(v: { scopes?: string[] }, prop: string): boolean {
+  if (!v.scopes?.length) return true;
+  const scope = SCOPE_OF_PROP[prop];
+  return !scope || v.scopes.includes(scope);
+}
+
 export interface ColorVariable {
   id: string;
   name: string;
@@ -200,6 +236,8 @@ export interface ColorVariable {
   kind?: 'COLOR' | 'STRING' | 'NUMBER' | 'BOOLEAN';
   /** Hex colour per mode id (the text for a text variable, a number as text for a number variable, "true" or "false" for a boolean). */
   values: Record<string, string>;
+  /** Number variables only: the property groups it may be bound to. Missing or empty means all of them. */
+  scopes?: NumberScope[];
 }
 
 /** A reusable colour: layers that use it get its paints as their fills. */
