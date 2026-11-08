@@ -20,7 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -725,45 +725,51 @@ export function Canvas() {
           </g>
         );
       }
+      // several fills draw the text once per fill, bottom first
+      const fills = textFills(n);
       const tf = textFill(n);
       return (
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
-          {tf.defs && <defs dangerouslySetInnerHTML={{ __html: tf.defs }} />}
-          <text
-            xmlSpace="preserve"
-            x={textPlacement(n).x}
-            textAnchor={textPlacement(n).anchor}
-            direction={textPlacement(n).rtl ? "rtl" : undefined}
-            unicodeBidi={textPlacement(n).rtl ? "plaintext" : undefined}
-            y={textBaseline(n) + verticalTextOffset(n, layoutText(n, canvasMeasure).height)}
-            letterSpacing={n.letterSpacing || undefined}
-            fill={tf.defs ? tf.fill : color}
-            fontFamily={n.fontFamily}
-            fontSize={n.fontSize}
-            fontWeight={n.fontWeight}
-            {...textFontStyle(n)}
-          >
-            {(() => {
-              const layout = layoutText(n, canvasMeasure);
-              return layout.lines.flatMap((line, i) =>
-                lineSegments(line, layout.starts[i] ?? 0, n.runs).map((seg, j) => (
-                  <tspan
-                    key={`${i}-${j}`}
-                    x={j === 0 ? textPlacement(n).x + (textPlacement(n).anchor === "start" && !textPlacement(n).rtl ? layout.indent[i] ?? 0 : 0) : undefined}
-                    dy={j === 0 && i ? lineHeightPx(n) + (layout.lineGap[i] ?? 0) : undefined}
-                    wordSpacing={layout.wordSpacing[i] || undefined}
-                    fill={seg.color}
-                    fontWeight={seg.bold ? 700 : undefined}
-                    fontStyle={seg.italic ? "italic" : undefined}
-                    textDecoration={seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : undefined}
-                  >
-                    {seg.text}
-                  </tspan>
-                )),
-              );
-            })()}
-          </text>
+          {fills.map((f, fi) => f.defs && <defs key={`defs-${fi}`} dangerouslySetInnerHTML={{ __html: f.defs }} />)}
+          {(fills.length > 1 ? fills : [{ defs: tf.defs, fill: tf.fill, opacity: 1 }]).map((f, fi) => (
+            <text
+              key={`fill-${fi}`}
+              xmlSpace="preserve"
+              x={textPlacement(n).x}
+              textAnchor={textPlacement(n).anchor}
+              direction={textPlacement(n).rtl ? "rtl" : undefined}
+              unicodeBidi={textPlacement(n).rtl ? "plaintext" : undefined}
+              y={textBaseline(n) + verticalTextOffset(n, layoutText(n, canvasMeasure).height)}
+              letterSpacing={n.letterSpacing || undefined}
+              fill={f.defs ? f.fill : fills.length > 1 ? f.fill : color}
+              fillOpacity={fills.length > 1 && f.opacity !== 1 ? f.opacity : undefined}
+              fontFamily={n.fontFamily}
+              fontSize={n.fontSize}
+              fontWeight={n.fontWeight}
+              {...textFontStyle(n)}
+            >
+              {(() => {
+                const layout = layoutText(n, canvasMeasure);
+                return layout.lines.flatMap((line, i) =>
+                  lineSegments(line, layout.starts[i] ?? 0, n.runs).map((seg, j) => (
+                    <tspan
+                      key={`${i}-${j}`}
+                      x={j === 0 ? textPlacement(n).x + (textPlacement(n).anchor === "start" && !textPlacement(n).rtl ? layout.indent[i] ?? 0 : 0) : undefined}
+                      dy={j === 0 && i ? lineHeightPx(n) + (layout.lineGap[i] ?? 0) : undefined}
+                      wordSpacing={layout.wordSpacing[i] || undefined}
+                      fill={seg.color}
+                      fontWeight={seg.bold ? 700 : undefined}
+                      fontStyle={seg.italic ? "italic" : undefined}
+                      textDecoration={seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : undefined}
+                    >
+                      {seg.text}
+                    </tspan>
+                  )),
+                );
+              })()}
+            </text>
+          ))}
         </g>
       );
     }

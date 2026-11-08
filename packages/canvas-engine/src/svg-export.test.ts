@@ -617,3 +617,17 @@ describe("gradient strokes", () => {
     expect(out).toMatch(/stroke="url\(#sg-[^"]+-1\)"/);
   });
 });
+
+describe("text with several fills", () => {
+  it("draws the text once per fill, bottom first, and keeps a single fill as before", () => {
+    const { doc, text } = setup();
+    const single = exportSvg(doc, [text])!.svg;
+    expect((single.match(/<text /g) ?? []).length).toBe(1);
+    doc.setStyle(text, { fills: [{ type: "SOLID", color: "#111111", opacity: 1 }, { type: "GRADIENT_LINEAR", angle: 0, opacity: 0.5, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }] });
+    const out = exportSvg(doc, [text])!.svg;
+    expect((out.match(/<text /g) ?? []).length).toBe(2);
+    expect(out.indexOf('fill="#111111"')).toBeLessThan(out.indexOf("url(#tg-"));
+    expect(out).toContain('fill-opacity="0.5"');
+    expect(out).toMatch(/<linearGradient id="tg-[^"]+-1"/);
+  });
+});

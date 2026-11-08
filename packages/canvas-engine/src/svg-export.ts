@@ -1,6 +1,6 @@
 import type { DesignDoc } from "@farsha/design-core";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@farsha/types";
-import { textFill, effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
+import { textFill, textFills, effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
@@ -98,7 +98,14 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
         const offset = n.textAlign === "CENTER" ? ' startOffset="50%" text-anchor="middle"' : n.textAlign === "RIGHT" ? ' startOffset="100%" text-anchor="end"' : "";
         return `<g transform="${transform}"${opacity}>${tfDefs}<defs><path id="${pid}" d="${pathD}" fill="none"/></defs><text${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${textFillAttrs} xml:space="preserve"><textPath href="#${pid}"${offset}>${esc(lines.join(" "))}</textPath></text></g>`;
       }
-      return `<g transform="${transform}"${opacity}>${tfDefs}<text x="${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${textFillAttrs} xml:space="preserve">${spans}</text></g>`;
+      // several fills: the text is drawn once per fill, bottom first
+      const fills = textFills(n);
+      const one = (fillAttrsOf: string) => `<text x="${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrsOf} xml:space="preserve">${spans}</text>`;
+      if (fills.length > 1) {
+        const defs = fills.filter((f) => f.defs).map((f) => f.defs).join("");
+        return `<g transform="${transform}"${opacity}>${defs ? `<defs>${defs}</defs>` : ""}${fills.map((f) => one(` fill="${f.fill}"${f.opacity !== 1 ? ` fill-opacity="${num(f.opacity)}"` : ""}`)).join("")}</g>`;
+      }
+      return `<g transform="${transform}"${opacity}>${tfDefs}${one(textFillAttrs)}</g>`;
     }
     case "FRAME": {
       const clipId = `clip-${n.id}`;

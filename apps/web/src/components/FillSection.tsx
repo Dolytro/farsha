@@ -45,7 +45,7 @@ export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
   const fills = style && editingStyle ? style.paints : node.fills;
   const setFills = (next: Paint[]) => (style ? doc.updateFillStyle(style.id, { paints: next }) : doc.setStyle(node.id, { fills: next }));
   // Text is drawn with a single colour, so it keeps one fill.
-  const canAdd = !style && (node.type !== "TEXT" || fills.length === 0);
+  const canAdd = !style;
   return (
     <section className="props__section">
       <h3 className="props__heading props__heading--row">

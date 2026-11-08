@@ -372,6 +372,18 @@ export function textFill(n: DesignNode): { defs: string; fill: string } {
   return { defs: "", fill: p ? hex(paintColor(p)) : "none" };
 }
 
+/** Every fill of a text layer, bottom first, as a `fill` value (with its gradient definition) and opacity: the text is drawn once per fill. */
+export function textFills(n: DesignNode): { defs: string; fill: string; opacity: number }[] {
+  const list = "fills" in n && Array.isArray(n.fills) ? n.fills : [];
+  return list.map((p, i) => {
+    if (isGradient(p)) {
+      const id = `tg-${safeId(n.id)}-${i}`;
+      return { defs: gradientDef(id, p), fill: `url(#${id})`, opacity: Number(unit(p.opacity)) };
+    }
+    return { defs: "", fill: hex(paintColor(p)), opacity: Number(unit(p.opacity)) };
+  });
+}
+
 const vectorGradientId = (n: DesignNode) => `vg-${safeId(n.id)}`;
 const vectorStrokeGradientId = (n: DesignNode) => `vgs-${safeId(n.id)}`;
 
