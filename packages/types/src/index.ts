@@ -517,6 +517,8 @@ export interface AutoLayoutProps {
   counterSizing?: LayoutSizing;
   /** Wrap children onto new lines when they do not fit along the layout direction (needs a fixed size in that direction). */
   layoutWrap?: boolean;
+  /** Canvas stacking (Figma): the first layer in the frame is drawn on top of the others instead of the last. */
+  layoutFirstOnTop?: boolean;
   /** Space between wrapped lines. */
   counterSpacing?: number;
   /** Horizontal layout with Wrap on: this many children per row, lined up in columns (a grid). 0 or missing is an ordinary wrap. */

@@ -681,7 +681,7 @@ export function Canvas() {
     if (!n.visible || n.isMask) return null;
     const { color } = fillOf(n);
     const transform = nodeTransform(n);
-    const kids = renderChildren(doc.children(n.id));
+    const kids = renderChildren(doc.paintOrder(n.id));
     const video = n.type === "RECTANGLE" ? videoUrl(doc, n.videoAssetId) : undefined;
     if (video && n.type === "RECTANGLE") {
       // a video layer shows the first frame; it plays when the prototype is previewed

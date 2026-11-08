@@ -66,3 +66,16 @@ describe("hit test: thin and rotated layers", () => {
     expect(hitTest(doc, page, 90, 5)).toBeUndefined();
   });
 });
+
+describe("first on top stacking", () => {
+  it("an auto layout frame with first on top is hit on its first layer", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { layoutMode: "HORIZONTAL", width: 100, height: 100 } });
+    const a = doc.createNode("RECTANGLE", { parentId: frame, props: { width: 10, height: 10, layoutPositioning: "ABSOLUTE" } });
+    const b = doc.createNode("RECTANGLE", { parentId: frame, props: { width: 10, height: 10, layoutPositioning: "ABSOLUTE" } });
+    expect(hitTest(doc, page, 5, 5, true)?.id).toBe(b);
+    doc.setStyle(frame, { layoutFirstOnTop: true });
+    expect(hitTest(doc, page, 5, 5, true)?.id).toBe(a);
+  });
+});

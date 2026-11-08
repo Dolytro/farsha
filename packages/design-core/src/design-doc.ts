@@ -518,6 +518,13 @@ export class DesignDoc {
     this.transact(() => this.stripInstance(id, this.rawChildren()));
   }
 
+  /** The children of a layer from the bottom of the drawing to the top. An auto layout frame with "first on top" stacking draws its first layer last. */
+  paintOrder(id: string): DesignNode[] {
+    const list = this.children(id);
+    const n = this.getNode(id);
+    return n?.type === 'FRAME' && n.layoutFirstOnTop && (n.layoutMode === 'HORIZONTAL' || n.layoutMode === 'VERTICAL') ? [...list].reverse() : list;
+  }
+
   // ---------- variants ----------
 
   /** The main components of a variant set, left to right. */

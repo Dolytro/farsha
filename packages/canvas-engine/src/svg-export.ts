@@ -65,7 +65,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   const opacity = (n.opacity !== 1 ? ` opacity="${num(n.opacity)}"` : "") + (blend ? ` style="mix-blend-mode:${blend}"` : "");
   const fill = paint(n, "fills");
   const fillAttrs = fill ? ` fill="${esc(paintColor(fill))}"${fill.opacity !== 1 ? ` fill-opacity="${num(fill.opacity)}"` : ""}` : ' fill="none"';
-  const kids = renderList(doc, doc.children(n.id), clipIds);
+  const kids = renderList(doc, doc.paintOrder(n.id), clipIds);
 
   switch (n.type) {
     case "ELLIPSE":

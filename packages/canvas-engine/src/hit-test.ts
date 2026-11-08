@@ -42,7 +42,7 @@ function localPoint(b: Bounds, rotation: number, wx: number, wy: number): [numbe
 
 function deepestHit(doc: DesignDoc, pageId: string, wx: number, wy: number): DesignNode | undefined {
   const walk = (parentId: string, ox: number, oy: number): DesignNode | undefined => {
-    const kids = doc.children(parentId);
+    const kids = doc.paintOrder(parentId);
     for (let i = kids.length - 1; i >= 0; i--) {
       const n = kids[i]!;
       if (!n.visible || n.locked) continue;

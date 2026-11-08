@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Auto layout > First on top (Figma's canvas stacking): the first layer of the frame is drawn above the others (canvas, hit-testing, SVG export; the Layers list order is unchanged). Still missing from the advanced settings: include strokes in layout, text baseline alignment.
 - ✅ Strokes on text (a Stroke section on text layers: colour or gradient, weight, Center / Outside; Inside is drawn like Center; only the first stroke is drawn, no dash or caps; canvas and SVG / PNG export).
 - ✅ Enter on a selected text layer opens its text editor (Esc closes it); Enter on anything else still selects the children.
 - ✅ Layers panel: Alt+click on a chevron opens (or closes) the layer and everything inside it.
