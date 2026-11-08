@@ -14,6 +14,8 @@ export interface ClipNode {
   type: NodeType;
   props: Record<string, unknown>;
   children: ClipNode[];
+  /** An instance: the properties its inner layers override, by the main layer they mirror, so a copy keeps them. */
+  layerOverrides?: { mainId: string; props: Record<string, unknown> }[];
 }
 
 export interface ClipPayload {
@@ -32,9 +34,25 @@ function toClip(doc: DesignDoc, node: DesignNode, mainAsInstance = true): ClipNo
     const { isComponent: _c, ...rest } = props as Record<string, unknown>;
     return { type, props: { ...rest, componentId: id }, children: [] };
   }
-  // An instance rebuilds its layers from the main component, so only the frame itself is copied (child overrides are not kept).
-  if (node.type === "FRAME" && node.componentId) return { type, props, children: [] };
+  // An instance rebuilds its layers from the main component, so only the frame itself is copied; the overrides of its layers travel next to it.
+  if (node.type === "FRAME" && node.componentId) return { type, props, children: [], layerOverrides: layerOverridesOf(doc, node.id) };
   return { type, props, children: doc.children(id).map((c) => toClip(doc, c, mainAsInstance)) };
+}
+
+const NOT_OVERRIDES = new Set(["id", "type", "parentId", "orderKey", "mainId", "overrides", "componentId", "isComponent"]);
+
+/** The overridden properties of the layers inside an instance, keyed by the main layer each one mirrors. */
+export function layerOverridesOf(doc: DesignDoc, instanceId: string): { mainId: string; props: Record<string, unknown> }[] {
+  const out: { mainId: string; props: Record<string, unknown> }[] = [];
+  for (const d of doc.descendants(instanceId)) {
+    const any = d as unknown as Record<string, unknown>;
+    const keys = Array.isArray(any.overrides) ? (any.overrides as string[]) : [];
+    if (typeof any.mainId !== "string" || !keys.length) continue;
+    const props: Record<string, unknown> = {};
+    for (const k of keys) if (!NOT_OVERRIDES.has(k) && k in any) props[k] = structuredClone(any[k]);
+    if (Object.keys(props).length) out.push({ mainId: any.mainId, props });
+  }
+  return out;
 }
 
 /** Ctrl+D: copy each top-level layer with its whole subtree next to the original (a main component duplicates into a new main). */
@@ -104,6 +122,16 @@ function create(doc: DesignDoc, clip: ClipNode, parentId: string, dx: number, dy
     }
     const id = doc.createNode(clip.type, { parentId, props });
     for (const child of clip.children) create(doc, child, id, 0, 0);
+    if (clip.layerOverrides?.length) {
+      // the new instance has rebuilt its layers from the main: put the overridden values back (writing them records the overrides again)
+      const byMain = new Map(doc.descendants(id).map((d) => [(d as unknown as { mainId?: string }).mainId, d.id]));
+      const updates: Record<string, Record<string, unknown>> = {};
+      for (const o of clip.layerOverrides) {
+        const target = byMain.get(o.mainId);
+        if (target) updates[target] = o.props;
+      }
+      if (Object.keys(updates).length) doc.patchNodes(updates);
+    }
     return id;
   } catch {
     return null; // the target can't hold this type (e.g. a frame inside a rectangle)
