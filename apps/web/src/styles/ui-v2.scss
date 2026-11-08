@@ -1441,3 +1441,27 @@ textarea:focus-visible {
 .boxmodel__row--mid > .boxmodel__layer, .boxmodel__row--mid > .boxmodel__content { flex: 1; }
 .boxmodel__num { min-width: 16px; align-self: center; }
 .boxmodel__content { padding: 8px 4px; border-radius: 4px; background: rgba(13, 153, 255, 0.35); align-self: center; }
+
+/* Accessibility: reduced motion (the Reduce motion preference, or the system setting). */
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}

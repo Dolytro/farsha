@@ -94,6 +94,12 @@ export function App() {
   const hideLeft = useEditor((s) => s.hideLeftPanel);
   const hideRight = useEditor((s) => s.hideRightPanel);
   const preset = useEditor((s) => s.prefs.preset);
+  const reduceMotion = useEditor((s) => s.prefs.reduceMotion);
+  // Accessibility: the stylesheet turns animations and transitions off under data-motion="reduce".
+  useEffect(() => {
+    if (reduceMotion) document.documentElement.dataset.motion = "reduce";
+    else delete document.documentElement.dataset.motion;
+  }, [reduceMotion]);
   // The interface preset is a data attribute that the stylesheet reads (density, roundness, accent, panel width).
   useEffect(() => {
     document.documentElement.dataset.ui = preset;

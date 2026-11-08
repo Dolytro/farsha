@@ -61,3 +61,11 @@ describe("newer preferences", () => {
     expect([p.flipWhileResizing, p.hideUiWhileChanging, p.arrowRotate]).toEqual([false, true, false]);
   });
 });
+
+describe("reduce motion preference", () => {
+  it("is off by default and read from saved preferences", () => {
+    expect(parsePrefs(null).reduceMotion).toBe(false);
+    expect(parsePrefs(JSON.stringify({ reduceMotion: true })).reduceMotion).toBe(true);
+    expect(parsePrefs(JSON.stringify({ reduceMotion: "yes" })).reduceMotion).toBe(false);
+  });
+});

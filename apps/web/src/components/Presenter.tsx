@@ -174,7 +174,7 @@ export function Presenter() {
     }
     if (interaction.action.type === "SCROLL_TO") {
       const box = layerBoxIn(doc, current, interaction.action.targetId);
-      if (box && scrollRef.current) scrollRef.current.scrollTo({ top: box.y * scale, left: box.x * scale, behavior: "smooth" });
+      if (box && scrollRef.current) scrollRef.current.scrollTo({ top: box.y * scale, left: box.x * scale, behavior: useEditor.getState().prefs.reduceMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
       else showToast("The layer to scroll to is not in this frame");
       return;
     }
