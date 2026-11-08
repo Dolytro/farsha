@@ -630,6 +630,11 @@ export interface VectorNode extends BaseNode {
   /** Pen paths only: the anchor points (in the layer's own coordinates, handles as offsets) so the path can be edited. */
   penPoints?: { x: number; y: number; hx: number; hy: number }[];
   penClosed?: boolean;
+  /** Polygon and Star tool layers: what they are and how many sides or points they have, so the Design panel can change them. */
+  shapeKind?: 'POLYGON' | 'STAR';
+  shapeSides?: number;
+  /** Stars: inner radius as a share of the outer one (0.05 to 0.95). */
+  starRatio?: number;
   /** Only on vectors drawn with the Line / Arrow / Polygon / Star tools: their fill and stroke are editable like a shape's. */
   fills?: Paint[];
   strokes?: Paint[];

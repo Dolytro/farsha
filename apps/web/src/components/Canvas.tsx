@@ -11,6 +11,7 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@farsha/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
+import { startShapeParams } from "../shape-params";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -42,7 +43,7 @@ function vectorStart(tool: Tool): Record<string, unknown> {
   const grey = [{ type: "SOLID", color: "#d9d9d9", opacity: 1 }];
   if (tool === "line") return { ...lineShape(1), fills: [], strokes: black, strokeWidth: 1 };
   if (tool === "arrow") return { ...arrowShape(1), fills: [], strokes: black, strokeWidth: 1 };
-  return { ...(tool === "star" ? starShape() : polygonShape()), fills: grey, strokes: [], strokeWidth: 1 };
+  return { ...(tool === "star" ? starShape() : polygonShape()), ...startShapeParams(tool === "star" ? "STAR" : "POLYGON"), fills: grey, strokes: [], strokeWidth: 1 };
 }
 const ACCENT = "#0d99ff";
 

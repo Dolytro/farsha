@@ -16,6 +16,7 @@ import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
+import { PolygonSection } from "./PolygonSection";
 import { Select } from "./Select";
 import { ColorSwatch } from "./ColorSwatch";
 import { VariableBindings } from "./VariableBindings";
@@ -323,6 +324,8 @@ export function Properties() {
       <FillSection doc={doc} node={node} />
 
       <VariableBindings doc={doc} node={node} />
+
+      <PolygonSection doc={doc} node={node} />
 
       <VariantsSection doc={doc} node={node} />
       <ComponentPropsSection doc={doc} node={node} />

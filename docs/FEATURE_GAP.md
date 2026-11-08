@@ -13,7 +13,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Scale tool (K) | ✅ | One layer at a time; keeps the ratio (Alt scales from the centre) |
 | Section, Slice | ❌ | P3 |
 | Line (L), Arrow (Shift+L) | 🟡 | Drawn by dragging (Shift snaps to 15°), editable stroke colour / width, rotation. Missing: arrow head types, stroke caps, the arrow head stretches when the width changes, no handles on the line ends |
-| Polygon, Star | 🟡 | Toolbar buttons, fill and stroke editable. Missing: side count / star ratio controls, corner radius |
+| Polygon, Star | 🟡 | Toolbar buttons, fill and stroke editable. ✅ Polygon sides (3 to 60) and Star points and ratio in the Design panel (for layers drawn with the tools). Missing: corner radius |
 | Image / video placement, paste or drop an image | ❌ | P1 |
 | Pen tool (P) | 🟡 | Click for corner points, drag for curve handles, click the first point to close, Enter / double-click / Esc to finish, Backspace removes the last point; result is a vector layer with editable stroke and fill. Point editing done (Enter or double-click a pen path: drag anchors and handles, click the path to add a point, Alt+click or Delete removes one, double-click a point to switch corner / smooth; needs no rotation or flip). Pencil tool (Shift+P) done: drag to draw freehand, the stroke is simplified and smoothed into an editable pen path, a loop closes itself. Missing: joining / splitting paths, editing imported SVG vectors, boolean operations |
 | Comment tool (C) | ❌ | P2 |
