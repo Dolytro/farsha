@@ -72,3 +72,40 @@ describe("snapResize", () => {
     expect(snapResize({ x: 0, y: 0, width: 118, height: 40 }, "e", [], 5, { xs: [120] }).box.width).toBe(120);
   });
 });
+
+describe("equal spacing while moving", () => {
+  const left = { x: 0, y: 0, width: 50, height: 50 };
+  const right = { x: 200, y: 0, width: 50, height: 50 };
+
+  it("snaps a box between two layers to the middle of the gap", () => {
+    // gaps are 50 and 60 around a 40 wide box: moving it 5 to the right makes both 55
+    const r = snapMove({ x: 100, y: 5, width: 40, height: 40 }, [left, right], 8);
+    expect(r.dx).toBe(5);
+    // the two gaps are marked (the box is also centred on the layers, which adds their alignment guides)
+    expect(r.guides).toEqual(expect.arrayContaining([expect.objectContaining({ x1: 50, x2: 105, y1: 25, y2: 25 }), expect.objectContaining({ x1: 145, x2: 200, y1: 25, y2: 25 })]));
+  });
+
+  it("does not snap when the box is further than the threshold from the middle", () => {
+    expect(snapMove({ x: 80, y: 5, width: 40, height: 40 }, [left, right], 8).dx).toBe(0);
+  });
+
+  it("works above and below too", () => {
+    const top = { x: 0, y: 0, width: 50, height: 50 };
+    const bottom = { x: 0, y: 200, width: 50, height: 50 };
+    const r = snapMove({ x: 5, y: 100, width: 40, height: 40 }, [top, bottom], 8);
+    expect(r.dy).toBe(5);
+    expect(r.guides.some((g) => g.y1 === 50 && g.y2 === 105)).toBe(true);
+    expect(r.guides.some((g) => g.y1 === 145 && g.y2 === 200)).toBe(true);
+  });
+
+  it("needs layers that overlap the box across the other axis", () => {
+    const farUp = { ...left, y: -500 };
+    expect(snapMove({ x: 100, y: 5, width: 40, height: 40 }, [farUp, right], 8).dx).toBe(0);
+  });
+
+  it("leaves a box alone that is already lined up with an edge, instead of nudging it to the middle", () => {
+    // its left edge sits exactly on the left layer's right edge: alignment wins
+    const r = snapMove({ x: 50, y: 5, width: 40, height: 40 }, [left, right], 8);
+    expect(r.dx).toBe(0);
+  });
+});

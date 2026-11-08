@@ -38,11 +38,17 @@ function best(mine: number[], theirs: number[], threshold: number): number {
 export function snapMove(moving: Box, targets: Box[], threshold: number, extra: { xs?: number[]; ys?: number[] } = {}): SnapResult {
   const xs = [...targets.flatMap((t) => lines(t.x, t.width)), ...(extra.xs ?? [])];
   const ys = [...targets.flatMap((t) => lines(t.y, t.height)), ...(extra.ys ?? [])];
-  const dx = best(lines(moving.x, moving.width), xs, threshold);
-  const dy = best(lines(moving.y, moving.height), ys, threshold);
+  let dx = best(lines(moving.x, moving.width), xs, threshold);
+  let dy = best(lines(moving.y, moving.height), ys, threshold);
+  // With no edge or centre alignment on an axis, the box can still snap to the middle of the gap between two layers
+  const near = (mine: number[], theirs: number[]) => mine.some((m) => theirs.some((t) => Math.abs(t - m) <= threshold + 1e-9));
+  const evenX = !near(lines(moving.x, moving.width), xs) ? equalGap(moving, targets, threshold, "x") : null;
+  const evenY = !near(lines(moving.y, moving.height), ys) ? equalGap(moving, targets, threshold, "y") : null;
+  if (evenX) dx = evenX.delta;
+  if (evenY) dy = evenY.delta;
   const m: Box = { ...moving, x: moving.x + dx, y: moving.y + dy };
 
-  const guides: Guide[] = [];
+  const guides: Guide[] = [...(evenX ? evenX.guides(m) : []), ...(evenY ? evenY.guides(m) : [])];
   const eps = 1e-6;
   for (const t of targets) {
     for (const mx of lines(m.x, m.width)) {
@@ -98,4 +104,42 @@ export function snapResize(box: Box, handle: string, targets: Box[], threshold: 
     for (const my of edgesY) for (const ty of lines(t.y, t.height)) if (Math.abs(my - ty) < eps) guides.push({ y1: ty, y2: ty, x1: Math.min(x, t.x), x2: Math.max(x + width, t.x + t.width) });
   }
   return { box: out, guides };
+}
+
+
+/**
+ * Equal spacing (Figma's red spacing guides): a box that sits between two layers snaps so the gap on its left equals the gap on its right
+ * (or above and below). The layers must overlap the box across the other axis. Returns the shift to apply and a way to draw the two gaps.
+ */
+export function equalGap(box: Box, targets: Box[], threshold: number, axis: "x" | "y"): { delta: number; guides: (placed: Box) => Guide[] } | null {
+  const pos = (b: Box) => (axis === "x" ? b.x : b.y);
+  const len = (b: Box) => (axis === "x" ? b.width : b.height);
+  const crossPos = (b: Box) => (axis === "x" ? b.y : b.x);
+  const crossLen = (b: Box) => (axis === "x" ? b.height : b.width);
+  const overlaps = (t: Box) => crossPos(t) < crossPos(box) + crossLen(box) && crossPos(box) < crossPos(t) + crossLen(t);
+  const side = targets.filter(overlaps);
+  const before = side.filter((t) => pos(t) + len(t) <= pos(box) + 1e-6);
+  const after = side.filter((t) => pos(t) >= pos(box) + len(box) - 1e-6);
+  let best: { delta: number; a: Box; b: Box } | null = null;
+  for (const a of before) {
+    for (const b of after) {
+      const gapA = pos(box) - (pos(a) + len(a));
+      const gapB = pos(b) - (pos(box) + len(box));
+      const delta = (gapB - gapA) / 2;
+      // the box must stay between the two layers
+      if (Math.abs(delta) <= threshold && gapA + delta >= 0 && gapB - delta >= 0 && (!best || Math.abs(delta) < Math.abs(best.delta))) best = { delta, a, b };
+    }
+  }
+  if (!best) return null;
+  const { delta, a, b } = best;
+  return {
+    delta,
+    guides: (placed) => {
+      const mid = crossPos(placed) + crossLen(placed) / 2;
+      const first = { from: pos(a) + len(a), to: pos(placed) };
+      const second = { from: pos(placed) + len(placed), to: pos(b) };
+      const seg = (s: { from: number; to: number }): Guide => (axis === "x" ? { x1: s.from, x2: s.to, y1: mid, y2: mid } : { y1: s.from, y2: s.to, x1: mid, x2: mid });
+      return [seg(first), seg(second)];
+    },
+  };
 }
