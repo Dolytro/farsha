@@ -33,7 +33,7 @@ export function Presenter() {
   // variable modes switched by "Set variable mode" are only for the presentation: the file's own mode comes back afterwards
   const [modeTick, setModeTick] = useState(0);
   // the old frame while it moves out (Move out and Push transitions)
-  const [leaving, setLeaving] = useState<{ svg: string; width: number; height: number; scale: number; stageWidth: number; stageHeight: number; name: string; ms: number; timing: string; n: number } | null>(null);
+  const [leaving, setLeaving] = useState<{ svg: string; width: number; height: number; scale: number; stageWidth: number; stageHeight: number; name: string; under: boolean; ms: number; timing: string; n: number } | null>(null);
   const startMode = useRef<string | null>(null);
   // variables changed by "Set variable": their original values, put back when the presentation ends or restarts
   const varBackup = useRef(new Map<string, Record<string, string>>());
@@ -197,7 +197,7 @@ export function Presenter() {
     setTransition(anim ? { ...anim, n: Date.now() } : null);
     if (anim?.leave && frame) {
       const n = Date.now();
-      setLeaving({ svg: frame.svg, width: frame.width, height: frame.height, scale, stageWidth, stageHeight, name: anim.leave, ms: anim.durationMs, timing: anim.timing, n });
+      setLeaving({ svg: frame.svg, width: frame.width, height: frame.height, scale, stageWidth, stageHeight, name: anim.leave, under: !!anim.leaveUnder, ms: anim.durationMs, timing: anim.timing, n });
       setTimeout(() => setLeaving((l) => (l && l.n === n ? null : l)), anim.durationMs + 50);
     } else setLeaving(null);
     setCurrent(next.frame);
@@ -320,7 +320,7 @@ export function Presenter() {
         </div>
       )}
       {leaving && (
-        <div className="presenter__leaving" key={`leave-${leaving.n}`} style={{ width: leaving.stageWidth, height: leaving.stageHeight }}>
+        <div className={`presenter__leaving${leaving.under ? " presenter__leaving--under" : ""}`} key={`leave-${leaving.n}`} style={{ width: leaving.stageWidth, height: leaving.stageHeight }}>
           <div style={{ width: leaving.stageWidth, height: leaving.stageHeight, animation: `${leaving.name} ${leaving.ms}ms ${leaving.timing} both` }}>
             <div className="presenter__frame" style={{ width: leaving.width, height: leaving.height, transform: `scale(${leaving.scale})` }} dangerouslySetInnerHTML={{ __html: leaving.svg }} />
           </div>

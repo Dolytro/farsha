@@ -173,15 +173,25 @@ export function easingFn(e: Easing | undefined): (t: number) => number {
 }
 
 /** CSS keyframes name, duration and timing function for a transition (null for an instant change). */
-export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string; leave?: string } | null {
+export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string; leave?: string; leaveUnder?: boolean } | null {
   if (!t || t.type === "INSTANT" || t.type === "SMART_ANIMATE") return null;
-  const names: Record<string, string> = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom", MOVE_IN_LEFT: "presenter-slide-left", MOVE_IN_RIGHT: "presenter-slide-right", MOVE_IN_TOP: "presenter-slide-top", MOVE_IN_BOTTOM: "presenter-slide-bottom" };
+  const names: Record<string, string> = { DISSOLVE: "presenter-dissolve", MOVE_IN_LEFT: "presenter-slide-left", MOVE_IN_RIGHT: "presenter-slide-right", MOVE_IN_TOP: "presenter-slide-top", MOVE_IN_BOTTOM: "presenter-slide-bottom" };
   // Move out: the old frame leaves toward a side and reveals the new one. Push: the new frame comes in from a side and pushes the old one out the opposite way.
   const opposite: Record<string, string> = { left: "right", right: "left", top: "bottom", bottom: "top" };
   const side = t.type.split("_").pop()!.toLowerCase();
   let name = names[t.type];
   let leave: string | undefined;
-  if (t.type.startsWith("MOVE_OUT_") || t.type.startsWith("SLIDE_OUT_")) {
+  let leaveUnder = false;
+  if (t.type.startsWith("SLIDE_IN_")) {
+    // Slide in: the new frame comes in over the old one, which drifts half as far the other way underneath it.
+    name = `presenter-slide-${side}`;
+    leave = `presenter-out-half-${opposite[side] ?? side}`;
+    leaveUnder = true;
+  } else if (t.type.startsWith("SLIDE_OUT_")) {
+    // Slide out: the old frame leaves toward a side while the new one arrives from half a frame away.
+    name = `presenter-in-half-${opposite[side] ?? side}`;
+    leave = `presenter-out-${side}`;
+  } else if (t.type.startsWith("MOVE_OUT_")) {
     name = "presenter-hold";
     leave = `presenter-out-${side}`;
   } else if (t.type.startsWith("PUSH_")) {
@@ -189,7 +199,7 @@ export function transitionAnimation(t: Interaction["transition"]): { name: strin
     leave = `presenter-out-${opposite[side] ?? side}`;
   }
   if (!name) return null;
-  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)), timing: easingCss(t.easing), ...(leave ? { leave } : {}) };
+  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)), timing: easingCss(t.easing), ...(leave ? { leave } : {}), ...(leaveUnder ? { leaveUnder } : {}) };
 }
 
 /** How big the prototype stage is in a window: fit the whole frame, or (vertical scrolling) fit the width and scroll the rest. */

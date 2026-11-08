@@ -42,7 +42,7 @@ describe("prototype triggers", () => {
     expect(transitionAnimation(undefined)).toBeNull();
     expect(transitionAnimation({ type: "INSTANT", durationMs: 300 })).toBeNull();
     expect(transitionAnimation({ type: "DISSOLVE", durationMs: 99999 })).toEqual({ name: "presenter-dissolve", durationMs: 5000, timing: "ease" });
-    expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 1 })).toEqual({ name: "presenter-slide-left", durationMs: 50, timing: "ease" });
+    expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 1 })).toEqual({ name: "presenter-slide-left", durationMs: 50, timing: "ease", leave: "presenter-out-half-right", leaveUnder: true });
   });
 });
 
@@ -202,7 +202,8 @@ describe("move out and push", () => {
     expect(transitionAnimation({ type: "MOVE_OUT_LEFT", durationMs: 400 })).toMatchObject({ name: "presenter-hold", leave: "presenter-out-left", durationMs: 400 });
     expect(transitionAnimation({ type: "PUSH_LEFT", durationMs: 400 })).toMatchObject({ name: "presenter-slide-left", leave: "presenter-out-right" });
     expect(transitionAnimation({ type: "PUSH_TOP", durationMs: 400 })).toMatchObject({ name: "presenter-slide-top", leave: "presenter-out-bottom" });
-    expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 400 })?.leave).toBeUndefined();
+    expect(transitionAnimation({ type: "SLIDE_IN_LEFT", durationMs: 400 })).toMatchObject({ leave: "presenter-out-half-right", leaveUnder: true });
+    expect(transitionAnimation({ type: "MOVE_IN_LEFT", durationMs: 400 })?.leave).toBeUndefined();
   });
 });
 
@@ -226,6 +227,6 @@ describe("conditional", () => {
   });
   it("Move in comes in from a side and Slide out leaves toward one", () => {
     expect(transitionAnimation({ type: "MOVE_IN_TOP", durationMs: 300 })).toMatchObject({ name: "presenter-slide-top" });
-    expect(transitionAnimation({ type: "SLIDE_OUT_RIGHT", durationMs: 300 })).toMatchObject({ name: "presenter-hold", leave: "presenter-out-right" });
+    expect(transitionAnimation({ type: "SLIDE_OUT_RIGHT", durationMs: 300 })).toMatchObject({ name: "presenter-in-half-left", leave: "presenter-out-right" });
   });
 });
