@@ -146,6 +146,16 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
       d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth / 2)} solid ${color}`], ["outline", `${px(node.strokeWidth / 2)} solid ${color}`]);
     } else {
       d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${color}`]);
+      // a gradient stroke: transparent border, the fill clipped to the padding box and the gradient to the border box
+      const st = node.strokes[0];
+      if (st.type === "GRADIENT_LINEAR" || st.type === "GRADIENT_RADIAL") {
+        const own = d.findIndex(([k]) => k === "background");
+        const fillCss = own >= 0 ? d[own]![1] : "linear-gradient(transparent, transparent)";
+        const combined = `${fillCss} padding-box, ${paintCss(st)} border-box`;
+        if (own >= 0) d[own] = ["background", combined];
+        else d.push(["background", combined]);
+        d[d.findIndex(([k]) => k === "border")] = ["border", `${px(node.strokeWidth)} solid transparent`];
+      }
       if ("strokeSides" in node && node.strokeSides?.length === 4) d.push(["border-width", node.strokeSides.map(px).join(" ")]);
       if (node.strokeDash?.some((v) => v > 0)) d.push(["border-style", (node.strokeDash[0] ?? 0) <= node.strokeWidth ? "dotted" : "dashed"]);
     }

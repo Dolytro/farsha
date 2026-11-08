@@ -614,3 +614,18 @@ describe("gradient text in CSS", () => {
     expect(d).not.toHaveProperty("background");
   });
 });
+
+describe("gradient stroke in CSS", () => {
+  it("uses a transparent border with the gradient on the border box", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", {
+      parentId: doc.pages()[0]!.id,
+      props: { width: 10, height: 10, fills: [{ type: "SOLID", color: "#ffffff", opacity: 1 }], strokes: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }], strokeWidth: 3, strokeAlign: "INSIDE" } as never,
+    });
+    const d = Object.fromEntries(declarations(doc.getNode(id)!));
+    expect(d.border).toBe("3px solid transparent");
+    expect(d.background).toContain("padding-box");
+    expect(d.background).toContain("border-box");
+    expect(d.background).toContain("linear-gradient");
+  });
+});
