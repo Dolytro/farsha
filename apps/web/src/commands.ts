@@ -8,6 +8,7 @@ import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, 
 import { panToLayer, booleanGroupSelection, booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit, zoomKeyboard } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
+import { afterDuplicate, duplicateOffset } from "./duplicate-offset";
 import { createComponentFromSelection, detachSelection, pushSelectionToMain, resetSelection } from "./component-actions";
 import { duplicatePage } from "./pages";
 import { duplicateFile, openLocalFilePicker, saveLocalCopy } from "./local-file";
@@ -118,7 +119,15 @@ export function buildCommands(): Command[] {
     { id: "select-matching", label: "Select all matching properties", shortcut: `${MOD}${ALT}A`, needsSelection: true, keywords: "same fill color font", run: () => state().select(selectMatching(doc(), sel(), state().pageId)) },
     { id: "select-children", label: "Select children", shortcut: "Enter", needsSelection: true, run: () => state().select(selectChildren(doc(), sel())) },
     { id: "select-parent", label: "Select parent", shortcut: `${SHIFT}Enter`, needsSelection: true, run: () => state().select(selectParent(doc(), sel(), state().pageId)) },
-    { id: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, needsSelection: true, run: () => state().select(duplicateNodes(doc(), sel(), 10, true, state().prefs.renameDuplicates)) },
+    { id: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, needsSelection: true, run: () => {
+        // Ctrl+D after an Alt+drag copy repeats that move
+        const ids = sel();
+        const offset = duplicateOffset(ids);
+        const copies = duplicateNodes(doc(), ids, offset, true, state().prefs.renameDuplicates);
+        afterDuplicate(ids, copies, offset);
+        state().select(copies);
+      },
+    },
     {
       id: "delete",
       label: "Delete",

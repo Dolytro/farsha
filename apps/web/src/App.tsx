@@ -16,6 +16,7 @@ import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
 import { placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
+import { afterDuplicate, duplicateOffset } from "./duplicate-offset";
 import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { CommandPalette } from "./components/CommandPalette";
 import { Presenter } from "./components/Presenter";
@@ -481,7 +482,11 @@ export function App() {
         reorderSelection(doc, selection, mod ? (up ? Infinity : -Infinity) : up ? 1 : -1);
       } else if (mod && key === "d") {
         e.preventDefault();
-        s.select(duplicateNodes(doc, selection, 10, true, s.prefs.renameDuplicates));
+        // Ctrl+D right after an Alt+drag copy repeats that move
+        const offset = duplicateOffset(selection);
+        const copies = duplicateNodes(doc, selection, offset, true, s.prefs.renameDuplicates);
+        afterDuplicate(selection, copies, offset);
+        s.select(copies);
       } else if (key === "delete" || key === "backspace") {
         doc.stopCapturing();
         selection.forEach((id) => doc.hasNode(id) && doc.deleteNode(id));

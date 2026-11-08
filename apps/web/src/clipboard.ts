@@ -56,12 +56,14 @@ export function layerOverridesOf(doc: DesignDoc, instanceId: string): { mainId: 
 }
 
 /** Ctrl+D: copy each top-level layer with its whole subtree next to the original (a main component duplicates into a new main). */
-export function duplicateNodes(doc: DesignDoc, ids: string[], offset = 10, closeStep = true, renameCopies = false): string[] {
+export function duplicateNodes(doc: DesignDoc, ids: string[], offset: number | { x: number; y: number } = 10, closeStep = true, renameCopies = false): string[] {
+  const ox = typeof offset === "number" ? offset : offset.x;
+  const oy = typeof offset === "number" ? offset : offset.y;
   doc.stopCapturing();
   const copies = topLevelOf(doc, ids).flatMap((id) => {
     const n = doc.getNode(id);
     if (!n?.parentId) return [];
-    const made = create(doc, toClip(doc, n, false), n.parentId, offset, offset);
+    const made = create(doc, toClip(doc, n, false), n.parentId, ox, oy);
     if (made && renameCopies) {
       const name = nextCopyName(n.name);
       if (name !== n.name) doc.rename(made, name);

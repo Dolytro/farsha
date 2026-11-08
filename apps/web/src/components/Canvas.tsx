@@ -1,4 +1,5 @@
 import { duplicateNodes } from "../clipboard";
+import { rememberCopyMove } from "../duplicate-offset";
 import { COMPONENT_DRAG } from "../asset-search";
 import { buildScaleUpdates } from "../scale";
 import { textFontStyle, verticalTextOffset } from "@farsha/canvas-engine";
@@ -36,7 +37,7 @@ import { loadDefaults, withDefaults } from "../defaults";
 
 type Drag =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
-  | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
+  | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[]; copied?: boolean }
   | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean; offset: { x: number; y: number }; targets: Box[]; rotation: number }
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
   | { kind: "multirotate"; wx: number; wy: number; items: TurnItem[]; cx: number; cy: number; start: number }
@@ -290,10 +291,12 @@ export function Canvas() {
       if (next.includes(hit.id)) {
         doc.stopCapturing();
         // Figma: Alt+drag drags a copy and leaves the original where it was
+        let copied = false;
         if (e.altKey && !viewer) {
           const copies = duplicateNodes(doc, next, 0, false, useEditor.getState().prefs.renameDuplicates);
           if (copies.length) {
             next = copies;
+            copied = true;
             select(copies);
           }
         }
@@ -312,7 +315,7 @@ export function Canvas() {
         const parentBox = parent && parent.type !== "PAGE" && parent.type !== "DOCUMENT" ? doc.absoluteBox(parent.id) : undefined;
         if (parentBox) targets.push(parentBox);
         const startBox = unionBox(next.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b));
-        drag.current = { kind: "move", wx: w.x, wy: w.y, origins, startBox, targets };
+        drag.current = { kind: "move", wx: w.x, wy: w.y, origins, startBox, targets, copied };
       }
       return;
     }
@@ -509,6 +512,13 @@ export function Canvas() {
       // Let go over another frame (or over empty canvas): the layers move into that frame (or out to the page), keeping their place on the canvas
       const at = movePoint.current;
       movePoint.current = null;
+      if (d.copied) {
+        // remember how far the Alt+drag copies went, so Ctrl+D repeats it
+        const ids = Object.keys(d.origins);
+        const n = doc.getNode(ids[0]!);
+        const o = d.origins[ids[0]!];
+        if (n && o) rememberCopyMove(ids, { x: Math.round((n.x - o.x) * 100) / 100, y: Math.round((n.y - o.y) * 100) / 100 });
+      }
       if (at && !viewer && Math.hypot(at.x - d.wx, at.y - d.wy) > 4 / viewport.zoom) dropInto(doc, pageId, Object.keys(d.origins), at);
     }
     if (d.kind === "line") {
