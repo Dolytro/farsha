@@ -16,6 +16,7 @@ import { groupBox, resizeGroup, rotateGroup, type GroupItem, type TurnItem } fro
 import { snapBoxToPixels, snapMoveToPixels } from "../pixel-snap";
 import { componentSetFrames } from "../component-set-frames";
 import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
+import { dropInto } from "../reparent-drop";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -109,6 +110,7 @@ export function Canvas() {
   const [marquee, setMarquee] = useState<Box | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const editRef = useRef<HTMLTextAreaElement | null>(null);
+  const movePoint = useRef<{ x: number; y: number } | null>(null);
   const [editSel, setEditSel] = useState<[number, number]>([0, 0]);
   const [altDown, setAltDown] = useState(false);
   const [changing, setChanging] = useState(false);
@@ -355,6 +357,7 @@ export function Canvas() {
     const w = world(e);
     let dx = w.x - d.wx;
     let dy = w.y - d.wy;
+    if (d.kind === "move") movePoint.current = w;
     if (d.kind === "move") {
       let aligned = false;
       if (d.startBox && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping) {
@@ -497,6 +500,12 @@ export function Canvas() {
     setMarquee(null);
     setGuides([]);
     if (!d || d.kind === "pan" || d.kind === "marquee") return;
+    if (d.kind === "move") {
+      // Let go over another frame (or over empty canvas): the layers move into that frame (or out to the page), keeping their place on the canvas
+      const at = movePoint.current;
+      movePoint.current = null;
+      if (at && !viewer && Math.hypot(at.x - d.wx, at.y - d.wy) > 4 / viewport.zoom) dropInto(doc, pageId, Object.keys(d.origins), at);
+    }
     if (d.kind === "line") {
       // A plain click makes a 100 px line.
       if (doc.getNode(d.id)!.width < 4) placeLine(d, d.wx + 100, d.wy, false);
