@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseRoute, shareUrl } from "./route";
+import { embedCode, parseRoute, shareUrl } from "./route";
 
 describe("parseRoute", () => {
   it("treats / as the editor", () => {
@@ -42,5 +42,12 @@ describe("links to a layer", () => {
     expect(parseRoute("/app/v/1AbC_dEfGhIjKlMn", "?node=a")).toEqual({ kind: "viewer", fileId: "1AbC_dEfGhIjKlMn", mode: "view" });
     expect(parseRoute("/app/v/1AbC_dEfGhIjKlMn", "?node=<script>alert(1)</script>")).toEqual({ kind: "viewer", fileId: "1AbC_dEfGhIjKlMn", mode: "view" });
     expect(shareUrl("https://farsha.org", "1AbC_dEfGhIjKlMn", "view", "bad id!")).toBe("https://farsha.org/app/v/1AbC_dEfGhIjKlMn");
+  });
+});
+
+describe("embedCode", () => {
+  it("wraps a share link in an iframe and escapes the address", () => {
+    const code = embedCode("https://farsha.dev/app/v/abc?node=n1&x=\"y\"", 640.4, 360);
+    expect(code).toBe('<iframe src="https://farsha.dev/app/v/abc?node=n1&amp;x=&quot;y&quot;" width="640" height="360" style="border:1px solid rgba(0,0,0,0.1)" allowfullscreen></iframe>');
   });
 });

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { isLinkShared, setLinkShared } from "../drive/drive";
 import { connect, save } from "../drive/session";
 import { getToken } from "../drive/google";
-import { shareUrl, type ViewerMode } from "../route";
+import { embedCode, shareUrl, type ViewerMode } from "../route";
 import { useEditor } from "../store";
 import { Select } from "./Select";
 
@@ -62,6 +62,16 @@ export function ShareDialog() {
     });
 
   const url = fileId ? shareUrl(window.location.origin, fileId, mode, toLayer ? layerId : undefined) : "";
+  const [embedCopied, setEmbedCopied] = useState(false);
+  const copyEmbed = async () => {
+    try {
+      await navigator.clipboard.writeText(embedCode(url));
+      setEmbedCopied(true);
+      setTimeout(() => setEmbedCopied(false), 1200);
+    } catch {
+      setError("Couldn't copy the embed code.");
+    }
+  };
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
@@ -123,6 +133,14 @@ export function ShareDialog() {
                     {copied ? "Copied" : "Copy link"}
                   </button>
                 </div>
+                {mode === "view" && (
+                  <div className="modal__row">
+                    <span className="modal__label">Embed</span>
+                    <button className="dev__copy" onClick={() => void copyEmbed()}>
+                      {embedCopied ? "Copied" : "Copy embed code"}
+                    </button>
+                  </div>
+                )}
                 <p className="modal__hint">
                   Anyone with the link can view this design without signing in. Inspect links show measurements and code only after the visitor signs in with Google. Nobody can change your file. They see your latest save. Turn the checkbox off to stop sharing.
                 </p>

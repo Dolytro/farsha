@@ -18,3 +18,9 @@ export function shareUrl(origin: string, fileId: string, mode: ViewerMode, nodeI
   const query = [mode === "inspect" ? "mode=inspect" : "", nodeId && NODE_ID.test(nodeId) ? `node=${nodeId}` : ""].filter(Boolean).join("&");
   return `${origin}/app/v/${fileId}${query ? `?${query}` : ""}`;
 }
+
+/** An `<iframe>` that shows a view-only share link inside another page (Figma's embed code). */
+export function embedCode(url: string, width = 800, height = 450): string {
+  const attr = url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  return `<iframe src="${attr}" width="${Math.round(width)}" height="${Math.round(height)}" style="border:1px solid rgba(0,0,0,0.1)" allowfullscreen></iframe>`;
+}
