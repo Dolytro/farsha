@@ -102,6 +102,14 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     d.push(["line-height", node.lineHeight === "AUTO" ? "normal" : px(node.lineHeight)]);
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
     if (node.italic) d.push(["font-style", "italic"]);
+    // an outline on the letters: centred is a plain text stroke, outside is a double-width one painted behind the fill
+    const outline = node.strokes?.[0];
+    if (outline && outline.type !== "IMAGE" && (node.strokeWidth ?? 1) > 0) {
+      const w = node.strokeWidth ?? 1;
+      const outside = node.strokeAlign === "OUTSIDE";
+      d.push(["-webkit-text-stroke", `${px(outside ? w * 2 : w)} ${toRgba(paintColor(outline), outline.opacity)}`]);
+      if (outside) d.push(["paint-order", "stroke fill"]);
+    }
     const decoStyle = node.textDecorationStyle === "DOTTED" ? " dotted" : node.textDecorationStyle === "WAVY" ? " wavy" : "";
     if (node.textDecoration === "UNDERLINE") d.push(["text-decoration", `underline${decoStyle}`]);
     else if (node.textDecoration === "STRIKETHROUGH") d.push(["text-decoration", `line-through${decoStyle}`]);

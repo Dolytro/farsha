@@ -578,3 +578,21 @@ describe("stroke position in CSS", () => {
     expect(tailwindClass(["outline", "4px solid #ff0000"])).toContain("outline-[4px]");
   });
 });
+
+describe("text stroke in CSS", () => {
+  const make = (strokeAlign: string) => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Hi", fontSize: 20, strokes: [{ type: "SOLID", color: "#ff0000", opacity: 1 }], strokeWidth: 2, strokeAlign } as never });
+    return Object.fromEntries(declarations(doc.getNode(id)!));
+  };
+  it("centred is a text stroke", () => {
+    const d = make("CENTER");
+    expect(d["-webkit-text-stroke"]).toBe("2px #ff0000");
+    expect(d).not.toHaveProperty("paint-order");
+  });
+  it("outside is twice as wide and painted behind the fill", () => {
+    const d = make("OUTSIDE");
+    expect(d["-webkit-text-stroke"]).toBe("4px #ff0000");
+    expect(d["paint-order"]).toBe("stroke fill");
+  });
+});
