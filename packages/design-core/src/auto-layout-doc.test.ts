@@ -135,3 +135,34 @@ describe('baseline alignment in the document', () => {
     expect(doc.getNode(text)!.y).toBe(30);
   });
 });
+
+describe('include strokes in layout', () => {
+  const build = (align: string, include: boolean) => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode('FRAME', { parentId: page, props: { width: 200, height: 100 } });
+    doc.setStyle(frame, { layoutMode: 'HORIZONTAL', itemSpacing: 10, layoutIncludeStrokes: include } as never);
+    const a = doc.createNode('RECTANGLE', { parentId: frame, props: { width: 20, height: 20, strokes: [{ type: 'SOLID', color: '#000000', opacity: 1 }], strokeWidth: 4, strokeAlign: align } as never });
+    const b = doc.createNode('RECTANGLE', { parentId: frame, props: { width: 20, height: 20 } });
+    return { doc, frame, a, b };
+  };
+  it('does nothing while off', () => {
+    const { doc, a, b } = build('CENTER', false);
+    expect(doc.getNode(a)!.x).toBe(0);
+    expect(doc.getNode(b)!.x).toBe(30);
+  });
+  it('a centred stroke pushes the next layer by its width and the layer sits inside it', () => {
+    const { doc, a, b } = build('CENTER', true);
+    expect(doc.getNode(a)!.x).toBe(2); // half the stroke outside on the left
+    expect(doc.getNode(b)!.x).toBe(34); // 20 + 4 + gap 10
+    expect(doc.getNode(a)!.width).toBe(20);
+  });
+  it('an outside stroke counts twice and an inside one not at all', () => {
+    const o = build('OUTSIDE', true);
+    expect(o.doc.getNode(o.a)!.x).toBe(4);
+    expect(o.doc.getNode(o.b)!.x).toBe(38);
+    const i = build('INSIDE', true);
+    expect(i.doc.getNode(i.a)!.x).toBe(0);
+    expect(i.doc.getNode(i.b)!.x).toBe(30);
+  });
+});

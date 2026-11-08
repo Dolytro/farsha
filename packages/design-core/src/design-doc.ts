@@ -24,6 +24,15 @@ type NodeMap = Y.Map<unknown>;
 /** Keys that describe the instance link; never copied from the main component and never overridden. */
 const DEFAULT_COLLECTION = 'default';
 
+/** How much a layer's stroke widens its box: a centred stroke by its width, an outside one by twice that, an inside one not at all. */
+export function strokeExtent(n: DesignNode): number {
+  const strokes = (n as { strokes?: unknown[] }).strokes;
+  const w = (n as { strokeWidth?: number }).strokeWidth;
+  if (!Array.isArray(strokes) || !strokes.length || typeof w !== 'number' || !(w > 0)) return 0;
+  const align = (n as { strokeAlign?: string }).strokeAlign ?? 'CENTER';
+  return align === 'OUTSIDE' ? w * 2 : align === 'INSIDE' ? 0 : w;
+}
+
 /** Baseline of the first line of a text layer, from the top of its box: AUTO line height puts it one font size down, a fixed one centres the 1.2 em line box in it. */
 function textBaselineOf(n: { fontSize: number; lineHeight: number | 'AUTO' }): number {
   return n.lineHeight === 'AUTO' ? n.fontSize : n.fontSize + (Math.max(0, n.lineHeight) - n.fontSize * 1.2) / 2;
@@ -794,22 +803,38 @@ export class DesignDoc {
         if (frame?.type !== 'FRAME') continue;
         // Layers set to absolute position stay out of the flow.
         const kids = this.children(id).filter((c) => c.visible && c.layoutPositioning !== 'ABSOLUTE');
+        // "Include strokes in layout": a centred stroke adds its width to the layer, an outside one twice that
+        const extraOf = (c: DesignNode) => (frame.layoutIncludeStrokes ? strokeExtent(c) : 0);
         const result = computeAutoLayout(
           frame,
-          kids.map((c) => ({
-            id: c.id,
-            width: c.width,
-            height: c.height,
-            fillWidth: c.layoutSizingH === 'FILL',
-            fillHeight: c.layoutSizingV === 'FILL',
-            baseline: c.type === 'TEXT' ? textBaselineOf(c) : undefined,
-            minWidth: c.minWidth,
-            maxWidth: c.maxWidth,
-            minHeight: c.minHeight,
-            maxHeight: c.maxHeight,
-          })),
+          kids.map((c) => {
+            const e = extraOf(c);
+            return {
+              id: c.id,
+              width: c.width + e,
+              height: c.height + e,
+              fillWidth: c.layoutSizingH === 'FILL',
+              fillHeight: c.layoutSizingV === 'FILL',
+              baseline: c.type === 'TEXT' ? textBaselineOf(c) + e / 2 : undefined,
+              minWidth: c.minWidth === undefined ? undefined : c.minWidth + e,
+              maxWidth: c.maxWidth === undefined ? undefined : c.maxWidth + e,
+              minHeight: c.minHeight === undefined ? undefined : c.minHeight + e,
+              maxHeight: c.maxHeight === undefined ? undefined : c.maxHeight + e,
+            };
+          }),
         );
         if (!result) continue;
+        if (frame.layoutIncludeStrokes) {
+          // the layout placed the outer edge of each stroke: the layer itself sits half the extra inside it
+          for (const c of kids) {
+            const e = extraOf(c);
+            if (!e) continue;
+            const p = result.positions[c.id];
+            if (p) result.positions[c.id] = { x: p.x + e / 2, y: p.y + e / 2 };
+            const sz = result.sizes[c.id];
+            if (sz) result.sizes[c.id] = { width: sz.width - e, height: sz.height - e };
+          }
+        }
         const moves = kids.filter((c) => {
           const p = result.positions[c.id]!;
           return Math.abs(p.x - c.x) > 1e-6 || Math.abs(p.y - c.y) > 1e-6;

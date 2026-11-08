@@ -179,6 +179,9 @@ export function AutoLayoutSection({ doc, node, select }: { doc: DesignDoc; node:
         <button className={`seg__btn${node.layoutFirstOnTop ? " seg__btn--active" : ""}`} aria-label="First on top" title="Canvas stacking: the first layer is drawn on top of the others (default: the last one is)" onClick={() => set({ layoutFirstOnTop: !node.layoutFirstOnTop })}>
           First on top
         </button>
+        <button className={`seg__btn${node.layoutIncludeStrokes ? " seg__btn--active" : ""}`} aria-label="Include strokes in layout" title="Include strokes in layout: gap and padding are measured from the outer edge of each layer's stroke" onClick={() => set({ layoutIncludeStrokes: !node.layoutIncludeStrokes })}>
+          Strokes in layout
+        </button>
         {node.layoutWrap && field("↨", "Gap between lines", num(node.counterSpacing ?? node.itemSpacing), (v) => set({ counterSpacing: v }))}
         {node.layoutWrap && mode === "HORIZONTAL" && field("▦", "Grid columns (0 = ordinary wrap)", num(node.gridColumns ?? 0), (v) => set({ gridColumns: Math.max(0, Math.min(24, Math.round(v))) }))}
       </div>

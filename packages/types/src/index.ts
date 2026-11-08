@@ -519,6 +519,8 @@ export interface AutoLayoutProps {
   layoutWrap?: boolean;
   /** Canvas stacking (Figma): the first layer in the frame is drawn on top of the others instead of the last. */
   layoutFirstOnTop?: boolean;
+  /** Figma's "Include strokes in layout": centred and outside strokes count towards the size of each child, so gap and padding are measured from the outer edge of the stroke. */
+  layoutIncludeStrokes?: boolean;
   /** Space between wrapped lines. */
   counterSpacing?: number;
   /** Horizontal layout with Wrap on: this many children per row, lined up in columns (a grid). 0 or missing is an ordinary wrap. */
