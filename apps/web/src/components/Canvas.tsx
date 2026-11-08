@@ -31,6 +31,7 @@ type Drag =
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
   | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean; offset: { x: number; y: number }; targets: Box[] }
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
+  | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
   | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
@@ -200,6 +201,15 @@ export function Canvas() {
       select(hit ? [hit.id] : []);
       return;
     }
+    if (el.dataset.gradient && selection[0]) {
+      // Dragging the gradient handle turns the gradient: the angle is where the pointer is, seen from the middle of the layer
+      const abs = doc.absoluteBox(selection[0]);
+      if (abs) {
+        doc.stopCapturing();
+        drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
+      }
+      return;
+    }
     if (el.dataset.rotate && selection[0]) {
       // Rotating: the angle between the pointer and the layer's centre decides the rotation.
       const node = doc.getNode(selection[0])!;
@@ -355,6 +365,14 @@ export function Canvas() {
     } else if (d.kind === "scale") {
       const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: true, fromCenter: e.altKey });
       doc.patchNodes(buildScaleUpdates(d.snapshot, next));
+    } else if (d.kind === "gradient") {
+      const node = doc.getNode(d.id);
+      if (node && "fills" in node && Array.isArray(node.fills)) {
+        const raw = (Math.atan2(w.y - d.cy, w.x - d.cx) * 180) / Math.PI;
+        const snapped = e.shiftKey ? Math.round(raw / 15) * 15 : Math.round(raw * 10) / 10;
+        const angle = ((snapped % 360) + 360) % 360;
+        doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
+      }
     } else if (d.kind === "multiresize") {
       const to = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
       const next = resizeGroup(d.items, d.box, to);
@@ -752,6 +770,17 @@ export function Canvas() {
   // Several layers of one parent, none locked or turned: the box around them gets resize handles
   const multiResizable =
     selection.length > 1 && !devMode && !viewer && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1 && selection.every((id) => { const n = doc.getNode(id); return !!n && !n.locked && !n.rotation; });
+  // The handle of a gradient fill (the top one): a dot on the edge of the layer in the direction of the gradient
+  const gradientHandle = (() => {
+    if (!selNode || !sel || devMode || viewer || rotated || selNode.flipX || selNode.flipY || !("fills" in selNode) || !Array.isArray(selNode.fills)) return null;
+    for (let i = selNode.fills.length - 1; i >= 0; i--) {
+      const f = selNode.fills[i]!;
+      if (f.type === "SOLID" || f.type === "IMAGE") continue;
+      const a = (f.angle * Math.PI) / 180;
+      return { index: i, x: sel.x + sel.width / 2 + (Math.cos(a) * sel.width) / 2, y: sel.y + sel.height / 2 + (Math.sin(a) * sel.height) / 2 };
+    }
+    return null;
+  })();
   const corners: { c: Handle; x: number; y: number }[] = sel
     ? [
         { c: "nw", x: sel.x, y: sel.y },
@@ -961,6 +990,13 @@ export function Canvas() {
                   />
                 ))}
               </g>
+              {gradientHandle && sel && (
+                <g>
+                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
+                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
+                  <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
+                </g>
+              )}
               {showDimensions && (
               <g pointerEvents="none" transform={`translate(${sel.x + sel.width / 2} ${sel.y + sel.height + 14 / z})`}>
                 <rect x={-34 / z} y={-9 / z} width={68 / z} height={18 / z} rx={3 / z} fill={ACCENT} />
