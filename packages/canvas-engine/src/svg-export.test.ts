@@ -332,6 +332,19 @@ describe("advanced strokes", () => {
     expect(svg).toContain('preserveAspectRatio="none"');
   });
 
+  it("zooms and moves a picture in Crop mode about the centre of the layer", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const make = (extra: object) => doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 200, height: 100, fills: [{ type: "IMAGE", assetId, scaleMode: "CROP", opacity: 1, ...extra }] } as never });
+    const svg = exportSvg(doc, [make({ cropZoom: 2, cropX: 10, cropY: -20 })])?.svg ?? "";
+    expect(svg).toContain('transform="translate(110 30) scale(2) translate(-100 -50)"');
+    expect(svg).toContain('preserveAspectRatio="xMidYMid slice"');
+    expect(exportSvg(doc, [make({})])?.svg ?? "").not.toContain("scale(");
+    // out-of-range numbers are clamped
+    expect(exportSvg(doc, [make({ cropZoom: 999 })])?.svg ?? "").toContain("scale(10)");
+    expect(exportSvg(doc, [make({ cropZoom: "x", cropX: NaN })])?.svg ?? "").not.toContain("NaN");
+  });
+
   it("turns OpenType features into font-feature-settings and ignores unknown ones", () => {
     expect(fontFeatureSettings(["tnum", "-liga", "evil\"; x", "tnum"])).toBe('"tnum" 1, "liga" 0');
     expect(fontFeatureSettings([])).toBeUndefined();

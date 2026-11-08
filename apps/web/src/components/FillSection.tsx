@@ -14,7 +14,7 @@ import { BLEND_MODES } from "../blend-modes";
 
 type Kind = Paint["type"];
 const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial", GRADIENT_ANGULAR: "Angular", GRADIENT_DIAMOND: "Diamond", IMAGE: "Image" };
-const SCALE_LABEL: Record<ImageScaleMode, string> = { FILL: "Fill", FIT: "Fit", STRETCH: "Stretch", TILE: "Tile" };
+const SCALE_LABEL: Record<ImageScaleMode, string> = { FILL: "Fill", FIT: "Fit", STRETCH: "Stretch", TILE: "Tile", CROP: "Crop" };
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
@@ -211,6 +211,26 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
           </option>
         ))}
       </Select>
+      {paint.scaleMode === "CROP" && (
+        <>
+          {([["Zoom", "cropZoom", "Zoom (%)", 100, (v: number) => Math.min(1000, Math.max(10, v)) / 100, (p: typeof paint) => Math.round((p.cropZoom ?? 1) * 100)], ["Move X", "cropX", "Move the picture sideways (px)", 1, (v: number) => v, (p: typeof paint) => Math.round(p.cropX ?? 0)], ["Move Y", "cropY", "Move the picture up or down (px)", 1, (v: number) => v, (p: typeof paint) => Math.round(p.cropY ?? 0)]] as const).map(([label, key, title, _unit, toValue, read]) => (
+            <label className="field field--row field--gap" key={key} title={title}>
+              <span className="field__label field__label--text">{label}</span>
+              <input
+                className="field__input"
+                type="number"
+                aria-label={`Crop ${label.toLowerCase()}`}
+                value={read(paint)}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (e.target.value === "" || !Number.isFinite(v)) return;
+                  setPaint({ ...paint, [key]: toValue(v) });
+                }}
+              />
+            </label>
+          ))}
+        </>
+      )}
       {paint.scaleMode === "TILE" && (
         <label className="field field--row field--gap" title="Tile size (% of the picture's own size)">
           <span className="field__label field__label--text">Tile</span>

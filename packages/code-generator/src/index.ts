@@ -33,6 +33,13 @@ export function paintCss(p: Paint): string {
       const h = Math.round((p.imageHeight && p.imageHeight > 0 ? p.imageHeight : 256) * k);
       return `url(image) 0 0 / ${w}px ${h}px repeat`;
     }
+    if (p.scaleMode === "CROP") {
+      // approximate: the picture fills the layer's width at the zoom, centred, then moved
+      const zoom = typeof p.cropZoom === "number" && Number.isFinite(p.cropZoom) ? Math.min(10, Math.max(0.1, p.cropZoom)) : 1;
+      const dx = typeof p.cropX === "number" && Number.isFinite(p.cropX) ? Math.round(p.cropX) : 0;
+      const dy = typeof p.cropY === "number" && Number.isFinite(p.cropY) ? Math.round(p.cropY) : 0;
+      return `url(image) calc(50% + ${dx}px) calc(50% + ${dy}px) / ${Math.round(zoom * 100)}% auto no-repeat`;
+    }
     return `url(image) ${p.scaleMode === "STRETCH" ? "0 0 / 100% 100%" : `center / ${p.scaleMode === "FIT" ? "contain" : "cover"}`} no-repeat`;
   }
   const stops = [...p.stops]

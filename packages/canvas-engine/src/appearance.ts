@@ -146,6 +146,18 @@ export function shapeGeometry(n: DesignNode, extra: string): string {
 }
 const geometry = shapeGeometry;
 
+/** Zoom and offset of a picture in Crop mode, clamped (zoom 0.1 to 10, offsets within 10 times the layer), as an SVG transform; "" when nothing changes. */
+export function cropTransform(p: { cropZoom?: unknown; cropX?: unknown; cropY?: unknown }, width: number, height: number): string {
+  const ok = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+  const zoom = Math.min(10, Math.max(0.1, ok(p.cropZoom, 1)));
+  const dx = Math.min(width * 10, Math.max(-width * 10, ok(p.cropX, 0)));
+  const dy = Math.min(height * 10, Math.max(-height * 10, ok(p.cropY, 0)));
+  if (zoom === 1 && dx === 0 && dy === 0) return "";
+  const cx = width / 2;
+  const cy = height / 2;
+  return `translate(${num(cx + dx)} ${num(cy + dy)}) scale(${num(zoom, 1)}) translate(${num(-cx)} ${num(-cy)})`;
+}
+
 /** Size of one repeated picture in Tile mode: the picture's own size times `tileScale` (256 px when the size is unknown). */
 export function tileSize(p: { imageWidth?: number; imageHeight?: number; tileScale?: number }): { w: number; h: number } {
   const ok = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : d);
@@ -201,12 +213,13 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
       const href = fill.assetId ? imageHref?.(fill.assetId) : undefined;
       if (href) {
         const par = fill.scaleMode === "FIT" ? "xMidYMid meet" : fill.scaleMode === "STRETCH" ? "none" : "xMidYMid slice";
+        const crop = fill.scaleMode === "CROP" ? cropTransform(fill, n.width, n.height) : "";
         const filterId = `${gradientId}-adj`;
         const filter = imageAdjustFilter(filterId, fill.adjustments);
         const tile = fill.scaleMode === "TILE" ? tileSize(fill) : null;
         const pw = tile ? tile.w : n.width;
         const ph = tile ? tile.h : n.height;
-        fillDef = `<pattern id="${gradientId}" patternUnits="userSpaceOnUse" width="${num(pw)}" height="${num(ph)}">${filter}<image href="${href.replace(/"/g, "&quot;")}" width="${num(pw)}" height="${num(ph)}" preserveAspectRatio="${tile ? "none" : par}"${filter ? ` filter="url(#${filterId})"` : ""}/></pattern>`;
+        fillDef = `<pattern id="${gradientId}" patternUnits="userSpaceOnUse" width="${num(pw)}" height="${num(ph)}">${filter}<image href="${href.replace(/"/g, "&quot;")}" width="${num(pw)}" height="${num(ph)}" preserveAspectRatio="${tile ? "none" : par}"${crop ? ` transform="${crop}"` : ""}${filter ? ` filter="url(#${filterId})"` : ""}/></pattern>`;
         fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
       } else fillAttrs = ' fill="#e5e5e5"';
     } else if (fill.type === "GRADIENT_ANGULAR" || fill.type === "GRADIENT_DIAMOND") {

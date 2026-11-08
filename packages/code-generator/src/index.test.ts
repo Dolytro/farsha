@@ -252,6 +252,7 @@ describe("tiled image fills", () => {
     expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "TILE", imageWidth: 32, imageHeight: 16, tileScale: 2, opacity: 1 })).toBe("url(image) 0 0 / 64px 32px repeat");
     expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "TILE", opacity: 1 })).toBe("url(image) 0 0 / 256px 256px repeat");
     expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "FIT", opacity: 1 })).toBe("url(image) center / contain no-repeat");
+    expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "CROP", cropZoom: 1.5, cropX: 12, cropY: -4, opacity: 1 })).toBe("url(image) calc(50% + 12px) calc(50% + -4px) / 150% auto no-repeat");
   });
 });
 

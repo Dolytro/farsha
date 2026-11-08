@@ -57,7 +57,7 @@ export interface GradientPaint {
   blendMode?: BlendMode;
 }
 
-export type ImageScaleMode = 'FILL' | 'FIT' | 'STRETCH' | 'TILE';
+export type ImageScaleMode = 'FILL' | 'FIT' | 'STRETCH' | 'TILE' | 'CROP';
 
 export interface ImagePaint {
   type: 'IMAGE';
@@ -69,6 +69,10 @@ export interface ImagePaint {
   imageHeight?: number;
   /** Tile mode only: size of one tile as a multiple of the picture's own size (default 1). */
   tileScale?: number;
+  /** Crop mode only: how far the picture is zoomed in (1 = filling the layer, default 1), and how far it is moved, in pixels of the layer. */
+  cropZoom?: number;
+  cropX?: number;
+  cropY?: number;
   opacity: number;
   blendMode?: BlendMode;
   /** Colour adjustments of the picture, each from -100 to 100 (0 or missing leaves it as it is). */
