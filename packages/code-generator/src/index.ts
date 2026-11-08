@@ -126,9 +126,23 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   else if ("cornerRadii" in node && node.cornerRadii?.length === 4 && node.cornerRadii.some((r) => r > 0)) d.push(["border-radius", node.cornerRadii.map(px).join(" ")]);
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
   if ("strokes" in node && node.strokes?.[0] && node.strokeWidth !== undefined) {
-    d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity)}`]);
-    if ("strokeSides" in node && node.strokeSides?.length === 4) d.push(["border-width", node.strokeSides.map(px).join(" ")]);
-    if (node.strokeDash?.some((v) => v > 0)) d.push(["border-style", (node.strokeDash[0] ?? 0) <= node.strokeWidth ? "dotted" : "dashed"]);
+    const color = toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity);
+    const align = "strokeAlign" in node ? node.strokeAlign : undefined;
+    if (align === "OUTSIDE") {
+      // an outside stroke sits beyond the box: an outline (it follows the corner radius in current browsers)
+      d.push(["outline", `${px(node.strokeWidth)} solid ${color}`]);
+    } else if (align === "CENTER") {
+      // a centred stroke is half inside (border) and half outside (outline)
+      d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth / 2)} solid ${color}`], ["outline", `${px(node.strokeWidth / 2)} solid ${color}`]);
+    } else {
+      d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${color}`]);
+      if ("strokeSides" in node && node.strokeSides?.length === 4) d.push(["border-width", node.strokeSides.map(px).join(" ")]);
+      if (node.strokeDash?.some((v) => v > 0)) d.push(["border-style", (node.strokeDash[0] ?? 0) <= node.strokeWidth ? "dotted" : "dashed"]);
+    }
+    if (align && align !== "INSIDE" && node.strokeDash?.some((v) => v > 0)) {
+      const style = (node.strokeDash[0] ?? 0) <= node.strokeWidth ? "dotted" : "dashed";
+      for (const [i, [k, v]] of d.entries()) if (k === "outline" || k === "border") d[i] = [k, v.replace(" solid ", ` ${style} `)];
+    }
   }
   if (node.type === "FRAME" && node.clipsContent) d.push(["overflow", "hidden"]);
   if (node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")) {
@@ -185,6 +199,10 @@ export function tailwindClass([prop, value]: Decl): string {
     case "border": {
       const [w, , ...color] = value.split(" ");
       return `border-[${w}] border-solid border-[${tw(color.join(" "))}]`;
+    }
+    case "outline": {
+      const [w, style, ...color] = value.split(" ");
+      return `outline outline-[${w}] ${style === "solid" ? "outline-solid" : style === "dotted" ? "outline-dotted" : "outline-dashed"} outline-[${tw(color.join(" "))}]`;
     }
     case "overflow":
       return "overflow-hidden";

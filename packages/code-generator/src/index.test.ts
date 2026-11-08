@@ -549,3 +549,32 @@ describe("Android XML", () => {
     expect(code).toMatch(/<TextView\s+xmlns:android=/);
   });
 });
+
+describe("stroke position in CSS", () => {
+  const make = (strokeAlign: string, extra: Record<string, unknown> = {}) => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 10, height: 10, strokes: [{ type: "SOLID", color: "#ff0000", opacity: 1 }], strokeWidth: 4, strokeAlign, ...extra } as never });
+    return Object.fromEntries(declarations(doc.getNode(id)!));
+  };
+  it("inside strokes are a border", () => {
+    expect(make("INSIDE")).toMatchObject({ border: "4px solid #ff0000", "box-sizing": "border-box" });
+    expect(make("INSIDE")).not.toHaveProperty("outline");
+  });
+  it("outside strokes are an outline and no border", () => {
+    const d = make("OUTSIDE");
+    expect(d.outline).toBe("4px solid #ff0000");
+    expect(d).not.toHaveProperty("border");
+  });
+  it("centred strokes are half border and half outline", () => {
+    const d = make("CENTER");
+    expect(d.border).toBe("2px solid #ff0000");
+    expect(d.outline).toBe("2px solid #ff0000");
+  });
+  it("dashes carry over to outline and border", () => {
+    const d = make("OUTSIDE", { strokeDash: [8, 4] });
+    expect(d.outline).toBe("4px dashed #ff0000");
+  });
+  it("Tailwind writes an outline", () => {
+    expect(tailwindClass(["outline", "4px solid #ff0000"])).toContain("outline-[4px]");
+  });
+});
