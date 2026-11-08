@@ -369,3 +369,24 @@ describe("Jetpack Compose", () => {
     expect(generateCode(doc.getNode(t)!, (i) => doc.children(i), "compose")).toContain('text = "Cost \\$5 \\"x\\"\\n",');
   });
 });
+
+describe("grid flow CSS", () => {
+  it("is a CSS grid with a fixed number of columns", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("FRAME", { parentId: page, props: { name: "Grid", width: 200, height: 100, layoutMode: "HORIZONTAL", layoutWrap: true, gridColumns: 3, itemSpacing: 8, counterSpacing: 4, paddingTop: 2, paddingRight: 2, paddingBottom: 2, paddingLeft: 2, primaryAxisAlign: "CENTER" } as never });
+    const decls = declarations(doc.getNode(id)!, {});
+    const get = (k: string) => decls.find(([p]) => p === k)?.[1];
+    expect(get("display")).toBe("grid");
+    expect(get("grid-template-columns")).toBe("repeat(3, max-content)");
+    expect(get("gap")).toBe("4px 8px");
+    expect(get("justify-items")).toBe("center");
+    expect(get("flex-direction")).toBeUndefined();
+  });
+  it("without columns the wrap stays a flex layout", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("FRAME", { parentId: page, props: { name: "Wrap", width: 200, height: 100, layoutMode: "HORIZONTAL", layoutWrap: true } as never });
+    expect(declarations(doc.getNode(id)!, {}).find(([p]) => p === "display")?.[1]).toBe("flex");
+  });
+});

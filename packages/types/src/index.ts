@@ -503,6 +503,8 @@ export interface AutoLayoutProps {
   layoutWrap?: boolean;
   /** Space between wrapped lines. */
   counterSpacing?: number;
+  /** Horizontal layout with Wrap on: this many children per row, lined up in columns (a grid). 0 or missing is an ordinary wrap. */
+  gridColumns?: number;
 }
 
 /** A layout grid drawn over a frame as a guide (Figma's layout grid): columns, rows, or a square grid. */

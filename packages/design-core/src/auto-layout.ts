@@ -54,9 +54,11 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
   const padCrossEnd = n(horizontal ? frame.paddingBottom : frame.paddingRight);
   const hugMain = (frame.primarySizing ?? 'HUG') === 'HUG' && children.length > 0;
   const hugCross = (frame.counterSizing ?? 'HUG') === 'HUG' && children.length > 0;
+  // Grid flow: a wrapping row layout with a fixed number of columns. Children keep their own sizes in a grid.
+  const grid = horizontal && !!frame.layoutWrap && Math.floor(n(frame.gridColumns)) >= 1;
   // A hugging frame can't hand out free space, so "fill" only applies along fixed axes.
-  const fillsMain = (c: LayoutChild) => !hugMain && !!(horizontal ? c.fillWidth : c.fillHeight);
-  const fillsCross = (c: LayoutChild) => !hugCross && !!(horizontal ? c.fillHeight : c.fillWidth);
+  const fillsMain = (c: LayoutChild) => !grid && !hugMain && !!(horizontal ? c.fillWidth : c.fillHeight);
+  const fillsCross = (c: LayoutChild) => !grid && !hugCross && !!(horizontal ? c.fillHeight : c.fillWidth);
   const gapSize = n(frame.itemSpacing);
   const fixedMain = children.reduce((sum, c) => sum + (fillsMain(c) ? 0 : horizontal ? c.width : c.height), 0);
   const fillCount = children.filter(fillsMain).length;
@@ -75,6 +77,28 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
   const cross = (c: LayoutChild) => (horizontal ? c.height : c.width);
 
   const gap = gapSize;
+  if (grid && sized.length) {
+    const cols = Math.max(1, Math.min(sized.length, Math.floor(n(frame.gridColumns))));
+    const rows = Math.ceil(sized.length / cols);
+    const colWidth = Array.from({ length: cols }, (_, ci) => sized.reduce((m, c, i) => (i % cols === ci ? Math.max(m, c.width) : m), 0));
+    const rowHeight = Array.from({ length: rows }, (_, ri) => sized.slice(ri * cols, ri * cols + cols).reduce((m, c) => Math.max(m, c.height), 0));
+    const rowGap = n(frame.counterSpacing ?? frame.itemSpacing);
+    const colOffset = colWidth.map((_, ci) => colWidth.slice(0, ci).reduce((a, b) => a + b, 0) + gap * ci);
+    const rowOffset = rowHeight.map((_, ri) => rowHeight.slice(0, ri).reduce((a, b) => a + b, 0) + rowGap * ri);
+    const contentW = colWidth.reduce((a, b) => a + b, 0) + gap * (cols - 1);
+    const contentH = rowHeight.reduce((a, b) => a + b, 0) + rowGap * (rows - 1);
+    const gridW = clampSize(hugMain ? contentW + padMainStart + padMainEnd : frame.width, frame.minWidth, frame.maxWidth);
+    const gridH = clampSize(hugCross ? contentH + padCrossStart + padCrossEnd : frame.height, frame.minHeight, frame.maxHeight);
+    const alignX = frame.primaryAxisAlign === 'CENTER' ? 0.5 : frame.primaryAxisAlign === 'MAX' ? 1 : 0;
+    const alignY = frame.counterAxisAlign === 'CENTER' ? 0.5 : frame.counterAxisAlign === 'MAX' ? 1 : 0;
+    const placed: LayoutResult['positions'] = {};
+    sized.forEach((c, i) => {
+      const ci = i % cols;
+      const ri = Math.floor(i / cols);
+      placed[c.id] = { x: padMainStart + colOffset[ci]! + (colWidth[ci]! - c.width) * alignX, y: padCrossStart + rowOffset[ri]! + (rowHeight[ri]! - c.height) * alignY };
+    });
+    return { positions: placed, sizes, width: gridW, height: gridH };
+  }
   // Wrapping needs a fixed size along the layout direction to break lines against.
   if (frame.layoutWrap && !hugMain && sized.length) {
     const innerMain = (horizontal ? frame.width : frame.height) - padMainStart - padMainEnd;

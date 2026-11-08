@@ -177,6 +177,7 @@ export function AutoLayoutSection({ doc, node, select }: { doc: DesignDoc; node:
           Wrap
         </button>
         {node.layoutWrap && field("↨", "Gap between lines", num(node.counterSpacing ?? node.itemSpacing), (v) => set({ counterSpacing: v }))}
+        {node.layoutWrap && mode === "HORIZONTAL" && field("▦", "Grid columns (0 = ordinary wrap)", num(node.gridColumns ?? 0), (v) => set({ gridColumns: Math.max(0, Math.min(24, Math.round(v))) }))}
       </div>
       <PaddingFields node={node} set={set} field={field} />
       <div className="props__grid props__grid--gap">

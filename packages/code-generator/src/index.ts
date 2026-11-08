@@ -123,6 +123,17 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   if (node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")) {
     // Auto layout is a flex container; its children are in the flow instead of absolutely positioned.
     const justify = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", SPACE_BETWEEN: "space-between" } as const;
+    const gridCols = node.layoutMode === "HORIZONTAL" && node.layoutWrap ? Math.floor(node.gridColumns ?? 0) : 0;
+    if (gridCols >= 1) {
+      // Grid flow: a fixed number of columns, each as wide as its widest child
+      const place = { MIN: "start", CENTER: "center", MAX: "end", SPACE_BETWEEN: "start" } as const;
+      d.push(["display", "grid"], ["grid-template-columns", `repeat(${gridCols}, max-content)`], ["gap", `${px(node.counterSpacing ?? node.itemSpacing ?? 0)} ${px(node.itemSpacing ?? 0)}`]);
+      const gridPad = [node.paddingTop, node.paddingRight, node.paddingBottom, node.paddingLeft].map((v) => v ?? 0);
+      if (gridPad.some((v) => v > 0)) d.push(["padding", gridPad.map(px).join(" ")]);
+      d.push(["justify-items", place[node.primaryAxisAlign ?? "MIN"]], ["align-items", place[node.counterAxisAlign ?? "MIN"]]);
+      effectDecls();
+      return d;
+    }
     d.push(["display", "flex"], ["flex-direction", node.layoutMode === "HORIZONTAL" ? "row" : "column"]);
     if (node.layoutWrap) {
       // wrapped lines are spaced by the line gap: row-gap / column-gap swap with the direction
