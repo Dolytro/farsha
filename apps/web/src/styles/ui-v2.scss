@@ -1503,3 +1503,36 @@ textarea:focus-visible {
   cursor: pointer;
   font-size: 13px;
 }
+
+/* Constraints diagram (Figma): clickable lines around and across the layer. */
+.cdiagram {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 8px;
+  border: 1px solid var(--c-border, #ddd);
+  border-radius: 6px;
+  background: var(--c-input, transparent);
+}
+.cdiagram__layer {
+  position: absolute;
+  inset: 24px;
+  border: 1px solid var(--c-muted, #888);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.cdiagram__line {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--c-border, #bbb);
+  cursor: pointer;
+}
+.cdiagram__line:hover {
+  background: var(--c-muted, #888);
+}
+.cdiagram__line--on,
+.cdiagram__line--on:hover {
+  background: var(--c-accent, #0d99ff);
+}
