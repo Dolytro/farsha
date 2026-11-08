@@ -27,6 +27,18 @@ export function ShareDialog() {
     isLinkShared(t, fileId).then(setShared, (e: Error) => setError(e.message));
   }, [shareOpen, fileId]);
 
+  useEffect(() => {
+    if (!shareOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setShareOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [shareOpen, setShareOpen]);
+
   if (!shareOpen) return null;
 
   const run = async (fn: () => Promise<unknown>) => {
