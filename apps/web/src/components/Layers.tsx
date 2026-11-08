@@ -4,7 +4,7 @@ import { useEditor } from "../store";
 import { addPage, deletePage, duplicatePage } from "../pages";
 import { zoomFit } from "../actions";
 import { Select } from "./Select";
-import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow } from "../layers-tree";
+import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow, treeKeyTarget, type TreeKey } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
@@ -95,6 +95,12 @@ export function Layers() {
     return (
       <li
         key={n.id}
+        role="treeitem"
+        tabIndex={selection[0] === n.id || (!selection.length && rows[0]?.id === n.id) ? 0 : -1}
+        aria-selected={selection.includes(n.id)}
+        aria-level={depth + 1}
+        aria-expanded={hasChildren ? !collapsed.has(n.id) : undefined}
+        aria-label={`${n.name}, ${n.type.toLowerCase()}${n.visible ? "" : ", hidden"}${n.locked ? ", locked" : ""}`}
         className={`layers__item${selection.includes(n.id) ? " layers__item--selected" : ""}${n.visible ? "" : " layers__item--hidden"}${drop?.id === n.id ? ` layers__item--drop-${drop.where}` : ""}`}
         style={{ paddingLeft: 4 + depth * 16 }}
         draggable={canEdit && renaming !== n.id}
@@ -295,7 +301,32 @@ export function Layers() {
               </svg>
             </button>
           </div>
-          <ul className="layers__list">{rows.map(renderRow)}</ul>
+          <ul
+            className="layers__list"
+            role="tree"
+            aria-label="Layers"
+            aria-multiselectable="true"
+            onKeyDown={(e) => {
+              if (e.target instanceof HTMLInputElement || e.altKey || e.ctrlKey || e.metaKey) return;
+              if (e.key === "Enter" && selection[0]) {
+                e.preventDefault();
+                e.stopPropagation();
+                const v = zoomFit(doc, pageId, [selection[0]]);
+                if (v) useEditor.getState().setViewport(v);
+                return;
+              }
+              if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+              e.preventDefault();
+              e.stopPropagation(); // the arrow keys move the selection here, not the layers on the canvas
+              const list = e.currentTarget;
+              const target = treeKeyTarget(rows, selection[0], e.key as TreeKey, collapsed);
+              if (target.toggle) toggleCollapsed(target.toggle.id);
+              if (target.select) {
+                select([target.select]);
+                requestAnimationFrame(() => list.querySelector<HTMLElement>('[aria-selected="true"]')?.focus());
+              }
+            }}
+          >{rows.map(renderRow)}</ul>
         </>
       )}
     </aside>

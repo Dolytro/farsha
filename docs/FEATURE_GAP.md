@@ -163,7 +163,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 - Performance: SVG renderer slows with thousands of nodes; no Canvas / WebGL path yet.
 - Text: wrapping uses canvas measureText in the browser (an estimate in exports); limited fonts, no Google Fonts yet.
 - Images are stored inline in the document (no separate asset pipeline).
-- Accessibility: keyboard navigation and screen-reader support are minimal.
+- Accessibility: ✅ the layers list is a tree (roles, levels, expanded and selected states, Up / Down / Left / Right / Home / End / Enter keys) and the canvas announces the page and selection; Reduce motion preference. Still minimal: moving layers and editing properties from the keyboard alone, canvas content for screen readers.
 - Touch / trackpad gestures beyond pinch zoom, mobile layout of the editor.
 
 ## Suggested build order

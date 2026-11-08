@@ -114,3 +114,30 @@ export function moveLayers(doc: DesignDoc, ids: string[], targetId: string, wher
   }
   return moving;
 }
+
+export type TreeKey = "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight" | "Home" | "End";
+
+/**
+ * What an arrow key does in the layers tree (the keyboard pattern of a tree view): Up and Down move to the neighbour, Home and End to the ends,
+ * Right opens a folded layer or goes to its first child, Left folds an open layer or goes to its parent.
+ */
+export function treeKeyTarget(rows: LayerRow[], currentId: string | undefined, key: TreeKey, collapsed: ReadonlySet<string>): { select?: string; toggle?: { id: string; collapse: boolean } } {
+  if (!rows.length) return {};
+  const i = rows.findIndex((r) => r.id === currentId);
+  if (i < 0) return { select: key === "End" ? rows[rows.length - 1]!.id : rows[0]!.id };
+  const row = rows[i]!;
+  if (key === "ArrowDown") return i + 1 < rows.length ? { select: rows[i + 1]!.id } : {};
+  if (key === "ArrowUp") return i > 0 ? { select: rows[i - 1]!.id } : {};
+  if (key === "Home") return { select: rows[0]!.id };
+  if (key === "End") return { select: rows[rows.length - 1]!.id };
+  if (key === "ArrowRight") {
+    if (!row.hasChildren) return {};
+    if (collapsed.has(row.id)) return { toggle: { id: row.id, collapse: false } };
+    const next = rows[i + 1];
+    return next && next.depth > row.depth ? { select: next.id } : {};
+  }
+  // ArrowLeft
+  if (row.hasChildren && !collapsed.has(row.id)) return { toggle: { id: row.id, collapse: true } };
+  for (let j = i - 1; j >= 0; j--) if (rows[j]!.depth < row.depth) return { select: rows[j]!.id };
+  return {};
+}

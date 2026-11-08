@@ -707,6 +707,7 @@ export function Canvas() {
   return (
     <main
       className="canvas"
+      aria-label={`Design canvas, page ${doc.getNode(pageId)?.name ?? ""}. ${selection.length ? `${selection.length} ${selection.length === 1 ? "layer" : "layers"} selected.` : "Nothing selected."}`}
       style={{ cursor, background: doc.pageBackground(pageId) }}
       tabIndex={0}
       onKeyDown={(e) => e.code === "Space" && setSpaceDown(true)}

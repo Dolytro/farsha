@@ -73,3 +73,38 @@ describe("layerKind", () => {
     expect(layerKind(doc, page)).toBeUndefined();
   });
 });
+
+import { treeKeyTarget, type LayerRow } from "./layers-tree";
+
+describe("treeKeyTarget", () => {
+  const rows: LayerRow[] = [
+    { id: "a", depth: 0, hasChildren: true },
+    { id: "a1", depth: 1, hasChildren: false },
+    { id: "a2", depth: 1, hasChildren: true },
+    { id: "a2x", depth: 2, hasChildren: false },
+    { id: "b", depth: 0, hasChildren: false },
+  ];
+  const none = new Set<string>();
+  it("moves up and down and stops at the ends", () => {
+    expect(treeKeyTarget(rows, "a", "ArrowDown", none)).toEqual({ select: "a1" });
+    expect(treeKeyTarget(rows, "a1", "ArrowUp", none)).toEqual({ select: "a" });
+    expect(treeKeyTarget(rows, "a", "ArrowUp", none)).toEqual({});
+    expect(treeKeyTarget(rows, "b", "ArrowDown", none)).toEqual({});
+    expect(treeKeyTarget(rows, "a1", "Home", none)).toEqual({ select: "a" });
+    expect(treeKeyTarget(rows, "a1", "End", none)).toEqual({ select: "b" });
+  });
+  it("starts from the top (or the bottom with End) when nothing in the list is selected", () => {
+    expect(treeKeyTarget(rows, undefined, "ArrowDown", none)).toEqual({ select: "a" });
+    expect(treeKeyTarget(rows, "gone", "End", none)).toEqual({ select: "b" });
+    expect(treeKeyTarget([], "a", "ArrowDown", none)).toEqual({});
+  });
+  it("Right opens a folded layer or enters an open one, Left folds or goes to the parent", () => {
+    expect(treeKeyTarget(rows, "a", "ArrowRight", new Set(["a"]))).toEqual({ toggle: { id: "a", collapse: false } });
+    expect(treeKeyTarget(rows, "a", "ArrowRight", none)).toEqual({ select: "a1" });
+    expect(treeKeyTarget(rows, "a1", "ArrowRight", none)).toEqual({});
+    expect(treeKeyTarget(rows, "a2", "ArrowLeft", none)).toEqual({ toggle: { id: "a2", collapse: true } });
+    expect(treeKeyTarget(rows, "a1", "ArrowLeft", none)).toEqual({ select: "a" });
+    expect(treeKeyTarget(rows, "a2x", "ArrowLeft", none)).toEqual({ select: "a2" });
+    expect(treeKeyTarget(rows, "b", "ArrowLeft", none)).toEqual({});
+  });
+});
