@@ -11,7 +11,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Move (V), Hand (H) | ✅ | |
 | Frame (F), Rectangle (R), Ellipse (O), Text (T) | ✅ | |
 | Scale tool (K) | ✅ | One layer at a time; keeps the ratio (Alt scales from the centre) |
-| Section, Slice | ❌ | P3 |
+| Section, Slice | ✅ | P3 |
 | Line (L), Arrow (Shift+L) | ✅ | Drawn by dragging (Shift snaps to 15°), editable stroke colour / width, rotation, caps, joins, dashes and arrowheads (Stroke section). No handles on the line ends |
 | Polygon, Star | 🟡 | Toolbar buttons, fill and stroke editable. ✅ Polygon sides (3 to 60) and Star points and ratio in the Design panel (for layers drawn with the tools). ✅ Corner radius for polygons and stars (a Radius field, in the 100 x 100 drawing units of the shape, so it scales with the layer). Missing: nothing in the tool |
 | Image / video placement, paste or drop an image | ✅ | P1 |
@@ -42,7 +42,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Select all (Ctrl+A) | ✅ | |
 | Select inverse (Ctrl+Shift+A), select all matching (Ctrl+Alt+A) | ✅ | Select none is Esc. Matching = same type, fills, strokes (and font for text) |
 | Select children (Enter), select parent (Shift+Enter), Tab / Shift+Tab to next / previous sibling | ✅ | |
-| Double-click to enter a group; Figma selects the top-level layer first | ❌ | P1 |
+| Double-click to enter a group; Figma selects the top-level layer first | ✅ | P1 |
 | Resize from all 8 handles, Shift = keep ratio, Alt = from center | 🟡 | All 8 handles (sides are invisible strips like Figma), Shift, Alt done. ✅ resizing several layers at once (select layers with the same parent: the box around them gets handles; positions and sizes scale together, Shift keeps the ratio, Alt resizes from the centre, one undo step). Missing: rotated layers, flipping when dragged past the opposite side, children scaling (constraints) |
 | Rotate handle, rotate with Ctrl+Alt+arrows (menu) | 🟡 | Drag just outside a corner of a single layer to rotate it (Shift snaps to 15°), plus the numeric field. While a layer is rotated only the rotated outline shows (no resize handles; resize with the W / H fields). Missing: Ctrl+Alt+arrows, ✅ rotating several layers together (drag just outside a corner of the box around them, Shift snaps to 15°; layers must share a parent), ✅ resizing a rotated layer by its handles (it grows along its own sides with the opposite corner fixed on the canvas; no flipping or snapping while turned; a turned layer inside a turned frame is not corrected) |
 | Flip horizontal / vertical (Shift+H / Shift+V) | 🟡 | Each selected layer flips about its own centre (Figma flips a multi-selection about the selection centre). Missing: menu entries |
@@ -53,7 +53,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Mask (Ctrl+Alt+M), frame selection (Ctrl+Alt+G) | ✅ | Mask: several layers are grouped and the bottom one masks the rest; one layer masks the layers above it; shape mask (alpha), also in SVG export. ✅ luminance masks (a Mask section with Mask type Alpha / Luminance on a mask layer; luminance works for rectangles, ellipses and frames and uses their own fills). Missing: outline-only masks |
 | Right-click context menu (Figma items; read-only in Dev Mode; none on view links; submenu is a flat "Copy/Paste as" group) | ✅ | |
 | Command palette "Actions" (Ctrl+/ or Ctrl+K) | ✅ | Search ~50 actions with their shortcuts (also works as a shortcut cheat sheet). Recent actions (the last 5, shown first) done. Searching pages and layers by name (type two letters, pick one to jump to it) done. Missing: plugins |
-| Find (Ctrl+F), find next / previous (menu) | ❌ | P3 |
+| Find (Ctrl+F), find next / previous (menu) | ✅ | Find, find and replace, next / previous (Enter, Ctrl+Shift+F / D) |
 | Draggable layer reorder, drag to reparent (drop on a frame or group) | ✅ | |
 | Layers panel: expand / collapse, search, lock icon, rename (selecting on canvas does not auto-expand parents yet) | ✅ | |
 | Pages: add, rename (double-click), duplicate (the ⧉ button, File menu or Actions; the copy lands after the original and keeps the page background), delete, switch (click, Page Up / Down); each page remembers its pan and zoom | ✅ | |
@@ -136,7 +136,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Per-person invite (edit / comment / view) | ❌ | P2 |
 | Password and expiry on links | ❌ | P3 |
 | Live multi-user editing and cursors | ❌ | P2 |
-| Comments, replies, mentions, resolve | ❌ | P2 |
+| Comments, replies, mentions, resolve | 🟡 | comments, replies and resolve are done and saved in the file; mentions and notifications need accounts and a server | P2 |
 
 ## 10. Preferences (Figma → Preferences menu) (menu)
 
