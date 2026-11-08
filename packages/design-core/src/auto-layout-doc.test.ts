@@ -121,3 +121,17 @@ describe('absolute position inside auto layout', () => {
     expect(pos(doc, b)).toEqual([8, 38]);
   });
 });
+
+describe('baseline alignment in the document', () => {
+  it('lines a text layer and a box up on the baseline of a row', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode('FRAME', { parentId: page, props: { width: 200, height: 100 } });
+    doc.setStyle(frame, { layoutMode: 'HORIZONTAL', counterAxisAlign: 'BASELINE', itemSpacing: 4 } as never);
+    const text = doc.createNode('TEXT', { parentId: frame, props: { characters: 'Hi', fontSize: 20, lineHeight: 'AUTO', width: 30, height: 24 } as never });
+    const box = doc.createNode('RECTANGLE', { parentId: frame, props: { width: 10, height: 50 } });
+    // the box has no text: it hangs by its bottom edge (50); the text baseline is one font size down (20)
+    expect(doc.getNode(box)!.y).toBe(0);
+    expect(doc.getNode(text)!.y).toBe(30);
+  });
+});

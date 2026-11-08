@@ -21,6 +21,8 @@ export interface LayoutChild extends SizeLimits {
   /** Fill the free space of the frame along its width / height. */
   fillWidth?: boolean;
   fillHeight?: boolean;
+  /** Distance from the top of the layer to the baseline of its first line of text (text layers), used by baseline alignment. Others align by their bottom edge. */
+  baseline?: number;
 }
 
 export interface LayoutFrame extends AutoLayoutProps, SizeLimits {
@@ -150,7 +152,11 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
 
   const childMain = sized.reduce((sum, c) => sum + main(c), 0);
   const contentMain = childMain + gap * Math.max(0, children.length - 1);
-  const contentCross = sized.reduce((m, c) => Math.max(m, cross(c)), 0);
+  // Baseline alignment (a row only): layers hang from a common baseline instead of a common edge
+  const byBaseline = horizontal && frame.counterAxisAlign === 'BASELINE';
+  const baselineOf = (c: LayoutChild) => (typeof c.baseline === 'number' && Number.isFinite(c.baseline) ? c.baseline : cross(c));
+  const commonBaseline = byBaseline ? sized.reduce((m, c) => Math.max(m, baselineOf(c)), 0) : 0;
+  const contentCross = byBaseline ? sized.reduce((m, c) => Math.max(m, commonBaseline - baselineOf(c) + cross(c)), 0) : sized.reduce((m, c) => Math.max(m, cross(c)), 0);
 
   const mainLimits: [number | undefined, number | undefined] = horizontal ? [frame.minWidth, frame.maxWidth] : [frame.minHeight, frame.maxHeight];
   const crossLimits: [number | undefined, number | undefined] = horizontal ? [frame.minHeight, frame.maxHeight] : [frame.minWidth, frame.maxWidth];
@@ -170,7 +176,8 @@ export function computeAutoLayout(frame: LayoutFrame, children: LayoutChild[]): 
   const positions: LayoutResult['positions'] = {};
   for (const c of sized) {
     let cPos = padCrossStart;
-    if (counter === 'CENTER') cPos += (innerCross - cross(c)) / 2;
+    if (byBaseline) cPos += commonBaseline - baselineOf(c);
+    else if (counter === 'CENTER') cPos += (innerCross - cross(c)) / 2;
     else if (counter === 'MAX') cPos += innerCross - cross(c);
     positions[c.id] = horizontal ? { x: cursor, y: cPos } : { x: cPos, y: cursor };
     cursor += main(c) + step;

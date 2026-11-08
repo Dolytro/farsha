@@ -511,7 +511,7 @@ export interface AutoLayoutProps {
   /** Alignment along the layout direction. */
   primaryAxisAlign?: LayoutAlign;
   /** Alignment across the layout direction (SPACE_BETWEEN is not valid here). */
-  counterAxisAlign?: Exclude<LayoutAlign, 'SPACE_BETWEEN'>;
+  counterAxisAlign?: Exclude<LayoutAlign, 'SPACE_BETWEEN'> | 'BASELINE';
   /** Hug = the frame grows / shrinks with its content along the layout direction. Missing means HUG. */
   primarySizing?: LayoutSizing;
   counterSizing?: LayoutSizing;

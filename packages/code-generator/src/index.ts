@@ -155,7 +155,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
       d.push(["display", "grid"], ["grid-template-columns", `repeat(${gridCols}, max-content)`], ["gap", `${px(node.counterSpacing ?? node.itemSpacing ?? 0)} ${px(node.itemSpacing ?? 0)}`]);
       const gridPad = [node.paddingTop, node.paddingRight, node.paddingBottom, node.paddingLeft].map((v) => v ?? 0);
       if (gridPad.some((v) => v > 0)) d.push(["padding", gridPad.map(px).join(" ")]);
-      d.push(["justify-items", place[node.primaryAxisAlign ?? "MIN"]], ["align-items", place[node.counterAxisAlign ?? "MIN"]]);
+      d.push(["justify-items", place[node.primaryAxisAlign ?? "MIN"]], ["align-items", node.counterAxisAlign === "BASELINE" ? "baseline" : place[node.counterAxisAlign ?? "MIN"]]);
       effectDecls();
       return d;
     }
@@ -168,7 +168,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     } else if (node.itemSpacing) d.push(["gap", px(node.itemSpacing)]);
     const pad = [node.paddingTop, node.paddingRight, node.paddingBottom, node.paddingLeft].map((v) => v ?? 0);
     if (pad.some((v) => v > 0)) d.push(["padding", pad.map(px).join(" ")]);
-    d.push(["justify-content", justify[node.primaryAxisAlign ?? "MIN"]], ["align-items", justify[node.counterAxisAlign ?? "MIN"]]);
+    d.push(["justify-content", justify[node.primaryAxisAlign ?? "MIN"]], ["align-items", node.counterAxisAlign === "BASELINE" ? "baseline" : justify[node.counterAxisAlign ?? "MIN"]]);
   }
   effectDecls();
   return d;

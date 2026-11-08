@@ -191,12 +191,13 @@ export function AutoLayoutSection({ doc, node, select }: { doc: DesignDoc; node:
             </option>
           ))}
         </Select>
-        <Select className="field__select" title="Alignment across the layout direction" value={node.counterAxisAlign ?? "MIN"} onChange={(e) => set({ counterAxisAlign: e.target.value as "MIN" | "CENTER" | "MAX" })}>
+        <Select className="field__select" title="Alignment across the layout direction" value={node.counterAxisAlign ?? "MIN"} onChange={(e) => set({ counterAxisAlign: e.target.value as "MIN" | "CENTER" | "MAX" | "BASELINE" })}>
           {COUNTER.map(([v, label]) => (
             <option key={v} value={v}>
               {label}
             </option>
           ))}
+          {mode === "HORIZONTAL" && <option value="BASELINE">Text baseline</option>}
         </Select>
         <Select className="field__select" title="Width" value={sizing(widthKey)} onChange={(e) => set({ [widthKey]: e.target.value as LayoutSizing })}>
           <option value="HUG">Hug width</option>

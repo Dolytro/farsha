@@ -23,6 +23,11 @@ type NodeMap = Y.Map<unknown>;
 
 /** Keys that describe the instance link; never copied from the main component and never overridden. */
 const DEFAULT_COLLECTION = 'default';
+
+/** Baseline of the first line of a text layer, from the top of its box: AUTO line height puts it one font size down, a fixed one centres the 1.2 em line box in it. */
+function textBaselineOf(n: { fontSize: number; lineHeight: number | 'AUTO' }): number {
+  return n.lineHeight === 'AUTO' ? n.fontSize : n.fontSize + (Math.max(0, n.lineHeight) - n.fontSize * 1.2) / 2;
+}
 const INSTANCE_KEYS = new Set(['id', 'type', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent', 'componentSetId', 'variantProps', 'componentProps', 'propValues']);
 /** Keys of an instance's own root that belong to the instance (its place on the canvas and its name). */
 const ROOT_KEYS = new Set(['x', 'y', 'name', 'orderKey']);
@@ -797,6 +802,7 @@ export class DesignDoc {
             height: c.height,
             fillWidth: c.layoutSizingH === 'FILL',
             fillHeight: c.layoutSizingV === 'FILL',
+            baseline: c.type === 'TEXT' ? textBaselineOf(c) : undefined,
             minWidth: c.minWidth,
             maxWidth: c.maxWidth,
             minHeight: c.minHeight,
