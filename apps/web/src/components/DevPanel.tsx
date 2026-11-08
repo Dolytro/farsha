@@ -107,18 +107,18 @@ export function DevPanel() {
       <section className="props__section">
         <h3 className="props__heading">Measurements</h3>
         <dl className="dev__list">
-          <dt>Width</dt><dd>{n(node.width)}px</dd>
-          <dt>Height</dt><dd>{n(node.height)}px</dd>
-          <dt>X</dt><dd>{n(node.x)}px</dd>
-          <dt>Y</dt><dd>{n(node.y)}px</dd>
+          <dt>Width</dt><dd><CopyValue text={`${n(node.width)}px`} /></dd>
+          <dt>Height</dt><dd><CopyValue text={`${n(node.height)}px`} /></dd>
+          <dt>X</dt><dd><CopyValue text={`${n(node.x)}px`} /></dd>
+          <dt>Y</dt><dd><CopyValue text={`${n(node.y)}px`} /></dd>
           {abs && (abs.x !== node.x || abs.y !== node.y) && (
             <>
               <dt>Page X / Y</dt><dd>{n(abs.x)} / {n(abs.y)}</dd>
             </>
           )}
-          {node.rotation !== 0 && (<><dt>Rotation</dt><dd>{n(node.rotation)}°</dd></>)}
-          {"cornerRadius" in node && node.cornerRadius > 0 && (<><dt>Radius</dt><dd>{n(node.cornerRadius)}px</dd></>)}
-          {node.opacity !== 1 && (<><dt>Opacity</dt><dd>{Math.round(node.opacity * 100)}%</dd></>)}
+          {node.rotation !== 0 && (<><dt>Rotation</dt><dd><CopyValue text={`${n(node.rotation)}deg`} label={`${n(node.rotation)}°`} /></dd></>)}
+          {"cornerRadius" in node && node.cornerRadius > 0 && (<><dt>Radius</dt><dd><CopyValue text={`${n(node.cornerRadius)}px`} /></dd></>)}
+          {node.opacity !== 1 && (<><dt>Opacity</dt><dd><CopyValue text={String(Math.round(node.opacity * 100) / 100)} label={`${Math.round(node.opacity * 100)}%`} /></dd></>)}
         </dl>
       </section>
 
@@ -128,7 +128,7 @@ export function DevPanel() {
           {[...fills.map((p) => ["Fill", p] as const), ...strokes.map((p) => ["Stroke", p] as const)].map(([label, p], i) => (
             <div key={`${label}-${i}`} className="fill-row dev__color">
               <span className="fill-row__swatch dev__swatch" style={{ background: paintCss(p) }} />
-              <span className="fill-row__hex">{p.type === "SOLID" ? p.color.toUpperCase() : p.type === "GRADIENT_RADIAL" ? "Radial" : p.type === "GRADIENT_ANGULAR" ? "Angular" : p.type === "GRADIENT_DIAMOND" ? "Diamond" : p.type === "IMAGE" ? "Image" : "Linear"}</span>
+              <span className="fill-row__hex">{p.type === "SOLID" ? <CopyValue text={p.color.toUpperCase()} /> : p.type === "GRADIENT_RADIAL" ? "Radial" : p.type === "GRADIENT_ANGULAR" ? "Angular" : p.type === "GRADIENT_DIAMOND" ? "Diamond" : p.type === "IMAGE" ? "Image" : "Linear"}</span>
               <span className="fill-row__opacity">{label}</span>
             </div>
           ))}
@@ -311,5 +311,25 @@ function CodeConnectSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
         )
       )}
     </section>
+  );
+}
+
+/** A value in the Dev panel: click it to copy it (Figma's Dev Mode does the same). `label` is what is shown when it differs from what is copied. */
+function CopyValue({ text, label }: { text: string; label?: string }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setDone(true);
+      setTimeout(() => setDone(false), 1000);
+      useEditor.getState().showToast(`Copied ${text}`);
+    } catch {
+      useEditor.getState().showToast("Couldn't copy: select the value and copy it by hand");
+    }
+  };
+  return (
+    <button className="dev__value" type="button" title={`Click to copy ${text}`} onClick={() => void copy()} style={{ all: "unset", cursor: "pointer", textDecoration: done ? "none" : "underline dotted", textUnderlineOffset: 2 }}>
+      {done ? "Copied" : (label ?? text)}
+    </button>
   );
 }

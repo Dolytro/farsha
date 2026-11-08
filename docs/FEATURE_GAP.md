@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Dev panel: click a measurement (width, height, X, Y, radius, rotation, opacity) or a colour to copy it, like Figma's Dev Mode.
 - ✅ Share link to one layer: the Share dialog has "Open on the selected layer" (adds `?node=<layer id>`); the viewer then opens on that layer's page, selects it and zooms to it.
 - ✅ View > Zoom to 50% and Zoom to 200% (also in the Actions palette), next to Zoom to 100% (Shift+0).
 - ✅ Layers list: Shift+click selects the range from the layer clicked before, Ctrl / Cmd+click adds or removes one (like Figma; on the canvas Shift+click still adds or removes).
