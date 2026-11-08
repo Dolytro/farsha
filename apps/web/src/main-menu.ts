@@ -81,7 +81,9 @@ export function buildMainMenu(): MenuNode[] {
       children: list(
         item("zoom-in"),
         item("zoom-out"),
+        item("zoom-50"),
         item("zoom-100"),
+        item("zoom-200"),
         item("zoom-fit"),
         item("zoom-selection"),
         item("frame-1", "Zoom to next frame", true),

@@ -401,6 +401,8 @@ export function buildCommands(): Command[] {
     ),
     { id: "zoom-in", label: "Zoom in", shortcut: `${MOD}+`, keywords: "view", run: () => state().setViewport(zoomKeyboard(doc(), sel(), state().viewport, state().viewport.zoom * 1.25, state().prefs.keyboardZoomToSelection)) },
     { id: "zoom-out", label: "Zoom out", shortcut: `${MOD}-`, keywords: "view", run: () => state().setViewport(zoomKeyboard(doc(), sel(), state().viewport, state().viewport.zoom * 0.8, state().prefs.keyboardZoomToSelection)) },
+    { id: "zoom-50", label: "Zoom to 50%", keywords: "view half", run: () => state().setViewport(zoomBy(state().viewport, 0.5)) },
+    { id: "zoom-200", label: "Zoom to 200%", keywords: "view double", run: () => state().setViewport(zoomBy(state().viewport, 2)) },
     { id: "zoom-100", label: "Zoom to 100%", shortcut: `${SHIFT}0`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, 1)) },
     {
       id: "present",
