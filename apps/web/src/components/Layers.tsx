@@ -1,3 +1,4 @@
+import { hideOtherLayers } from "../object-actions";
 import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
 import { rowWindow, scrollToRow } from "../virtual-rows";
 import type { DesignNode } from "@farsha/types";
@@ -219,9 +220,15 @@ export function Layers() {
         )}
         <button
           className="layers__toggle"
-          title={n.visible ? "Hide" : "Show"}
+          title={n.visible ? "Hide (Alt+click shows only this layer)" : "Show (Alt+click shows only this layer)"}
           onClick={(e) => {
             e.stopPropagation();
+            // Figma: Alt+click on the eye hides everything else (and brings the others back on a second Alt+click)
+            if (e.altKey) {
+              if (!n.visible) doc.setStyle(n.id, { visible: true });
+              hideOtherLayers(doc, [n.id], pageId);
+              return;
+            }
             doc.setStyle(n.id, { visible: !n.visible });
           }}
         >
