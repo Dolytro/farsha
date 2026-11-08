@@ -194,3 +194,47 @@ describe('DesignDoc', () => {
     expect(b.children(page).map((n) => n.id)).toEqual(a.children(page).map((n) => n.id));
   });
 });
+
+describe('resizing a group', () => {
+  function group() {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const g = doc.createNode('GROUP', { parentId: page, props: { x: 100, y: 50, width: 200, height: 100 } });
+    const a = doc.createNode('RECTANGLE', { parentId: g, props: { x: 0, y: 0, width: 50, height: 40 } });
+    const b = doc.createNode('RECTANGLE', { parentId: g, props: { x: 100, y: 60, width: 100, height: 40 } });
+    return { doc, g, a, b };
+  }
+  const box = (doc: DesignDoc, id: string) => {
+    const n = doc.getNode(id)!;
+    return { x: n.x, y: n.y, width: n.width, height: n.height };
+  };
+
+  it('scales the layers inside, keeping their place relative to the group', () => {
+    const { doc, g, a, b } = group();
+    doc.resizeNode(g, { width: 400, height: 150 });
+    expect(box(doc, g)).toMatchObject({ x: 100, y: 50, width: 400, height: 150 });
+    expect(box(doc, a)).toEqual({ x: 0, y: 0, width: 100, height: 60 });
+    expect(box(doc, b)).toEqual({ x: 200, y: 90, width: 200, height: 60 });
+  });
+
+  it('moving the group, or resizing one side only, behaves', () => {
+    const { doc, g, a, b } = group();
+    doc.resizeNode(g, { x: 300, y: 300 });
+    expect(box(doc, a)).toEqual({ x: 0, y: 0, width: 50, height: 40 });
+    doc.resizeNode(g, { width: 100 });
+    expect(box(doc, b)).toEqual({ x: 50, y: 60, width: 50, height: 40 });
+    expect(doc.getNode(g)!.height).toBe(100);
+  });
+
+  it('scales nested groups too, and is one undo step', () => {
+    const { doc, g, a } = group();
+    const inner = doc.createNode('GROUP', { parentId: g, props: { x: 10, y: 10, width: 40, height: 40 } });
+    const deep = doc.createNode('RECTANGLE', { parentId: inner, props: { x: 10, y: 10, width: 20, height: 20 } });
+    doc.stopCapturing();
+    doc.resizeNode(g, { width: 400, height: 200 });
+    expect(box(doc, deep)).toEqual({ x: 20, y: 20, width: 40, height: 40 });
+    doc.undo();
+    expect(box(doc, deep)).toEqual({ x: 10, y: 10, width: 20, height: 20 });
+    expect(box(doc, a)).toEqual({ x: 0, y: 0, width: 50, height: 40 });
+  });
+});

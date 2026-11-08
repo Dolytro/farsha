@@ -992,6 +992,18 @@ export class DesignDoc {
       });
       return;
     }
+    if (node.type === 'GROUP' && resizes) {
+      // Resizing a group scales what is inside it (Figma): every layer keeps its place and size relative to the group's box.
+      const sx = patch.width !== undefined && node.width > 0 ? patch.width / node.width : 1;
+      const sy = patch.height !== undefined && node.height > 0 ? patch.height / node.height : 1;
+      this.transact(() => {
+        this.setProps(id, patch);
+        for (const child of this.children(id)) {
+          this.resizeNode(child.id, { x: child.x * sx, y: child.y * sy, width: child.width * sx, height: child.height * sy });
+        }
+      });
+      return;
+    }
     if (node.type === 'FRAME' && (node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL')) {
       const horizontal = node.layoutMode === 'HORIZONTAL';
       const widthKey = horizontal ? 'primarySizing' : 'counterSizing';
