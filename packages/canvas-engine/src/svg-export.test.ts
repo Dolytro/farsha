@@ -551,3 +551,25 @@ describe("noise, texture and glass effects", () => {
     expect(m).not.toContain("NaN");
   });
 });
+
+describe("mask types", () => {
+  function build(maskType?: string) {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { width: 100, height: 100 } });
+    doc.createNode("RECTANGLE", { parentId: frame, props: { name: "Mask", width: 100, height: 100, isMask: true, ...(maskType ? { maskType } : {}), fills: [{ type: "SOLID", color: "#336699", opacity: 1 }] } as never });
+    doc.createNode("RECTANGLE", { parentId: frame, props: { name: "Below", width: 100, height: 100, fills: [{ type: "SOLID", color: "#ff0000", opacity: 1 }] } as never });
+    return exportSvg(doc, [frame])?.svg ?? "";
+  }
+
+  it("an alpha mask draws its shape in white", () => {
+    const svg = build();
+    expect(svg).toMatch(/<mask[^>]*>.*fill="#fff"/);
+    expect(svg).not.toMatch(/<mask[^>]*>[^]*#336699[^]*<\/mask>/);
+  });
+
+  it("a luminance mask draws the shape with its own fill", () => {
+    const svg = build("LUMINANCE");
+    expect(svg).toMatch(/<mask[^>]*>[^]*#336699[^]*<\/mask>/);
+  });
+});

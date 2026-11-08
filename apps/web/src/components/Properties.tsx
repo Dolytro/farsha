@@ -18,6 +18,7 @@ import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
 import { PolygonSection } from "./PolygonSection";
 import { ArcSection } from "./ArcSection";
+import { MaskSection } from "./MaskSection";
 import { Select } from "./Select";
 import { ColorSwatch } from "./ColorSwatch";
 import { VariableBindings } from "./VariableBindings";
@@ -328,6 +329,7 @@ export function Properties() {
 
       <PolygonSection doc={doc} node={node} />
       <ArcSection doc={doc} node={node} />
+      <MaskSection doc={doc} node={node} />
 
       <VariantsSection doc={doc} node={node} />
       <ComponentPropsSection doc={doc} node={node} />

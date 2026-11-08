@@ -444,6 +444,8 @@ export interface BaseNode {
   layoutPositioning?: 'AUTO' | 'ABSOLUTE';
   /** True for a mask layer: it is not drawn itself, and only shows through its shape the layers above it in the same parent. */
   isMask?: boolean;
+  /** How a mask layer reveals the layers above it: ALPHA (default) by where its shape is, LUMINANCE by how light its own fills are. */
+  maskType?: 'ALPHA' | 'LUMINANCE';
   /** Prototype links of this layer (Prototype tab). */
   interactions?: Interaction[];
   /** Dash pattern of the strokes as [dash, gap, ...] in pixels; missing or empty means solid. */
@@ -773,6 +775,7 @@ export interface StylePatch extends AutoLayoutProps {
   strokeEndCap?: LineEnd;
   interactions?: Interaction[];
   isMask?: boolean;
+  maskType?: 'ALPHA' | 'LUMINANCE';
   layoutGrids?: LayoutGrid[];
 }
 
