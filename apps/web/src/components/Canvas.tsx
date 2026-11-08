@@ -26,6 +26,8 @@ import { placeMediaFile } from "../place-image";
 import { isVideoFile, videoUrl } from "../video";
 import { useEditor, type Tool } from "../store";
 import { canvasMeasure, fitText } from "../text-layout";
+import { isFarshaFileName, maybeFarshaDragItem } from "../farsha-file";
+import { openLocalFile } from "../local-file";
 import { nearestFrame } from "../actions";
 import { connectorPath, connectorsIn } from "../prototype";
 import { loadDefaults, withDefaults } from "../defaults";
@@ -537,7 +539,7 @@ export function Canvas() {
       e.dataTransfer.dropEffect = "copy";
       return;
     }
-    if ([...e.dataTransfer.items].some((i) => i.kind === "file" && (i.type.startsWith("image/") || i.type.startsWith("video/")))) {
+    if ([...e.dataTransfer.items].some((i) => maybeFarshaDragItem(i) || (i.kind === "file" && (i.type.startsWith("image/") || i.type.startsWith("video/"))))) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
     }
@@ -564,6 +566,13 @@ export function Canvas() {
       } catch (err) {
         useEditor.getState().showToast(err instanceof Error ? `Couldn't do that: ${err.message}` : "Couldn't do that");
       }
+      return;
+    }
+    // a .farsha file dropped on the canvas opens as a separate working copy, like File > Open local file
+    const farsha = [...e.dataTransfer.files].find((f) => isFarshaFileName(f.name));
+    if (farsha) {
+      e.preventDefault();
+      void openLocalFile(farsha);
       return;
     }
     const files = dropFiles(e);
