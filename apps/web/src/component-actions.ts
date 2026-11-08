@@ -1,15 +1,12 @@
 import type { DesignDoc } from "@farsha/design-core";
 import { topLevelOf } from "./clipboard";
 
-/** Figma's "Create component" (Ctrl+Alt+K): a frame becomes a main component, anything else is wrapped in one. */
+/** Figma's "Create component" (Ctrl+Alt+K): a frame becomes a main component, anything else is wrapped in one. With several layers selected each one gets its own component ("Create multiple components"). */
 export function createComponentFromSelection(doc: DesignDoc, ids: string[]): string[] {
   const tops = topLevelOf(doc, ids);
   if (!tops.length) return ids;
   doc.stopCapturing();
-  const parents = new Set(tops.map((id) => doc.getNode(id)?.parentId));
-  // Layers from different parents each become their own component.
-  const groups = parents.size === 1 ? [tops] : tops.map((id) => [id]);
-  const made = groups.map((g) => doc.createComponent(g));
+  const made = tops.map((id) => doc.createComponent([id]));
   doc.stopCapturing();
   return made;
 }
