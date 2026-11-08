@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Design panel for several layers: an Effects section (+ adds a drop shadow to every selected layer, − removes all their effects, "Mixed" when the counts differ).
 - ✅ Ctrl+D after an Alt+drag copy repeats that move (Figma's duplicate and repeat last move): the next copies land the same distance further, again and again. Any other selection duplicates with the plain 10 px offset.
 - ✅ Create component with several layers selected makes one component for each layer (Figma's "Create multiple components"); before, they were wrapped in one.
 - ✅ Rename layers (Ctrl+R with several layers selected, or Rename layer in Actions): a name pattern with $& (old name), $n (count from a start number), $00 (zero padded), $p (parent name), find and replace, and a live preview; one undo step.

@@ -60,6 +60,15 @@ export function MultiSection({ doc, ids }: { doc: DesignDoc; ids: string[] }) {
     // a layer that had no stroke weight would draw nothing: give it 1 px
     for (const n of withStroke) if (!("strokeWidth" in n) || !n.strokeWidth) setCommonStyle(doc, [n.id], "strokeWidth", 1);
   };
+  const withEffects = nodes.filter((n) => n.type !== "PAGE" && n.type !== "DOCUMENT");
+  const effectCounts = withEffects.map((n) => (("effects" in n ? (n.effects ?? []) : []) as unknown[]).length);
+  const effectText = !effectCounts.length ? "" : effectCounts.every((c) => c === effectCounts[0]) ? (effectCounts[0] ? `${effectCounts[0]} ${effectCounts[0] === 1 ? "effect" : "effects"} each` : "No effects") : "Mixed";
+  const addShadow = () => {
+    doc.stopCapturing();
+    for (const n of withEffects) doc.setStyle(n.id, { effects: [...(("effects" in n ? n.effects : undefined) ?? []), { type: "DROP_SHADOW", x: 0, y: 4, blur: 4, color: "#000000", opacity: 0.25, visible: true }] });
+    doc.stopCapturing();
+  };
+  const clearEffects = () => setCommonStyle(doc, withEffects.map((n) => n.id), "effects", []);
   return (
     <>
       <section className="props__section">
@@ -182,6 +191,24 @@ export function MultiSection({ doc, ids }: { doc: DesignDoc; ids: string[] }) {
                 }}
               />
             </label>
+          </div>
+        </section>
+      )}
+      {withEffects.length > 0 && (
+        <section className="props__section">
+          <h3 className="props__heading">
+            Effects
+            <button className="props__add" title="Add a drop shadow to every selected layer" aria-label="Add drop shadow to the selection" onClick={addShadow}>
+              +
+            </button>
+          </h3>
+          <div className="fill-row">
+            <span className="fill-row__hex">{effectText}</span>
+            {effectCounts.some((c) => c > 0) && (
+              <button className="props__add" title="Remove every effect of the selected layers" aria-label="Remove effects of the selection" onClick={clearEffects}>
+                −
+              </button>
+            )}
           </div>
         </section>
       )}
