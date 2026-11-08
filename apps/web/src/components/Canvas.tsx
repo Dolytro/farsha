@@ -14,6 +14,7 @@ import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } fr
 import { startShapeParams } from "../shape-params";
 import { groupBox, resizeGroup, rotateGroup, type GroupItem, type TurnItem } from "../multi-resize";
 import { snapBoxToPixels, snapMoveToPixels } from "../pixel-snap";
+import { componentSetFrames } from "../component-set-frames";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -912,6 +913,15 @@ export function Canvas() {
               return <rect key={`slice-${n.id}`} x={abs.x} y={abs.y} width={abs.width} height={abs.height} fill="rgba(13,185,100,0.08)" stroke="#0db964" strokeWidth={1 / z} strokeDasharray={`${4 / z} ${3 / z}`} pointerEvents="none" />;
             })}
 
+          {!devMode &&
+            componentSetFrames(doc, pageId).map((f) => (
+              <g key={`set-${f.setId}`} pointerEvents="none">
+                <rect x={f.box.x} y={f.box.y} width={f.box.width} height={f.box.height} fill="none" stroke="#9747ff" strokeWidth={1 / z} strokeDasharray={`${6 / z} ${4 / z}`} rx={4 / z} />
+                <text x={f.box.x} y={f.box.y - 6 / z} fontSize={11 / z} fill="#9747ff">
+                  ❖ {f.name} · {f.count} variants
+                </text>
+              </g>
+            ))}
           {[...doc.children(pageId).filter((n) => n.type === "FRAME"), ...doc.children(pageId).filter((n) => n.type === "FRAME" && n.isSection).flatMap((s) => doc.children(s.id).filter((c) => c.type === "FRAME"))]
             .filter((n) => n.visible)
             .map((n) => {
