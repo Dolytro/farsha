@@ -563,7 +563,7 @@ export function buildCommands(): Command[] {
     { id: "panel-design", label: "Open design panel", shortcut: `${ALT}8`, keywords: "view panels properties right", run: () => (state().setHideRightPanel(false), state().setPrototypeMode(false), state().setDevMode(false)) },
     { id: "panel-prototype", label: "Open prototype panel", shortcut: `${ALT}9`, keywords: "view panels interactions right", run: () => (state().setHideRightPanel(false), state().setPrototypeMode(true)) },
     { id: "panel-right", label: "Show / hide properties panel", keywords: "view panels sidebar right design", run: () => state().setHideRightPanel(!state().hideRightPanel) },
-    { id: "rename-layer", label: "Rename layer", shortcut: `${MOD}R`, needsSelection: true, keywords: "name layers", run: () => (sel().length === 1 ? (state().setHideLeftPanel(false), state().setLeftTab("layers"), state().setRenaming(sel()[0]!)) : state().showToast("Select one layer to rename")) },
+    { id: "rename-layer", label: "Rename layer", shortcut: `${MOD}R`, needsSelection: true, keywords: "name layers", run: () => (sel().length === 1 ? (state().setHideLeftPanel(false), state().setLeftTab("layers"), state().setRenaming(sel()[0]!)) : state().setBatchRenameOpen(true)) },
     {
       id: "frame-find-next",
       label: "Find next frame",

@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Rename layers (Ctrl+R with several layers selected, or Rename layer in Actions): a name pattern with $& (old name), $n (count from a start number), $00 (zero padded), $p (parent name), find and replace, and a live preview; one undo step.
 - ✅ Dev panel sections for Typography (font, size, weight, line height, letter spacing, alignment), Auto layout (direction, gap, padding) and shadows, each value copyable with a click.
 - ✅ Dev panel: click a measurement (width, height, X, Y, radius, rotation, opacity) or a colour to copy it, like Figma's Dev Mode.
 - ✅ Share link to one layer: the Share dialog has "Open on the selected layer" (adds `?node=<layer id>`); the viewer then opens on that layer's page, selects it and zooms to it.

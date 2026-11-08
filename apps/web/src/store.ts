@@ -84,6 +84,8 @@ interface EditorState {
   prefs: Prefs;
   prefsOpen: boolean;
   shortcutsOpen: boolean;
+  /** Figma's "Rename layers" dialog for several selected layers. */
+  batchRenameOpen: boolean;
   /** Figma's "Minimize UI": the side panels and toolbar are hidden so the canvas fills the window. */
   uiHidden: boolean;
   /** View > Panels: hide the left (layers) or right (properties) panel on its own. */
@@ -141,6 +143,7 @@ interface EditorState {
   setPrefs: (patch: Partial<Prefs>) => void;
   setPrefsOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
+  setBatchRenameOpen: (open: boolean) => void;
   setUiHidden: (hidden: boolean) => void;
   setTheme: (theme: ThemePreference) => void;
   setVersionsOpen: (open: boolean) => void;
@@ -194,6 +197,7 @@ export const useEditor = create<EditorState>((set) => ({
   prefs: readPrefs(),
   prefsOpen: false,
   shortcutsOpen: false,
+  batchRenameOpen: false,
   uiHidden: false,
   leftTab: "layers",
   hideLeftPanel: false,
@@ -265,6 +269,7 @@ export const useEditor = create<EditorState>((set) => ({
     }),
   setPrefsOpen: (prefsOpen) => set({ prefsOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
+  setBatchRenameOpen: (batchRenameOpen) => set({ batchRenameOpen }),
   setUiHidden: (uiHidden) => set({ uiHidden }),
   setHideLeftPanel: (hideLeftPanel) => set({ hideLeftPanel }),
   setLeftTab: (leftTab) => set({ leftTab }),

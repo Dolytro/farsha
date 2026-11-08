@@ -26,6 +26,7 @@ import { FindBar } from "./components/FindBar";
 import { CommentPopover } from "./components/CommentPopover";
 import { PreferencesDialog } from "./components/PreferencesDialog";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
+import { BatchRenameDialog } from "./components/BatchRenameDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
 import { buildCommands } from "./commands";
@@ -424,6 +425,10 @@ export function App() {
       } else if (mod && key === "z") {
         e.preventDefault();
         e.shiftKey ? doc.redo() : doc.undo();
+      } else if (mod && !e.shiftKey && !e.altKey && key === "r" && selection.length > 1 && !s.viewer) {
+        // Figma's "Rename layers" for a multi-selection
+        e.preventDefault();
+        s.setBatchRenameOpen(true);
       } else if (mod && !e.shiftKey && !e.altKey && key === "r" && selection.length === 1 && !s.viewer) {
         // Figma's "Rename" (Ctrl+R)
         e.preventDefault();
@@ -624,6 +629,7 @@ export function App() {
       <FindBar />
       <PreferencesDialog />
       <ShortcutsDialog />
+      <BatchRenameDialog />
     </div>
   );
 }
