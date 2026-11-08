@@ -14,7 +14,7 @@ import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } fr
 import { startShapeParams } from "../shape-params";
 import { groupBox, resizeGroup, type GroupItem } from "../multi-resize";
 import { snapBoxToPixels, snapMoveToPixels } from "../pixel-snap";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -29,7 +29,7 @@ import { loadDefaults, withDefaults } from "../defaults";
 type Drag =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
   | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
-  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean; offset: { x: number; y: number }; targets: Box[] }
+  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean; offset: { x: number; y: number }; targets: Box[]; rotation: number }
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
   | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
@@ -248,7 +248,7 @@ export function Canvas() {
         .filter((b): b is Box => !!b);
       const parentBox = parent && parent.type !== "PAGE" && parent.type !== "DOCUMENT" ? doc.absoluteBox(parent.id) : undefined;
       if (parentBox) targets.push(parentBox);
-      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, flipX: !!box.flipX, flipY: !!box.flipY, offset: abs ? { x: abs.x - box.x, y: abs.y - box.y } : { x: 0, y: 0 }, targets };
+      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, flipX: !!box.flipX, flipY: !!box.flipY, offset: abs ? { x: abs.x - box.x, y: abs.y - box.y } : { x: 0, y: 0 }, targets, rotation: box.rotation };
       return;
     }
     const labelId = el.dataset.labelId;
@@ -390,8 +390,13 @@ export function Canvas() {
       // Shift keeps the ratio (so does a layer with locked proportions), Alt resizes from the centre (Figma).
       const locked = !!doc.getNode(d.id)?.lockAspect;
       const opts = { keepRatio: e.shiftKey || locked, fromCenter: e.altKey };
-      const flipping = useEditor.getState().prefs.flipWhileResizing;
-      const turned = flipping ? resizeBoxFlip(d.box, d.corner, dx, dy, opts) : { box: resizeBox(d.box, d.corner, dx, dy, opts), flipX: false, flipY: false };
+      const flipping = useEditor.getState().prefs.flipWhileResizing && !d.rotation;
+      // A turned layer grows along its own sides with the opposite corner fixed on the canvas; it does not flip or snap while turned
+      const turned = d.rotation
+        ? { box: resizeRotatedBox(d.box, d.corner, dx, dy, d.rotation, opts), flipX: false, flipY: false }
+        : flipping
+          ? resizeBoxFlip(d.box, d.corner, dx, dy, opts)
+          : { box: resizeBox(d.box, d.corner, dx, dy, opts), flipX: false, flipY: false };
       let next = turned.box;
       // Edges snap to other layers and ruler guides unless Ctrl is held; not while the ratio is kept, resizing from the centre, or flipping
       if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping && !opts.keepRatio && !opts.fromCenter && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation) {
@@ -963,7 +968,7 @@ export function Canvas() {
                     style={{ cursor: "alias" }}
                   />
                 ))}
-              {(selection.length === 1 || multiResizable) && !devMode && !rotated &&
+              {(selection.length === 1 || multiResizable) && !devMode && !viewer &&
                 // Invisible strips along the four sides, so every edge can be dragged like in Figma.
                 ([
                   ["n", sel.x, sel.y - hs / 2, sel.width, hs],
@@ -973,7 +978,7 @@ export function Canvas() {
                 ] as [Handle, number, number, number, number][]).map(([h, x, y, w, ht]) => (
                   <rect key={h} className="canvas__handle" data-corner={h} x={x} y={y} width={w} height={ht} fill="transparent" style={{ cursor: CURSORS[h] }} />
                 ))}
-              {(selection.length === 1 || multiResizable) && !devMode && !rotated &&
+              {(selection.length === 1 || multiResizable) && !devMode && !viewer &&
                 corners.map(({ c, x, y }) => (
                   <rect
                     key={c}
