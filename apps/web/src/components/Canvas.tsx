@@ -26,6 +26,7 @@ import { placeMediaFile } from "../place-image";
 import { isVideoFile, videoUrl } from "../video";
 import { useEditor, type Tool } from "../store";
 import { canvasMeasure, fitText } from "../text-layout";
+import { gridSnapLines } from "../grid-snap";
 import { isFarshaFileName, maybeFarshaDragItem } from "../farsha-file";
 import { openLocalFile } from "../local-file";
 import { nearestFrame } from "../actions";
@@ -369,9 +370,10 @@ export function Canvas() {
       if (d.startBox && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping) {
         const page = doc.getNode(pageId);
         const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const grid = parentGridLines(Object.keys(d.origins)[0]);
         const snap = snapMove({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets, 5 / viewport.zoom, {
-          xs: guideList.filter((g) => g.axis === "x").map((g) => g.position),
-          ys: guideList.filter((g) => g.axis === "y").map((g) => g.position),
+          xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],
+          ys: [...guideList.filter((g) => g.axis === "y").map((g) => g.position), ...grid.ys],
         });
         dx += snap.dx;
         dy += snap.dy;
@@ -448,9 +450,10 @@ export function Canvas() {
       if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping && !opts.keepRatio && !opts.fromCenter && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation) {
         const page = doc.getNode(pageId);
         const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const grid = parentGridLines(d.id);
         const snapped = snapResize({ x: next.x + d.offset.x, y: next.y + d.offset.y, width: next.width, height: next.height }, d.corner, d.targets, 5 / viewport.zoom, {
-          xs: guideList.filter((g) => g.axis === "x").map((g) => g.position),
-          ys: guideList.filter((g) => g.axis === "y").map((g) => g.position),
+          xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],
+          ys: [...guideList.filter((g) => g.axis === "y").map((g) => g.position), ...grid.ys],
         });
         next = { x: snapped.box.x - d.offset.x, y: snapped.box.y - d.offset.y, width: snapped.box.width, height: snapped.box.height };
         setGuides(snapped.guides);
@@ -528,6 +531,14 @@ export function Canvas() {
       }
     }
     doc.stopCapturing();
+  };
+
+  /** Layout grid lines of the frame a layer sits in, when that frame shows grids (layers snap to column and row edges). */
+  const parentGridLines = (layerId: string | undefined) => {
+    const parentId = layerId ? doc.getNode(layerId)?.parentId : undefined;
+    const parent = parentId ? doc.getNode(parentId) : undefined;
+    const box = parentId ? doc.absoluteBox(parentId) : undefined;
+    return parent?.type === "FRAME" && box ? gridSnapLines(parent.layoutGrids, box) : { xs: [], ys: [] };
   };
 
   // Drop image files from the desktop or another tab onto the canvas.
