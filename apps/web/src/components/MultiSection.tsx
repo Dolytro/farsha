@@ -1,10 +1,11 @@
 import type { DesignDoc } from "@farsha/design-core";
-import type { Box, Paint } from "@farsha/types";
+import type { Box, Paint, TextNode } from "@farsha/types";
 import { paintColor } from "@farsha/types";
 import { commonValue, selectionFrame, setCommonStyle, setSelectionBox } from "../multi-edit";
 import { fitText } from "../text-layout";
 import { ColorSwatch } from "./ColorSwatch";
 import { HexInput } from "./HexInput";
+import { FontControls } from "./TypographySection";
 
 /** What the Design panel shows for several layers: the box round them (X, Y, W, H), opacity and corner radius where they share it, and one fill for all. */
 export function MultiSection({ doc, ids }: { doc: DesignDoc; ids: string[] }) {
@@ -42,7 +43,7 @@ export function MultiSection({ doc, ids }: { doc: DesignDoc; ids: string[] }) {
   const texts = nodes.filter((n) => n.type === "TEXT");
   const size = texts.length ? commonValue(texts.map((n) => (n.type === "TEXT" ? n.fontSize : 0))) : null;
   const weightOfText = texts.length ? commonValue(texts.map((n) => (n.type === "TEXT" ? n.fontWeight : 0))) : null;
-  const setText = (patch: { fontSize?: number; fontWeight?: number }) => {
+  const setText = (patch: Parameters<DesignDoc["setText"]>[1]) => {
     doc.stopCapturing();
     for (const n of texts) {
       doc.setText(n.id, patch);
@@ -159,6 +160,22 @@ export function MultiSection({ doc, ids }: { doc: DesignDoc; ids: string[] }) {
                 }}
               />
             </label>
+          </div>
+          <FontControls value={texts[0] as TextNode} onChange={(patch) => setText(patch)} />
+          <div className="seg seg--flat typo-format" role="group" aria-label="Text style of the selection">
+            {([
+              ["B", "Bold", (n: TextNode) => n.fontWeight >= 600, (on: boolean) => ({ fontWeight: on ? 400 : 700 })],
+              ["I", "Italic", (n: TextNode) => !!n.italic, (on: boolean) => ({ italic: !on })],
+              ["U", "Underline", (n: TextNode) => n.textDecoration === "UNDERLINE", (on: boolean) => ({ textDecoration: on ? "NONE" : "UNDERLINE" })],
+              ["S", "Strikethrough", (n: TextNode) => n.textDecoration === "STRIKETHROUGH", (on: boolean) => ({ textDecoration: on ? "NONE" : "STRIKETHROUGH" })],
+            ] as const).map(([label, title, has, patch]) => {
+              const all = texts.every((n) => has(n as TextNode));
+              return (
+                <button key={label} className={`seg__btn${all ? " seg__btn--active" : ""}`} title={`${title} for every selected text layer`} aria-pressed={all} onClick={() => setText(patch(all) as Parameters<typeof setText>[0])}>
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </section>
       )}

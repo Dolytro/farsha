@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Design panel for several text layers: the full font controls (family, weight, size, line height, letter spacing) and Bold / Italic / Underline / Strikethrough buttons apply to every selected text layer (the controls show the first layer's values).
 - ✅ Dev Mode: Flutter code (a Flutter tab: a StatelessWidget with Container, BoxDecoration, Row / Column with spacing and Padding, Stack / Positioned, Text with TextStyle, Opacity, Transform, Expanded; gradients and shadows; images and vectors are placeholders; checked on the starter board for crashes and balanced brackets, not compiled with Flutter).
 - ✅ Dev Mode: a Vue tab (single-file component: template plus scoped style); class names of long text layers are cut to a few words; React component names never start with a digit.
 - ✅ Layers panel: press an eye (or a lock) and drag down the list to hide, show, lock or unlock every layer you cross (like Figma). A slow drag can take more than one undo step.

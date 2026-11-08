@@ -48,7 +48,7 @@ const firstFamily = (stack: string) => stack.split(",")[0]!.trim().replace(/['"]
 type FontValue = Pick<TextNode, "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "letterSpacing">;
 
 /** Family, weight, size, line height and letter spacing: used for a text layer and for editing a text style. */
-function FontControls({ value: node, onChange: set }: { value: FontValue; onChange: (patch: Partial<FontValue>) => void }) {
+export function FontControls({ value: node, onChange: set }: { value: FontValue; onChange: (patch: Partial<FontValue>) => void }) {
   const known = FONTS.find((f) => firstFamily(f.stack) === firstFamily(node.fontFamily));
   const weightKnown = WEIGHTS.some(([w]) => w === node.fontWeight);
   return (
