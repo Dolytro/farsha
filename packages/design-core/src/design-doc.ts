@@ -494,6 +494,7 @@ export class DesignDoc {
     const old = this.getNode(inst.componentId);
     const keepsSize = old?.type === 'FRAME' && old.width === inst.width && old.height === inst.height;
     this.transact(() => {
+      this.relinkInstanceLayers(instanceId, inst.componentId as string, componentId);
       this.setProps(instanceId, { componentId, ...(keepsSize ? { width: main.width, height: main.height } : {}) });
     });
   }
@@ -620,7 +621,38 @@ export class DesignDoc {
       .sort((a, b) => score(b) - score(a))[0];
     if (!best) throw new Error('No variant has that value');
     if (best.id === current.id) return;
-    this.setProps(instanceId, { componentId: best.id });
+    this.transact(() => {
+      this.relinkInstanceLayers(instanceId, current.id, best.id);
+      this.setProps(instanceId, { componentId: best.id });
+    });
+  }
+
+  /**
+   * Before an instance points at another component or variant: its inner layers are re-linked to the layer of the new component with the same
+   * name, type and place, so what the instance overrides (text, colours ...) survives. Layers with no match are rebuilt as before.
+   */
+  private relinkInstanceLayers(instanceId: string, oldMainId: string, newMainId: string): void {
+    const signature = (id: string, root: string): string => {
+      const parts: string[] = [];
+      for (let cur: string | null | undefined = id, hops = 0; cur && cur !== root && hops < 200; hops++) {
+        const m = this.nodes.get(cur);
+        parts.push(`${m?.get('type')}:${m?.get('name')}`);
+        cur = m?.get('parentId') as string | null | undefined;
+      }
+      return parts.reverse().join('/');
+    };
+    const free = new Map<string, string[]>();
+    for (const d of this.descendants(newMainId)) {
+      const key = signature(d.id, newMainId);
+      free.set(key, [...(free.get(key) ?? []), d.id]);
+    }
+    for (const d of this.descendants(instanceId)) {
+      const map = this.nodes.get(d.id);
+      const was = map?.get('mainId') as string | undefined;
+      if (!map || !was) continue;
+      const target = free.get(signature(was, oldMainId))?.shift();
+      if (target) map.set('mainId', target);
+    }
   }
 
   // ---------- component properties ----------
