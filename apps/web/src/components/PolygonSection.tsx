@@ -1,6 +1,6 @@
 import type { DesignDoc } from "@farsha/design-core";
 import type { DesignNode } from "@farsha/types";
-import { MAX_SIDES, MIN_SIDES, DEFAULT_STAR_RATIO, polygonPatch } from "../shape-params";
+import { MAX_SHAPE_RADIUS, MAX_SIDES, MIN_SIDES, DEFAULT_STAR_RATIO, polygonPatch } from "../shape-params";
 
 /** Figma's Polygon and Star controls: the number of sides (or points) and, for a star, how deep the points are. Only for layers made with those tools. */
 export function PolygonSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
@@ -8,7 +8,8 @@ export function PolygonSection({ doc, node }: { doc: DesignDoc; node: DesignNode
   const kind = node.shapeKind;
   const sides = node.shapeSides ?? (kind === "STAR" ? 5 : 3);
   const ratio = node.starRatio ?? DEFAULT_STAR_RATIO;
-  const apply = (nextSides: number, nextRatio: number) => doc.patchNodes({ [node.id]: polygonPatch(kind, nextSides, nextRatio) });
+  const radius = node.shapeRadius ?? 0;
+  const apply = (nextSides: number, nextRatio: number, nextRadius = radius) => doc.patchNodes({ [node.id]: polygonPatch(kind, nextSides, nextRatio, nextRadius) });
   return (
     <section className="props__section">
       <h3 className="props__heading">{kind === "STAR" ? "Star" : "Polygon"}</h3>
@@ -25,6 +26,21 @@ export function PolygonSection({ doc, node }: { doc: DesignDoc; node: DesignNode
             onChange={(e) => {
               const v = Number(e.target.value);
               if (e.target.value !== "" && Number.isFinite(v)) apply(v, ratio);
+            }}
+          />
+        </label>
+        <label className="field field--row" title="Corner radius">
+          <span className="field__label field__label--text">Radius</span>
+          <input
+            className="field__input"
+            type="number"
+            min={0}
+            max={MAX_SHAPE_RADIUS}
+            aria-label="Polygon corner radius"
+            value={radius}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (e.target.value !== "" && Number.isFinite(v)) apply(sides, ratio, v);
             }}
           />
         </label>

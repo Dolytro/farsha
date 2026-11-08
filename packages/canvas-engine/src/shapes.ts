@@ -33,12 +33,39 @@ export function polygonPoints(sides: number, inner = 0): [number, number][] {
   return pts.map(([x, y]) => [((x - minX) / w) * 100, ((y - minY) / h) * 100]);
 }
 
-export function polygonShape(sides = 3): ShapeVector {
-  return { viewBox: "0 0 100 100", markup: `<polygon points="${polygonPoints(sides).map((p) => `${r(p[0])},${r(p[1])}`).join(" ")}" ${NS}/>` };
+/**
+ * A closed outline through the points with every corner rounded: the corner is cut `radius` away from the vertex along both edges
+ * (no more than half an edge) and joined by a curve that bends at the vertex.
+ */
+export function roundedPolygonPath(points: [number, number][], radius: number): string {
+  const n = points.length;
+  if (n < 3) return "";
+  const rad = Math.max(0, radius);
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const prev = points[(i + n - 1) % n]!;
+    const cur = points[i]!;
+    const next = points[(i + 1) % n]!;
+    const dPrev = Math.hypot(prev[0] - cur[0], prev[1] - cur[1]) || 1;
+    const dNext = Math.hypot(next[0] - cur[0], next[1] - cur[1]) || 1;
+    const t = Math.min(rad, dPrev / 2, dNext / 2);
+    const a = [cur[0] + ((prev[0] - cur[0]) * t) / dPrev, cur[1] + ((prev[1] - cur[1]) * t) / dPrev];
+    const b = [cur[0] + ((next[0] - cur[0]) * t) / dNext, cur[1] + ((next[1] - cur[1]) * t) / dNext];
+    out.push(`${i === 0 ? "M" : "L"}${r(a[0]!)} ${r(a[1]!)}Q${r(cur[0])} ${r(cur[1])} ${r(b[0]!)} ${r(b[1]!)}`);
+  }
+  return `${out.join("")}Z`;
 }
 
-export function starShape(points = 5, inner = 0.382): ShapeVector {
-  return { viewBox: "0 0 100 100", markup: `<polygon points="${polygonPoints(points, inner).map((p) => `${r(p[0])},${r(p[1])}`).join(" ")}" ${NS}/>` };
+function outline(pts: [number, number][], radius: number): string {
+  return radius > 0 ? `<path d="${roundedPolygonPath(pts, radius)}" ${NS}/>` : `<polygon points="${pts.map((p) => `${r(p[0])},${r(p[1])}`).join(" ")}" ${NS}/>`;
+}
+
+export function polygonShape(sides = 3, radius = 0): ShapeVector {
+  return { viewBox: "0 0 100 100", markup: outline(polygonPoints(sides), radius) };
+}
+
+export function starShape(points = 5, inner = 0.382, radius = 0): ShapeVector {
+  return { viewBox: "0 0 100 100", markup: outline(polygonPoints(points, inner), radius) };
 }
 
 /** A horizontal line `length` long; the layer is rotated to point anywhere else. */

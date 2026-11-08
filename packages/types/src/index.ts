@@ -697,6 +697,8 @@ export interface VectorNode extends BaseNode {
   shapeSides?: number;
   /** Stars: inner radius as a share of the outer one (0.05 to 0.95). */
   starRatio?: number;
+  /** Corner radius of a polygon or star in its 100 x 100 drawing units (0 to 50, default 0). */
+  shapeRadius?: number;
   /** Only on vectors drawn with the Line / Arrow / Polygon / Star tools: their fill and stroke are editable like a shape's. */
   fills?: Paint[];
   strokes?: Paint[];

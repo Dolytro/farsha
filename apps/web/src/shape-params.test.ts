@@ -31,4 +31,14 @@ describe("polygonPatch", () => {
     expect(startShapeParams("POLYGON")).toEqual({ shapeKind: "POLYGON", shapeSides: 3 });
     expect(startShapeParams("STAR")).toEqual({ shapeKind: "STAR", shapeSides: 5, starRatio: 0.382 });
   });
+
+  it("rounds the corners with a radius, kept between 0 and 50", () => {
+    const p = polygonPatch("POLYGON", 5, 0.382, 8);
+    expect(p).toMatchObject({ shapeRadius: 8 });
+    expect(p.markup as string).toContain("<path");
+    expect(polygonPatch("POLYGON", 5, 0.382, 0).markup as string).toContain("<polygon");
+    expect(polygonPatch("STAR", 5, 0.4, 999).shapeRadius).toBe(50);
+    expect(polygonPatch("STAR", 5, 0.4, -3).shapeRadius).toBe(0);
+    expect(polygonPatch("STAR", 5, 0.4, NaN).shapeRadius).toBe(0);
+  });
 });
