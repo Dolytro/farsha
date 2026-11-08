@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Easing, Interaction, OverlayPosition } from "@farsha/types";
 import { exportSvg } from "@farsha/canvas-engine";
 import { canvasMeasure } from "../text-layout";
-import { easingFn, followInteraction, hotspotsIn, layerBoxIn, mediaState, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
+import { easingFn, flowsOf, followInteraction, hotspotsIn, layerBoxIn, mediaState, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
 import { frameAt, matchLayers, scratchCopy } from "../smart-animate";
 import { videoUrl } from "../video";
 import { useEditor } from "../store";
+import { Select } from "./Select";
 
 /** Full-screen prototype presentation: shows one frame at a time; layers with interactions react to clicks, hovering, time and keys. */
 export function Presenter() {
@@ -83,6 +84,7 @@ export function Presenter() {
   const spots = useMemo(() => (start && current && doc.hasNode(current) ? hotspotsIn(doc, current) : []), [doc, current, start, modeTick]);
   const overlayFrame = useMemo(() => (start && overlay && doc.hasNode(overlay) ? exportSvg(doc, [overlay], { measure: canvasMeasure }) : null), [doc, overlay, start, modeTick]);
   const overlaySpots = useMemo(() => (start && overlay && doc.hasNode(overlay) ? hotspotsIn(doc, overlay) : []), [doc, overlay, start, modeTick]);
+  const flows = useMemo(() => (start ? flowsOf(doc) : []), [doc, start, modeTick]);
   const videos = useMemo(() => (start && current && doc.hasNode(current) ? videosIn(doc, current) : []), [doc, current, start, modeTick]);
   const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start, modeTick]);
 
@@ -289,6 +291,34 @@ export function Presenter() {
       <button className="presenter__close" onClick={() => setPresenting(null)} title="Exit (Esc)">
         ✕
       </button>
+      {flows.length > 1 && (
+        <div className="presenter__flows" style={{ position: "absolute", top: 12, left: 12, zIndex: 5, width: 200 }}>
+          <Select
+            className="field__select field__select--wide"
+            aria-label="Go to flow"
+            title="Jump to another flow"
+            value=""
+            onChange={(e) => {
+              const flow = flows.find((f) => f.frameId === e.target.value);
+              if (!flow) return;
+              tweenRun.current++;
+              setTween(null);
+              setOverlay(null);
+              setTransition(null);
+              setLeaving(null);
+              setHistory([]);
+              setCurrent(flow.frameId);
+            }}
+          >
+            <option value="">Go to flow…</option>
+            {flows.map((f) => (
+              <option key={f.frameId} value={f.frameId}>
+                {f.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
       {leaving && (
         <div className="presenter__leaving" key={`leave-${leaving.n}`} style={{ width: leaving.stageWidth, height: leaving.stageHeight }}>
           <div style={{ width: leaving.stageWidth, height: leaving.stageHeight, animation: `${leaving.name} ${leaving.ms}ms ${leaving.timing} both` }}>
