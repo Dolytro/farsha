@@ -43,10 +43,10 @@ export function BatchRenameDialog() {
     doc.stopCapturing();
     setOpen(false);
   };
-  const field = (label: string, value: string, set: (v: string) => void, hint?: string) => (
+  const field = (label: string, value: string, set: (v: string) => void, hint?: string, focus?: boolean) => (
     <label className="dialog__row" style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: 8, alignItems: "center", margin: "6px 0" }}>
       <span>{label}</span>
-      <input className="dialog__input" aria-label={label} value={value} placeholder={hint} onChange={(e) => set(e.target.value)} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") apply(); }} />
+      <input className="dialog__input" aria-label={label} value={value} placeholder={hint} autoFocus={focus} onFocus={(e) => focus && e.target.select()} onChange={(e) => set(e.target.value)} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") apply(); }} />
     </label>
   );
   return (
@@ -56,7 +56,7 @@ export function BatchRenameDialog() {
           <strong>Rename {layers.length} layers</strong>
           <button className="icon-btn" aria-label="Close" onClick={() => setOpen(false)}>✕</button>
         </div>
-        {field("New name", pattern, setPattern, "$&")}
+        {field("New name", pattern, setPattern, "$&", true)}
         {field("Start at", start, setStart)}
         {field("Find", find, setFind)}
         {field("Replace with", replace, setReplace)}
