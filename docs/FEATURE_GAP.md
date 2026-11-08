@@ -260,7 +260,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 
 ### 12.2 Missing, free to build (P1, most used by designers)
 - ✅ Layers list: Shift+click selects the range from the layer clicked before, Ctrl / Cmd+click adds or removes one (like Figma; on the canvas Shift+click still adds or removes).
-- ✅ Design panel for several layers: X, Y, W, H of the box round them (moving and scaling them together; layers of different frames can only be moved), opacity and corner radius ("Mixed" when they differ) one fill for all, and one stroke colour and weight for all. Effects and text settings are still only for one layer at a time.
+- ✅ Design panel for several layers: X, Y, W, H of the box round them (moving and scaling them together; layers of different frames can only be moved), opacity and corner radius ("Mixed" when they differ) one fill for all, one stroke colour and weight for all, and font size and weight for the text layers among them. Effects and the other text settings are still only for one layer at a time.
 - ✅ Drawing shapes: Shift makes a square (or circle), Alt draws from the centre.
 - ✅ Shift while dragging layers keeps them on one line (horizontal or vertical, whichever the pointer went further on).
 - ✅ Dropping dragged layers on another frame moves them into it, and dropping them on empty canvas moves them out to the page (they keep their place on the canvas; into an auto layout frame they take the slot under the pointer; layers inside instances and locked layers stay put).

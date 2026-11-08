@@ -39,6 +39,17 @@ export function MultiSection({ doc, ids }: { doc: DesignDoc; ids: string[] }) {
   const radius = withRadius.length ? commonValue(withRadius.map((n) => ("cornerRadius" in n ? n.cornerRadius : 0))) : undefined;
   const firstFills = nodes.filter((n) => "fills" in n && Array.isArray(n.fills)).map((n) => ("fills" in n ? ((n.fills as Paint[])[0] ?? null) : null));
   const solid = firstFills.every((f) => f && f.type === "SOLID") && firstFills.length > 0 ? commonValue(firstFills.map((f) => (f ? paintColor(f).toLowerCase() : ""))) : null;
+  const texts = nodes.filter((n) => n.type === "TEXT");
+  const size = texts.length ? commonValue(texts.map((n) => (n.type === "TEXT" ? n.fontSize : 0))) : null;
+  const weightOfText = texts.length ? commonValue(texts.map((n) => (n.type === "TEXT" ? n.fontWeight : 0))) : null;
+  const setText = (patch: { fontSize?: number; fontWeight?: number }) => {
+    doc.stopCapturing();
+    for (const n of texts) {
+      doc.setText(n.id, patch);
+      fitText(doc, n.id);
+    }
+    doc.stopCapturing();
+  };
   const applyFill = (color: string) => setCommonStyle(doc, ids, "fills", [{ type: "SOLID", color, opacity: 1 }]);
   const withStroke = nodes.filter((n) => "strokes" in n && Array.isArray(n.strokes));
   const firstStrokes = withStroke.map((n) => ("strokes" in n ? ((n.strokes as Paint[])[0] ?? null) : null));
@@ -103,6 +114,45 @@ export function MultiSection({ doc, ids }: { doc: DesignDoc; ids: string[] }) {
           )}
         </div>
       </section>
+      {texts.length > 0 && (
+        <section className="props__section">
+          <h3 className="props__heading">Text</h3>
+          <div className="props__grid">
+            <label className="field" title="Font size of every selected text layer">
+              <span className="field__label">Aa</span>
+              <input
+                className="field__input"
+                type="number"
+                min={1}
+                aria-label="Font size of the selected text"
+                placeholder="Mixed"
+                value={size ?? ""}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (e.target.value !== "" && Number.isFinite(v) && v >= 1) setText({ fontSize: v });
+                }}
+              />
+            </label>
+            <label className="field" title="Font weight of every selected text layer (100 to 900)">
+              <span className="field__label">W</span>
+              <input
+                className="field__input"
+                type="number"
+                min={100}
+                max={900}
+                step={100}
+                aria-label="Font weight of the selected text"
+                placeholder="Mixed"
+                value={weightOfText ?? ""}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (e.target.value !== "" && Number.isFinite(v)) setText({ fontWeight: Math.min(900, Math.max(100, Math.round(v / 100) * 100)) });
+                }}
+              />
+            </label>
+          </div>
+        </section>
+      )}
       {withStroke.length > 0 && (
         <section className="props__section">
           <h3 className="props__heading">Stroke</h3>
