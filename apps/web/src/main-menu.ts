@@ -204,6 +204,16 @@ export function buildMainMenu(): MenuNode[] {
         item("show-variables", "Variables…"),
       ),
     },
+    {
+      label: "Help",
+      children: list(
+        item("keyboard-shortcuts"),
+        item("help-github", undefined, true),
+        item("help-issues"),
+        item("help-privacy", undefined, true),
+        item("help-terms"),
+      ),
+    },
   ];
 
   return sections.filter((s) => s.children.length).map((s) => ({ label: s.label, children: first(s.children) }));

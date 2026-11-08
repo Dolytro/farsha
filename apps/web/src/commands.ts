@@ -1,3 +1,4 @@
+import { HELP_LINKS, openHelpLink } from "./help-links";
 import { alignSelection, distributeSelection, type AlignMode } from "./align";
 import { distributeEdges, packLayers, roundToPixel, tidyUp, type EdgeMode } from "./arrange-actions";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
@@ -526,6 +527,7 @@ export function buildCommands(): Command[] {
       },
     },
     { id: "eyedropper", label: "Pick color from the screen", shortcut: "I", keywords: "eyedropper sample color", run: () => pickColorFromScreen(doc(), sel(), state().showToast) },
+    ...HELP_LINKS.map((l): Command => ({ id: l.id, label: l.label, keywords: `help ${l.keywords}`, run: () => void openHelpLink(l.url) })),
     { id: "keyboard-shortcuts", label: "Keyboard shortcuts…", shortcut: `${MOD}${SHIFT}?`, keywords: "cheat sheet keys help hotkeys", run: () => state().setShortcutsOpen(true) },
     { id: "preferences", label: "Preferences", keywords: "settings keep tool snapping zoom nudge", run: () => state().setPrefsOpen(true) },
     { id: "outlines", label: "Show / hide outlines", shortcut: `${MOD}${SHIFT}Y`, keywords: "view wireframe outline mode", run: () => state().setOutlines(!state().outlines) },
