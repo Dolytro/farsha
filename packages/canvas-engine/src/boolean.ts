@@ -1,3 +1,4 @@
+import { arcParams, isFullEllipse } from "./ellipse-arc";
 import polygonClipping from "polygon-clipping";
 import type { DesignDoc } from "@farsha/design-core";
 import type { DesignNode, Paint } from "@farsha/types";
@@ -37,6 +38,22 @@ function localOutline(n: DesignNode): Ring | null {
     return out;
   }
   if (n.type === "ELLIPSE") {
+    const arc = arcParams(n);
+    if (!isFullEllipse(arc)) {
+      // a pie, a ring or a ring sector: the outer arc, then (for a ring) the inner arc back. A full ring is one outline with a slit at the start angle.
+      if (arc.sweep <= 0) return null;
+      const rx = n.width / 2;
+      const ry = n.height / 2;
+      const steps = Math.max(2, Math.ceil((72 * arc.sweep) / 360));
+      const at = (i: number, k: number): [number, number] => {
+        const a = ((arc.start + (arc.sweep * i) / steps) * Math.PI) / 180;
+        return [rx + Math.cos(a) * rx * k, ry + Math.sin(a) * ry * k];
+      };
+      const outer = Array.from({ length: steps + 1 }, (_, i) => at(i, 1));
+      if (arc.ratio === 0) return [[rx, ry], ...outer];
+      const inner = Array.from({ length: steps + 1 }, (_, i) => at(steps - i, arc.ratio));
+      return [...outer, ...inner];
+    }
     return Array.from({ length: 72 }, (_, i) => {
       const a = (i / 72) * Math.PI * 2;
       return [n.width / 2 + (Math.cos(a) * n.width) / 2, n.height / 2 + (Math.sin(a) * n.height) / 2] as [number, number];
