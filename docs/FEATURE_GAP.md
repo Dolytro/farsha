@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Dev Mode: a Vue tab (single-file component: template plus scoped style); class names of long text layers are cut to a few words; React component names never start with a digit.
 - ✅ Layers panel: press an eye (or a lock) and drag down the list to hide, show, lock or unlock every layer you cross (like Figma). A slow drag can take more than one undo step.
 - ✅ Share dialog: "Copy embed code" gives an iframe for a view-only link (needs a signed-in Drive file, so only the code builder is unit-tested; the dialog itself was not exercised with a real account).
 - ✅ Auto layout > First on top (Figma's canvas stacking): the first layer of the frame is drawn above the others (canvas, hit-testing, SVG export; the Layers list order is unchanged). ✅ Alignment across a row has a "Text baseline" option (text layers hang from their first baseline, other layers by their bottom edge; Dev Mode CSS align-items: baseline). ✅ "Strokes in layout" toggle (centred strokes widen each child by their width, outside ones by twice that, so gap and padding are measured from the stroke edge; inside strokes are unchanged).

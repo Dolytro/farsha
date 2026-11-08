@@ -9,7 +9,7 @@ export { composeColor, composePaint, generateCompose } from "./compose";
 export { generateUIKit, uiColor, uikitClassName } from "./uikit";
 export { androidColor, generateAndroidXml } from "./androidxml";
 
-export type Language = "css" | "html" | "react" | "tailwind" | "swiftui" | "uikit" | "compose" | "androidxml";
+export type Language = "css" | "html" | "react" | "vue" | "tailwind" | "swiftui" | "uikit" | "compose" | "androidxml";
 export type Decl = [prop: string, value: string];
 export type ChildrenOf = (id: string) => DesignNode[];
 
@@ -245,8 +245,17 @@ export function tailwindClass([prop, value]: Decl): string {
   }
 }
 
-const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "node";
-const pascal = (name: string) => name.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(" ").map((w) => w[0]!.toUpperCase() + w.slice(1)).join("") || "Component";
+const slug = (name: string) => {
+  const full = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  // a long text layer would make a class name as long as the text: keep a few words
+  const short = full.length > 32 ? (full.slice(0, 32).replace(/-[^-]*$/, "") || full.slice(0, 32)) : full;
+  return short || "node";
+};
+const pascal = (name: string) => {
+  const id = name.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(" ").filter(Boolean).map((w) => w[0]!.toUpperCase() + w.slice(1)).join("") || "Component";
+  // a component name cannot start with a digit
+  return /^[0-9]/.test(id) ? `C${id}` : id;
+};
 const camel = (prop: string) => prop.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const escJsx = (s: string) => escHtml(s).replace(/[{}]/g, (c) => (c === "{" ? "&#123;" : "&#125;"));
@@ -307,6 +316,9 @@ export function generateCode(node: DesignNode, children: ChildrenOf, language: L
       return css(root);
     case "html":
       return `${html(root, 0, (w) => w.cls)}\n\n<style>\n${css(root)}\n</style>`;
+    case "vue":
+      // a single-file component: the markup indented inside <template>, the rules in a scoped style block
+      return `<template>\n${html(root, 1, (w) => w.cls)}\n</template>\n\n<style scoped>\n${css(root)}\n</style>`;
     case "tailwind":
       return html(root, 0, (w) => w.decls.map(tailwindClass).join(" "));
     case "react":

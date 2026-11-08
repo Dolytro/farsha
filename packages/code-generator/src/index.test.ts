@@ -629,3 +629,34 @@ describe("gradient stroke in CSS", () => {
     expect(d.background).toContain("linear-gradient");
   });
 });
+
+describe("Vue output", () => {
+  it("is a single-file component with a template and a scoped style", () => {
+    const doc = new DesignDoc();
+    const frame = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id, props: { name: "Card", width: 100, height: 50 } });
+    doc.createNode("TEXT", { parentId: frame, props: { characters: "Hello <b>", fontSize: 12 } as never });
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "vue");
+    expect(code.startsWith("<template>\n")).toBe(true);
+    expect(code).toContain("</template>\n\n<style scoped>");
+    expect(code.trimEnd().endsWith("</style>")).toBe(true);
+    expect(code).toContain("Hello &lt;b&gt;");
+    expect(code).toContain('class="card"');
+  });
+});
+
+describe("class and component names", () => {
+  it("shortens the class of a long text layer to a few words", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Tile ta nijei ekta selection frame with four corner handles and a dot grid inside", fontSize: 12 } as never });
+    const code = generateCode(doc.getNode(id)!, (n) => doc.children(n), "html");
+    const cls = /class="([^"]+)"/.exec(code)![1]!;
+    expect(cls.length).toBeLessThanOrEqual(32);
+    expect(cls.startsWith("tile-ta-nijei")).toBe(true);
+    expect(cls.endsWith("-")).toBe(false);
+  });
+  it("a React component name never starts with a digit", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id, props: { name: "3D card", width: 10, height: 10 } });
+    expect(generateCode(doc.getNode(id)!, (n) => doc.children(n), "react")).toContain("export function C3DCard()");
+  });
+});

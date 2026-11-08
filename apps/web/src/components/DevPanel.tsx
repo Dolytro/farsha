@@ -16,6 +16,7 @@ const LANGS: { id: Language; label: string }[] = [
   { id: "css", label: "CSS" },
   { id: "html", label: "HTML" },
   { id: "react", label: "React" },
+  { id: "vue", label: "Vue" },
   { id: "tailwind", label: "Tailwind" },
   { id: "swiftui", label: "SwiftUI" },
   { id: "uikit", label: "UIKit" },
