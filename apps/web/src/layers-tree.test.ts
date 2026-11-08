@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { layerKind, layerRows, moveLayers } from "./layers-tree";
+import { layerKind, layerRows, moveLayers, toggleBranch } from "./layers-tree";
 
 function setup() {
   const doc = new DesignDoc();
@@ -122,5 +122,16 @@ describe("rangeBetween", () => {
     expect(rangeBetween(rows, undefined, "c")).toEqual(["c"]);
     expect(rangeBetween(rows, "gone", "c")).toEqual(["c"]);
     expect(rangeBetween(rows, "a", "zzz")).toEqual([]);
+  });
+});
+
+describe("toggleBranch", () => {
+  it("opens a closed layer and everything inside it", () => {
+    const next = toggleBranch(new Set(["a", "b", "c", "x"]), "a", ["b", "c"]);
+    expect([...next]).toEqual(["x"]);
+  });
+  it("closes an open layer and everything inside it", () => {
+    const next = toggleBranch(new Set(["x"]), "a", ["b", "c"]);
+    expect([...next].sort()).toEqual(["a", "b", "c", "x"]);
   });
 });

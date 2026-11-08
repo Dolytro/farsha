@@ -6,7 +6,7 @@ import { useEditor } from "../store";
 import { addPage, deletePage, duplicatePage, movePage } from "../pages";
 import { zoomFit } from "../actions";
 import { Select } from "./Select";
-import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow, treeKeyTarget, type TreeKey, rangeBetween } from "../layers-tree";
+import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow, treeKeyTarget, type TreeKey, rangeBetween, toggleBranch } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
@@ -184,10 +184,11 @@ export function Layers() {
       >
         <button
           className={`layers__chevron${hasChildren ? "" : " layers__chevron--none"}`}
-          title={collapsed.has(n.id) ? "Expand" : "Collapse"}
+          title={collapsed.has(n.id) ? "Expand (Alt+click opens everything inside)" : "Collapse (Alt+click closes everything inside)"}
           onClick={(e) => {
             e.stopPropagation();
-            toggleCollapsed(n.id);
+            if (e.altKey) setCollapsed((c) => toggleBranch(c, n.id, doc.descendants(n.id).map((d) => d.id)));
+            else toggleCollapsed(n.id);
           }}
         >
           {collapsed.has(n.id) ? "▸" : "▾"}

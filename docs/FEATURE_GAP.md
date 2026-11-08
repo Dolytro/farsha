@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Layers panel: Alt+click on a chevron opens (or closes) the layer and everything inside it.
 - ✅ Layers panel: Alt+click on a layer's eye shows only that layer (everything else on the page is hidden; Alt+click again brings them back).
 - ✅ Design panel for several layers: an Effects section (+ adds a drop shadow to every selected layer, − removes all their effects, "Mixed" when the counts differ).
 - ✅ Ctrl+D after an Alt+drag copy repeats that move (Figma's duplicate and repeat last move): the next copies land the same distance further, again and again. Any other selection duplicates with the plain 10 px offset.

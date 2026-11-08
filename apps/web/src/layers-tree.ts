@@ -154,3 +154,12 @@ export function rangeBetween(rows: LayerRow[], anchorId: string | undefined, tar
   const [a, b] = from <= to ? [from, to] : [to, from];
   return rows.slice(a, b + 1).map((r) => r.id);
 }
+
+/** Alt+click on a chevron: open the layer and everything inside it, or close all of it when it was open. */
+export function toggleBranch(collapsed: ReadonlySet<string>, id: string, descendantIds: string[]): Set<string> {
+  const next = new Set(collapsed);
+  const all = [id, ...descendantIds];
+  if (collapsed.has(id)) for (const x of all) next.delete(x);
+  else for (const x of all) next.add(x);
+  return next;
+}
