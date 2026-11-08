@@ -12,13 +12,13 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Frame (F), Rectangle (R), Ellipse (O), Text (T) | ✅ | |
 | Scale tool (K) | ✅ | One layer at a time; keeps the ratio (Alt scales from the centre) |
 | Section, Slice | ❌ | P3 |
-| Line (L), Arrow (Shift+L) | 🟡 | Drawn by dragging (Shift snaps to 15°), editable stroke colour / width, rotation. Missing: arrow head types, stroke caps, the arrow head stretches when the width changes, no handles on the line ends |
+| Line (L), Arrow (Shift+L) | ✅ | Drawn by dragging (Shift snaps to 15°), editable stroke colour / width, rotation, caps, joins, dashes and arrowheads (Stroke section). No handles on the line ends |
 | Polygon, Star | 🟡 | Toolbar buttons, fill and stroke editable. ✅ Polygon sides (3 to 60) and Star points and ratio in the Design panel (for layers drawn with the tools). ✅ Corner radius for polygons and stars (a Radius field, in the 100 x 100 drawing units of the shape, so it scales with the layer). Missing: nothing in the tool |
-| Image / video placement, paste or drop an image | ❌ | P1 |
-| Pen tool (P) | 🟡 | Click for corner points, drag for curve handles, click the first point to close, Enter / double-click / Esc to finish, Backspace removes the last point; result is a vector layer with editable stroke and fill. Point editing done (Enter or double-click a pen path: drag anchors and handles, click the path to add a point, Alt+click or Delete removes one, double-click a point to switch corner / smooth; needs no rotation or flip). Pencil tool (Shift+P) done: drag to draw freehand, the stroke is simplified and smoothed into an editable pen path, a loop closes itself. Missing: joining / splitting paths, editing imported SVG vectors, boolean operations |
-| Comment tool (C) | ❌ | P2 |
-| Color picker / eyedropper (I) (menu) | 🟡 | Eyedropper (I or Actions) picks a colour anywhere on the screen and applies it to the selection (copies it when nothing is selected); needs Chromium's EyeDropper API. Real screen picking could not be driven in the test browser (a stub was used). Missing: a colour picker popover with a spectrum |
-| Tool dropdowns with variants in the toolbar | ❌ | P2 |
+| Image / video placement, paste or drop an image | ✅ | P1 |
+| Pen tool (P) | 🟡 | Click for corner points, drag for curve handles, click the first point to close, Enter / double-click / Esc to finish, Backspace removes the last point; result is a vector layer with editable stroke and fill. Point editing done (Enter or double-click a pen path: drag anchors and handles, click the path to add a point, Alt+click or Delete removes one, double-click a point to switch corner / smooth; needs no rotation or flip). Pencil tool (Shift+P) done: drag to draw freehand, the stroke is simplified and smoothed into an editable pen path, a loop closes itself. Joining, splitting and boolean operations are done. Missing: editing imported SVG vectors |
+| Comment tool (C) | ✅ | P2 (comments are stored in the document; no mentions or live notifications) |
+| Color picker / eyedropper (I) (menu) | 🟡 | Eyedropper (I or Actions) picks a colour anywhere on the screen and applies it to the selection (copies it when nothing is selected); needs Chromium's EyeDropper API. Real screen picking could not be driven in the test browser (a stub was used). The custom colour picker with a spectrum is done (see Design panel). |
+| Tool dropdowns with variants in the toolbar | ✅ | P2 (Move tools, Region tools, Shapes tools, Draw tools) |
 | "Keep tool selected after use" setting (menu) | ✅ | Preferences |
 
 ## 2. Selection and editing
