@@ -1,4 +1,5 @@
 import { arcParams, isFullEllipse } from "./ellipse-arc";
+import { polygonPoints, roundedPolygonOutline } from "./shapes";
 import polygonClipping from "polygon-clipping";
 import type { DesignDoc } from "@farsha/design-core";
 import type { DesignNode, Paint } from "@farsha/types";
@@ -82,6 +83,12 @@ function localOutline(n: DesignNode): Ring | null {
         }
       }
       return pts;
+    }
+    // polygons and stars with rounded corners: rebuilt from their numbers
+    if (n.shapeKind && (n.shapeRadius ?? 0) > 0) {
+      const pts = polygonPoints(n.shapeSides ?? (n.shapeKind === "STAR" ? 5 : 3), n.shapeKind === "STAR" ? (n.starRatio ?? 0.382) : 0);
+      const ring = roundedPolygonOutline(pts, n.shapeRadius!).map(([x, y]) => [x * sx, y * sy] as [number, number]);
+      return ring.length > 2 ? ring : null;
     }
     // polygons and stars from the shape tools
     const m = /<polygon points="([0-9eE+\-.,\s]+)"/.exec(n.markup);

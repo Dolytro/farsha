@@ -114,3 +114,18 @@ describe("boolean operations with ellipse arcs", () => {
     expect(r.box.width).toBe(210);
   });
 });
+
+describe("boolean operations with rounded polygons", () => {
+  it("a rounded square is smaller than its box: the corners are cut", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const rounded = doc.createNode("VECTOR", { parentId: page, props: { x: 0, y: 0, width: 100, height: 100, viewBox: "0 0 100 100", markup: '<path d="M0 0Z"/>', shapeKind: "POLYGON", shapeSides: 4, shapeRadius: 20, fills: [], strokes: [], strokeWidth: 1 } as never });
+    const sharp = doc.createNode("VECTOR", { parentId: page, props: { x: 200, y: 0, width: 100, height: 100, viewBox: "0 0 100 100", markup: '<polygon points="0,0 100,0 100,100 0,100"/>', fills: [], strokes: [], strokeWidth: 1 } as never });
+    const r = booleanShapes(doc, [rounded, sharp], "UNION")!;
+    const ring = r.rings.find((ring) => ring.every(([x]) => x < 150))!;
+    // a diamond (4 sides starting at the top) rounded at the corners never reaches the box's very tips
+    const tipY = Math.min(...ring.map((p) => p[1]));
+    expect(tipY).toBeGreaterThan(0.1);
+    expect(ring.length).toBeGreaterThan(8);
+  });
+});
