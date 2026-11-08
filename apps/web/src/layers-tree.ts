@@ -141,3 +141,16 @@ export function treeKeyTarget(rows: LayerRow[], currentId: string | undefined, k
   for (let j = i - 1; j >= 0; j--) if (rows[j]!.depth < row.depth) return { select: rows[j]!.id };
   return {};
 }
+
+/**
+ * Shift+click in the layers list (Figma): every layer from the one clicked before (the anchor) to this one, in the order they are listed.
+ * Without an anchor that is in the list, only the clicked layer is selected.
+ */
+export function rangeBetween(rows: LayerRow[], anchorId: string | undefined, targetId: string): string[] {
+  const to = rows.findIndex((r) => r.id === targetId);
+  if (to < 0) return [];
+  const from = anchorId ? rows.findIndex((r) => r.id === anchorId) : -1;
+  if (from < 0) return [targetId];
+  const [a, b] = from <= to ? [from, to] : [to, from];
+  return rows.slice(a, b + 1).map((r) => r.id);
+}

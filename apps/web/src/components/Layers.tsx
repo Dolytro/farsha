@@ -4,7 +4,7 @@ import { useEditor } from "../store";
 import { addPage, deletePage, duplicatePage, movePage } from "../pages";
 import { zoomFit } from "../actions";
 import { Select } from "./Select";
-import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow, treeKeyTarget, type TreeKey } from "../layers-tree";
+import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow, treeKeyTarget, type TreeKey, rangeBetween } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
@@ -58,6 +58,7 @@ export function Layers() {
     if (!doc.hasNode(pageId)) setPage(doc.pages()[0]!.id);
   });
 
+  const anchor = useRef<string | undefined>(undefined);
   const pageDrag = useRef<string | null>(null);
   const [pageDrop, setPageDrop] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
@@ -139,7 +140,17 @@ export function Layers() {
           const v = zoomFit(doc, pageId, [n.id]);
           if (v) useEditor.getState().setViewport(v);
         }}
-        onClick={(e) => select(e.shiftKey ? (selection.includes(n.id) ? selection.filter((i) => i !== n.id) : [...selection, n.id]) : [n.id])}
+        onClick={(e) => {
+          // Shift+click selects the range from the layer clicked before; Ctrl / Cmd+click adds or removes one layer (Figma)
+          if (e.shiftKey) select(rangeBetween(rows, anchor.current, n.id));
+          else if (e.ctrlKey || e.metaKey) {
+            select(selection.includes(n.id) ? selection.filter((i) => i !== n.id) : [...selection, n.id]);
+            anchor.current = n.id;
+          } else {
+            select([n.id]);
+            anchor.current = n.id;
+          }
+        }}
       >
         <button
           className={`layers__chevron${hasChildren ? "" : " layers__chevron--none"}`}

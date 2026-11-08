@@ -108,3 +108,19 @@ describe("treeKeyTarget", () => {
     expect(treeKeyTarget(rows, "b", "ArrowLeft", none)).toEqual({});
   });
 });
+
+import { rangeBetween } from "./layers-tree";
+
+describe("rangeBetween", () => {
+  const rows: LayerRow[] = ["a", "b", "c", "d", "e"].map((id) => ({ id, depth: 0, hasChildren: false }));
+  it("selects everything from the anchor to the clicked layer, in either direction", () => {
+    expect(rangeBetween(rows, "b", "d")).toEqual(["b", "c", "d"]);
+    expect(rangeBetween(rows, "d", "b")).toEqual(["b", "c", "d"]);
+    expect(rangeBetween(rows, "c", "c")).toEqual(["c"]);
+  });
+  it("is just the clicked layer without a usable anchor, and empty for an unknown layer", () => {
+    expect(rangeBetween(rows, undefined, "c")).toEqual(["c"]);
+    expect(rangeBetween(rows, "gone", "c")).toEqual(["c"]);
+    expect(rangeBetween(rows, "a", "zzz")).toEqual([]);
+  });
+});
