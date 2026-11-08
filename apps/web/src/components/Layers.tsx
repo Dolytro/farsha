@@ -106,6 +106,26 @@ export function Layers() {
   const rowHeight = Number.parseFloat(typeof document !== "undefined" ? getComputedStyle(document.documentElement).getPropertyValue("--row-h") : "") || 24;
   const visible = rowWindow(rows.length, rowHeight, scroll.top, scroll.height);
 
+  // Press an eye or a lock and drag down the list: every layer you cross gets the same state (Figma)
+  const sweep = useRef<{ prop: "visible" | "locked"; value: boolean } | null>(null);
+  const startSweep = (prop: "visible" | "locked", id: string, value: boolean) => {
+    doc.stopCapturing();
+    sweep.current = { prop, value };
+    doc.setStyle(id, { [prop]: value });
+    const end = () => {
+      sweep.current = null;
+      doc.stopCapturing();
+      window.removeEventListener("pointerup", end);
+    };
+    window.addEventListener("pointerup", end);
+  };
+  const sweepOver = (prop: "visible" | "locked", id: string) => {
+    const s = sweep.current;
+    if (!s || s.prop !== prop) return;
+    const n = doc.getNode(id);
+    if (n && n[prop] !== s.value) doc.setStyle(id, { [prop]: s.value });
+  };
+
   const toggleCollapsed = (id: string) =>
     setCollapsed((c) => {
       const next = new Set(c);
@@ -210,10 +230,18 @@ export function Layers() {
         {canEdit && (
           <button
             className={`layers__toggle${n.locked ? " layers__toggle--on" : ""}`}
-            title={n.locked ? "Unlock" : "Lock"}
+            title={n.locked ? "Unlock (drag down to change several)" : "Lock (drag down to change several)"}
+            onMouseDown={(e) => e.preventDefault() /* keeps the row from starting a drag while sweeping */}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              e.stopPropagation();
+              startSweep("locked", n.id, !n.locked);
+            }}
+            onPointerEnter={() => sweepOver("locked", n.id)}
             onClick={(e) => {
               e.stopPropagation();
-              doc.setStyle(n.id, { locked: !n.locked });
+              // a pointer press already did the work; a keyboard click (detail 0) toggles here
+              if (e.detail === 0) doc.setStyle(n.id, { locked: !n.locked });
             }}
           >
             {n.locked ? "🔒" : "🔓"}
@@ -222,6 +250,13 @@ export function Layers() {
         <button
           className="layers__toggle"
           title={n.visible ? "Hide (Alt+click shows only this layer)" : "Show (Alt+click shows only this layer)"}
+          onMouseDown={(e) => e.preventDefault() /* keeps the row from starting a drag while sweeping */}
+          onPointerDown={(e) => {
+            if (e.button !== 0 || e.altKey) return;
+            e.stopPropagation();
+            startSweep("visible", n.id, !n.visible);
+          }}
+          onPointerEnter={() => sweepOver("visible", n.id)}
           onClick={(e) => {
             e.stopPropagation();
             // Figma: Alt+click on the eye hides everything else (and brings the others back on a second Alt+click)
@@ -230,7 +265,8 @@ export function Layers() {
               hideOtherLayers(doc, [n.id], pageId);
               return;
             }
-            doc.setStyle(n.id, { visible: !n.visible });
+            // a pointer press already did the work; a keyboard click (detail 0) toggles here
+            if (e.detail === 0) doc.setStyle(n.id, { visible: !n.visible });
           }}
         >
           {n.visible ? "◉" : "○"}
