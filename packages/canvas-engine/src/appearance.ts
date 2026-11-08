@@ -1,3 +1,4 @@
+import { arcParams, ellipsePath } from "./ellipse-arc";
 import { cssBlendMode, paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
 
 /**
@@ -126,6 +127,10 @@ export function smoothedRectPath(w: number, h: number, r: [number, number, numbe
 
 /** The outline of a rectangle-like or elliptical layer as one SVG shape element carrying `extra` attributes. */
 export function shapeGeometry(n: DesignNode, extra: string): string {
+  if (n.type === "ELLIPSE") {
+    const arc = ellipsePath(n.width, n.height, arcParams(n));
+    if (arc) return `<path d="${arc.d}"${arc.evenodd ? ' fill-rule="evenodd"' : ""}${extra}/>`;
+  }
   if (n.type === "ELLIPSE") return `<ellipse cx="${num(n.width / 2)}" cy="${num(n.height / 2)}" rx="${num(n.width / 2)}" ry="${num(n.height / 2)}"${extra}/>`;
   const r = cornerRadiiOf(n);
   const smooth = "cornerSmoothing" in n && typeof n.cornerSmoothing === "number" ? Math.min(1, Math.max(0, n.cornerSmoothing)) : 0;

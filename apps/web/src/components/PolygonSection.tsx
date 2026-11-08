@@ -12,8 +12,8 @@ export function PolygonSection({ doc, node }: { doc: DesignDoc; node: DesignNode
   return (
     <section className="props__section">
       <h3 className="props__heading">{kind === "STAR" ? "Star" : "Polygon"}</h3>
-      <div className="props__grid">
-        <label className="field" title={kind === "STAR" ? "Number of points" : "Number of sides"}>
+      <div className="props__stack">
+        <label className="field field--row" title={kind === "STAR" ? "Number of points" : "Number of sides"}>
           <span className="field__label field__label--text">{kind === "STAR" ? "Points" : "Sides"}</span>
           <input
             className="field__input"
@@ -29,7 +29,7 @@ export function PolygonSection({ doc, node }: { doc: DesignDoc; node: DesignNode
           />
         </label>
         {kind === "STAR" && (
-          <label className="field" title="Inner radius as a percentage of the outer radius">
+          <label className="field field--row" title="Inner radius as a percentage of the outer radius">
             <span className="field__label field__label--text">Ratio</span>
             <input
               className="field__input"

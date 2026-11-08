@@ -602,6 +602,12 @@ export interface EllipseNode extends BaseNode {
   strokes: Paint[];
   strokeWidth: number;
   strokeAlign?: StrokeAlign;
+  /** Arc (Figma's ellipse handles): where the arc starts in degrees clockwise from 3 o'clock (default 0). */
+  arcStart?: number;
+  /** How far the arc goes, 0 to 360 degrees (default 360, a full ellipse). */
+  arcSweep?: number;
+  /** Inner radius as a share of the outer one, 0 to 0.99 (default 0). Above 0 the ellipse is a ring or a ring sector. */
+  arcRatio?: number;
 }
 
 export type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED';
@@ -728,6 +734,9 @@ export interface StylePatch extends AutoLayoutProps {
   cornerRadii?: [number, number, number, number] | null;
   cornerSmoothing?: number;
   strokeSides?: [number, number, number, number] | null;
+  arcStart?: number;
+  arcSweep?: number;
+  arcRatio?: number;
   strokeStyleId?: string | null;
   devStatus?: DevStatus | null;
   devNote?: string | null;

@@ -212,7 +212,7 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
         ))}
       </Select>
       {paint.scaleMode === "TILE" && (
-        <label className="field field--gap" title="Tile size (% of the picture's own size)">
+        <label className="field field--row field--gap" title="Tile size (% of the picture's own size)">
           <span className="field__label field__label--text">Tile</span>
           <input
             className="field__input"
@@ -234,7 +234,7 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void choose(e.target.files?.[0])} />
       </label>
       {(["exposure", "contrast", "saturation", "temperature", "tint", "highlights", "shadows"] as const).map((key) => (
-        <label className="field field--gap" key={key} title={`Image ${key} (-100 to 100)`}>
+        <label className="field field--row field--gap" key={key} title={`Image ${key} (-100 to 100)`}>
           <span className="field__label field__label--text">{key[0]!.toUpperCase() + key.slice(1)}</span>
           <input
             className="field__input"
