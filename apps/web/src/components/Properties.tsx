@@ -27,6 +27,7 @@ import { rotateSelectionBy } from "../object-actions";
 import { FRAME_PRESETS, presetLabel, presetOf } from "../frame-presets";
 import { SelectionColors } from "./SelectionColors";
 import { LocalStyles } from "./LocalStyles";
+import { MultiSection } from "./MultiSection";
 
 
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
@@ -111,6 +112,7 @@ export function Properties() {
         )}
         {selection.length === 0 && !viewer && <LocalStyles />}
         {selection.length === 0 && !viewer && <ExportSection doc={doc} ids={[]} pageId={pageId} />}
+        {selection.length > 1 && !viewer && !devMode && <MultiSection doc={doc} ids={selection} />}
         {selection.length > 0 && !viewer && <SelectionColors />}
         <p className="props__empty">{selection.length > 1 ? `${selection.length} layers selected` : "Select a layer to edit its properties"}</p>
       </aside>

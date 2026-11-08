@@ -259,6 +259,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 | Delete and heal | Shift+Backspace | ✅ same (while editing a path) |
 
 ### 12.2 Missing, free to build (P1, most used by designers)
+- ✅ Design panel for several layers: X, Y, W, H of the box round them (moving and scaling them together; layers of different frames can only be moved), opacity and corner radius ("Mixed" when they differ) and one fill for all. Stroke, effects and text settings are still only for one layer at a time.
 - ✅ Drawing shapes: Shift makes a square (or circle), Alt draws from the centre.
 - ✅ Shift while dragging layers keeps them on one line (horizontal or vertical, whichever the pointer went further on).
 - ✅ Dropping dragged layers on another frame moves them into it, and dropping them on empty canvas moves them out to the page (they keep their place on the canvas; into an auto layout frame they take the slot under the pointer; layers inside instances and locked layers stay put).
