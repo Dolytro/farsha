@@ -3,7 +3,7 @@ import { gridRects } from "@farsha/canvas-engine";
 
 /**
  * The lines layers snap to inside a frame that shows layout grids (Figma): the left and right edge of every column and the
- * top and bottom edge of every row, in the coordinates of the page. Square grids and hidden grids add nothing.
+ * top and bottom edge of every row, in the coordinates of the page. Hidden grids add nothing; a square grid gives a line every cell unless the cells are tiny.
  */
 export function gridSnapLines(grids: LayoutGrid[] | undefined, frame: Box): { xs: number[]; ys: number[] } {
   const xs = new Set<number>();
@@ -12,6 +12,12 @@ export function gridSnapLines(grids: LayoutGrid[] | undefined, frame: Box): { xs
     if (!g.visible) continue;
     if (g.type === "COLUMNS") for (const r of gridRects(g, frame.width, frame.height)) [r.x, r.x + r.width].forEach((x) => xs.add(round(frame.x + x)));
     if (g.type === "ROWS") for (const r of gridRects(g, frame.width, frame.height)) [r.y, r.y + r.height].forEach((y) => ys.add(round(frame.y + y)));
+    if (g.type === "GRID") {
+      // a square grid: a line every `size` pixels each way (skipped when that would be hundreds of lines)
+      const size = Math.max(2, Number.isFinite(g.size) ? (g.size as number) : 10);
+      if (frame.width / size <= 200) for (let x = 0; x <= frame.width + 1e-6; x += size) xs.add(round(frame.x + x));
+      if (frame.height / size <= 200) for (let y = 0; y <= frame.height + 1e-6; y += size) ys.add(round(frame.y + y));
+    }
   }
   return { xs: [...xs], ys: [...ys] };
 }

@@ -14,9 +14,16 @@ describe("gridSnapLines", () => {
     expect(xs).toEqual([]);
     expect(ys).toEqual([50, 150, 250, 350]);
   });
-  it("ignores hidden grids, square grids and no grids", () => {
+  it("gives a line per cell for a square grid", () => {
+    const { xs, ys } = gridSnapLines([{ type: "GRID", size: 100, color: "#f00", opacity: 0.1, visible: true }], frame);
+    expect(xs).toEqual([100, 200, 300, 400, 500]);
+    expect(ys).toEqual([50, 150, 250, 350]);
+  });
+  it("skips a square grid with tiny cells", () => {
+    expect(gridSnapLines([{ type: "GRID", size: 2, color: "#f00", opacity: 0.1, visible: true }], { x: 0, y: 0, width: 4000, height: 10 }).xs).toEqual([]);
+  });
+  it("ignores hidden grids and no grids", () => {
     expect(gridSnapLines([{ type: "COLUMNS", count: 2, color: "#f00", opacity: 0.1, visible: false }], frame)).toEqual({ xs: [], ys: [] });
-    expect(gridSnapLines([{ type: "GRID", size: 8, color: "#f00", opacity: 0.1, visible: true }], frame)).toEqual({ xs: [], ys: [] });
     expect(gridSnapLines(undefined, frame)).toEqual({ xs: [], ys: [] });
   });
 });
