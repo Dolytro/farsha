@@ -673,6 +673,36 @@ export class DesignDoc {
   }
 
   /** Drop every override inside an instance so it matches its main component again. */
+  /**
+   * Figma's "Push changes to main component": every property the instance overrides is written to the layer it mirrors in the main component,
+   * and the overrides are cleared. Other instances follow the main. Returns how many properties were pushed.
+   */
+  pushOverridesToMain(instanceId: string): number {
+    const rootMap = this.nodes.get(instanceId);
+    const mainId = rootMap?.get('componentId') as string | undefined;
+    if (!rootMap || !mainId) throw new Error('Select an instance to push its changes');
+    if (!this.nodes.get(mainId)?.get('isComponent')) throw new Error('The main component of this instance is gone');
+    let pushed = 0;
+    this.transact(() => {
+      for (const n of [this.getNode(instanceId)!, ...this.descendants(instanceId)]) {
+        const map = this.nodes.get(n.id)!;
+        const keys = (map.get('overrides') as string[] | undefined) ?? [];
+        if (!keys.length) continue;
+        const target = n.id === instanceId ? mainId : (map.get('mainId') as string | undefined);
+        const targetMap = target ? this.nodes.get(target) : undefined;
+        if (targetMap) {
+          for (const key of keys) {
+            if (INSTANCE_KEYS.has(key) || !map.has(key)) continue;
+            targetMap.set(key, map.get(key));
+            pushed++;
+          }
+        }
+        map.delete('overrides');
+      }
+    });
+    return pushed;
+  }
+
   resetOverrides(id: string): void {
     this.requireNode(id);
     this.transact(() => {

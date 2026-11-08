@@ -7,7 +7,7 @@ import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, 
 import { panToLayer, booleanGroupSelection, booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit, zoomKeyboard } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
-import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
+import { createComponentFromSelection, detachSelection, pushSelectionToMain, resetSelection } from "./component-actions";
 import { duplicatePage } from "./pages";
 import { duplicateFile, openLocalFilePicker, saveLocalCopy } from "./local-file";
 import { placeImagePicker } from "./place-image";
@@ -313,6 +313,20 @@ export function buildCommands(): Command[] {
     { id: "create-component", label: "Create component", shortcut: `${MOD}${ALT}K`, needsSelection: true, keywords: "main symbol", run: () => state().select(createComponentFromSelection(doc(), sel())) },
     { id: "detach-instance", label: "Detach instance", shortcut: `${MOD}${ALT}B`, needsSelection: true, run: () => state().select(detachSelection(doc(), sel())) },
     { id: "reset-overrides", label: "Reset all overrides", needsSelection: true, keywords: "instance", run: () => resetSelection(doc(), sel()) },
+    {
+      id: "push-to-main",
+      label: "Push changes to main component",
+      needsSelection: true,
+      keywords: "instance overrides apply update main",
+      run: () => {
+        try {
+          const n = pushSelectionToMain(doc(), sel());
+          state().showToast(n ? `Pushed ${n} ${n === 1 ? "change" : "changes"} to the main component` : "This instance has no changes to push");
+        } catch (err) {
+          state().showToast(err instanceof Error ? err.message : "Couldn't push the changes");
+        }
+      },
+    },
     align("left", "left", "A"),
     align("hcenter", "horizontal centers", "H"),
     align("right", "right", "D"),

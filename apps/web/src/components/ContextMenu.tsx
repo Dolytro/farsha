@@ -6,6 +6,7 @@ import { createComponentFromSelection, detachSelection, mainsOf, resetSelection 
 import { copyAsCss, copyAsPng, copyAsSvg } from "../exporting";
 import { copyNodes, copyProperties, parseClip, pasteNodes, pasteOver, pasteProperties, pasteTarget, pasteText, topLevelOf } from "../clipboard";
 import { useEditor } from "../store";
+import { buildCommands } from "../commands";
 
 const MARGIN = 8;
 
@@ -97,6 +98,7 @@ async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
       case "create-component": return select(createComponentFromSelection(doc, selection));
       case "detach-instance": return select(detachSelection(doc, selection));
       case "reset-overrides": return resetSelection(doc, selection);
+      case "push-to-main": return buildCommands().find((c) => c.id === "push-to-main")?.run();
       case "go-to-main": {
         const mains = mainsOf(doc, selection);
         if (!mains.length) return showToast("The main component no longer exists");

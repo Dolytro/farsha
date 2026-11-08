@@ -36,3 +36,13 @@ export function resetSelection(doc: DesignDoc, ids: string[]): void {
 export function mainsOf(doc: DesignDoc, ids: string[]): string[] {
   return [...new Set(ids.map((id) => doc.instanceOf(id)).map((n) => (n && n.type === "FRAME" ? n.componentId : undefined)).filter((id): id is string => !!id && doc.hasNode(id)))];
 }
+
+/** Figma's "Push changes to main component": the overrides of the selected instances become part of their main components. Returns how many properties were pushed. */
+export function pushSelectionToMain(doc: DesignDoc, ids: string[]): number {
+  const roots = [...new Set(ids.map((id) => doc.instanceOf(id)?.id).filter((id): id is string => !!id))];
+  doc.stopCapturing();
+  let pushed = 0;
+  for (const id of roots) pushed += doc.pushOverridesToMain(id);
+  doc.stopCapturing();
+  return pushed;
+}

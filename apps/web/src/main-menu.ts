@@ -120,6 +120,7 @@ export function buildMainMenu(): MenuNode[] {
         item("remove-auto-layout"),
         item("create-component", undefined, true),
         item("reset-overrides", "Reset instance"),
+        item("push-to-main"),
         item("detach-instance"),
         item("front", undefined, true),
         item("forward"),
