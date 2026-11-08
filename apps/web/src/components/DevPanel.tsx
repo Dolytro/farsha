@@ -122,6 +122,51 @@ export function DevPanel() {
         </dl>
       </section>
 
+      {node.type === "TEXT" && (
+        <section className="props__section">
+          <h3 className="props__heading">Typography</h3>
+          <dl className="dev__list">
+            <dt>Font</dt><dd><CopyValue text={node.fontFamily.split(",")[0].replace(/"/g, "")} /></dd>
+            <dt>Size</dt><dd><CopyValue text={`${n(node.fontSize)}px`} /></dd>
+            <dt>Weight</dt><dd><CopyValue text={String(node.fontWeight)} /></dd>
+            <dt>Line height</dt><dd><CopyValue text={node.lineHeight === "AUTO" ? "normal" : `${n(node.lineHeight)}px`} label={node.lineHeight === "AUTO" ? "Auto" : undefined} /></dd>
+            {node.letterSpacing !== 0 && (<><dt>Letter spacing</dt><dd><CopyValue text={`${n(node.letterSpacing)}px`} /></dd></>)}
+            <dt>Align</dt><dd><CopyValue text={node.textAlign.toLowerCase()} /></dd>
+          </dl>
+        </section>
+      )}
+
+      {node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL") && (
+        <section className="props__section">
+          <h3 className="props__heading">Auto layout</h3>
+          <dl className="dev__list">
+            <dt>Direction</dt><dd><CopyValue text={node.layoutMode === "HORIZONTAL" ? "row" : "column"} label={node.layoutMode === "HORIZONTAL" ? "Horizontal" : "Vertical"} /></dd>
+            <dt>Gap</dt><dd><CopyValue text={`${n(node.itemSpacing ?? 0)}px`} /></dd>
+            <dt>Padding</dt><dd><CopyValue text={[node.paddingTop, node.paddingRight, node.paddingBottom, node.paddingLeft].map((v) => `${n(v ?? 0)}px`).join(" ")} /></dd>
+          </dl>
+        </section>
+      )}
+
+      {(node.effects ?? []).some((e) => e.visible && (e.type === "DROP_SHADOW" || e.type === "INNER_SHADOW")) && (
+        <section className="props__section">
+          <h3 className="props__heading">Effects</h3>
+          <dl className="dev__list">
+            {(node.effects ?? []).flatMap((e, i) =>
+              e.visible && (e.type === "DROP_SHADOW" || e.type === "INNER_SHADOW")
+                ? [
+                    <div key={i} style={{ display: "contents" }}>
+                      <dt>{e.type === "DROP_SHADOW" ? "Drop shadow" : "Inner shadow"}</dt>
+                      <dd>
+                        <CopyValue text={`${e.type === "INNER_SHADOW" ? "inset " : ""}${n(e.x)}px ${n(e.y)}px ${n(e.blur)}px${e.spread ? ` ${n(e.spread)}px` : ""} ${e.color.toLowerCase()}`} label={`${n(e.x)} ${n(e.y)} ${n(e.blur)}`} />
+                      </dd>
+                    </div>,
+                  ]
+                : [],
+            )}
+          </dl>
+        </section>
+      )}
+
       {(fills.length > 0 || strokes.length > 0) && (
         <section className="props__section">
           <h3 className="props__heading">Colors</h3>
@@ -147,19 +192,6 @@ export function DevPanel() {
             ))}
           </dl>
           <pre className="dev__code"><code>{cssVariableBlock(uses)}</code></pre>
-        </section>
-      )}
-
-      {node.type === "TEXT" && (
-        <section className="props__section">
-          <h3 className="props__heading">Typography</h3>
-          <dl className="dev__list">
-            <dt>Font</dt><dd>{node.fontFamily.split(",")[0]}</dd>
-            <dt>Size</dt><dd>{n(node.fontSize)}px</dd>
-            <dt>Weight</dt><dd>{node.fontWeight}</dd>
-            <dt>Line height</dt><dd>{node.lineHeight === "AUTO" ? "Auto" : `${n(node.lineHeight)}px`}</dd>
-            <dt>Align</dt><dd>{node.textAlign.toLowerCase()}</dd>
-          </dl>
         </section>
       )}
 
