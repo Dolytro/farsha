@@ -114,3 +114,52 @@ export function moveLayers(doc: DesignDoc, ids: string[], targetId: string, wher
   }
   return moving;
 }
+
+export type TreeKey = "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight" | "Home" | "End";
+
+/**
+ * What an arrow key does in the layers tree (the keyboard pattern of a tree view): Up and Down move to the neighbour, Home and End to the ends,
+ * Right opens a folded layer or goes to its first child, Left folds an open layer or goes to its parent.
+ */
+export function treeKeyTarget(rows: LayerRow[], currentId: string | undefined, key: TreeKey, collapsed: ReadonlySet<string>): { select?: string; toggle?: { id: string; collapse: boolean } } {
+  if (!rows.length) return {};
+  const i = rows.findIndex((r) => r.id === currentId);
+  if (i < 0) return { select: key === "End" ? rows[rows.length - 1]!.id : rows[0]!.id };
+  const row = rows[i]!;
+  if (key === "ArrowDown") return i + 1 < rows.length ? { select: rows[i + 1]!.id } : {};
+  if (key === "ArrowUp") return i > 0 ? { select: rows[i - 1]!.id } : {};
+  if (key === "Home") return { select: rows[0]!.id };
+  if (key === "End") return { select: rows[rows.length - 1]!.id };
+  if (key === "ArrowRight") {
+    if (!row.hasChildren) return {};
+    if (collapsed.has(row.id)) return { toggle: { id: row.id, collapse: false } };
+    const next = rows[i + 1];
+    return next && next.depth > row.depth ? { select: next.id } : {};
+  }
+  // ArrowLeft
+  if (row.hasChildren && !collapsed.has(row.id)) return { toggle: { id: row.id, collapse: true } };
+  for (let j = i - 1; j >= 0; j--) if (rows[j]!.depth < row.depth) return { select: rows[j]!.id };
+  return {};
+}
+
+/**
+ * Shift+click in the layers list (Figma): every layer from the one clicked before (the anchor) to this one, in the order they are listed.
+ * Without an anchor that is in the list, only the clicked layer is selected.
+ */
+export function rangeBetween(rows: LayerRow[], anchorId: string | undefined, targetId: string): string[] {
+  const to = rows.findIndex((r) => r.id === targetId);
+  if (to < 0) return [];
+  const from = anchorId ? rows.findIndex((r) => r.id === anchorId) : -1;
+  if (from < 0) return [targetId];
+  const [a, b] = from <= to ? [from, to] : [to, from];
+  return rows.slice(a, b + 1).map((r) => r.id);
+}
+
+/** Alt+click on a chevron: open the layer and everything inside it, or close all of it when it was open. */
+export function toggleBranch(collapsed: ReadonlySet<string>, id: string, descendantIds: string[]): Set<string> {
+  const next = new Set(collapsed);
+  const all = [id, ...descendantIds];
+  if (collapsed.has(id)) for (const x of all) next.delete(x);
+  else for (const x of all) next.add(x);
+  return next;
+}

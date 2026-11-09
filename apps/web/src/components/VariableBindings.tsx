@@ -1,4 +1,4 @@
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, type DesignNode } from "@farsha/types";
+import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, variableAllowsProperty, type DesignNode } from "@farsha/types";
 import type { DesignDoc } from "@farsha/design-core";
 import { Select } from "./Select";
 
@@ -58,7 +58,7 @@ export function VariableBindings({ doc, node }: { doc: DesignDoc; node: DesignNo
         >
           <option value="">Bind a property…</option>
           {free.flatMap((prop) =>
-            ((BOOLEAN_BINDABLE as readonly string[]).includes(prop) ? booleans : numbers).map((v) => (
+            ((BOOLEAN_BINDABLE as readonly string[]).includes(prop) ? booleans : numbers.filter((v) => variableAllowsProperty(v, prop))).map((v) => (
               <option key={`${prop}|${v.id}`} value={`${prop}|${v.id}`}>
                 {LABEL[prop] ?? prop} → {v.name}
               </option>

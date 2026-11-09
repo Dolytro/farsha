@@ -84,6 +84,8 @@ interface EditorState {
   prefs: Prefs;
   prefsOpen: boolean;
   shortcutsOpen: boolean;
+  /** Figma's "Rename layers" dialog for several selected layers. */
+  batchRenameOpen: boolean;
   /** Figma's "Minimize UI": the side panels and toolbar are hidden so the canvas fills the window. */
   uiHidden: boolean;
   /** View > Panels: hide the left (layers) or right (properties) panel on its own. */
@@ -109,6 +111,11 @@ interface EditorState {
   /** Device bezel drawn around the prototype while presenting. */
   presentDevice: "none" | "phone" | "tablet";
   setPresentDevice: (d: "none" | "phone" | "tablet") => void;
+  /** Prototype settings: colour behind the frame while presenting. */
+  presentBackground: string;
+  presentScale: "FIT" | "FILL" | "ACTUAL";
+  setPresentScale: (s: "FIT" | "FILL" | "ACTUAL") => void;
+  setPresentBackground: (c: string) => void;
   /** Layer being renamed in the layers panel (F2 / Ctrl+R / double-click). */
   renaming: string | null;
   setRenaming: (id: string | null) => void;
@@ -136,6 +143,7 @@ interface EditorState {
   setPrefs: (patch: Partial<Prefs>) => void;
   setPrefsOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
+  setBatchRenameOpen: (open: boolean) => void;
   setUiHidden: (hidden: boolean) => void;
   setTheme: (theme: ThemePreference) => void;
   setVersionsOpen: (open: boolean) => void;
@@ -189,6 +197,7 @@ export const useEditor = create<EditorState>((set) => ({
   prefs: readPrefs(),
   prefsOpen: false,
   shortcutsOpen: false,
+  batchRenameOpen: false,
   uiHidden: false,
   leftTab: "layers",
   hideLeftPanel: false,
@@ -201,6 +210,8 @@ export const useEditor = create<EditorState>((set) => ({
   prototypeMode: false,
   presenting: null,
   presentDevice: "none",
+  presentBackground: "#1E1E1E",
+  presentScale: "FIT",
   renaming: null,
   setRenaming: (renaming) => set({ renaming }),
   menu: null,
@@ -215,6 +226,8 @@ export const useEditor = create<EditorState>((set) => ({
   setPrototypeMode: (on) => set((s) => (s.viewer ? s : { prototypeMode: on, devMode: on, tool: "select" })),
   setPresenting: (presenting) => set({ presenting }),
   setPresentDevice: (presentDevice) => set({ presentDevice }),
+  setPresentBackground: (presentBackground) => set({ presentBackground }),
+  setPresentScale: (presentScale) => set({ presentScale }),
   setTool: (tool) => set({ tool }),
   select: (selection) => set({ selection }),
   setPage: (id) =>
@@ -256,6 +269,7 @@ export const useEditor = create<EditorState>((set) => ({
     }),
   setPrefsOpen: (prefsOpen) => set({ prefsOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
+  setBatchRenameOpen: (batchRenameOpen) => set({ batchRenameOpen }),
   setUiHidden: (uiHidden) => set({ uiHidden }),
   setHideLeftPanel: (hideLeftPanel) => set({ hideLeftPanel }),
   setLeftTab: (leftTab) => set({ leftTab }),

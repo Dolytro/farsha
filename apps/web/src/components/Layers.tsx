@@ -1,10 +1,12 @@
+import { hideOtherLayers } from "../object-actions";
 import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
+import { rowWindow, scrollToRow } from "../virtual-rows";
 import type { DesignNode } from "@farsha/types";
 import { useEditor } from "../store";
-import { addPage, deletePage, duplicatePage } from "../pages";
+import { addPage, deletePage, duplicatePage, movePage } from "../pages";
 import { zoomFit } from "../actions";
 import { Select } from "./Select";
-import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow } from "../layers-tree";
+import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow, treeKeyTarget, type TreeKey, rangeBetween, toggleBranch } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
@@ -58,6 +60,9 @@ export function Layers() {
     if (!doc.hasNode(pageId)) setPage(doc.pages()[0]!.id);
   });
 
+  const anchor = useRef<string | undefined>(undefined);
+  const pageDrag = useRef<string | null>(null);
+  const [pageDrop, setPageDrop] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const collapseTick = useEditor((s) => s.collapseTick);
   // "Collapse layers" (Alt+L) folds every layer that has children.
@@ -74,6 +79,52 @@ export function Layers() {
   const [drop, setDrop] = useState<{ id: string; where: DropWhere } | null>(null);
   const dragging = useRef<string[]>([]);
   const rows = layerRows(doc, pageId, collapsed, query, kind);
+  // Only the rows in view are drawn (a file can have thousands of layers): the list tracks its own scroll position and height
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const [scroll, setScroll] = useState({ top: 0, height: 600 });
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      setScroll((s) => (s.top === el.scrollTop && s.height === el.clientHeight ? s : { top: el.scrollTop, height: el.clientHeight }));
+    };
+    const queue = () => {
+      if (!frame) frame = requestAnimationFrame(read);
+    };
+    read();
+    el.addEventListener("scroll", queue, { passive: true });
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(queue) : null;
+    observer?.observe(el);
+    return () => {
+      el.removeEventListener("scroll", queue);
+      observer?.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  });
+  const rowHeight = Number.parseFloat(typeof document !== "undefined" ? getComputedStyle(document.documentElement).getPropertyValue("--row-h") : "") || 24;
+  const visible = rowWindow(rows.length, rowHeight, scroll.top, scroll.height);
+
+  // Press an eye or a lock and drag down the list: every layer you cross gets the same state (Figma)
+  const sweep = useRef<{ prop: "visible" | "locked"; value: boolean } | null>(null);
+  const startSweep = (prop: "visible" | "locked", id: string, value: boolean) => {
+    doc.stopCapturing();
+    sweep.current = { prop, value };
+    doc.setStyle(id, { [prop]: value });
+    const end = () => {
+      sweep.current = null;
+      doc.stopCapturing();
+      window.removeEventListener("pointerup", end);
+    };
+    window.addEventListener("pointerup", end);
+  };
+  const sweepOver = (prop: "visible" | "locked", id: string) => {
+    const s = sweep.current;
+    if (!s || s.prop !== prop) return;
+    const n = doc.getNode(id);
+    if (n && n[prop] !== s.value) doc.setStyle(id, { [prop]: s.value });
+  };
 
   const toggleCollapsed = (id: string) =>
     setCollapsed((c) => {
@@ -89,12 +140,20 @@ export function Layers() {
     return f < 0.5 ? "before" : "after";
   };
 
-  const renderRow = ({ id, depth, hasChildren }: LayerRow): ReactElement | null => {
+  const renderRow = ({ id, depth, hasChildren }: LayerRow, index: number): ReactElement | null => {
     const n = doc.getNode(id);
     if (!n) return null;
     return (
       <li
         key={n.id}
+        role="treeitem"
+        tabIndex={selection[0] === n.id || (!selection.length && rows[0]?.id === n.id) ? 0 : -1}
+        aria-selected={selection.includes(n.id)}
+        aria-level={depth + 1}
+        aria-setsize={rows.length}
+        aria-posinset={index + 1}
+        aria-expanded={hasChildren ? !collapsed.has(n.id) : undefined}
+        aria-label={`${n.name}, ${n.type.toLowerCase()}${n.visible ? "" : ", hidden"}${n.locked ? ", locked" : ""}`}
         className={`layers__item${selection.includes(n.id) ? " layers__item--selected" : ""}${n.visible ? "" : " layers__item--hidden"}${drop?.id === n.id ? ` layers__item--drop-${drop.where}` : ""}`}
         style={{ paddingLeft: 4 + depth * 16 }}
         draggable={canEdit && renaming !== n.id}
@@ -131,14 +190,25 @@ export function Layers() {
           const v = zoomFit(doc, pageId, [n.id]);
           if (v) useEditor.getState().setViewport(v);
         }}
-        onClick={(e) => select(e.shiftKey ? (selection.includes(n.id) ? selection.filter((i) => i !== n.id) : [...selection, n.id]) : [n.id])}
+        onClick={(e) => {
+          // Shift+click selects the range from the layer clicked before; Ctrl / Cmd+click adds or removes one layer (Figma)
+          if (e.shiftKey) select(rangeBetween(rows, anchor.current, n.id));
+          else if (e.ctrlKey || e.metaKey) {
+            select(selection.includes(n.id) ? selection.filter((i) => i !== n.id) : [...selection, n.id]);
+            anchor.current = n.id;
+          } else {
+            select([n.id]);
+            anchor.current = n.id;
+          }
+        }}
       >
         <button
           className={`layers__chevron${hasChildren ? "" : " layers__chevron--none"}`}
-          title={collapsed.has(n.id) ? "Expand" : "Collapse"}
+          title={collapsed.has(n.id) ? "Expand (Alt+click opens everything inside)" : "Collapse (Alt+click closes everything inside)"}
           onClick={(e) => {
             e.stopPropagation();
-            toggleCollapsed(n.id);
+            if (e.altKey) setCollapsed((c) => toggleBranch(c, n.id, doc.descendants(n.id).map((d) => d.id)));
+            else toggleCollapsed(n.id);
           }}
         >
           {collapsed.has(n.id) ? "▸" : "▾"}
@@ -160,10 +230,18 @@ export function Layers() {
         {canEdit && (
           <button
             className={`layers__toggle${n.locked ? " layers__toggle--on" : ""}`}
-            title={n.locked ? "Unlock" : "Lock"}
+            title={n.locked ? "Unlock (drag down to change several)" : "Lock (drag down to change several)"}
+            onMouseDown={(e) => e.preventDefault() /* keeps the row from starting a drag while sweeping */}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              e.stopPropagation();
+              startSweep("locked", n.id, !n.locked);
+            }}
+            onPointerEnter={() => sweepOver("locked", n.id)}
             onClick={(e) => {
               e.stopPropagation();
-              doc.setStyle(n.id, { locked: !n.locked });
+              // a pointer press already did the work; a keyboard click (detail 0) toggles here
+              if (e.detail === 0) doc.setStyle(n.id, { locked: !n.locked });
             }}
           >
             {n.locked ? "🔒" : "🔓"}
@@ -171,10 +249,24 @@ export function Layers() {
         )}
         <button
           className="layers__toggle"
-          title={n.visible ? "Hide" : "Show"}
+          title={n.visible ? "Hide (Alt+click shows only this layer)" : "Show (Alt+click shows only this layer)"}
+          onMouseDown={(e) => e.preventDefault() /* keeps the row from starting a drag while sweeping */}
+          onPointerDown={(e) => {
+            if (e.button !== 0 || e.altKey) return;
+            e.stopPropagation();
+            startSweep("visible", n.id, !n.visible);
+          }}
+          onPointerEnter={() => sweepOver("visible", n.id)}
           onClick={(e) => {
             e.stopPropagation();
-            doc.setStyle(n.id, { visible: !n.visible });
+            // Figma: Alt+click on the eye hides everything else (and brings the others back on a second Alt+click)
+            if (e.altKey) {
+              if (!n.visible) doc.setStyle(n.id, { visible: true });
+              hideOtherLayers(doc, [n.id], pageId);
+              return;
+            }
+            // a pointer press already did the work; a keyboard click (detail 0) toggles here
+            if (e.detail === 0) doc.setStyle(n.id, { visible: !n.visible });
           }}
         >
           {n.visible ? "◉" : "○"}
@@ -222,7 +314,30 @@ export function Layers() {
         {pages.map((p) => (
           <li
             key={p.id}
-            className={`pages__item${p.id === pageId ? " pages__item--current" : ""}`}
+            className={`pages__item${p.id === pageId ? " pages__item--current" : ""}${pageDrop === p.id ? " pages__item--drop" : ""}`}
+            draggable={canEdit && renamingPage !== p.id}
+            onDragStart={(e) => {
+              pageDrag.current = p.id;
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", p.name);
+            }}
+            onDragOver={(e) => {
+              if (!pageDrag.current || pageDrag.current === p.id) return;
+              e.preventDefault();
+              setPageDrop(p.id);
+            }}
+            onDragLeave={() => setPageDrop((d) => (d === p.id ? null : d))}
+            onDrop={(e) => {
+              e.preventDefault();
+              const dragged = pageDrag.current;
+              pageDrag.current = null;
+              setPageDrop(null);
+              if (dragged && dragged !== p.id) movePage(doc, dragged, pages.findIndex((x) => x.id === p.id));
+            }}
+            onDragEnd={() => {
+              pageDrag.current = null;
+              setPageDrop(null);
+            }}
             onClick={() => setPage(p.id)}
             onDoubleClick={() => canEdit && setRenamingPage(p.id)}
           >
@@ -295,7 +410,45 @@ export function Layers() {
               </svg>
             </button>
           </div>
-          <ul className="layers__list">{rows.map(renderRow)}</ul>
+          <ul
+            ref={listRef}
+            className="layers__list"
+            role="tree"
+            aria-label="Layers"
+            aria-multiselectable="true"
+            onKeyDown={(e) => {
+              if (e.target instanceof HTMLInputElement || e.altKey || e.ctrlKey || e.metaKey) return;
+              if (e.key === "Enter" && selection[0]) {
+                e.preventDefault();
+                e.stopPropagation();
+                const v = zoomFit(doc, pageId, [selection[0]]);
+                if (v) useEditor.getState().setViewport(v);
+                return;
+              }
+              if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+              e.preventDefault();
+              e.stopPropagation(); // the arrow keys move the selection here, not the layers on the canvas
+              const list = e.currentTarget;
+              const target = treeKeyTarget(rows, selection[0], e.key as TreeKey, collapsed);
+              if (target.toggle) toggleCollapsed(target.toggle.id);
+              if (target.select) {
+                select([target.select]);
+                const at = rows.findIndex((r) => r.id === target.select);
+                if (at >= 0) list.scrollTop = scrollToRow(at, rowHeight, list.scrollTop, list.clientHeight);
+                // the row may only be drawn after the list has scrolled to it: try for a few frames
+                const focusSelected = (tries: number) => {
+                  const row = list.querySelector<HTMLElement>('[aria-selected="true"]');
+                  if (row) row.focus();
+                  else if (tries > 0) requestAnimationFrame(() => focusSelected(tries - 1));
+                };
+                requestAnimationFrame(() => focusSelected(10));
+              }
+            }}
+          >
+            {visible.before > 0 && <li role="presentation" aria-hidden style={{ height: visible.before, listStyle: "none" }} />}
+            {rows.slice(visible.start, visible.end).map((r, i) => renderRow(r, visible.start + i))}
+            {visible.after > 0 && <li role="presentation" aria-hidden style={{ height: visible.after, listStyle: "none" }} />}
+          </ul>
         </>
       )}
     </aside>

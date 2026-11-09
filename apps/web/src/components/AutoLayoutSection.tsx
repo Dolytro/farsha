@@ -176,7 +176,14 @@ export function AutoLayoutSection({ doc, node, select }: { doc: DesignDoc; node:
         <button className={`seg__btn${node.layoutWrap ? " seg__btn--active" : ""}`} title="Wrap children onto new lines (needs a fixed size in the layout direction)" onClick={() => set({ layoutWrap: !node.layoutWrap })}>
           Wrap
         </button>
+        <button className={`seg__btn${node.layoutFirstOnTop ? " seg__btn--active" : ""}`} aria-label="First on top" title="Canvas stacking: the first layer is drawn on top of the others (default: the last one is)" onClick={() => set({ layoutFirstOnTop: !node.layoutFirstOnTop })}>
+          First on top
+        </button>
+        <button className={`seg__btn${node.layoutIncludeStrokes ? " seg__btn--active" : ""}`} aria-label="Include strokes in layout" title="Include strokes in layout: gap and padding are measured from the outer edge of each layer's stroke" onClick={() => set({ layoutIncludeStrokes: !node.layoutIncludeStrokes })}>
+          Strokes in layout
+        </button>
         {node.layoutWrap && field("↨", "Gap between lines", num(node.counterSpacing ?? node.itemSpacing), (v) => set({ counterSpacing: v }))}
+        {node.layoutWrap && mode === "HORIZONTAL" && field("▦", "Grid columns (0 = ordinary wrap)", num(node.gridColumns ?? 0), (v) => set({ gridColumns: Math.max(0, Math.min(24, Math.round(v))) }))}
       </div>
       <PaddingFields node={node} set={set} field={field} />
       <div className="props__grid props__grid--gap">
@@ -187,12 +194,13 @@ export function AutoLayoutSection({ doc, node, select }: { doc: DesignDoc; node:
             </option>
           ))}
         </Select>
-        <Select className="field__select" title="Alignment across the layout direction" value={node.counterAxisAlign ?? "MIN"} onChange={(e) => set({ counterAxisAlign: e.target.value as "MIN" | "CENTER" | "MAX" })}>
+        <Select className="field__select" title="Alignment across the layout direction" value={node.counterAxisAlign ?? "MIN"} onChange={(e) => set({ counterAxisAlign: e.target.value as "MIN" | "CENTER" | "MAX" | "BASELINE" })}>
           {COUNTER.map(([v, label]) => (
             <option key={v} value={v}>
               {label}
             </option>
           ))}
+          {mode === "HORIZONTAL" && <option value="BASELINE">Text baseline</option>}
         </Select>
         <Select className="field__select" title="Width" value={sizing(widthKey)} onChange={(e) => set({ [widthKey]: e.target.value as LayoutSizing })}>
           <option value="HUG">Hug width</option>

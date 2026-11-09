@@ -1,3 +1,5 @@
+import { arcParams, isFullEllipse } from "./ellipse-arc";
+import { polygonPoints, roundedPolygonOutline } from "./shapes";
 import polygonClipping from "polygon-clipping";
 import type { DesignDoc } from "@farsha/design-core";
 import type { DesignNode, Paint } from "@farsha/types";
@@ -37,6 +39,22 @@ function localOutline(n: DesignNode): Ring | null {
     return out;
   }
   if (n.type === "ELLIPSE") {
+    const arc = arcParams(n);
+    if (!isFullEllipse(arc)) {
+      // a pie, a ring or a ring sector: the outer arc, then (for a ring) the inner arc back. A full ring is one outline with a slit at the start angle.
+      if (arc.sweep <= 0) return null;
+      const rx = n.width / 2;
+      const ry = n.height / 2;
+      const steps = Math.max(2, Math.ceil((72 * arc.sweep) / 360));
+      const at = (i: number, k: number): [number, number] => {
+        const a = ((arc.start + (arc.sweep * i) / steps) * Math.PI) / 180;
+        return [rx + Math.cos(a) * rx * k, ry + Math.sin(a) * ry * k];
+      };
+      const outer = Array.from({ length: steps + 1 }, (_, i) => at(i, 1));
+      if (arc.ratio === 0) return [[rx, ry], ...outer];
+      const inner = Array.from({ length: steps + 1 }, (_, i) => at(steps - i, arc.ratio));
+      return [...outer, ...inner];
+    }
     return Array.from({ length: 72 }, (_, i) => {
       const a = (i / 72) * Math.PI * 2;
       return [n.width / 2 + (Math.cos(a) * n.width) / 2, n.height / 2 + (Math.sin(a) * n.height) / 2] as [number, number];
@@ -65,6 +83,12 @@ function localOutline(n: DesignNode): Ring | null {
         }
       }
       return pts;
+    }
+    // polygons and stars with rounded corners: rebuilt from their numbers
+    if (n.shapeKind && (n.shapeRadius ?? 0) > 0) {
+      const pts = polygonPoints(n.shapeSides ?? (n.shapeKind === "STAR" ? 5 : 3), n.shapeKind === "STAR" ? (n.starRatio ?? 0.382) : 0);
+      const ring = roundedPolygonOutline(pts, n.shapeRadius!).map(([x, y]) => [x * sx, y * sy] as [number, number]);
+      return ring.length > 2 ? ring : null;
     }
     // polygons and stars from the shape tools
     const m = /<polygon points="([0-9eE+\-.,\s]+)"/.exec(n.markup);

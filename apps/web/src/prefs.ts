@@ -25,6 +25,8 @@ export interface Prefs {
   wheelZoom: boolean;
   /** Layers snap to other layers and guides while moving. */
   snapping: boolean;
+  /** Moving, resizing and drawing put edges on whole pixels (Figma: Snap to pixel grid). */
+  pixelSnap: boolean;
   /** Underline misspelled words while typing in a text layer (the browser's spell checker). */
   spellCheck: boolean;
   /** Outline the layer under the pointer. */
@@ -39,6 +41,16 @@ export interface Prefs {
   keyboardZoomToSelection: boolean;
   /** Ctrl + click on the canvas opens the right-click menu. */
   ctrlClickMenu: boolean;
+  /** Typing " or ' in a text layer gives curly quotes (Figma: Use smart quotes). */
+  smartQuotes: boolean;
+  /** Ctrl+Alt+Left / Right rotate the selection 1 degree (Shift: 15) (Figma: Use Ctrl+Alt+arrows to rotate). */
+  arrowRotate: boolean;
+  /** Dragging a resize handle past the opposite side turns the layer over (Figma: Flip objects while resizing). */
+  flipWhileResizing: boolean;
+  /** The selection box, handles and size pill are hidden while a layer is moved, resized or rotated (Figma: Hide canvas UI during changes). */
+  hideUiWhileChanging: boolean;
+  /** Interface animations and prototype transitions play instantly (also on when the system asks for reduced motion). */
+  reduceMotion: boolean;
   /** Arrow key nudge, and Shift + arrow nudge, in pixels. */
   nudge: number;
   bigNudge: number;
@@ -46,7 +58,7 @@ export interface Prefs {
 
 export const PREFS_KEY = "farsha.prefs";
 
-export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, renameDuplicates: false, keyboardZoomToSelection: false, ctrlClickMenu: false, nudge: 1, bigNudge: 10 };
+export const DEFAULT_PREFS: Prefs = { preset: "farsha", keepTool: false, invertZoom: false, wheelZoom: false, snapping: true, pixelSnap: true, spellCheck: false, hoverHighlight: true, showDimensions: true, rightDragPan: false, renameDuplicates: false, keyboardZoomToSelection: false, ctrlClickMenu: false, smartQuotes: false, arrowRotate: false, flipWhileResizing: true, hideUiWhileChanging: false, reduceMotion: false, nudge: 1, bigNudge: 10 };
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
 const amount = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 && v <= 1000 ? v : fallback);
@@ -66,6 +78,7 @@ export function parsePrefs(text: string | null | undefined): Prefs {
     invertZoom: bool(raw.invertZoom, DEFAULT_PREFS.invertZoom),
     wheelZoom: bool(raw.wheelZoom, DEFAULT_PREFS.wheelZoom),
     snapping: bool(raw.snapping, DEFAULT_PREFS.snapping),
+    pixelSnap: bool(raw.pixelSnap, DEFAULT_PREFS.pixelSnap),
     spellCheck: bool(raw.spellCheck, DEFAULT_PREFS.spellCheck),
     hoverHighlight: bool(raw.hoverHighlight, DEFAULT_PREFS.hoverHighlight),
     showDimensions: bool(raw.showDimensions, DEFAULT_PREFS.showDimensions),
@@ -73,6 +86,11 @@ export function parsePrefs(text: string | null | undefined): Prefs {
     renameDuplicates: bool(raw.renameDuplicates, DEFAULT_PREFS.renameDuplicates),
     keyboardZoomToSelection: bool(raw.keyboardZoomToSelection, DEFAULT_PREFS.keyboardZoomToSelection),
     ctrlClickMenu: bool(raw.ctrlClickMenu, DEFAULT_PREFS.ctrlClickMenu),
+    smartQuotes: bool(raw.smartQuotes, DEFAULT_PREFS.smartQuotes),
+    arrowRotate: bool(raw.arrowRotate, DEFAULT_PREFS.arrowRotate),
+    flipWhileResizing: bool(raw.flipWhileResizing, DEFAULT_PREFS.flipWhileResizing),
+    hideUiWhileChanging: bool(raw.hideUiWhileChanging, DEFAULT_PREFS.hideUiWhileChanging),
+    reduceMotion: bool(raw.reduceMotion, DEFAULT_PREFS.reduceMotion),
     nudge: amount(raw.nudge, DEFAULT_PREFS.nudge),
     bigNudge: amount(raw.bigNudge, DEFAULT_PREFS.bigNudge),
   };

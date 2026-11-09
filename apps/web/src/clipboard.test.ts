@@ -273,3 +273,45 @@ describe("duplicate (Ctrl+D)", () => {
     expect(doc.children(instCopy!)).toHaveLength(1);
   });
 });
+
+describe("copying an instance keeps what it overrides", () => {
+  function setup() {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { name: "Card", width: 100, height: 50 } });
+    doc.createNode("TEXT", { parentId: frame, props: { name: "Label", characters: "Old", fontSize: 12 } });
+    const mainId = doc.createComponent([frame]);
+    const inst = doc.createInstance(mainId, page, 300, 0);
+    const label = doc.children(inst).find((n) => n.type === "TEXT")!;
+    doc.setText(label.id, { characters: "Changed", fontSize: 24 });
+    return { doc, page, mainId, inst };
+  }
+
+  it("a duplicate keeps the overridden text and size, and still follows the main for the rest", () => {
+    const { doc, inst, mainId } = setup();
+    const [copy] = duplicateNodes(doc, [inst]);
+    const copyLabel = doc.children(copy!).find((n) => n.type === "TEXT") as unknown as { characters: string; fontSize: number; overrides?: string[] };
+    expect(copyLabel.characters).toBe("Changed");
+    expect(copyLabel.fontSize).toBe(24);
+    expect(copyLabel.overrides).toEqual(expect.arrayContaining(["characters", "fontSize"]));
+    // a change in the main that is not overridden still reaches the copy
+    const mainLabel = doc.children(mainId).find((n) => n.type === "TEXT")!;
+    doc.setText(mainLabel.id, { fontWeight: 700 });
+    expect((doc.children(copy!).find((n) => n.type === "TEXT") as unknown as { fontWeight: number }).fontWeight).toBe(700);
+    expect((doc.children(copy!).find((n) => n.type === "TEXT") as unknown as { characters: string }).characters).toBe("Changed");
+  });
+
+  it("copy and paste keeps them too", () => {
+    const { doc, page, inst } = setup();
+    const text = copyNodes(doc, [inst])!;
+    const [pasted] = pasteNodes(doc, parseClip(text)!, page);
+    expect((doc.children(pasted!).find((n) => n.type === "TEXT") as unknown as { characters: string }).characters).toBe("Changed");
+  });
+
+  it("an instance without overrides copies as before", () => {
+    const { doc, page, mainId } = setup();
+    const plain = doc.createInstance(mainId, page, 600, 0);
+    const [copy] = duplicateNodes(doc, [plain]);
+    expect((doc.children(copy!).find((n) => n.type === "TEXT") as unknown as { characters: string }).characters).toBe("Old");
+  });
+});

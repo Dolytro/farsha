@@ -1,9 +1,10 @@
 import type { DesignDoc } from "@farsha/design-core";
-import type { TextAlign, TextAutoResize, TextCase, TextDirection, TextList, TextNode, TextVerticalAlign } from "@farsha/types";
+import type { TextAlign, TextAutoResize, TextCase, TextDecorationStyle, TextDirection, TextList, TextNode, TextVerticalAlign } from "@farsha/types";
 import { useState } from "react";
 import { fitText } from "../text-layout";
 import { TextStyleMenu, TextStylePill } from "./TextStyleMenu";
 import { Select } from "./Select";
+import { OPENTYPE_FEATURES } from "@farsha/canvas-engine";
 import { FontPicker } from "./FontPicker";
 
 export const FONTS: { label: string; stack: string }[] = [
@@ -47,7 +48,7 @@ const firstFamily = (stack: string) => stack.split(",")[0]!.trim().replace(/['"]
 type FontValue = Pick<TextNode, "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "letterSpacing">;
 
 /** Family, weight, size, line height and letter spacing: used for a text layer and for editing a text style. */
-function FontControls({ value: node, onChange: set }: { value: FontValue; onChange: (patch: Partial<FontValue>) => void }) {
+export function FontControls({ value: node, onChange: set }: { value: FontValue; onChange: (patch: Partial<FontValue>) => void }) {
   const known = FONTS.find((f) => firstFamily(f.stack) === firstFamily(node.fontFamily));
   const weightKnown = WEIGHTS.some(([w]) => w === node.fontWeight);
   return (
@@ -127,12 +128,37 @@ export function TypographySection({ doc, node }: { doc: DesignDoc; node: TextNod
           </button>
         ))}
       </div>
+      {(node.textDecoration === "UNDERLINE" || node.textDecoration === "STRIKETHROUGH") && (
+        <Select className="field__select" aria-label="Decoration style" value={node.textDecorationStyle ?? "SOLID"} onChange={(e) => set({ textDecorationStyle: e.target.value as TextDecorationStyle })}>
+          <option value="SOLID">Solid line</option>
+          <option value="DOTTED">Dotted line</option>
+          <option value="WAVY">Wavy line</option>
+        </Select>
+      )}
+      <details className="props__more">
+        <summary>OpenType features{node.fontFeatures?.length ? ` (${node.fontFeatures.length})` : ""}</summary>
+        {OPENTYPE_FEATURES.map((f) => (
+          <label className="props__check" key={f.tag}>
+            <input
+              type="checkbox"
+              aria-label={f.label}
+              checked={!!node.fontFeatures?.includes(f.tag)}
+              onChange={(e) => {
+                const rest = (node.fontFeatures ?? []).filter((t) => t !== f.tag);
+                set({ fontFeatures: e.target.checked ? [...rest, f.tag] : rest });
+              }}
+            />
+            {f.label}
+          </label>
+        ))}
+      </details>
       <div className="props__grid props__grid--gap">
         <Select className="field__select" aria-label="Text case" value={node.textCase ?? "NONE"} onChange={(e) => set({ textCase: e.target.value as TextCase })}>
           <option value="NONE">Original case</option>
           <option value="UPPER">UPPER CASE</option>
           <option value="LOWER">lower case</option>
           <option value="TITLE">Title Case</option>
+          <option value="SMALL_CAPS">Small caps</option>
         </Select>
         <Select className="field__select" aria-label="Vertical alignment" value={node.textVerticalAlign ?? "TOP"} onChange={(e) => set({ textVerticalAlign: e.target.value as TextVerticalAlign })}>
           <option value="TOP">Align top</option>

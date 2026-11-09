@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { generateKeyBetween } from 'fractional-indexing';
 import { nanoid } from 'nanoid';
-import { BOOLEAN_BINDABLE, NUMBER_BINDABLE, TEXT_STYLE_KEYS, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type Box, type DesignNode, type FillStyle, type NodeType, type Paint, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
+import { BOOLEAN_BINDABLE, COLOR_SCOPES, NUMBER_BINDABLE, NUMBER_SCOPES, STROKE_STYLE_KEYS, TEXT_STYLE_KEYS, variableAllowsProperty, variableAllowsUse, type Comment, type ComponentProperty, type ColorVariable, type VariableMode, type VariableCollection, type Box, type DesignNode, type Effect, type EffectStyle, type FillStyle, type GridStyle, type LayoutGrid, type NodeType, type Paint, type VariableScope, type StrokeStyle, type StylePatch, type TextPatch, type TextStyle } from '@farsha/types';
 import { computeAutoLayout } from './auto-layout';
 import { applyConstraints } from './constraints';
 import { ALLOWED_CHILDREN, defaultsFor } from './defaults';
@@ -11,6 +11,8 @@ export const LOCAL_ORIGIN = 'farsha:local';
 const INIT_ORIGIN = 'farsha:init';
 /** Asset writes are not part of undo history: undoing a paste removes the layer, not the stored bytes. */
 const ASSET_ORIGIN = 'farsha:asset';
+/** A variable value that points to another variable (an alias) starts with this marker, which never appears in a real value. */
+const ALIAS_PREFIX = '\u0001alias:';
 
 export interface StoredAsset {
   mime: string;
@@ -20,6 +22,21 @@ export interface StoredAsset {
 type NodeMap = Y.Map<unknown>;
 
 /** Keys that describe the instance link; never copied from the main component and never overridden. */
+const DEFAULT_COLLECTION = 'default';
+
+/** How much a layer's stroke widens its box: a centred stroke by its width, an outside one by twice that, an inside one not at all. */
+export function strokeExtent(n: DesignNode): number {
+  const strokes = (n as { strokes?: unknown[] }).strokes;
+  const w = (n as { strokeWidth?: number }).strokeWidth;
+  if (!Array.isArray(strokes) || !strokes.length || typeof w !== 'number' || !(w > 0)) return 0;
+  const align = (n as { strokeAlign?: string }).strokeAlign ?? 'CENTER';
+  return align === 'OUTSIDE' ? w * 2 : align === 'INSIDE' ? 0 : w;
+}
+
+/** Baseline of the first line of a text layer, from the top of its box: AUTO line height puts it one font size down, a fixed one centres the 1.2 em line box in it. */
+function textBaselineOf(n: { fontSize: number; lineHeight: number | 'AUTO' }): number {
+  return n.lineHeight === 'AUTO' ? n.fontSize : n.fontSize + (Math.max(0, n.lineHeight) - n.fontSize * 1.2) / 2;
+}
 const INSTANCE_KEYS = new Set(['id', 'type', 'parentId', 'mainId', 'overrides', 'componentId', 'isComponent', 'componentSetId', 'variantProps', 'componentProps', 'propValues']);
 /** Keys of an instance's own root that belong to the instance (its place on the canvas and its name). */
 const ROOT_KEYS = new Set(['x', 'y', 'name', 'orderKey']);
@@ -48,9 +65,13 @@ export class DesignDoc {
   /** Colour styles, keyed by style id. */
   private readonly styles: Y.Map<FillStyle>;
   private readonly textStyleMap: Y.Map<TextStyle>;
+  private readonly effectStyleMap: Y.Map<EffectStyle>;
+  private readonly strokeStyleMap: Y.Map<StrokeStyle>;
+  private readonly gridStyleMap: Y.Map<GridStyle>;
   private readonly commentMap: Y.Map<Comment>;
   private readonly variableMap: Y.Map<ColorVariable>;
   private readonly modeMap: Y.Map<VariableMode & { order: number }>;
+  private readonly collectionMap: Y.Map<VariableCollection & { order: number }>;
   private readonly undoManager: Y.UndoManager;
   private readonly listeners = new Set<() => void>();
   private nodeCache = new Map<string, DesignNode>();
@@ -70,7 +91,8 @@ export class DesignDoc {
     });
     this.variableMap = ydoc.getMap('variables') as Y.Map<ColorVariable>;
     this.modeMap = ydoc.getMap('variableModes') as Y.Map<VariableMode & { order: number }>;
-    for (const map of [this.variableMap, this.modeMap, this.meta]) {
+    this.collectionMap = ydoc.getMap('variableCollections') as Y.Map<VariableCollection & { order: number }>;
+    for (const map of [this.variableMap, this.modeMap, this.collectionMap, this.meta]) {
       map.observe(() => {
         this.version++;
         this.listeners.forEach((fn) => fn());
@@ -78,6 +100,21 @@ export class DesignDoc {
     }
     this.textStyleMap = ydoc.getMap('textStyles') as Y.Map<TextStyle>;
     this.textStyleMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
+    this.gridStyleMap = ydoc.getMap('gridStyles') as Y.Map<GridStyle>;
+    this.gridStyleMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
+    this.effectStyleMap = ydoc.getMap('effectStyles') as Y.Map<EffectStyle>;
+    this.effectStyleMap.observe(() => {
+      this.version++;
+      this.listeners.forEach((fn) => fn());
+    });
+    this.strokeStyleMap = ydoc.getMap('strokeStyles') as Y.Map<StrokeStyle>;
+    this.strokeStyleMap.observe(() => {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
@@ -90,7 +127,7 @@ export class DesignDoc {
       this.version++;
       this.listeners.forEach((fn) => fn());
     });
-    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.variableMap, this.modeMap], {
+    this.undoManager = new Y.UndoManager([this.nodes, this.styles, this.textStyleMap, this.effectStyleMap, this.strokeStyleMap, this.gridStyleMap, this.variableMap, this.modeMap, this.collectionMap], {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: 500,
     });
@@ -159,8 +196,7 @@ export class DesignDoc {
     if (!this.variableMap.size && ![...this.nodes.values()].some((m) => this.hasBoundPaint(m) || !!m.get('textVariableId') || !!m.get('varBindings'))) return;
     this.syncing = true;
     try {
-      const mode = this.activeModeId();
-      const resolve = (paints: unknown): Paint[] | null => {
+      const resolve = (paints: unknown, nodeId: string): Paint[] | null => {
         if (!Array.isArray(paints)) return null;
         let changed = false;
         const next = (paints as Paint[]).map((p) => {
@@ -171,7 +207,7 @@ export class DesignDoc {
             const { variableId: _gone, ...rest } = p;
             return rest;
           }
-          const color = v.values[mode] ?? Object.values(v.values)[0] ?? p.color;
+          const color = this.resolveVariableValue(v, this.modeForVariable(nodeId, v)) || p.color;
           if (color === p.color) return p;
           changed = true;
           return { ...p, color };
@@ -180,8 +216,9 @@ export class DesignDoc {
       };
       this.transact(() => {
         for (const map of this.nodes.values()) {
+          const nodeId = map.get('id') as string;
           for (const key of ['fills', 'strokes']) {
-            const next = resolve(map.get(key));
+            const next = resolve(map.get(key), nodeId);
             if (next) map.set(key, next);
           }
           if (map.get('varBindings')) this.applyBindings(map.get('id') as string);
@@ -190,7 +227,7 @@ export class DesignDoc {
             const v = this.variableMap.get(textVar);
             if (!v || v.kind !== 'STRING') map.delete('textVariableId');
             else {
-              const text = v.values[mode] ?? Object.values(v.values)[0] ?? '';
+              const text = this.resolveVariableValue(v, this.modeForVariable(nodeId, v));
               if (map.get('characters') !== text) map.set('characters', text);
             }
           }
@@ -199,6 +236,29 @@ export class DesignDoc {
     } finally {
       this.syncing = false;
     }
+  }
+
+  /** The variable mode a layer shows for the first collection: the explicit mode of the closest frame (or itself) that has one, else the active mode. */
+  private modeFor(id: string, active: string): string {
+    return this.explicitModeIn(id, DEFAULT_COLLECTION) ?? active;
+  }
+
+  /** The explicit mode of the closest frame (or the layer itself) whose explicit mode belongs to the collection. */
+  private explicitModeIn(id: string, collectionId: string): string | undefined {
+    for (let cur: string | null | undefined = id, hops = 0; cur && hops < 200; hops++) {
+      const map = this.nodes.get(cur);
+      if (!map) break;
+      const explicit = map.get('explicitMode');
+      if (typeof explicit === 'string' && this.modeExists(explicit) && this.modeCollection(explicit) === collectionId) return explicit;
+      cur = map.get('parentId') as string | null | undefined;
+    }
+    return undefined;
+  }
+
+  /** The mode a layer shows a variable in: the explicit mode for the variable's collection, else that collection's active mode. */
+  private modeForVariable(nodeId: string, v: ColorVariable): string {
+    const cid = v.collectionId ?? DEFAULT_COLLECTION;
+    return this.explicitModeIn(nodeId, cid) ?? this.activeModeId(cid);
   }
 
   private hasBoundPaint(map: NodeMap): boolean {
@@ -219,6 +279,32 @@ export class DesignDoc {
             const style = this.styles.get(styleId);
             if (!style) map.delete('fillStyleId');
             else if (JSON.stringify(map.get('fills')) !== JSON.stringify(style.paints)) map.set('fills', style.paints);
+          }
+          const effectStyleId = map.get('effectStyleId') as string | undefined;
+          if (effectStyleId) {
+            const style = this.effectStyleMap.get(effectStyleId);
+            if (!style) map.delete('effectStyleId');
+            else if (JSON.stringify(map.get('effects')) !== JSON.stringify(style.effects)) map.set('effects', style.effects);
+          }
+          const strokeStyleId = map.get('strokeStyleId') as string | undefined;
+          if (strokeStyleId) {
+            const style = this.strokeStyleMap.get(strokeStyleId);
+            if (!style) map.delete('strokeStyleId');
+            else {
+              for (const key of STROKE_STYLE_KEYS) {
+                const want = style[key];
+                if (JSON.stringify(map.get(key)) !== JSON.stringify(want)) {
+                  if (want === undefined) map.delete(key);
+                  else map.set(key, want);
+                }
+              }
+            }
+          }
+          const gridStyleId = map.get('gridStyleId') as string | undefined;
+          if (gridStyleId) {
+            const style = this.gridStyleMap.get(gridStyleId);
+            if (!style) map.delete('gridStyleId');
+            else if (JSON.stringify(map.get('layoutGrids')) !== JSON.stringify(style.grids)) map.set('layoutGrids', style.grids);
           }
           const textStyleId = map.get('textStyleId') as string | undefined;
           if (textStyleId) {
@@ -420,11 +506,37 @@ export class DesignDoc {
     return id;
   }
 
+  /**
+   * Figma's "Swap instance": point an instance at a different main component. Its layers are rebuilt from the new main; the instance
+   * keeps its position and name, and takes the new main's size when it still had the old main's size.
+   */
+  swapInstance(instanceId: string, componentId: string): void {
+    const inst = this.requireNode(instanceId);
+    if (inst.type !== 'FRAME' || !inst.componentId) throw new Error('Not an instance');
+    const main = this.requireNode(componentId);
+    if (main.type !== 'FRAME' || !main.isComponent) throw new Error('Not a main component');
+    if (componentId === instanceId || this.isAncestor(instanceId, componentId) || this.isAncestor(componentId, instanceId)) throw new Error('Cannot swap an instance with the component it sits in');
+    if (inst.componentId === componentId) return;
+    const old = this.getNode(inst.componentId);
+    const keepsSize = old?.type === 'FRAME' && old.width === inst.width && old.height === inst.height;
+    this.transact(() => {
+      this.relinkInstanceLayers(instanceId, inst.componentId as string, componentId);
+      this.setProps(instanceId, { componentId, ...(keepsSize ? { width: main.width, height: main.height } : {}) });
+    });
+  }
+
   /** Cut an instance loose from its main component; it becomes a plain frame with the layers it has now. */
   detachInstance(id: string): void {
     const node = this.requireNode(id);
     if (node.type !== 'FRAME' || !node.componentId) throw new Error('Not an instance');
     this.transact(() => this.stripInstance(id, this.rawChildren()));
+  }
+
+  /** The children of a layer from the bottom of the drawing to the top. An auto layout frame with "first on top" stacking draws its first layer last. */
+  paintOrder(id: string): DesignNode[] {
+    const list = this.children(id);
+    const n = this.getNode(id);
+    return n?.type === 'FRAME' && n.layoutFirstOnTop && (n.layoutMode === 'HORIZONTAL' || n.layoutMode === 'VERTICAL') ? [...list].reverse() : list;
   }
 
   // ---------- variants ----------
@@ -542,7 +654,38 @@ export class DesignDoc {
       .sort((a, b) => score(b) - score(a))[0];
     if (!best) throw new Error('No variant has that value');
     if (best.id === current.id) return;
-    this.setProps(instanceId, { componentId: best.id });
+    this.transact(() => {
+      this.relinkInstanceLayers(instanceId, current.id, best.id);
+      this.setProps(instanceId, { componentId: best.id });
+    });
+  }
+
+  /**
+   * Before an instance points at another component or variant: its inner layers are re-linked to the layer of the new component with the same
+   * name, type and place, so what the instance overrides (text, colours ...) survives. Layers with no match are rebuilt as before.
+   */
+  private relinkInstanceLayers(instanceId: string, oldMainId: string, newMainId: string): void {
+    const signature = (id: string, root: string): string => {
+      const parts: string[] = [];
+      for (let cur: string | null | undefined = id, hops = 0; cur && cur !== root && hops < 200; hops++) {
+        const m = this.nodes.get(cur);
+        parts.push(`${m?.get('type')}:${m?.get('name')}`);
+        cur = m?.get('parentId') as string | null | undefined;
+      }
+      return parts.reverse().join('/');
+    };
+    const free = new Map<string, string[]>();
+    for (const d of this.descendants(newMainId)) {
+      const key = signature(d.id, newMainId);
+      free.set(key, [...(free.get(key) ?? []), d.id]);
+    }
+    for (const d of this.descendants(instanceId)) {
+      const map = this.nodes.get(d.id);
+      const was = map?.get('mainId') as string | undefined;
+      if (!map || !was) continue;
+      const target = free.get(signature(was, oldMainId))?.shift();
+      if (target) map.set('mainId', target);
+    }
   }
 
   // ---------- component properties ----------
@@ -595,6 +738,36 @@ export class DesignDoc {
   }
 
   /** Drop every override inside an instance so it matches its main component again. */
+  /**
+   * Figma's "Push changes to main component": every property the instance overrides is written to the layer it mirrors in the main component,
+   * and the overrides are cleared. Other instances follow the main. Returns how many properties were pushed.
+   */
+  pushOverridesToMain(instanceId: string): number {
+    const rootMap = this.nodes.get(instanceId);
+    const mainId = rootMap?.get('componentId') as string | undefined;
+    if (!rootMap || !mainId) throw new Error('Select an instance to push its changes');
+    if (!this.nodes.get(mainId)?.get('isComponent')) throw new Error('The main component of this instance is gone');
+    let pushed = 0;
+    this.transact(() => {
+      for (const n of [this.getNode(instanceId)!, ...this.descendants(instanceId)]) {
+        const map = this.nodes.get(n.id)!;
+        const keys = (map.get('overrides') as string[] | undefined) ?? [];
+        if (!keys.length) continue;
+        const target = n.id === instanceId ? mainId : (map.get('mainId') as string | undefined);
+        const targetMap = target ? this.nodes.get(target) : undefined;
+        if (targetMap) {
+          for (const key of keys) {
+            if (INSTANCE_KEYS.has(key) || !map.has(key)) continue;
+            targetMap.set(key, map.get(key));
+            pushed++;
+          }
+        }
+        map.delete('overrides');
+      }
+    });
+    return pushed;
+  }
+
   resetOverrides(id: string): void {
     this.requireNode(id);
     this.transact(() => {
@@ -630,21 +803,38 @@ export class DesignDoc {
         if (frame?.type !== 'FRAME') continue;
         // Layers set to absolute position stay out of the flow.
         const kids = this.children(id).filter((c) => c.visible && c.layoutPositioning !== 'ABSOLUTE');
+        // "Include strokes in layout": a centred stroke adds its width to the layer, an outside one twice that
+        const extraOf = (c: DesignNode) => (frame.layoutIncludeStrokes ? strokeExtent(c) : 0);
         const result = computeAutoLayout(
           frame,
-          kids.map((c) => ({
-            id: c.id,
-            width: c.width,
-            height: c.height,
-            fillWidth: c.layoutSizingH === 'FILL',
-            fillHeight: c.layoutSizingV === 'FILL',
-            minWidth: c.minWidth,
-            maxWidth: c.maxWidth,
-            minHeight: c.minHeight,
-            maxHeight: c.maxHeight,
-          })),
+          kids.map((c) => {
+            const e = extraOf(c);
+            return {
+              id: c.id,
+              width: c.width + e,
+              height: c.height + e,
+              fillWidth: c.layoutSizingH === 'FILL',
+              fillHeight: c.layoutSizingV === 'FILL',
+              baseline: c.type === 'TEXT' ? textBaselineOf(c) + e / 2 : undefined,
+              minWidth: c.minWidth === undefined ? undefined : c.minWidth + e,
+              maxWidth: c.maxWidth === undefined ? undefined : c.maxWidth + e,
+              minHeight: c.minHeight === undefined ? undefined : c.minHeight + e,
+              maxHeight: c.maxHeight === undefined ? undefined : c.maxHeight + e,
+            };
+          }),
         );
         if (!result) continue;
+        if (frame.layoutIncludeStrokes) {
+          // the layout placed the outer edge of each stroke: the layer itself sits half the extra inside it
+          for (const c of kids) {
+            const e = extraOf(c);
+            if (!e) continue;
+            const p = result.positions[c.id];
+            if (p) result.positions[c.id] = { x: p.x + e / 2, y: p.y + e / 2 };
+            const sz = result.sizes[c.id];
+            if (sz) result.sizes[c.id] = { width: sz.width - e, height: sz.height - e };
+          }
+        }
         const moves = kids.filter((c) => {
           const p = result.positions[c.id]!;
           return Math.abs(p.x - c.x) > 1e-6 || Math.abs(p.y - c.y) > 1e-6;
@@ -852,6 +1042,18 @@ export class DesignDoc {
       });
       return;
     }
+    if (node.type === 'GROUP' && resizes) {
+      // Resizing a group scales what is inside it (Figma): every layer keeps its place and size relative to the group's box.
+      const sx = patch.width !== undefined && node.width > 0 ? patch.width / node.width : 1;
+      const sy = patch.height !== undefined && node.height > 0 ? patch.height / node.height : 1;
+      this.transact(() => {
+        this.setProps(id, patch);
+        for (const child of this.children(id)) {
+          this.resizeNode(child.id, { x: child.x * sx, y: child.y * sy, width: child.width * sx, height: child.height * sy });
+        }
+      });
+      return;
+    }
     if (node.type === 'FRAME' && (node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL')) {
       const horizontal = node.layoutMode === 'HORIZONTAL';
       const widthKey = horizontal ? 'primarySizing' : 'counterSizing';
@@ -971,6 +1173,134 @@ export class DesignDoc {
     this.setProps(nodeId, { fills: style.paints, fillStyleId: styleId });
   }
 
+  // ---------- effect styles ----------
+
+  effectStyles(): EffectStyle[] {
+    return [...this.effectStyleMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getEffectStyle(id: string): EffectStyle | undefined {
+    return this.effectStyleMap.get(id);
+  }
+
+  createEffectStyle(name: string, effects: Effect[]): string {
+    const id = nanoid();
+    this.transact(() => this.effectStyleMap.set(id, { id, name: name.trim() || 'Effect style', effects }));
+    return id;
+  }
+
+  updateEffectStyle(id: string, patch: { name?: string; effects?: Effect[] }): void {
+    const style = this.effectStyleMap.get(id);
+    if (!style) throw new Error('Style not found');
+    this.transact(() => this.effectStyleMap.set(id, { ...style, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.effects ? { effects: patch.effects } : {}) }));
+  }
+
+  deleteEffectStyle(id: string): void {
+    this.transact(() => this.effectStyleMap.delete(id));
+  }
+
+  /** Give a layer an effect style (its effects now follow the style), or pass null to detach it. */
+  applyEffectStyle(nodeId: string, styleId: string | null): void {
+    this.requireNode(nodeId);
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('effectStyleId'));
+      return;
+    }
+    const style = this.effectStyleMap.get(styleId);
+    if (!style) throw new Error('Style not found');
+    this.setProps(nodeId, { effects: style.effects, effectStyleId: styleId });
+  }
+
+  // ---------- stroke styles ----------
+
+  strokeStyles(): StrokeStyle[] {
+    return [...this.strokeStyleMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getStrokeStyle(id: string): StrokeStyle | undefined {
+    return this.strokeStyleMap.get(id);
+  }
+
+  /** Create a stroke style from the stroke properties of a layer. Throws for a layer without a stroke. */
+  createStrokeStyleFrom(name: string, nodeId: string): string {
+    const node = this.requireNode(nodeId) as unknown as Record<string, unknown>;
+    if (!Array.isArray(node.strokes) || !node.strokes.length) throw new Error('This layer has no stroke to make a style from');
+    const style: Record<string, unknown> = { id: nanoid(), name: name.trim() || 'Stroke style' };
+    for (const key of STROKE_STYLE_KEYS) if (node[key] !== undefined) style[key] = structuredClone(node[key]);
+    if (typeof style.strokeWidth !== 'number') style.strokeWidth = 1;
+    this.transact(() => this.strokeStyleMap.set(style.id as string, style as unknown as StrokeStyle));
+    return style.id as string;
+  }
+
+  updateStrokeStyle(id: string, patch: { name?: string }): void {
+    const style = this.strokeStyleMap.get(id);
+    if (!style) throw new Error('Style not found');
+    this.transact(() => this.strokeStyleMap.set(id, { ...style, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}) }));
+  }
+
+  deleteStrokeStyle(id: string): void {
+    this.transact(() => this.strokeStyleMap.delete(id));
+  }
+
+  /** Give a layer a stroke style (its stroke now follows the style), or pass null to detach it. */
+  applyStrokeStyle(nodeId: string, styleId: string | null): void {
+    const node = this.requireNode(nodeId) as unknown as Record<string, unknown>;
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('strokeStyleId'));
+      return;
+    }
+    const style = this.strokeStyleMap.get(styleId);
+    if (!style) throw new Error('Style not found');
+    if (!('strokes' in node)) throw new Error('This layer cannot have a stroke');
+    const props: Record<string, unknown> = { strokeStyleId: styleId };
+    for (const key of STROKE_STYLE_KEYS) if (style[key] !== undefined) props[key] = structuredClone(style[key]);
+    this.setProps(nodeId, props);
+    // properties the style does not set go back to their defaults
+    this.transact(() => {
+      const map = this.nodes.get(nodeId)!;
+      for (const key of STROKE_STYLE_KEYS) if (style[key] === undefined) map.delete(key);
+    });
+  }
+
+  // ---------- grid styles ----------
+
+  gridStyles(): GridStyle[] {
+    return [...this.gridStyleMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getGridStyle(id: string): GridStyle | undefined {
+    return this.gridStyleMap.get(id);
+  }
+
+  createGridStyle(name: string, grids: LayoutGrid[]): string {
+    const id = nanoid();
+    this.transact(() => this.gridStyleMap.set(id, { id, name: name.trim() || 'Grid style', grids }));
+    return id;
+  }
+
+  updateGridStyle(id: string, patch: { name?: string; grids?: LayoutGrid[] }): void {
+    const style = this.gridStyleMap.get(id);
+    if (!style) throw new Error('Style not found');
+    this.transact(() => this.gridStyleMap.set(id, { ...style, ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.grids ? { grids: patch.grids } : {}) }));
+  }
+
+  deleteGridStyle(id: string): void {
+    this.transact(() => this.gridStyleMap.delete(id));
+  }
+
+  /** Give a frame a grid style (its layout grids now follow the style), or pass null to detach it. */
+  applyGridStyle(nodeId: string, styleId: string | null): void {
+    const node = this.requireNode(nodeId);
+    if (node.type !== 'FRAME') throw new Error('Only frames have layout grids');
+    if (styleId === null) {
+      this.transact(() => this.nodes.get(nodeId)!.delete('gridStyleId'));
+      return;
+    }
+    const style = this.gridStyleMap.get(styleId);
+    if (!style) throw new Error('Style not found');
+    this.setProps(nodeId, { layoutGrids: style.grids, gridStyleId: styleId });
+  }
+
   // ---------- comments ----------
 
   /** Comments of a page (all pages when none is given), oldest first. */
@@ -1016,16 +1346,70 @@ export class DesignDoc {
 
   // ---------- colour variables ----------
 
-  /** The modes in order; a document without any has the single implicit mode "Mode 1". */
-  modes(): VariableMode[] {
-    const list = [...this.modeMap.values()].sort((a, b) => a.order - b.order).map(({ id, name }) => ({ id, name }));
-    return list.length ? list : [{ id: 'default', name: 'Mode 1' }];
+  /** The collections in order; the first one always exists (a document without any has "Collection 1"). */
+  collections(): VariableCollection[] {
+    const stored = [...this.collectionMap.values()].sort((a, b) => a.order - b.order).map(({ id, name }) => ({ id, name }));
+    return [{ id: DEFAULT_COLLECTION, name: this.meta.get('defaultCollectionName') || 'Collection 1' }, ...stored];
   }
 
-  activeModeId(): string {
-    const id = this.meta.get('activeMode');
-    const modes = this.modes();
-    return id && modes.some((m) => m.id === id) ? id : modes[0]!.id;
+  addCollection(name: string): string {
+    const id = nanoid();
+    this.transact(() => {
+      const order = Math.max(-1, ...[...this.collectionMap.values()].map((c) => c.order)) + 1;
+      this.collectionMap.set(id, { id, name: name.trim() || `Collection ${order + 2}`, order });
+      const modeOrder = Math.max(-1, ...[...this.modeMap.values()].map((m) => m.order)) + 1;
+      this.modeMap.set(`${id}-m0`, { id: `${id}-m0`, name: 'Mode 1', order: modeOrder, collectionId: id });
+    });
+    return id;
+  }
+
+  renameCollection(id: string, name: string): void {
+    const clean = name.trim();
+    if (!clean) return;
+    if (id === DEFAULT_COLLECTION) {
+      this.transact(() => this.meta.set('defaultCollectionName', clean));
+      return;
+    }
+    const c = this.collectionMap.get(id);
+    if (c) this.transact(() => this.collectionMap.set(id, { ...c, name: clean }));
+  }
+
+  /** Remove a collection with its modes and variables (the first collection cannot be removed). Layers bound to a deleted variable keep their value. */
+  deleteCollection(id: string): void {
+    if (id === DEFAULT_COLLECTION || !this.collectionMap.has(id)) throw new Error('That collection cannot be removed');
+    this.transact(() => {
+      for (const v of [...this.variableMap.values()]) if (v.collectionId === id) this.variableMap.delete(v.id);
+      for (const m of [...this.modeMap.values()]) if (m.collectionId === id) this.modeMap.delete(m.id);
+      this.collectionMap.delete(id);
+      this.meta.delete(`activeMode:${id}`);
+    });
+  }
+
+  /** The collection a mode belongs to. */
+  modeCollection(modeId: string): string {
+    return this.modeMap.get(modeId)?.collectionId ?? DEFAULT_COLLECTION;
+  }
+
+  /** True when the mode exists in any collection. */
+  modeExists(modeId: string): boolean {
+    return this.modeMap.has(modeId) || (modeId === 'default' && ![...this.modeMap.values()].some((m) => (m.collectionId ?? DEFAULT_COLLECTION) === DEFAULT_COLLECTION));
+  }
+
+  /** The variables of one collection (all kinds). */
+  variablesIn(collectionId: string): ColorVariable[] {
+    return [...this.variableMap.values()].filter((v) => (v.collectionId ?? DEFAULT_COLLECTION) === collectionId);
+  }
+
+  /** The modes of a collection in order; the first collection of a document without any has the single implicit mode "Mode 1". */
+  modes(collectionId: string = DEFAULT_COLLECTION): VariableMode[] {
+    const list = [...this.modeMap.values()].filter((m) => (m.collectionId ?? DEFAULT_COLLECTION) === collectionId).sort((a, b) => a.order - b.order).map(({ id, name }) => ({ id, name }));
+    return list.length ? list : collectionId === DEFAULT_COLLECTION ? [{ id: 'default', name: 'Mode 1' }] : [];
+  }
+
+  activeModeId(collectionId: string = DEFAULT_COLLECTION): string {
+    const id = this.meta.get(collectionId === DEFAULT_COLLECTION ? 'activeMode' : `activeMode:${collectionId}`);
+    const modes = this.modes(collectionId);
+    return id && modes.some((m) => m.id === id) ? id : (modes[0]?.id ?? 'default');
   }
 
   /** Canvas colour of a page (Figma's page Background); undefined means the default. */
@@ -1042,19 +1426,22 @@ export class DesignDoc {
   }
 
   setActiveMode(id: string): void {
-    if (!this.modes().some((m) => m.id === id)) throw new Error('Mode not found');
-    this.transact(() => this.meta.set('activeMode', id));
+    if (!this.modeExists(id)) throw new Error('Mode not found');
+    const cid = this.modeCollection(id);
+    this.transact(() => this.meta.set(cid === DEFAULT_COLLECTION ? 'activeMode' : `activeMode:${cid}`, id));
   }
 
-  /** Add a mode; every variable starts with the value it has in the active mode. */
-  addMode(name: string): string {
+  /** Add a mode to a collection; every variable of that collection starts with the value it has in the active mode. */
+  addMode(name: string, collectionId: string = DEFAULT_COLLECTION): string {
+    if (collectionId !== DEFAULT_COLLECTION && !this.collectionMap.has(collectionId)) throw new Error('Collection not found');
     const id = nanoid();
-    const base = this.activeModeId();
+    const base = this.activeModeId(collectionId);
     this.transact(() => {
-      if (!this.modeMap.size) this.modeMap.set('default', { id: 'default', name: 'Mode 1', order: 0 });
+      if (collectionId === DEFAULT_COLLECTION && ![...this.modeMap.values()].some((m) => (m.collectionId ?? DEFAULT_COLLECTION) === DEFAULT_COLLECTION)) this.modeMap.set('default', { id: 'default', name: 'Mode 1', order: Math.max(-1, ...[...this.modeMap.values()].map((m) => m.order)) + 1 });
       const order = Math.max(-1, ...[...this.modeMap.values()].map((m) => m.order)) + 1;
-      this.modeMap.set(id, { id, name: name.trim() || `Mode ${order + 1}`, order });
-      for (const v of this.variableMap.values()) this.variableMap.set(v.id, { ...v, values: { ...v.values, [id]: v.values[base] ?? Object.values(v.values)[0] ?? (v.kind === 'STRING' ? '' : v.kind === 'NUMBER' ? '0' : v.kind === 'BOOLEAN' ? 'false' : '#000000') } });
+      const count = this.modes(collectionId).length;
+      this.modeMap.set(id, { id, name: name.trim() || `Mode ${count + 1}`, order, ...(collectionId === DEFAULT_COLLECTION ? {} : { collectionId }) });
+      for (const v of this.variablesIn(collectionId)) this.variableMap.set(v.id, { ...v, values: { ...v.values, [id]: v.values[base] ?? Object.values(v.values)[0] ?? (v.kind === 'STRING' ? '' : v.kind === 'NUMBER' ? '0' : v.kind === 'BOOLEAN' ? 'false' : '#000000') } });
     });
     return id;
   }
@@ -1065,16 +1452,18 @@ export class DesignDoc {
     else if (!mode && id === 'default' && name.trim()) this.transact(() => this.modeMap.set('default', { id: 'default', name: name.trim(), order: 0 }));
   }
 
-  /** Remove a mode (the last one cannot be removed). */
+  /** Remove a mode (the last one of a collection cannot be removed). */
   deleteMode(id: string): void {
-    if (this.modes().length < 2) throw new Error('A collection needs at least one mode');
+    const cid = this.modeCollection(id);
+    if (this.modes(cid).length < 2) throw new Error('A collection needs at least one mode');
     this.transact(() => {
       this.modeMap.delete(id);
-      for (const v of this.variableMap.values()) {
+      for (const v of this.variablesIn(cid)) {
         const { [id]: _dropped, ...values } = v.values;
         this.variableMap.set(v.id, { ...v, values });
       }
-      if (this.meta.get('activeMode') === id) this.meta.delete('activeMode');
+      const key = cid === DEFAULT_COLLECTION ? 'activeMode' : `activeMode:${cid}`;
+      if (this.meta.get(key) === id) this.meta.delete(key);
     });
   }
 
@@ -1087,9 +1476,9 @@ export class DesignDoc {
     return [...this.variableMap.values()].filter((v) => v.kind === kind).sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  createValueVariable(kind: 'NUMBER' | 'BOOLEAN', name: string, value: string): string {
+  createValueVariable(kind: 'NUMBER' | 'BOOLEAN', name: string, value: string, collectionId: string = DEFAULT_COLLECTION): string {
     const id = nanoid();
-    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || (kind === 'NUMBER' ? 'Number' : 'Boolean'), kind, values: Object.fromEntries(this.modes().map((m) => [m.id, value])) }));
+    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || (kind === 'NUMBER' ? 'Number' : 'Boolean'), kind, values: Object.fromEntries(this.modes(collectionId).map((m) => [m.id, value])), ...this.collectionField(collectionId) }));
     return id;
   }
 
@@ -1107,6 +1496,17 @@ export class DesignDoc {
     );
   }
 
+  /** Limit a number variable to some groups of properties, or a colour variable to some kinds of paint (an empty list means no limit). Throws for text and boolean variables. */
+  setVariableScopes(id: string, scopes: string[]): void {
+    const v = this.variableMap.get(id);
+    const isColor = !!v && (!v.kind || v.kind === 'COLOR');
+    if (!v || (v.kind !== 'NUMBER' && !isColor)) throw new Error('Only number and colour variables have a scope');
+    const all: readonly string[] = v.kind === 'NUMBER' ? NUMBER_SCOPES : COLOR_SCOPES;
+    const clean = [...new Set(scopes)].filter((x): x is VariableScope => all.includes(x));
+    const { scopes: _old, ...rest } = v;
+    this.transact(() => this.variableMap.set(id, clean.length && clean.length < all.length ? { ...rest, scopes: clean } : rest));
+  }
+
   /** Make a property of a layer follow a number or boolean variable (or pass null to keep the value it has now and detach). */
   bindProperty(nodeId: string, prop: string, variableId: string | null): void {
     const node = this.requireNode(nodeId) as unknown as Record<string, unknown>;
@@ -1117,6 +1517,7 @@ export class DesignDoc {
       const numeric = (NUMBER_BINDABLE as readonly string[]).includes(prop);
       const boolean = (BOOLEAN_BINDABLE as readonly string[]).includes(prop);
       if (!v || !(numeric ? v.kind === 'NUMBER' : boolean ? v.kind === 'BOOLEAN' : false)) throw new Error('That variable cannot drive this property');
+      if (!variableAllowsProperty(v, prop)) throw new Error(`The scope of ${v.name} does not include this property`);
       bindings[prop] = variableId;
     }
     this.setProps(nodeId, { varBindings: Object.keys(bindings).length ? bindings : null });
@@ -1128,13 +1529,12 @@ export class DesignDoc {
     const map = this.nodes.get(nodeId);
     const bindings = map?.get('varBindings') as Record<string, string> | undefined | null;
     if (!map || !bindings) return;
-    const mode = this.activeModeId();
     const kept: Record<string, string> = {};
     for (const [prop, varId] of Object.entries(bindings)) {
       const v = this.variableMap.get(varId);
       if (!v) continue; // a deleted variable just releases the property
       kept[prop] = varId;
-      const raw = v.values[mode] ?? Object.values(v.values)[0] ?? '';
+      const raw = this.resolveVariableValue(v, this.modeForVariable(nodeId, v));
       const next = v.kind === 'BOOLEAN' ? raw === 'true' : Number(raw);
       if (typeof next === 'number' && !Number.isFinite(next)) continue;
       if (map.get(prop) !== next) map.set(prop, next);
@@ -1142,14 +1542,21 @@ export class DesignDoc {
     if (Object.keys(kept).length !== Object.keys(bindings).length) map.set('varBindings', Object.keys(kept).length ? kept : null);
   }
 
+  /** The collectionId field to store on a new variable (nothing for the first collection); throws for an unknown collection. */
+  private collectionField(collectionId: string): { collectionId?: string } {
+    if (collectionId === DEFAULT_COLLECTION) return {};
+    if (!this.collectionMap.has(collectionId)) throw new Error('Collection not found');
+    return { collectionId };
+  }
+
   /** Text variables: a text per mode that text layers can follow. */
   textVariables(): ColorVariable[] {
     return [...this.variableMap.values()].filter((v) => v.kind === 'STRING').sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  createTextVariable(name: string, text: string): string {
+  createTextVariable(name: string, text: string, collectionId: string = DEFAULT_COLLECTION): string {
     const id = nanoid();
-    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Text', kind: 'STRING', values: Object.fromEntries(this.modes().map((m) => [m.id, text])) }));
+    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Text', kind: 'STRING', values: Object.fromEntries(this.modes(collectionId).map((m) => [m.id, text])), ...this.collectionField(collectionId) }));
     return id;
   }
 
@@ -1176,16 +1583,16 @@ export class DesignDoc {
     }
     const v = this.variableMap.get(variableId);
     if (!v || v.kind !== 'STRING') throw new Error('Text variable not found');
-    this.setText(nodeId, { textVariableId: variableId, characters: v.values[this.activeModeId()] ?? Object.values(v.values)[0] ?? '' });
+    this.setText(nodeId, { textVariableId: variableId, characters: this.resolveVariableValue(v, this.modeForVariable(nodeId, v)) });
   }
 
   getColorVariable(id: string): ColorVariable | undefined {
     return this.variableMap.get(id);
   }
 
-  createColorVariable(name: string, color: string): string {
+  createColorVariable(name: string, color: string, collectionId: string = DEFAULT_COLLECTION): string {
     const id = nanoid();
-    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Color', values: Object.fromEntries(this.modes().map((m) => [m.id, color])) }));
+    this.transact(() => this.variableMap.set(id, { id, name: name.trim() || 'Color', values: Object.fromEntries(this.modes(collectionId).map((m) => [m.id, color])), ...this.collectionField(collectionId) }));
     return id;
   }
 
@@ -1201,8 +1608,100 @@ export class DesignDoc {
     );
   }
 
+  /** Set the value of any variable in one mode: a colour, a text, a number or "true" / "false". Throws for an unknown variable or a bad value. */
+  setVariableValue(id: string, modeId: string, value: string): void {
+    const v = this.variableMap.get(id);
+    if (!v) throw new Error('Variable not found');
+    if (!this.modeExists(modeId)) throw new Error('Mode not found');
+    if (v.kind === 'STRING') this.updateTextVariable(id, { modeId, text: value });
+    else if (v.kind === 'NUMBER' || v.kind === 'BOOLEAN') this.updateValueVariable(id, { modeId, value });
+    else {
+      if (!/^#[0-9a-fA-F]{6}$/.test(value)) throw new Error('A colour variable needs a six-digit hex colour');
+      this.updateColorVariable(id, { modeId, color: value });
+    }
+  }
+
   deleteColorVariable(id: string): void {
-    this.transact(() => this.variableMap.delete(id));
+    this.transact(() => {
+      // variables that pointed to this one keep the value they showed
+      const gone = this.variableMap.get(id);
+      if (gone) {
+        for (const other of [...this.variableMap.values()]) {
+          if (other.id === id || !Object.values(other.values).some((raw) => DesignDoc.aliasTarget(raw) === id)) continue;
+          const values = Object.fromEntries(Object.entries(other.values).map(([mode, raw]) => [mode, DesignDoc.aliasTarget(raw) === id ? this.resolveVariableValue(other, mode) : raw]));
+          this.variableMap.set(other.id, { ...other, values });
+        }
+      }
+      this.variableMap.delete(id);
+    });
+  }
+
+  /** The variable id an alias value points to, or null for an ordinary value. */
+  static aliasTarget(raw: unknown): string | null {
+    return typeof raw === 'string' && raw.startsWith(ALIAS_PREFIX) ? raw.slice(ALIAS_PREFIX.length) : null;
+  }
+
+  /** The variable a variable is an alias of in one mode (null when that mode holds its own value). */
+  variableAlias(id: string, modeId: string): string | null {
+    const v = this.variableMap.get(id);
+    const target = v ? DesignDoc.aliasTarget(v.values[modeId]) : null;
+    return target && this.variableMap.has(target) ? target : null;
+  }
+
+  /** The value a variable shows in a mode, following aliases (same kind only). A broken or looping alias shows the variable's own first plain value. */
+  resolveVariableValue(v: ColorVariable, modeId: string, hops = 0): string {
+    // a mode of another collection has no value here: use the active mode of this variable's own collection
+    const own = v.values[modeId] ?? v.values[this.activeModeId(v.collectionId ?? DEFAULT_COLLECTION)] ?? Object.values(v.values)[0] ?? '';
+    const target = DesignDoc.aliasTarget(own);
+    if (target === null) return own;
+    const next = hops < 10 ? this.variableMap.get(target) : undefined;
+    if (!next || next.id === v.id || (next.kind ?? 'COLOR') !== (v.kind ?? 'COLOR')) return this.plainValue(v);
+    return this.resolveVariableValue(next, modeId, hops + 1);
+  }
+
+  private plainValue(v: ColorVariable): string {
+    const plain = Object.values(v.values).find((raw) => DesignDoc.aliasTarget(raw) === null);
+    return plain ?? (v.kind === 'STRING' ? '' : v.kind === 'NUMBER' ? '0' : v.kind === 'BOOLEAN' ? 'false' : '#000000');
+  }
+
+  /** Make a variable an alias of another variable of the same kind in one mode (or pass null to keep the value it shows now). Throws for a different kind or a loop. */
+  setVariableAlias(id: string, modeId: string, targetId: string | null): void {
+    const v = this.variableMap.get(id);
+    if (!v) throw new Error('Variable not found');
+    if (!this.modeExists(modeId)) throw new Error('Mode not found');
+    if (targetId === null) {
+      const shown = this.resolveVariableValue(v, modeId);
+      this.transact(() => this.variableMap.set(id, { ...v, values: { ...v.values, [modeId]: shown } }));
+      return;
+    }
+    const target = this.variableMap.get(targetId);
+    if (!target) throw new Error('Variable not found');
+    if (targetId === id) throw new Error('A variable cannot be an alias of itself');
+    if ((target.kind ?? 'COLOR') !== (v.kind ?? 'COLOR')) throw new Error('An alias must be a variable of the same type');
+    // a loop: the target (in any mode) eventually points back to this variable
+    const seen = new Set<string>();
+    const stack = [targetId];
+    while (stack.length) {
+      const cur = stack.pop()!;
+      if (cur === id) throw new Error('That alias would loop back to this variable');
+      if (seen.has(cur)) continue;
+      seen.add(cur);
+      for (const raw of Object.values(this.variableMap.get(cur)?.values ?? {})) {
+        const t = DesignDoc.aliasTarget(raw);
+        if (t) stack.push(t);
+      }
+    }
+    this.transact(() => this.variableMap.set(id, { ...v, values: { ...v.values, [modeId]: ALIAS_PREFIX + targetId } }));
+  }
+
+  /** Put back the raw values a variable had (aliases included), for example after a prototype changed them. Unknown modes are skipped. */
+  restoreVariableValues(id: string, values: Record<string, string>): void {
+    const v = this.variableMap.get(id);
+    if (!v) return;
+    const known = new Set(Object.keys(v.values));
+    const next = { ...v.values };
+    for (const [mode, raw] of Object.entries(values)) if (known.has(mode) && typeof raw === 'string') next[mode] = raw;
+    this.transact(() => this.variableMap.set(id, { ...v, values: next }));
   }
 
   /** Bind one solid fill or stroke of a layer to a colour variable (or pass null to keep its colour and detach). */
@@ -1219,7 +1718,8 @@ export class DesignDoc {
     } else {
       const v = this.variableMap.get(variableId);
       if (!v || (v.kind && v.kind !== 'COLOR')) throw new Error('Variable not found');
-      next = { ...paint, variableId, color: v.values[this.activeModeId()] ?? paint.color };
+      if (!variableAllowsUse(v, key === 'strokes' ? 'STROKE' : node.type === 'TEXT' ? 'TEXT_FILL' : 'FILL')) throw new Error(`The scope of ${v.name} does not include this use`);
+      next = { ...paint, variableId, color: this.resolveVariableValue(v, this.modeForVariable(nodeId, v)) || paint.color };
     }
     this.setStyle(nodeId, { [key]: (paints as Paint[]).map((p, i) => (i === index ? next : p)) } as StylePatch);
   }
@@ -1354,6 +1854,9 @@ export class DesignDoc {
       for (const [key, value] of Object.entries(patch)) map.set(key, value);
       // Changing the fills by hand detaches the layer from its colour style (Figma).
       if ('fills' in patch && !('fillStyleId' in patch)) map.delete('fillStyleId');
+      if ('layoutGrids' in patch && !('gridStyleId' in patch)) map.delete('gridStyleId');
+      if ('effects' in patch && !('effectStyleId' in patch)) map.delete('effectStyleId');
+      if (STROKE_STYLE_KEYS.some((k) => k in patch) && !('strokeStyleId' in patch)) map.delete('strokeStyleId');
       if (TEXT_STYLE_KEYS.some((k) => k in patch) && !('textStyleId' in patch)) map.delete('textStyleId');
       if (!follows) return;
       const isRoot = map.get('componentId') !== undefined;

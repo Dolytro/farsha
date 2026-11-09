@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrowShape, lineBetween, lineShape, polygonPoints, polygonShape, starShape } from "./shapes";
+import { arrowShape, lineBetween, lineShape, polygonPoints, polygonShape, starShape, roundedPolygonPath } from "./shapes";
 
 describe("polygon and star points", () => {
   it("fills the 100 x 100 box", () => {
@@ -41,5 +41,29 @@ describe("line and arrow", () => {
   it("snaps the angle to 15 degrees with Shift", () => {
     expect(lineBetween(0, 0, 100, 10, true).rotation).toBe(0);
     expect(lineBetween(0, 0, 100, 30, true).rotation).toBe(15);
+  });
+});
+
+describe("rounded polygons", () => {
+  const square: [number, number][] = [[0, 0], [100, 0], [100, 100], [0, 100]];
+
+  it("rounds every corner with a curve through the vertex", () => {
+    const d = roundedPolygonPath(square, 10);
+    expect(d.startsWith("M0 10Q0 0 10 0")).toBe(true);
+    expect(d).toContain("L90 0Q100 0 100 10");
+    expect(d.endsWith("Z")).toBe(true);
+    expect((d.match(/Q/g) ?? []).length).toBe(4);
+  });
+
+  it("never cuts more than half an edge", () => {
+    const d = roundedPolygonPath(square, 500);
+    expect(d.startsWith("M0 50Q0 0 50 0")).toBe(true);
+  });
+
+  it("is the plain outline for a radius of zero, and empty for fewer than three points", () => {
+    expect(polygonShape(4, 0).markup).toContain("<polygon");
+    expect(polygonShape(4, 8).markup).toContain("<path d=\"M");
+    expect(starShape(5, 0.4, 5).markup).toContain("Q");
+    expect(roundedPolygonPath([[0, 0], [1, 1]], 3)).toBe("");
   });
 });

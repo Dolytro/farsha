@@ -1,3 +1,4 @@
+import { mirrorAboutSelection } from "./flip-multi";
 import type { DesignDoc } from "@farsha/design-core";
 import { booleanShapes, flattenShapes, offsetShape, outlineStrokeShape, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@farsha/canvas-engine";
 import type { Box, DesignNode } from "@farsha/types";
@@ -126,12 +127,20 @@ export function toggleLocked(doc: DesignDoc, ids: string[]): void {
 
 /** Figma's Flip horizontal / vertical (Shift+H / Shift+V): each selected layer is mirrored about its own centre. */
 export function flipSelection(doc: DesignDoc, ids: string[], axis: "x" | "y"): void {
+  const nodes = ids.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n && n.type !== "PAGE" && n.type !== "DOCUMENT");
+  // Several layers of one parent flip about the middle of the box round all of them (Figma), so they swap places.
+  const parent = nodes[0]?.parentId ? doc.getNode(nodes[0].parentId) : undefined;
+  const together = nodes.length > 1 && nodes.every((n) => n.parentId === parent?.id) && !(parent?.type === "FRAME" && (parent.layoutMode === "HORIZONTAL" || parent.layoutMode === "VERTICAL"));
+  const moved = together ? mirrorAboutSelection(nodes.map((n) => ({ x: n.x, y: n.y, width: n.width, height: n.height, rotation: n.rotation })), axis) : [];
   doc.stopCapturing();
-  for (const id of ids) {
-    const n = doc.getNode(id);
-    if (!n || n.type === "PAGE" || n.type === "DOCUMENT") continue;
-    doc.setStyle(id, axis === "x" ? { flipX: !n.flipX } : { flipY: !n.flipY });
-  }
+  nodes.forEach((n, i) => {
+    doc.setStyle(n.id, axis === "x" ? { flipX: !n.flipX } : { flipY: !n.flipY });
+    const to = moved[i];
+    if (to) {
+      doc.setPosition(n.id, to.x, to.y);
+      if (n.rotation) doc.rotateNode(n.id, to.rotation);
+    }
+  });
   doc.stopCapturing();
 }
 

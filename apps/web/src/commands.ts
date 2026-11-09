@@ -1,3 +1,4 @@
+import { HELP_LINKS, openHelpLink } from "./help-links";
 import { alignSelection, distributeSelection, type AlignMode } from "./align";
 import { distributeEdges, packLayers, roundToPixel, tidyUp, type EdgeMode } from "./arrange-actions";
 import { addAutoLayout, removeAutoLayout } from "./auto-layout-actions";
@@ -7,7 +8,8 @@ import { deletePointAndHeal, joinSelection, simplifySelection, smoothSelection, 
 import { panToLayer, booleanGroupSelection, booleanSelection, flattenSelection, offsetSelection, outlineStrokeSelection, toggleLayoutGrids, adjacentFrame, useAsMask, flipSelection, frameSelection, groupSelection, reorderSelection, toggleHidden, toggleLocked, ungroupSelection, zoomBy, zoomFit, zoomKeyboard } from "./actions";
 import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
-import { createComponentFromSelection, detachSelection, resetSelection } from "./component-actions";
+import { afterDuplicate, duplicateOffset } from "./duplicate-offset";
+import { createComponentFromSelection, detachSelection, pushSelectionToMain, resetSelection } from "./component-actions";
 import { duplicatePage } from "./pages";
 import { duplicateFile, openLocalFilePicker, saveLocalCopy } from "./local-file";
 import { placeImagePicker } from "./place-image";
@@ -117,7 +119,15 @@ export function buildCommands(): Command[] {
     { id: "select-matching", label: "Select all matching properties", shortcut: `${MOD}${ALT}A`, needsSelection: true, keywords: "same fill color font", run: () => state().select(selectMatching(doc(), sel(), state().pageId)) },
     { id: "select-children", label: "Select children", shortcut: "Enter", needsSelection: true, run: () => state().select(selectChildren(doc(), sel())) },
     { id: "select-parent", label: "Select parent", shortcut: `${SHIFT}Enter`, needsSelection: true, run: () => state().select(selectParent(doc(), sel(), state().pageId)) },
-    { id: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, needsSelection: true, run: () => state().select(duplicateNodes(doc(), sel(), 10, true, state().prefs.renameDuplicates)) },
+    { id: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, needsSelection: true, run: () => {
+        // Ctrl+D after an Alt+drag copy repeats that move
+        const ids = sel();
+        const offset = duplicateOffset(ids);
+        const copies = duplicateNodes(doc(), ids, offset, true, state().prefs.renameDuplicates);
+        afterDuplicate(ids, copies, offset);
+        state().select(copies);
+      },
+    },
     {
       id: "delete",
       label: "Delete",
@@ -313,6 +323,20 @@ export function buildCommands(): Command[] {
     { id: "create-component", label: "Create component", shortcut: `${MOD}${ALT}K`, needsSelection: true, keywords: "main symbol", run: () => state().select(createComponentFromSelection(doc(), sel())) },
     { id: "detach-instance", label: "Detach instance", shortcut: `${MOD}${ALT}B`, needsSelection: true, run: () => state().select(detachSelection(doc(), sel())) },
     { id: "reset-overrides", label: "Reset all overrides", needsSelection: true, keywords: "instance", run: () => resetSelection(doc(), sel()) },
+    {
+      id: "push-to-main",
+      label: "Push changes to main component",
+      needsSelection: true,
+      keywords: "instance overrides apply update main",
+      run: () => {
+        try {
+          const n = pushSelectionToMain(doc(), sel());
+          state().showToast(n ? `Pushed ${n} ${n === 1 ? "change" : "changes"} to the main component` : "This instance has no changes to push");
+        } catch (err) {
+          state().showToast(err instanceof Error ? err.message : "Couldn't push the changes");
+        }
+      },
+    },
     align("left", "left", "A"),
     align("hcenter", "horizontal centers", "H"),
     align("right", "right", "D"),
@@ -386,6 +410,8 @@ export function buildCommands(): Command[] {
     ),
     { id: "zoom-in", label: "Zoom in", shortcut: `${MOD}+`, keywords: "view", run: () => state().setViewport(zoomKeyboard(doc(), sel(), state().viewport, state().viewport.zoom * 1.25, state().prefs.keyboardZoomToSelection)) },
     { id: "zoom-out", label: "Zoom out", shortcut: `${MOD}-`, keywords: "view", run: () => state().setViewport(zoomKeyboard(doc(), sel(), state().viewport, state().viewport.zoom * 0.8, state().prefs.keyboardZoomToSelection)) },
+    { id: "zoom-50", label: "Zoom to 50%", keywords: "view half", run: () => state().setViewport(zoomBy(state().viewport, 0.5)) },
+    { id: "zoom-200", label: "Zoom to 200%", keywords: "view double", run: () => state().setViewport(zoomBy(state().viewport, 2)) },
     { id: "zoom-100", label: "Zoom to 100%", shortcut: `${SHIFT}0`, keywords: "view", run: () => state().setViewport(zoomBy(state().viewport, 1)) },
     {
       id: "present",
@@ -423,6 +449,7 @@ export function buildCommands(): Command[] {
     {
       id: "vector-delete-heal",
       label: "Delete and heal",
+      shortcut: `${SHIFT}Backspace`,
       keywords: "vector point remove anchor",
       run: () => {
         const { editingPath, editingPoint } = state();
@@ -511,6 +538,7 @@ export function buildCommands(): Command[] {
       },
     },
     { id: "eyedropper", label: "Pick color from the screen", shortcut: "I", keywords: "eyedropper sample color", run: () => pickColorFromScreen(doc(), sel(), state().showToast) },
+    ...HELP_LINKS.map((l): Command => ({ id: l.id, label: l.label, keywords: `help ${l.keywords}`, run: () => void openHelpLink(l.url) })),
     { id: "keyboard-shortcuts", label: "Keyboard shortcuts…", shortcut: `${MOD}${SHIFT}?`, keywords: "cheat sheet keys help hotkeys", run: () => state().setShortcutsOpen(true) },
     { id: "preferences", label: "Preferences", keywords: "settings keep tool snapping zoom nudge", run: () => state().setPrefsOpen(true) },
     { id: "outlines", label: "Show / hide outlines", shortcut: `${MOD}${SHIFT}Y`, keywords: "view wireframe outline mode", run: () => state().setOutlines(!state().outlines) },
@@ -539,11 +567,12 @@ export function buildCommands(): Command[] {
         } else s.setHideLeftPanel(true);
       },
     },
+    { id: "panel-left-minimize", label: "Minimize left bar", keywords: "view panels sidebar left hide show layers", run: () => state().setHideLeftPanel(!state().hideLeftPanel) },
     { id: "panel-assets", label: "Open libraries panel", shortcut: `${ALT}2`, keywords: "view panels assets components", run: () => (state().setHideLeftPanel(false), state().setLeftTab("assets")) },
     { id: "panel-design", label: "Open design panel", shortcut: `${ALT}8`, keywords: "view panels properties right", run: () => (state().setHideRightPanel(false), state().setPrototypeMode(false), state().setDevMode(false)) },
     { id: "panel-prototype", label: "Open prototype panel", shortcut: `${ALT}9`, keywords: "view panels interactions right", run: () => (state().setHideRightPanel(false), state().setPrototypeMode(true)) },
     { id: "panel-right", label: "Show / hide properties panel", keywords: "view panels sidebar right design", run: () => state().setHideRightPanel(!state().hideRightPanel) },
-    { id: "rename-layer", label: "Rename layer", shortcut: `${MOD}R`, needsSelection: true, keywords: "name layers", run: () => (sel().length === 1 ? (state().setHideLeftPanel(false), state().setLeftTab("layers"), state().setRenaming(sel()[0]!)) : state().showToast("Select one layer to rename")) },
+    { id: "rename-layer", label: "Rename layer", shortcut: `${MOD}R`, needsSelection: true, keywords: "name layers", run: () => (sel().length === 1 ? (state().setHideLeftPanel(false), state().setLeftTab("layers"), state().setRenaming(sel()[0]!)) : state().setBatchRenameOpen(true)) },
     {
       id: "frame-find-next",
       label: "Find next frame",
@@ -622,16 +651,23 @@ export function buildCommands(): Command[] {
       }),
     ),
     { id: "show-variables", label: "Show variables", keywords: "colors modes tokens", run: () => state().setVariablesOpen(true) },
+    { id: "toggle-variables", label: "Toggle variables panel", keywords: "colors modes tokens show hide variables", run: () => state().setVariablesOpen(!state().variablesOpen) },
     {
       id: "next-mode",
       label: "Switch to next variable mode",
       keywords: "light dark theme",
       run: () => {
+        // every collection with more than one mode moves on to its next mode
         const d = doc();
-        const modes = d.modes();
-        const next = modes[(modes.findIndex((m) => m.id === d.activeModeId()) + 1) % modes.length]!;
-        d.setActiveMode(next.id);
-        state().showToast(`Mode: ${next.name}`);
+        const names: string[] = [];
+        for (const c of d.collections()) {
+          const modes = d.modes(c.id);
+          if (modes.length < 2) continue;
+          const next = modes[(modes.findIndex((m) => m.id === d.activeModeId(c.id)) + 1) % modes.length]!;
+          d.setActiveMode(next.id);
+          names.push(d.collections().length > 1 ? `${c.name}: ${next.name}` : next.name);
+        }
+        state().showToast(names.length ? `Mode: ${names.join(", ")}` : "No variable mode to switch to");
       },
     },
     ...(["light", "dark", "system"] as const).map(

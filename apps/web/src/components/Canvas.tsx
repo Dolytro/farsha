@@ -1,4 +1,6 @@
 import { duplicateNodes } from "../clipboard";
+import { rememberCopyMove } from "../duplicate-offset";
+import { COMPONENT_DRAG } from "../asset-search";
 import { buildScaleUpdates } from "../scale";
 import { textFontStyle, verticalTextOffset } from "@farsha/canvas-engine";
 import { PINCH_STRENGTH, WHEEL_STRENGTH, wheelZoomFactor } from "../prefs";
@@ -10,12 +12,24 @@ import { VectorEditLayer } from "./VectorEditLayer";
 import { gridRects, maskMarkup } from "@farsha/canvas-engine";
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type NodeType } from "@farsha/types";
-import { layoutText, lineHeightPx, resizeBox, snapMove, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeHas, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { startShapeParams } from "../shape-params";
+import { groupBox, resizeGroup, rotateGroup, type GroupItem, type TurnItem } from "../multi-resize";
+import { snapBoxToPixels, snapMoveToPixels } from "../pixel-snap";
+import { componentSetFrames } from "../component-set-frames";
+import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
+import { dropInto } from "../reparent-drop";
+import { lockAxis } from "../axis-lock";
+import { drawBox } from "../draw-box";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
 import { isVideoFile, videoUrl } from "../video";
 import { useEditor, type Tool } from "../store";
 import { canvasMeasure, fitText } from "../text-layout";
+import { gridSnapLines } from "../grid-snap";
+import { isFarshaFileName, maybeFarshaDragItem } from "../farsha-file";
+import { openLocalFile } from "../local-file";
 import { nearestFrame } from "../actions";
 import { connectorPath, connectorsIn } from "../prototype";
 import { loadDefaults, withDefaults } from "../defaults";
@@ -23,8 +37,11 @@ import { loadDefaults, withDefaults } from "../defaults";
 
 type Drag =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
-  | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[] }
-  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box }
+  | { kind: "move"; wx: number; wy: number; origins: Record<string, { x: number; y: number }>; startBox?: Box; targets: Box[]; copied?: boolean }
+  | { kind: "resize"; id: string; corner: Handle; wx: number; wy: number; box: Box; flipX: boolean; flipY: boolean; offset: { x: number; y: number }; targets: Box[]; rotation: number }
+  | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
+  | { kind: "multirotate"; wx: number; wy: number; items: TurnItem[]; cx: number; cy: number; start: number }
+  | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
   | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
@@ -40,7 +57,7 @@ function vectorStart(tool: Tool): Record<string, unknown> {
   const grey = [{ type: "SOLID", color: "#d9d9d9", opacity: 1 }];
   if (tool === "line") return { ...lineShape(1), fills: [], strokes: black, strokeWidth: 1 };
   if (tool === "arrow") return { ...arrowShape(1), fills: [], strokes: black, strokeWidth: 1 };
-  return { ...(tool === "star" ? starShape() : polygonShape()), fills: grey, strokes: [], strokeWidth: 1 };
+  return { ...(tool === "star" ? starShape() : polygonShape()), ...startShapeParams(tool === "star" ? "STAR" : "POLYGON"), fills: grey, strokes: [], strokeWidth: 1 };
 }
 const ACCENT = "#0d99ff";
 
@@ -85,8 +102,10 @@ export function Canvas() {
   const view = useEditor((s) => s.view);
   const prototypeMode = useEditor((s) => s.prototypeMode);
   const spellCheck = useEditor((s) => s.prefs.spellCheck);
+  const smartQuotes = useEditor((s) => s.prefs.smartQuotes);
   const hoverHighlight = useEditor((s) => s.prefs.hoverHighlight);
   const showDimensions = useEditor((s) => s.prefs.showDimensions);
+  const hideUiWhileChanging = useEditor((s) => s.prefs.hideUiWhileChanging);
   const rightPanMoved = useRef(false);
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
@@ -96,7 +115,20 @@ export function Canvas() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Box | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  // Enter on a selected text layer (handled in App) asks the canvas to open the text editor
+  useEffect(() => {
+    const onEdit = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (typeof id === "string" && useEditor.getState().doc.getNode(id)?.type === "TEXT") setEditing(id);
+    };
+    window.addEventListener("farsha:edit-text", onEdit);
+    return () => window.removeEventListener("farsha:edit-text", onEdit);
+  }, []);
+  const editRef = useRef<HTMLTextAreaElement | null>(null);
+  const movePoint = useRef<{ x: number; y: number } | null>(null);
+  const [editSel, setEditSel] = useState<[number, number]>([0, 0]);
   const [altDown, setAltDown] = useState(false);
+  const [changing, setChanging] = useState(false);
   const z = viewport.zoom;
 
   // Selecting something else ends the point editing of a pen path.
@@ -189,6 +221,27 @@ export function Canvas() {
       select(hit ? [hit.id] : []);
       return;
     }
+    if (el.dataset.gradient && selection[0]) {
+      // Dragging the gradient handle turns the gradient: the angle is where the pointer is, seen from the middle of the layer
+      const abs = doc.absoluteBox(selection[0]);
+      if (abs) {
+        doc.stopCapturing();
+        drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
+      }
+      return;
+    }
+    if (el.dataset.rotate && selection.length > 1 && !viewer) {
+      // Several layers turn together round the middle of the box that holds them
+      const items = selection.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n && !n.locked).map((n) => ({ id: n.id, x: n.x, y: n.y, width: n.width, height: n.height, rotation: n.rotation }));
+      const union = unionBox(selection.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b));
+      if (union && items.length === selection.length && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1) {
+        const cx = union.x + union.width / 2;
+        const cy = union.y + union.height / 2;
+        doc.stopCapturing();
+        drag.current = { kind: "multirotate", wx: w.x, wy: w.y, items, cx, cy, start: Math.atan2(w.y - cy, w.x - cx) };
+      }
+      return;
+    }
     if (el.dataset.rotate && selection[0]) {
       // Rotating: the angle between the pointer and the layer's centre decides the rotation.
       const node = doc.getNode(selection[0])!;
@@ -200,6 +253,16 @@ export function Canvas() {
       return;
     }
     const corner = el.dataset.corner as Handle | undefined;
+    if (corner && selection.length > 1 && !viewer) {
+      // Several layers: the box around them resizes and every layer follows it (layers must share a parent so their positions are comparable)
+      const items = selection.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n && !n.locked).map((n) => ({ id: n.id, x: n.x, y: n.y, width: n.width, height: n.height }));
+      const box = groupBox(items);
+      if (box && items.length === selection.length && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1) {
+        doc.stopCapturing();
+        drag.current = { kind: "multiresize", corner, wx: w.x, wy: w.y, box, items };
+      }
+      return;
+    }
     if (corner && selection[0]) {
       const box = doc.getNode(selection[0])!;
       doc.stopCapturing();
@@ -208,7 +271,16 @@ export function Canvas() {
         drag.current = { kind: "scale", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, snapshot: [box, ...doc.descendants(box.id)] };
         return;
       }
-      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height } };
+      // Smart guides while resizing: the box is in its parent's coordinates, the other layers and the parent frame are in canvas coordinates
+      const abs = doc.absoluteBox(box.id);
+      const parent = box.parentId ? doc.getNode(box.parentId) : undefined;
+      const targets = (box.parentId ? doc.children(box.parentId) : [])
+        .filter((n) => n.visible && n.id !== box.id)
+        .map((n) => doc.absoluteBox(n.id))
+        .filter((b): b is Box => !!b);
+      const parentBox = parent && parent.type !== "PAGE" && parent.type !== "DOCUMENT" ? doc.absoluteBox(parent.id) : undefined;
+      if (parentBox) targets.push(parentBox);
+      drag.current = { kind: "resize", id: box.id, corner, wx: w.x, wy: w.y, box: { x: box.x, y: box.y, width: box.width, height: box.height }, flipX: !!box.flipX, flipY: !!box.flipY, offset: abs ? { x: abs.x - box.x, y: abs.y - box.y } : { x: 0, y: 0 }, targets, rotation: box.rotation };
       return;
     }
     const labelId = el.dataset.labelId;
@@ -228,10 +300,12 @@ export function Canvas() {
       if (next.includes(hit.id)) {
         doc.stopCapturing();
         // Figma: Alt+drag drags a copy and leaves the original where it was
+        let copied = false;
         if (e.altKey && !viewer) {
           const copies = duplicateNodes(doc, next, 0, false, useEditor.getState().prefs.renameDuplicates);
           if (copies.length) {
             next = copies;
+            copied = true;
             select(copies);
           }
         }
@@ -250,7 +324,7 @@ export function Canvas() {
         const parentBox = parent && parent.type !== "PAGE" && parent.type !== "DOCUMENT" ? doc.absoluteBox(parent.id) : undefined;
         if (parentBox) targets.push(parentBox);
         const startBox = unionBox(next.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b));
-        drag.current = { kind: "move", wx: w.x, wy: w.y, origins, startBox, targets };
+        drag.current = { kind: "move", wx: w.x, wy: w.y, origins, startBox, targets, copied };
       }
       return;
     }
@@ -296,22 +370,50 @@ export function Canvas() {
       setViewport({ ...viewport, x: d.vx + e.clientX - d.sx, y: d.vy + e.clientY - d.sy });
       return;
     }
+    if (hideUiWhileChanging && !changing && (d.kind === "move" || d.kind === "resize" || d.kind === "rotate" || d.kind === "scale")) setChanging(true);
     const w = world(e);
     let dx = w.x - d.wx;
     let dy = w.y - d.wy;
+    if (d.kind === "move") movePoint.current = w;
     if (d.kind === "move") {
+      // Shift keeps the layers on one line
+      if (e.shiftKey) ({ dx, dy } = lockAxis(dx, dy));
+      let aligned = false;
       if (d.startBox && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping) {
         const page = doc.getNode(pageId);
         const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const grid = parentGridLines(Object.keys(d.origins)[0]);
         const snap = snapMove({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets, 5 / viewport.zoom, {
-          xs: guideList.filter((g) => g.axis === "x").map((g) => g.position),
-          ys: guideList.filter((g) => g.axis === "y").map((g) => g.position),
+          xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],
+          ys: [...guideList.filter((g) => g.axis === "y").map((g) => g.position), ...grid.ys],
         });
         dx += snap.dx;
         dy += snap.dy;
         setGuides(snap.guides);
+        aligned = snap.guides.length > 0;
       } else setGuides([]);
-      for (const [id, o] of Object.entries(d.origins)) doc.setPosition(id, o.x + dx, o.y + dy);
+      // Snap to pixel grid: the first layer lands on a whole pixel (the others keep their distance to it), unless a smart guide already holds it
+      const first = Object.values(d.origins)[0];
+      if (first && !aligned && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap) ({ dx, dy } = snapMoveToPixels(first, { dx, dy }));
+      // A layer inside an auto layout frame is reordered by dragging instead of being moved: it takes the slot the pointer is over
+      let reordering = false;
+      const draggedIds = Object.keys(d.origins);
+      const dragged = draggedIds.length === 1 ? doc.getNode(draggedIds[0]!) : undefined;
+      const layoutParent = dragged?.parentId ? doc.getNode(dragged.parentId) : undefined;
+      if (dragged && layoutParent?.type === "FRAME" && (layoutParent.layoutMode === "HORIZONTAL" || layoutParent.layoutMode === "VERTICAL") && dragged.layoutPositioning !== "ABSOLUTE") {
+        const horizontal = layoutParent.layoutMode === "HORIZONTAL";
+        const order = doc.children(layoutParent.id).map((c) => c.id);
+        const others = doc.children(layoutParent.id).filter((c) => c.id !== dragged.id && c.visible && c.layoutPositioning !== "ABSOLUTE");
+        const centres = others.map((c) => {
+          const b = doc.absoluteBox(c.id);
+          return b ? (horizontal ? b.x + b.width / 2 : b.y + b.height / 2) : 0;
+        });
+        const slot = insertionIndex(centres, horizontal ? w.x : w.y);
+        const target = reorderTarget(order, dragged.id, others.map((c) => c.id), slot);
+        if (target !== null) doc.reorderNode(dragged.id, target);
+        reordering = true;
+      }
+      if (!reordering) for (const [id, o] of Object.entries(d.origins)) doc.setPosition(id, o.x + dx, o.y + dy);
     } else if (d.kind === "rotate") {
       const turned = ((Math.atan2(w.y - d.cy, w.x - d.cx) - d.start) * 180) / Math.PI;
       const next = d.base + turned;
@@ -319,12 +421,63 @@ export function Canvas() {
     } else if (d.kind === "scale") {
       const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: true, fromCenter: e.altKey });
       doc.patchNodes(buildScaleUpdates(d.snapshot, next));
+    } else if (d.kind === "multirotate") {
+      const raw = ((Math.atan2(w.y - d.cy, w.x - d.cx) - d.start) * 180) / Math.PI;
+      const turned = e.shiftKey ? Math.round(raw / 15) * 15 : raw;
+      doc.patchNodes(rotateGroup(d.items, turned));
+    } else if (d.kind === "gradient") {
+      const node = doc.getNode(d.id);
+      if (node && "fills" in node && Array.isArray(node.fills)) {
+        const raw = (Math.atan2(w.y - d.cy, w.x - d.cx) * 180) / Math.PI;
+        const snapped = e.shiftKey ? Math.round(raw / 15) * 15 : Math.round(raw * 10) / 10;
+        const angle = ((snapped % 360) + 360) % 360;
+        doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
+      }
+    } else if (d.kind === "multiresize") {
+      const to = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
+      const next = resizeGroup(d.items, d.box, to);
+      for (const [id, box] of Object.entries(next)) {
+        const before = d.items.find((i) => i.id === id)!;
+        doc.resizeNode(id, box);
+        const node = doc.getNode(id);
+        if (node?.type === "TEXT") {
+          if (box.height !== before.height) doc.setText(id, { textAutoResize: "NONE" });
+          else if (box.width !== before.width && (node.textAutoResize ?? "WIDTH_AND_HEIGHT") === "WIDTH_AND_HEIGHT") doc.setText(id, { textAutoResize: "HEIGHT" });
+          fitText(doc, id);
+        }
+      }
     } else if (d.kind === "resize") {
       // Shift keeps the ratio (so does a layer with locked proportions), Alt resizes from the centre (Figma).
       const locked = !!doc.getNode(d.id)?.lockAspect;
-      const next = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey || locked, fromCenter: e.altKey });
-
+      const opts = { keepRatio: e.shiftKey || locked, fromCenter: e.altKey };
+      const flipping = useEditor.getState().prefs.flipWhileResizing && !d.rotation;
+      // A turned layer grows along its own sides with the opposite corner fixed on the canvas; it does not flip or snap while turned
+      const turned = d.rotation
+        ? { box: resizeRotatedBox(d.box, d.corner, dx, dy, d.rotation, opts), flipX: false, flipY: false }
+        : flipping
+          ? resizeBoxFlip(d.box, d.corner, dx, dy, opts)
+          : { box: resizeBox(d.box, d.corner, dx, dy, opts), flipX: false, flipY: false };
+      let next = turned.box;
+      // Edges snap to other layers and ruler guides unless Ctrl is held; not while the ratio is kept, resizing from the centre, or flipping
+      if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping && !opts.keepRatio && !opts.fromCenter && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation) {
+        const page = doc.getNode(pageId);
+        const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const grid = parentGridLines(d.id);
+        const snapped = snapResize({ x: next.x + d.offset.x, y: next.y + d.offset.y, width: next.width, height: next.height }, d.corner, d.targets, 5 / viewport.zoom, {
+          xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],
+          ys: [...guideList.filter((g) => g.axis === "y").map((g) => g.position), ...grid.ys],
+        });
+        next = { x: snapped.box.x - d.offset.x, y: snapped.box.y - d.offset.y, width: snapped.box.width, height: snapped.box.height };
+        setGuides(snapped.guides);
+      } else setGuides([]);
+      if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation && !(opts.keepRatio && !locked)) next = snapBoxToPixels(next);
       doc.resizeNode(d.id, next);
+      if (flipping) {
+        const now = doc.getNode(d.id);
+        const wantX = d.flipX !== turned.flipX;
+        const wantY = d.flipY !== turned.flipY;
+        if (now && (!!now.flipX !== wantX || !!now.flipY !== wantY)) doc.setStyle(d.id, { flipX: wantX, flipY: wantY });
+      }
       const node = doc.getNode(d.id);
       if (node?.type === "TEXT") {
         // Figma: dragging the width gives auto height, dragging the height gives a fixed box.
@@ -335,12 +488,9 @@ export function Canvas() {
     } else if (d.kind === "line") {
       placeLine(d, w.x, w.y, e.shiftKey);
     } else if (d.kind === "draw") {
-      doc.resizeNode(d.id, {
-        x: Math.min(d.wx, w.x) - d.px,
-        y: Math.min(d.wy, w.y) - d.py,
-        width: Math.max(1, Math.abs(dx)),
-        height: Math.max(1, Math.abs(dy)),
-      });
+      const raw = drawBox({ x: d.wx, y: d.wy }, w, { shift: e.shiftKey, alt: e.altKey });
+      const drawn = { x: raw.x - d.px, y: raw.y - d.py, width: raw.width, height: raw.height };
+      doc.resizeNode(d.id, !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap ? snapBoxToPixels(drawn) : drawn);
     } else {
       const box = { x: Math.min(d.wx, w.x), y: Math.min(d.wy, w.y), width: Math.abs(dx), height: Math.abs(dy) };
       setMarquee(box);
@@ -363,9 +513,23 @@ export function Canvas() {
   const onPointerUp = () => {
     const d = drag.current;
     drag.current = null;
+    setChanging(false);
     setMarquee(null);
     setGuides([]);
     if (!d || d.kind === "pan" || d.kind === "marquee") return;
+    if (d.kind === "move") {
+      // Let go over another frame (or over empty canvas): the layers move into that frame (or out to the page), keeping their place on the canvas
+      const at = movePoint.current;
+      movePoint.current = null;
+      if (d.copied) {
+        // remember how far the Alt+drag copies went, so Ctrl+D repeats it
+        const ids = Object.keys(d.origins);
+        const n = doc.getNode(ids[0]!);
+        const o = d.origins[ids[0]!];
+        if (n && o) rememberCopyMove(ids, { x: Math.round((n.x - o.x) * 100) / 100, y: Math.round((n.y - o.y) * 100) / 100 });
+      }
+      if (at && !viewer && Math.hypot(at.x - d.wx, at.y - d.wy) > 4 / viewport.zoom) dropInto(doc, pageId, Object.keys(d.origins), at);
+    }
     if (d.kind === "line") {
       // A plain click makes a 100 px line.
       if (doc.getNode(d.id)!.width < 4) placeLine(d, d.wx + 100, d.wy, false);
@@ -388,17 +552,59 @@ export function Canvas() {
     doc.stopCapturing();
   };
 
+  /** Layout grid lines of the frame a layer sits in, when that frame shows grids (layers snap to column and row edges). */
+  const parentGridLines = (layerId: string | undefined) => {
+    const parentId = layerId ? doc.getNode(layerId)?.parentId : undefined;
+    const parent = parentId ? doc.getNode(parentId) : undefined;
+    const box = parentId ? doc.absoluteBox(parentId) : undefined;
+    return parent?.type === "FRAME" && box ? gridSnapLines(parent.layoutGrids, box) : { xs: [], ys: [] };
+  };
+
   // Drop image files from the desktop or another tab onto the canvas.
   const dropFiles = (e: React.DragEvent) => [...e.dataTransfer.files].filter((f) => isImageFile(f) || isVideoFile(f));
   const onDragOver = (e: React.DragEvent) => {
     if (viewer || devMode) return;
-    if ([...e.dataTransfer.items].some((i) => i.kind === "file" && (i.type.startsWith("image/") || i.type.startsWith("video/")))) {
+    if (e.dataTransfer.types.includes(COMPONENT_DRAG)) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      return;
+    }
+    if ([...e.dataTransfer.items].some((i) => maybeFarshaDragItem(i) || (i.kind === "file" && (i.type.startsWith("image/") || i.type.startsWith("video/"))))) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
     }
   };
   const onDrop = (e: React.DragEvent) => {
     if (viewer || devMode) return;
+    const componentId = e.dataTransfer.getData(COMPONENT_DRAG);
+    if (componentId) {
+      // dragged from the Assets panel: an instance lands under the pointer, inside the frame it is dropped on
+      e.preventDefault();
+      const main = doc.getNode(componentId);
+      if (main?.type !== "FRAME" || !main.isComponent) return;
+      const w = world(e);
+      const under = hitTest(doc, pageId, w.x, w.y);
+      let frame = under?.type === "FRAME" ? under : undefined;
+      // an instance cannot sit inside its own main component
+      if (frame && (frame.id === componentId || doc.isAncestor(componentId, frame.id))) frame = undefined;
+      const origin = frame ? (doc.absoluteBox(frame.id) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
+      try {
+        doc.stopCapturing();
+        const inst = doc.createInstance(componentId, frame?.id ?? pageId, Math.round(w.x - origin.x - main.width / 2), Math.round(w.y - origin.y - main.height / 2));
+        doc.stopCapturing();
+        select([inst]);
+      } catch (err) {
+        useEditor.getState().showToast(err instanceof Error ? `Couldn't do that: ${err.message}` : "Couldn't do that");
+      }
+      return;
+    }
+    // a .farsha file dropped on the canvas opens as a separate working copy, like File > Open local file
+    const farsha = [...e.dataTransfer.files].find((f) => isFarshaFileName(f.name));
+    if (farsha) {
+      e.preventDefault();
+      void openLocalFile(farsha);
+      return;
+    }
     const files = dropFiles(e);
     if (!files.length) return;
     e.preventDefault();
@@ -475,7 +681,7 @@ export function Canvas() {
     if (!n.visible || n.isMask) return null;
     const { color } = fillOf(n);
     const transform = nodeTransform(n);
-    const kids = renderChildren(doc.children(n.id));
+    const kids = renderChildren(doc.paintOrder(n.id));
     const video = n.type === "RECTANGLE" ? videoUrl(doc, n.videoAssetId) : undefined;
     if (video && n.type === "RECTANGLE") {
       // a video layer shows the first frame; it plays when the prototype is previewed
@@ -519,44 +725,54 @@ export function Canvas() {
           </g>
         );
       }
+      // several fills draw the text once per fill, bottom first
+      const fills = textFills(n);
       const tf = textFill(n);
+      const ts = textStroke(n);
       return (
         <g key={n.id} transform={transform} opacity={n.opacity} style={blendStyle(n)} filter={fxUrl(n)}>
           {fxDefs(n)}
-          {tf.defs && <defs dangerouslySetInnerHTML={{ __html: tf.defs }} />}
-          <text
-            xmlSpace="preserve"
-            x={textPlacement(n).x}
-            textAnchor={textPlacement(n).anchor}
-            direction={textPlacement(n).rtl ? "rtl" : undefined}
-            unicodeBidi={textPlacement(n).rtl ? "plaintext" : undefined}
-            y={textBaseline(n) + verticalTextOffset(n, layoutText(n, canvasMeasure).height)}
-            letterSpacing={n.letterSpacing || undefined}
-            fill={tf.defs ? tf.fill : color}
-            fontFamily={n.fontFamily}
-            fontSize={n.fontSize}
-            fontWeight={n.fontWeight}
-            {...textFontStyle(n)}
-          >
-            {(() => {
-              const layout = layoutText(n, canvasMeasure);
-              return layout.lines.flatMap((line, i) =>
-                lineSegments(line, layout.starts[i] ?? 0, n.runs).map((seg, j) => (
-                  <tspan
-                    key={`${i}-${j}`}
-                    x={j === 0 ? textPlacement(n).x + (textPlacement(n).anchor === "start" && !textPlacement(n).rtl ? layout.indent[i] ?? 0 : 0) : undefined}
-                    dy={j === 0 && i ? lineHeightPx(n) + (layout.lineGap[i] ?? 0) : undefined}
-                    wordSpacing={layout.wordSpacing[i] || undefined}
-                    fontWeight={seg.bold ? 700 : undefined}
-                    fontStyle={seg.italic ? "italic" : undefined}
-                    textDecoration={seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : undefined}
-                  >
-                    {seg.text}
-                  </tspan>
-                )),
-              );
-            })()}
-          </text>
+          {fills.map((f, fi) => f.defs && <defs key={`defs-${fi}`} dangerouslySetInnerHTML={{ __html: f.defs }} />)}
+          {ts?.defs && <defs dangerouslySetInnerHTML={{ __html: ts.defs }} />}
+          {(fills.length > 1 ? fills : [{ defs: tf.defs, fill: tf.fill, opacity: 1 }]).map((f, fi) => (
+            <text
+              key={`fill-${fi}`}
+              xmlSpace="preserve"
+              x={textPlacement(n).x}
+              textAnchor={textPlacement(n).anchor}
+              direction={textPlacement(n).rtl ? "rtl" : undefined}
+              unicodeBidi={textPlacement(n).rtl ? "plaintext" : undefined}
+              y={textBaseline(n) + verticalTextOffset(n, layoutText(n, canvasMeasure).height)}
+              letterSpacing={n.letterSpacing || undefined}
+              fill={f.defs ? f.fill : fills.length > 1 ? f.fill : color}
+              fillOpacity={fills.length > 1 && f.opacity !== 1 ? f.opacity : undefined}
+            {...(ts ? { stroke: ts.stroke, strokeWidth: ts.width, strokeOpacity: ts.opacity !== 1 ? ts.opacity : undefined, strokeLinejoin: "round" as const, paintOrder: ts.behind ? "stroke" : undefined } : {})}
+              fontFamily={n.fontFamily}
+              fontSize={n.fontSize}
+              fontWeight={n.fontWeight}
+              {...textFontStyle(n)}
+            >
+              {(() => {
+                const layout = layoutText(n, canvasMeasure);
+                return layout.lines.flatMap((line, i) =>
+                  lineSegments(line, layout.starts[i] ?? 0, n.runs).map((seg, j) => (
+                    <tspan
+                      key={`${i}-${j}`}
+                      x={j === 0 ? textPlacement(n).x + (textPlacement(n).anchor === "start" && !textPlacement(n).rtl ? layout.indent[i] ?? 0 : 0) : undefined}
+                      dy={j === 0 && i ? lineHeightPx(n) + (layout.lineGap[i] ?? 0) : undefined}
+                      wordSpacing={layout.wordSpacing[i] || undefined}
+                      fill={seg.color}
+                      fontWeight={seg.bold ? 700 : undefined}
+                      fontStyle={seg.italic ? "italic" : undefined}
+                      textDecoration={seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : undefined}
+                    >
+                      {seg.text}
+                    </tspan>
+                  )),
+                );
+              })()}
+            </text>
+          ))}
         </g>
       );
     }
@@ -650,6 +866,22 @@ export function Canvas() {
   const CURSORS: Record<Handle, string> = { n: "ns-resize", s: "ns-resize", e: "ew-resize", w: "ew-resize", nw: "nwse-resize", se: "nwse-resize", ne: "nesw-resize", sw: "nesw-resize" };
   const selNode = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
   const rotated = !!selNode && !!selNode.rotation;
+  // Several layers of one parent, none locked or turned: the box around them gets resize handles
+  const multiResizable =
+    selection.length > 1 && !devMode && !viewer && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1 && selection.every((id) => { const n = doc.getNode(id); return !!n && !n.locked && !n.rotation; });
+  // Several layers of one parent, none locked: they can be turned together
+  const multiTurnable = selection.length > 1 && !devMode && !viewer && new Set(selection.map((id) => doc.getNode(id)?.parentId)).size === 1 && selection.every((id) => !doc.getNode(id)?.locked);
+  // The handle of a gradient fill (the top one): a dot on the edge of the layer in the direction of the gradient
+  const gradientHandle = (() => {
+    if (!selNode || !sel || devMode || viewer || rotated || selNode.flipX || selNode.flipY || !("fills" in selNode) || !Array.isArray(selNode.fills)) return null;
+    for (let i = selNode.fills.length - 1; i >= 0; i--) {
+      const f = selNode.fills[i]!;
+      if (f.type === "SOLID" || f.type === "IMAGE") continue;
+      const a = (f.angle * Math.PI) / 180;
+      return { index: i, x: sel.x + sel.width / 2 + (Math.cos(a) * sel.width) / 2, y: sel.y + sel.height / 2 + (Math.sin(a) * sel.height) / 2 };
+    }
+    return null;
+  })();
   const corners: { c: Handle; x: number; y: number }[] = sel
     ? [
         { c: "nw", x: sel.x, y: sel.y },
@@ -664,6 +896,7 @@ export function Canvas() {
   return (
     <main
       className="canvas"
+      aria-label={`Design canvas, page ${doc.getNode(pageId)?.name ?? ""}. ${selection.length ? `${selection.length} ${selection.length === 1 ? "layer" : "layers"} selected.` : "Nothing selected."}`}
       style={{ cursor, background: doc.pageBackground(pageId) }}
       tabIndex={0}
       onKeyDown={(e) => e.code === "Space" && setSpaceDown(true)}
@@ -756,6 +989,15 @@ export function Canvas() {
               return <rect key={`slice-${n.id}`} x={abs.x} y={abs.y} width={abs.width} height={abs.height} fill="rgba(13,185,100,0.08)" stroke="#0db964" strokeWidth={1 / z} strokeDasharray={`${4 / z} ${3 / z}`} pointerEvents="none" />;
             })}
 
+          {!devMode &&
+            componentSetFrames(doc, pageId).map((f) => (
+              <g key={`set-${f.setId}`} pointerEvents="none">
+                <rect x={f.box.x} y={f.box.y} width={f.box.width} height={f.box.height} fill="none" stroke="#9747ff" strokeWidth={1 / z} strokeDasharray={`${6 / z} ${4 / z}`} rx={4 / z} />
+                <text x={f.box.x} y={f.box.y - 6 / z} fontSize={11 / z} fill="#9747ff">
+                  ❖ {f.name} · {f.count} variants
+                </text>
+              </g>
+            ))}
           {[...doc.children(pageId).filter((n) => n.type === "FRAME"), ...doc.children(pageId).filter((n) => n.type === "FRAME" && n.isSection).flatMap((s) => doc.children(s.id).filter((c) => c.type === "FRAME"))]
             .filter((n) => n.visible)
             .map((n) => {
@@ -772,6 +1014,7 @@ export function Canvas() {
                 fill={selection.includes(n.id) ? ACCENT : n.type === "FRAME" && n.isSection ? "#4b5563" : "#8c8c8c"}
               >
                 {n.flowStart ? "▶ " : ""}
+                {n.flowStart && n.type === "FRAME" && n.flowName?.trim() ? `${n.flowName.trim()} · ` : ""}
                 {n.name}
                 {n.devStatus && <tspan fill={n.devStatus === "READY" ? "#14ae5c" : "#7a5af8"}>{n.devStatus === "READY" ? "  ● Ready for dev" : "  ✓ Completed"}</tspan>}
               </text>
@@ -813,11 +1056,11 @@ export function Canvas() {
             </g>
           )}
 
-          {sel && (
+          {sel && !changing && (
             <g>
               <g transform={rotated && selNode ? `rotate(${selNode.rotation} ${sel.x + sel.width / 2} ${sel.y + sel.height / 2})` : undefined}>
               <rect x={sel.x} y={sel.y} width={sel.width} height={sel.height} fill="none" stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />
-              {selection.length === 1 && !devMode && !viewer &&
+              {(selection.length === 1 || multiTurnable) && !devMode && !viewer &&
                 // Invisible discs just outside the corners rotate the layer (Shift snaps to 15 degrees).
                 corners.map(({ c, x, y }) => (
                   <circle
@@ -830,7 +1073,7 @@ export function Canvas() {
                     style={{ cursor: "alias" }}
                   />
                 ))}
-              {selection.length === 1 && !devMode && !rotated &&
+              {(selection.length === 1 || multiResizable) && !devMode && !viewer &&
                 // Invisible strips along the four sides, so every edge can be dragged like in Figma.
                 ([
                   ["n", sel.x, sel.y - hs / 2, sel.width, hs],
@@ -840,7 +1083,7 @@ export function Canvas() {
                 ] as [Handle, number, number, number, number][]).map(([h, x, y, w, ht]) => (
                   <rect key={h} className="canvas__handle" data-corner={h} x={x} y={y} width={w} height={ht} fill="transparent" style={{ cursor: CURSORS[h] }} />
                 ))}
-              {selection.length === 1 && !devMode && !rotated &&
+              {(selection.length === 1 || multiResizable) && !devMode && !viewer &&
                 corners.map(({ c, x, y }) => (
                   <rect
                     key={c}
@@ -857,6 +1100,13 @@ export function Canvas() {
                   />
                 ))}
               </g>
+              {gradientHandle && sel && (
+                <g>
+                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
+                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
+                  <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
+                </g>
+              )}
               {showDimensions && (
               <g pointerEvents="none" transform={`translate(${sel.x + sel.width / 2} ${sel.y + sel.height + 14 / z})`}>
                 <rect x={-34 / z} y={-9 / z} width={68 / z} height={18 / z} rx={3 / z} fill={ACCENT} />
@@ -880,7 +1130,9 @@ export function Canvas() {
           {editing && editNode?.type === "TEXT" && editBox && (
             <foreignObject x={editBox.x} y={editBox.y} width={Math.max(editBox.width + 24, 160)} height={Math.max(editBox.height, editNode.fontSize * 1.6) + 8}>
               <textarea
+                ref={editRef}
                 className="canvas__text-edit"
+                onSelect={(e) => setEditSel([e.currentTarget.selectionStart, e.currentTarget.selectionEnd])}
                 autoFocus
                 rows={1}
                 spellCheck={spellCheck}
@@ -889,8 +1141,12 @@ export function Canvas() {
                 onPointerDown={(e) => e.stopPropagation()}
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => {
-                  doc.setText(editNode.id, { characters: e.target.value, runs: adjustRuns(editNode.runs, editNode.characters, e.target.value) });
+                  const el = e.currentTarget;
+                  const value = smartQuotes ? smartQuote(editNode.characters, el.value, el.selectionStart) : el.value;
+                  doc.setText(editNode.id, { characters: value, runs: adjustRuns(editNode.runs, editNode.characters, value) });
                   fitText(doc, editNode.id);
+                  const caret = el.selectionStart;
+                  requestAnimationFrame(() => el.setSelectionRange(caret, caret));
                 }}
                 onBlur={() => setEditing(null)}
                 onKeyDown={(e) => {
@@ -912,6 +1168,55 @@ export function Canvas() {
                   }
                 }}
               />
+            </foreignObject>
+          )}
+          {editing && editNode?.type === "TEXT" && editBox && (
+            // Colour for the selected characters: preset swatches that keep the focus in the text box, so the selection survives the click
+            <foreignObject x={editBox.x} y={editBox.y - 34 / z} width={300 / z} height={30 / z}>
+              <div className="textcolors" role="toolbar" aria-label="Text colour" style={{ transform: `scale(${1 / z})`, transformOrigin: "0 0", width: 300, height: 30 }} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.preventDefault()}>
+                {["#000000", "#ffffff", "#ef4444", "#f59e0b", "#22c55e", "#0ea5e9", "#8b5cf6", "#ec4899"].map((c) => {
+                  const [a, b] = editSel;
+                  const current = rangeColor(editNode.runs, editNode.characters.length, a, b);
+                  return (
+                    <button
+                      key={c}
+                      className={`textcolors__swatch${current === c ? " textcolors__swatch--on" : ""}`}
+                      style={{ background: c }}
+                      disabled={a === b}
+                      title={a === b ? "Select some characters first" : `Colour the selected characters ${c}`}
+                      aria-label={`Text colour ${c}`}
+                      onClick={() => {
+                        const el = editRef.current;
+                        const from = el ? el.selectionStart : a;
+                        const to = el ? el.selectionEnd : b;
+                        if (from === to) return;
+                        doc.stopCapturing();
+                        doc.setText(editNode.id, { runs: setRangeColor(editNode.runs, editNode.characters.length, from, to, c) });
+                        doc.stopCapturing();
+                        fitText(doc, editNode.id);
+                      }}
+                    />
+                  );
+                })}
+                <button
+                  className="textcolors__reset"
+                  disabled={editSel[0] === editSel[1]}
+                  title="Back to the layer's own colour"
+                  aria-label="Reset text colour"
+                  onClick={() => {
+                    const el = editRef.current;
+                    const from = el ? el.selectionStart : editSel[0];
+                    const to = el ? el.selectionEnd : editSel[1];
+                    if (from === to) return;
+                    doc.stopCapturing();
+                    doc.setText(editNode.id, { runs: setRangeColor(editNode.runs, editNode.characters.length, from, to, null) });
+                    doc.stopCapturing();
+                    fitText(doc, editNode.id);
+                  }}
+                >
+                  A⃠
+                </button>
+              </div>
             </foreignObject>
           )}
         </g>

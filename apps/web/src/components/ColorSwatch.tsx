@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { hexToHsv, hexToRgb, hslToRgb, hsvToHex, normalizeHex, rgbToHex, rgbToHsl, usedColors, type Hsv } from "../color-math";
+import { cssColor, hexToHsv, hexToRgb, parseCssColor, hslToRgb, hsvToHex, normalizeHex, rgbToHex, rgbToHsl, usedColors, type Hsv } from "../color-math";
 import { useEditor } from "../store";
 
-type Mode = "HEX" | "RGB" | "HSL";
+type Mode = "HEX" | "RGB" | "HSL" | "HSB" | "CSS";
 
 /**
  * A colour swatch that opens Figma's kind of picker: a saturation / brightness square, a hue slider, an eyedropper,
@@ -101,6 +101,8 @@ export function ColorSwatch({ value, onChange, className = "fill-row__swatch", l
               <option>HEX</option>
               <option>RGB</option>
               <option>HSL</option>
+              <option>HSB</option>
+              <option>CSS</option>
             </select>
             {mode === "HEX" && (
               <input
@@ -121,6 +123,40 @@ export function ColorSwatch({ value, onChange, className = "fill-row__swatch", l
             {mode === "RGB" &&
               (["r", "g", "b"] as const).map((k) => (
                 <input key={k} className="colorpick__field colorpick__field--num" type="number" aria-label={k.toUpperCase()} min={0} max={255} value={rgb[k]} onChange={(e) => { const c = rgbToHex({ ...rgb, [k]: num(Number(e.target.value), 0, 255) }); setHsv(hexToHsv(c)); onChange(c); }} />
+              ))}
+            {mode === "CSS" && (
+              <input
+                className="colorpick__field"
+                aria-label="CSS color"
+                defaultValue={cssColor(hex)}
+                key={hex}
+                onKeyDown={(e) => e.stopPropagation()}
+                onBlur={(e) => {
+                  const c = parseCssColor(e.currentTarget.value);
+                  if (c) {
+                    setHsv(hexToHsv(c));
+                    onChange(c);
+                  }
+                }}
+              />
+            )}
+            {mode === "HSB" &&
+              (["h", "s", "v"] as const).map((k) => (
+                <input
+                  key={k}
+                  className="colorpick__field colorpick__field--num"
+                  type="number"
+                  aria-label={k === "v" ? "B" : k.toUpperCase()}
+                  min={0}
+                  max={k === "h" ? 360 : 100}
+                  value={k === "h" ? Math.round(hsv.h) : Math.round(hsv[k] * 100)}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    const next = { ...hsv, [k]: k === "h" ? num(v, 0, 360) : num(v, 0, 100) / 100 };
+                    setHsv(next);
+                    onChange(hsvToHex(next));
+                  }}
+                />
               ))}
             {mode === "HSL" &&
               (["h", "s", "l"] as const).map((k) => (

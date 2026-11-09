@@ -1155,6 +1155,19 @@ body {
   z-index: 4;
   pointer-events: none;
 
+  &__input {
+    position: absolute;
+    width: 56px;
+    height: 20px;
+    padding: 0 4px;
+    border: 1px solid #0d99ff;
+    border-radius: 3px;
+    background: var(--c-panel, #2c2c2c);
+    color: inherit;
+    font-size: 11px;
+    pointer-events: auto;
+  }
+
   &__guides {
     position: absolute;
     inset: 0;
@@ -1542,6 +1555,12 @@ body {
   &__hotspot {
     position: absolute;
     cursor: pointer;
+
+    &--hint {
+      background: rgba(13, 153, 255, 0.25);
+      outline: 2px solid rgba(13, 153, 255, 0.9);
+      border-radius: 4px;
+    }
   }
 
   &__empty {

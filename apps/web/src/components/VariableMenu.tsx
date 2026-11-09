@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { DesignDoc } from "@farsha/design-core";
+import { variableAllowsUse, type ColorScope } from "@farsha/types";
 import { useEditor } from "../store";
 
 /** The "Apply variable" button next to a solid colour: pick a colour variable to bind the colour to. */
-export function VariableButton({ doc, onPick }: { doc: DesignDoc; onPick: (variableId: string) => void }) {
+export function VariableButton({ doc, onPick, use = "FILL" }: { doc: DesignDoc; onPick: (variableId: string) => void; use?: ColorScope }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLSpanElement>(null);
   const mode = doc.activeModeId();
-  const variables = doc.colorVariables();
+  const variables = doc.colorVariables().filter((v) => variableAllowsUse(v, use));
 
   useEffect(() => {
     if (!open) return;
@@ -36,7 +37,7 @@ export function VariableButton({ doc, onPick }: { doc: DesignDoc; onPick: (varia
                 setOpen(false);
               }}
             >
-              <span className="stylemenu__swatch" style={{ background: v.values[mode] ?? Object.values(v.values)[0] }} />
+              <span className="stylemenu__swatch" style={{ background: doc.resolveVariableValue(v, mode) }} />
               {v.name}
             </button>
           ))}
@@ -61,7 +62,7 @@ export function VariableChip({ doc, variableId, onDetach }: { doc: DesignDoc; va
   const mode = doc.activeModeId();
   return (
     <div className="stylepill">
-      <span className="stylemenu__swatch" style={{ background: v?.values[mode] ?? Object.values(v?.values ?? {})[0] ?? "transparent" }} />
+      <span className="stylemenu__swatch" style={{ background: v ? doc.resolveVariableValue(v, mode) : "transparent" }} />
       <span className="stylepill__name">{v?.name ?? "Missing variable"}</span>
       <button className="props__add" title="Detach variable" onClick={onDetach}>
         −

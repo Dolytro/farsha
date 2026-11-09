@@ -18,3 +18,4 @@ export * from "./pen-ops";
 export * from "./mask";
 export * from "./layout-grid";
 export * from "./boolean";
+export * from "./ellipse-arc";

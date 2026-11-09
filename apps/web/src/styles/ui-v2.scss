@@ -904,7 +904,46 @@ textarea:focus-visible {
   to { transform: none; opacity: 1; }
 }
 
+@keyframes presenter-hold {
+  from { opacity: 1; }
+  to { opacity: 1; }
+}
+@keyframes presenter-out-left {
+  to { transform: translateX(-100%); }
+}
+@keyframes presenter-out-right {
+  to { transform: translateX(100%); }
+}
+@keyframes presenter-out-top {
+  to { transform: translateY(-100%); }
+}
+@keyframes presenter-out-bottom {
+  to { transform: translateY(100%); }
+}
+@keyframes presenter-out-half-left { to { transform: translateX(-50%); } }
+@keyframes presenter-out-half-right { to { transform: translateX(50%); } }
+@keyframes presenter-out-half-top { to { transform: translateY(-50%); } }
+@keyframes presenter-out-half-bottom { to { transform: translateY(50%); } }
+@keyframes presenter-in-half-left { from { transform: translateX(-50%); } to { transform: none; } }
+@keyframes presenter-in-half-right { from { transform: translateX(50%); } to { transform: none; } }
+@keyframes presenter-in-half-top { from { transform: translateY(-50%); } to { transform: none; } }
+@keyframes presenter-in-half-bottom { from { transform: translateY(50%); } to { transform: none; } }
+// The frame that is leaving: drawn over the new one, centred like the stage.
+.presenter__leaving {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
 // Prototype overlays: the overlay frame sits centred on a dimmed backdrop.
+.presenter__leaving--under {
+  z-index: 0;
+}
+
 .presenter__overlay {
   position: absolute;
   inset: 0;
@@ -1405,4 +1444,112 @@ textarea:focus-visible {
 .layers__tools .layers__filter {
   flex: none;
   width: 92px;
+}
+
+.boxmodel__layer { padding: 4px 6px 6px; border-radius: 6px; font-size: 11px; text-align: center; }
+.boxmodel__label { text-align: left; opacity: 0.7; font-size: 10px; }
+.boxmodel__row { display: flex; justify-content: center; }
+.boxmodel__row--mid { align-items: stretch; justify-content: space-between; gap: 4px; }
+.boxmodel__row--mid > .boxmodel__layer, .boxmodel__row--mid > .boxmodel__content { flex: 1; }
+.boxmodel__num { min-width: 16px; align-self: center; }
+.boxmodel__content { padding: 8px 4px; border-radius: 4px; background: rgba(13, 153, 255, 0.35); align-self: center; }
+
+/* Accessibility: reduced motion (the Reduce motion preference, or the system setting). */
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Colour bar above the text editor (rich text colour for the selected characters). */
+.textcolors {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--c-panel, #fff);
+  border: 1px solid var(--c-border, #ddd);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+.textcolors__swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(128, 128, 128, 0.6);
+  cursor: pointer;
+}
+.textcolors__swatch:disabled,
+.textcolors__reset:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.textcolors__swatch--on {
+  outline: 2px solid var(--c-accent, #0d99ff);
+  outline-offset: 1px;
+}
+.textcolors__reset {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--c-text, inherit);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* Constraints diagram (Figma): clickable lines around and across the layer. */
+.cdiagram {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 8px;
+  border: 1px solid var(--c-border, #ddd);
+  border-radius: 6px;
+  background: var(--c-input, transparent);
+}
+.cdiagram__layer {
+  position: absolute;
+  inset: 24px;
+  border: 1px solid var(--c-muted, #888);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.cdiagram__line {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--c-border, #bbb);
+  cursor: pointer;
+}
+.cdiagram__line:hover {
+  background: var(--c-muted, #888);
+}
+.cdiagram__line--on,
+.cdiagram__line--on:hover {
+  background: var(--c-accent, #0d99ff);
+}
+
+/* Dragging a page onto another one puts it in that place. */
+.pages__item--drop {
+  box-shadow: inset 0 2px 0 var(--c-accent, #0d99ff);
 }

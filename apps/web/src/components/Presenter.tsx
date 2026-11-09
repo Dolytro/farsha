@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Easing, Interaction, OverlayPosition } from "@farsha/types";
 import { exportSvg } from "@farsha/canvas-engine";
 import { canvasMeasure } from "../text-layout";
-import { easingFn, followInteraction, hotspotsIn, layerBoxIn, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
+import { easingFn, flowsOf, followInteraction, hotspotsIn, layerBoxIn, mediaState, overlayTarget, safeUrl, stageLayout, videosIn, timedAndKeyIn, transitionAnimation } from "../prototype";
 import { frameAt, matchLayers, scratchCopy } from "../smart-animate";
 import { videoUrl } from "../video";
 import { useEditor } from "../store";
+import { Select } from "./Select";
 
 /** Full-screen prototype presentation: shows one frame at a time; layers with interactions react to clicks, hovering, time and keys. */
 export function Presenter() {
@@ -13,17 +14,67 @@ export function Presenter() {
   const setPresenting = useEditor((s) => s.setPresenting);
   const showToast = useEditor((s) => s.showToast);
   const device = useEditor((s) => s.presentDevice);
+  const background = useEditor((s) => s.presentBackground);
+  const zoom = useEditor((s) => s.presentScale);
   const doc = useEditor((s) => s.doc);
   const [current, setCurrent] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [hints, setHints] = useState(false);
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [overlay, setOverlay] = useState<string | null>(null);
   const [tween, setTween] = useState<{ svg: string; width: number; height: number } | null>(null);
   const tweenRun = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef(new Map<string, HTMLVideoElement>());
   const [overlayCfg, setOverlayCfg] = useState<{ dim: boolean; closeOnOutside: boolean; position: OverlayPosition }>({ dim: true, closeOnOutside: true, position: "CENTER" });
   const dragFrom = useRef<{ x: number; y: number } | null>(null);
   const [transition, setTransition] = useState<{ name: string; durationMs: number; timing: string; n: number } | null>(null);
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
+  // variable modes switched by "Set variable mode" are only for the presentation: the file's own mode comes back afterwards
+  const [modeTick, setModeTick] = useState(0);
+  // the old frame while it moves out (Move out and Push transitions)
+  const [leaving, setLeaving] = useState<{ svg: string; width: number; height: number; scale: number; stageWidth: number; stageHeight: number; name: string; under: boolean; ms: number; timing: string; n: number } | null>(null);
+  const startMode = useRef<Record<string, string> | null>(null);
+  // variables changed by "Set variable": their original values, put back when the presentation ends or restarts
+  const varBackup = useRef(new Map<string, Record<string, string>>());
+  // instances turned into another component by "Change to": their original component, put back like the variables
+  const instBackup = useRef(new Map<string, string>());
+  const restoreMode = () => {
+    for (const [id, componentId] of instBackup.current) {
+      try {
+        if (doc.hasNode(id)) doc.swapInstance(id, componentId);
+      } catch {
+        // the instance or its component was deleted meanwhile: nothing to restore
+      }
+    }
+    if (instBackup.current.size) setModeTick((n) => n + 1);
+    instBackup.current.clear();
+    for (const [id, values] of varBackup.current) doc.restoreVariableValues(id, values);
+    if (varBackup.current.size) setModeTick((n) => n + 1);
+    varBackup.current.clear();
+    if (startMode.current) {
+      let restored = false;
+      for (const [collectionId, modeId] of Object.entries(startMode.current)) {
+        if (doc.activeModeId(collectionId) === modeId) continue;
+        try {
+          doc.setActiveMode(modeId);
+          restored = true;
+        } catch {
+          // the mode was deleted meanwhile: nothing to restore
+        }
+      }
+      if (restored) setModeTick((n) => n + 1);
+    }
+  };
+  useEffect(() => {
+    if (!start) return;
+    startMode.current = Object.fromEntries(doc.collections().map((c) => [c.id, doc.activeModeId(c.id)]));
+    return () => {
+      restoreMode();
+      startMode.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [start]);
 
   useEffect(() => {
     setCurrent(start);
@@ -34,12 +85,13 @@ export function Presenter() {
     setTween(null);
   }, [start]);
 
-  const frame = useMemo(() => (start && current && doc.hasNode(current) ? exportSvg(doc, [current], { measure: canvasMeasure }) : null), [doc, current, start]);
-  const spots = useMemo(() => (start && current && doc.hasNode(current) ? hotspotsIn(doc, current) : []), [doc, current, start]);
-  const overlayFrame = useMemo(() => (start && overlay && doc.hasNode(overlay) ? exportSvg(doc, [overlay], { measure: canvasMeasure }) : null), [doc, overlay, start]);
-  const overlaySpots = useMemo(() => (start && overlay && doc.hasNode(overlay) ? hotspotsIn(doc, overlay) : []), [doc, overlay, start]);
-  const videos = useMemo(() => (start && current && doc.hasNode(current) ? videosIn(doc, current) : []), [doc, current, start]);
-  const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start]);
+  const frame = useMemo(() => (start && current && doc.hasNode(current) ? exportSvg(doc, [current], { measure: canvasMeasure }) : null), [doc, current, start, modeTick]);
+  const spots = useMemo(() => (start && current && doc.hasNode(current) ? hotspotsIn(doc, current) : []), [doc, current, start, modeTick]);
+  const overlayFrame = useMemo(() => (start && overlay && doc.hasNode(overlay) ? exportSvg(doc, [overlay], { measure: canvasMeasure }) : null), [doc, overlay, start, modeTick]);
+  const overlaySpots = useMemo(() => (start && overlay && doc.hasNode(overlay) ? hotspotsIn(doc, overlay) : []), [doc, overlay, start, modeTick]);
+  const flows = useMemo(() => (start ? flowsOf(doc) : []), [doc, start, modeTick]);
+  const videos = useMemo(() => (start && current && doc.hasNode(current) ? videosIn(doc, current) : []), [doc, current, start, modeTick]);
+  const auto = useMemo(() => (start && current && doc.hasNode(current) ? timedAndKeyIn(doc, current) : []), [doc, current, start, modeTick]);
 
   /** Smart animate: tween the paired layers of the next frame from where they were in this one. */
   const startTween = (from: string, to: string, durationMs: number, easing?: Easing) => {
@@ -61,7 +113,7 @@ export function Presenter() {
   };
 
   /** Run an interaction: open its address, or change frame with its transition. */
-  const run = (interaction: Interaction) => {
+  const run = (interaction: Interaction, layerId?: string) => {
     if (!current) return;
     if (interaction.action.type === "OPEN_URL") {
       const url = safeUrl(interaction.action.url);
@@ -73,9 +125,63 @@ export function Presenter() {
       setOverlay(null);
       return;
     }
+    if (interaction.action.type === "CHANGE_TO") {
+      const n = layerId ? doc.getNode(layerId) : undefined;
+      if (n?.type !== "FRAME" || !n.componentId) {
+        showToast("Change to only works on an instance");
+        return;
+      }
+      try {
+        if (!instBackup.current.has(n.id)) instBackup.current.set(n.id, n.componentId);
+        doc.swapInstance(n.id, interaction.action.componentId);
+        setModeTick((x) => x + 1);
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Couldn't change the component");
+      }
+      return;
+    }
+    if (interaction.action.type === "SET_VARIABLE") {
+      const a = interaction.action;
+      const v = doc.getColorVariable(a.variableId);
+      if (!v) {
+        showToast("That variable no longer exists");
+        return;
+      }
+      try {
+        if (!varBackup.current.has(v.id)) varBackup.current.set(v.id, { ...v.values });
+        doc.setVariableValue(v.id, doc.activeModeId(v.collectionId ?? "default"), a.value);
+        setModeTick((n) => n + 1);
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Couldn't set the variable");
+      }
+      return;
+    }
+    if (interaction.action.type === "SET_MODE") {
+      try {
+        doc.setActiveMode(interaction.action.modeId);
+        setModeTick((n) => n + 1);
+      } catch {
+        showToast("That variable mode no longer exists");
+      }
+      return;
+    }
+    if (interaction.action.type === "MEDIA") {
+      const a = interaction.action;
+      const el = videoRefs.current.get(a.targetId);
+      if (!el) {
+        showToast("The video to control is not in this frame");
+        return;
+      }
+      const next = mediaState(a.op, { paused: el.paused, muted: el.muted, time: el.currentTime, duration: el.duration }, a.seconds);
+      el.muted = next.muted;
+      if (next.time !== el.currentTime) el.currentTime = next.time;
+      if (next.paused) el.pause();
+      else void el.play().catch(() => undefined);
+      return;
+    }
     if (interaction.action.type === "SCROLL_TO") {
       const box = layerBoxIn(doc, current, interaction.action.targetId);
-      if (box && scrollRef.current) scrollRef.current.scrollTo({ top: box.y * scale, left: box.x * scale, behavior: "smooth" });
+      if (box && scrollRef.current) scrollRef.current.scrollTo({ top: box.y * scale, left: box.x * scale, behavior: useEditor.getState().prefs.reduceMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
       else showToast("The layer to scroll to is not in this frame");
       return;
     }
@@ -94,17 +200,22 @@ export function Presenter() {
     if (interaction.transition?.type === "SMART_ANIMATE") startTween(current, next.frame, interaction.transition.durationMs, interaction.transition.easing);
     const anim = transitionAnimation(interaction.transition);
     setTransition(anim ? { ...anim, n: Date.now() } : null);
+    if (anim?.leave && frame) {
+      const n = Date.now();
+      setLeaving({ svg: frame.svg, width: frame.width, height: frame.height, scale, stageWidth, stageHeight, name: anim.leave, under: !!anim.leaveUnder, ms: anim.durationMs, timing: anim.timing, n });
+      setTimeout(() => setLeaving((l) => (l && l.n === n ? null : l)), anim.durationMs + 50);
+    } else setLeaving(null);
     setCurrent(next.frame);
     setHistory(next.history);
   };
 
   /** Mouse handlers of a hotspot: click, hover, or a drag of more than 10 pixels. */
-  const spotEvents = (interaction: Interaction) => {
-    if (interaction.trigger === "ON_CLICK") return { onClick: () => run(interaction) };
-    if (interaction.trigger === "ON_HOVER" || interaction.trigger === "ON_MOUSE_ENTER") return { onMouseEnter: () => run(interaction) };
-    if (interaction.trigger === "ON_MOUSE_LEAVE") return { onMouseLeave: () => run(interaction) };
-    if (interaction.trigger === "ON_MOUSE_DOWN") return { onPointerDown: () => run(interaction) };
-    if (interaction.trigger === "ON_MOUSE_UP") return { onPointerUp: () => run(interaction) };
+  const spotEvents = (interaction: Interaction, layerId?: string) => {
+    if (interaction.trigger === "ON_CLICK") return { onClick: () => run(interaction, layerId) };
+    if (interaction.trigger === "ON_HOVER" || interaction.trigger === "ON_MOUSE_ENTER") return { onMouseEnter: () => run(interaction, layerId) };
+    if (interaction.trigger === "ON_MOUSE_LEAVE") return { onMouseLeave: () => run(interaction, layerId) };
+    if (interaction.trigger === "ON_MOUSE_DOWN") return { onPointerDown: () => run(interaction, layerId) };
+    if (interaction.trigger === "ON_MOUSE_UP") return { onPointerUp: () => run(interaction, layerId) };
     if (interaction.trigger === "ON_DRAG") {
       return {
         onPointerDown: (e: React.PointerEvent) => {
@@ -113,7 +224,7 @@ export function Presenter() {
         onPointerUp: (e: React.PointerEvent) => {
           const from = dragFrom.current;
           dragFrom.current = null;
-          if (from && Math.hypot(e.clientX - from.x, e.clientY - from.y) > 10) run(interaction);
+          if (from && Math.hypot(e.clientX - from.x, e.clientY - from.y) > 10) run(interaction, layerId);
         },
       };
     }
@@ -130,10 +241,22 @@ export function Presenter() {
         else setPresenting(null);
         return;
       }
+      if ((e.key === "r" || e.key === "R") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Figma: R restarts the prototype from its starting frame
+        e.preventDefault();
+        restoreMode();
+        setCurrent(start);
+        setHistory([]);
+        setOverlay(null);
+        setTransition(null);
+        tweenRun.current++;
+        setTween(null);
+        return;
+      }
       const bound = auto.find((a) => a.interaction.trigger === "ON_KEY" && a.interaction.key === e.key);
       if (bound) {
         e.preventDefault();
-        run(bound.interaction);
+        run(bound.interaction, bound.id);
       } else if (e.key === "Backspace" || e.key === "ArrowLeft") {
         e.preventDefault();
         setHistory((h) => {
@@ -156,7 +279,7 @@ export function Presenter() {
   // After-delay interactions start when their frame appears.
   useEffect(() => {
     if (!start) return;
-    const timers = auto.filter((a) => a.interaction.trigger === "AFTER_DELAY").map((a) => setTimeout(() => run(a.interaction), Math.max(0, a.interaction.delayMs ?? 0)));
+    const timers = auto.filter((a) => a.interaction.trigger === "AFTER_DELAY").map((a) => setTimeout(() => run(a.interaction, a.id), Math.max(0, a.interaction.delayMs ?? 0)));
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [start, auto, current]);
@@ -166,17 +289,59 @@ export function Presenter() {
   const currentNode = current ? doc.getNode(current) : undefined;
   const scrollMode = currentNode?.type === "FRAME" && currentNode.overflowScroll ? currentNode.overflowScroll : "NONE";
   const shown = tween ?? frame;
-  const { scale, stageWidth, stageHeight } = frame ? stageLayout(frame, size, scrollMode) : { scale: 1, stageWidth: 0, stageHeight: 0 };
+  const { scale, stageWidth, stageHeight } = frame ? stageLayout(frame, size, scrollMode, zoom) : { scale: 1, stageWidth: 0, stageHeight: 0 };
 
   return (
-    <div className="presenter" role="dialog" aria-label="Prototype">
+    <div className="presenter" role="dialog" aria-label="Prototype" style={{ background }}>
       <button className="presenter__close" onClick={() => setPresenting(null)} title="Exit (Esc)">
         ✕
       </button>
+      {flows.length > 1 && (
+        <div className="presenter__flows" style={{ position: "absolute", top: 12, left: 12, zIndex: 5, width: 200 }}>
+          <Select
+            className="field__select field__select--wide"
+            aria-label="Go to flow"
+            title="Jump to another flow"
+            value=""
+            onChange={(e) => {
+              const flow = flows.find((f) => f.frameId === e.target.value);
+              if (!flow) return;
+              tweenRun.current++;
+              setTween(null);
+              setOverlay(null);
+              setTransition(null);
+              setLeaving(null);
+              setHistory([]);
+              setCurrent(flow.frameId);
+            }}
+          >
+            <option value="">Go to flow…</option>
+            {flows.map((f) => (
+              <option key={f.frameId} value={f.frameId}>
+                {f.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
+      {leaving && (
+        <div className={`presenter__leaving${leaving.under ? " presenter__leaving--under" : ""}`} key={`leave-${leaving.n}`} style={{ width: leaving.stageWidth, height: leaving.stageHeight }}>
+          <div style={{ width: leaving.stageWidth, height: leaving.stageHeight, animation: `${leaving.name} ${leaving.ms}ms ${leaving.timing} both` }}>
+            <div className="presenter__frame" style={{ width: leaving.width, height: leaving.height, transform: `scale(${leaving.scale})` }} dangerouslySetInnerHTML={{ __html: leaving.svg }} />
+          </div>
+        </div>
+      )}
       {frame ? (
         <div
           key={transition?.n ?? 0}
           className={`presenter__stage${device !== "none" ? ` presenter__stage--${device}` : ""}`}
+          onClick={(e) => {
+            // Figma flashes the clickable areas when a click hits nothing
+            if ((e.target as HTMLElement).closest(".presenter__hotspot")) return;
+            setHints(true);
+            clearTimeout(hintTimer.current);
+            hintTimer.current = setTimeout(() => setHints(false), 700);
+          }}
           style={{ width: stageWidth, height: stageHeight, animation: transition ? `${transition.name} ${transition.durationMs}ms ${transition.timing} both` : undefined }}
         >
           <div className="presenter__scroll" ref={scrollRef} style={{ height: stageHeight, width: stageWidth, overflowY: scrollMode === "VERTICAL" || scrollMode === "BOTH" ? "auto" : "hidden", overflowX: scrollMode === "HORIZONTAL" || scrollMode === "BOTH" ? "auto" : "hidden" }}>
@@ -185,15 +350,15 @@ export function Presenter() {
           {videos.map((v) => {
             const src = videoUrl(doc, v.assetId);
             return src ? (
-              <video key={`video-${v.id}`} src={src} autoPlay muted loop playsInline controls style={{ position: "absolute", left: v.box.x * scale, top: v.box.y * scale, width: v.box.width * scale, height: v.box.height * scale, objectFit: "cover", background: "#000" }} />
+              <video key={`video-${v.id}`} ref={(el) => { if (el) videoRefs.current.set(v.id, el); else videoRefs.current.delete(v.id); }} src={src} autoPlay muted loop playsInline controls style={{ position: "absolute", left: v.box.x * scale, top: v.box.y * scale, width: v.box.width * scale, height: v.box.height * scale, objectFit: "cover", background: "#000" }} />
             ) : null;
           })}
           {spots.map((h, i) => (
             <div
               key={`${h.id}-${i}`}
-              className="presenter__hotspot"
+              className={`presenter__hotspot${hints ? " presenter__hotspot--hint" : ""}`}
               style={{ left: h.box.x * scale, top: h.box.y * scale, width: h.box.width * scale, height: h.box.height * scale }}
-              {...spotEvents(h.interaction)}
+              {...spotEvents(h.interaction, h.id)}
             />
           ))}
           </div>
@@ -209,9 +374,9 @@ export function Presenter() {
                 {overlaySpots.map((h, i) => (
                   <div
                     key={`o-${h.id}-${i}`}
-                    className="presenter__hotspot"
+                    className={`presenter__hotspot${hints ? " presenter__hotspot--hint" : ""}`}
                     style={{ left: h.box.x * scale, top: h.box.y * scale, width: h.box.width * scale, height: h.box.height * scale }}
-                    {...spotEvents(h.interaction)}
+                    {...spotEvents(h.interaction, h.id)}
                   />
                 ))}
               </div>

@@ -1,6 +1,16 @@
 import { cssBlendMode, paintColor, type DesignNode, type Paint } from "@farsha/types";
+import { generateAndroidXml } from "./androidxml";
+import { generateCompose } from "./compose";
+import { generateFlutter } from "./flutter";
+import { generateSwiftUI } from "./swiftui";
+import { generateUIKit } from "./uikit";
 
-export type Language = "css" | "html" | "react" | "tailwind";
+export { generateSwiftUI, swiftColor, swiftPaint } from "./swiftui";
+export { composeColor, composePaint, generateCompose } from "./compose";
+export { generateUIKit, uiColor, uikitClassName } from "./uikit";
+export { androidColor, generateAndroidXml } from "./androidxml";
+
+export type Language = "css" | "html" | "react" | "vue" | "tailwind" | "swiftui" | "uikit" | "compose" | "androidxml" | "flutter";
 export type Decl = [prop: string, value: string];
 export type ChildrenOf = (id: string) => DesignNode[];
 
@@ -17,7 +27,22 @@ export function toRgba(hex: string, opacity = 1): string {
 /** CSS background value of a paint (solid colour or a linear/radial gradient). */
 export function paintCss(p: Paint): string {
   if (p.type === "SOLID") return toRgba(p.color, p.opacity);
-  if (p.type === "IMAGE") return `url(image) ${p.scaleMode === "STRETCH" ? "0 0 / 100% 100%" : `center / ${p.scaleMode === "FIT" ? "contain" : "cover"}`} no-repeat`;
+  if (p.type === "IMAGE") {
+    if (p.scaleMode === "TILE") {
+      const k = typeof p.tileScale === "number" && Number.isFinite(p.tileScale) && p.tileScale > 0 ? Math.min(10, Math.max(0.01, p.tileScale)) : 1;
+      const w = Math.round((p.imageWidth && p.imageWidth > 0 ? p.imageWidth : 256) * k);
+      const h = Math.round((p.imageHeight && p.imageHeight > 0 ? p.imageHeight : 256) * k);
+      return `url(image) 0 0 / ${w}px ${h}px repeat`;
+    }
+    if (p.scaleMode === "CROP") {
+      // approximate: the picture fills the layer's width at the zoom, centred, then moved
+      const zoom = typeof p.cropZoom === "number" && Number.isFinite(p.cropZoom) ? Math.min(10, Math.max(0.1, p.cropZoom)) : 1;
+      const dx = typeof p.cropX === "number" && Number.isFinite(p.cropX) ? Math.round(p.cropX) : 0;
+      const dy = typeof p.cropY === "number" && Number.isFinite(p.cropY) ? Math.round(p.cropY) : 0;
+      return `url(image) calc(50% + ${dx}px) calc(50% + ${dy}px) / ${Math.round(zoom * 100)}% auto no-repeat`;
+    }
+    return `url(image) ${p.scaleMode === "STRETCH" ? "0 0 / 100% 100%" : `center / ${p.scaleMode === "FIT" ? "contain" : "cover"}`} no-repeat`;
+  }
   const stops = [...p.stops]
     .sort((a, b) => a.position - b.position)
     .map((s) => `${toRgba(s.color, s.opacity * p.opacity)} ${Math.round(s.position * 100)}%`)
@@ -74,12 +99,24 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   if (node.type === "TEXT") {
     const fill = node.fills[0];
     if (fill) d.push(["color", toRgba(paintColor(fill), fill.opacity)]);
+    // gradient text: the gradient is the background, clipped to the letters
+    if (fill && fill.type !== "SOLID" && fill.type !== "IMAGE") d.push(["background", paintCss(fill)], ["-webkit-background-clip", "text"], ["background-clip", "text"], ["-webkit-text-fill-color", "transparent"]);
     d.push(["font-family", node.fontFamily], ["font-size", px(node.fontSize)], ["font-weight", String(node.fontWeight)]);
     d.push(["line-height", node.lineHeight === "AUTO" ? "normal" : px(node.lineHeight)]);
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
     if (node.italic) d.push(["font-style", "italic"]);
-    if (node.textDecoration === "UNDERLINE") d.push(["text-decoration", "underline"]);
-    else if (node.textDecoration === "STRIKETHROUGH") d.push(["text-decoration", "line-through"]);
+    // an outline on the letters: centred is a plain text stroke, outside is a double-width one painted behind the fill
+    const outline = node.strokes?.[0];
+    if (outline && outline.type !== "IMAGE" && (node.strokeWidth ?? 1) > 0) {
+      const w = node.strokeWidth ?? 1;
+      const outside = node.strokeAlign === "OUTSIDE";
+      d.push(["-webkit-text-stroke", `${px(outside ? w * 2 : w)} ${toRgba(paintColor(outline), outline.opacity)}`]);
+      if (outside) d.push(["paint-order", "stroke fill"]);
+    }
+    const decoStyle = node.textDecorationStyle === "DOTTED" ? " dotted" : node.textDecorationStyle === "WAVY" ? " wavy" : "";
+    if (node.textDecoration === "UNDERLINE") d.push(["text-decoration", `underline${decoStyle}`]);
+    else if (node.textDecoration === "STRIKETHROUGH") d.push(["text-decoration", `line-through${decoStyle}`]);
+    if (node.textCase === "SMALL_CAPS") d.push(["font-variant", "small-caps"]);
     if (node.textCase === "UPPER") d.push(["text-transform", "uppercase"]);
     else if (node.textCase === "LOWER") d.push(["text-transform", "lowercase"]);
     else if (node.textCase === "TITLE") d.push(["text-transform", "capitalize"]);
@@ -100,14 +137,49 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   else if ("cornerRadii" in node && node.cornerRadii?.length === 4 && node.cornerRadii.some((r) => r > 0)) d.push(["border-radius", node.cornerRadii.map(px).join(" ")]);
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
   if ("strokes" in node && node.strokes?.[0] && node.strokeWidth !== undefined) {
-    d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity)}`]);
-    if ("strokeSides" in node && node.strokeSides?.length === 4) d.push(["border-width", node.strokeSides.map(px).join(" ")]);
-    if (node.strokeDash?.some((v) => v > 0)) d.push(["border-style", (node.strokeDash[0] ?? 0) <= node.strokeWidth ? "dotted" : "dashed"]);
+    const color = toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity);
+    const align = "strokeAlign" in node ? node.strokeAlign : undefined;
+    if (align === "OUTSIDE") {
+      // an outside stroke sits beyond the box: an outline (it follows the corner radius in current browsers)
+      d.push(["outline", `${px(node.strokeWidth)} solid ${color}`]);
+    } else if (align === "CENTER") {
+      // a centred stroke is half inside (border) and half outside (outline)
+      d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth / 2)} solid ${color}`], ["outline", `${px(node.strokeWidth / 2)} solid ${color}`]);
+    } else {
+      d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${color}`]);
+      // a gradient stroke: transparent border, the fill clipped to the padding box and the gradient to the border box
+      const st = node.strokes[0];
+      if (st.type === "GRADIENT_LINEAR" || st.type === "GRADIENT_RADIAL") {
+        const own = d.findIndex(([k]) => k === "background");
+        const fillCss = own >= 0 ? d[own]![1] : "linear-gradient(transparent, transparent)";
+        const combined = `${fillCss} padding-box, ${paintCss(st)} border-box`;
+        if (own >= 0) d[own] = ["background", combined];
+        else d.push(["background", combined]);
+        d[d.findIndex(([k]) => k === "border")] = ["border", `${px(node.strokeWidth)} solid transparent`];
+      }
+      if ("strokeSides" in node && node.strokeSides?.length === 4) d.push(["border-width", node.strokeSides.map(px).join(" ")]);
+      if (node.strokeDash?.some((v) => v > 0)) d.push(["border-style", (node.strokeDash[0] ?? 0) <= node.strokeWidth ? "dotted" : "dashed"]);
+    }
+    if (align && align !== "INSIDE" && node.strokeDash?.some((v) => v > 0)) {
+      const style = (node.strokeDash[0] ?? 0) <= node.strokeWidth ? "dotted" : "dashed";
+      for (const [i, [k, v]] of d.entries()) if (k === "outline" || k === "border") d[i] = [k, v.replace(" solid ", ` ${style} `)];
+    }
   }
   if (node.type === "FRAME" && node.clipsContent) d.push(["overflow", "hidden"]);
   if (node.type === "FRAME" && (node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL")) {
     // Auto layout is a flex container; its children are in the flow instead of absolutely positioned.
     const justify = { MIN: "flex-start", CENTER: "center", MAX: "flex-end", SPACE_BETWEEN: "space-between" } as const;
+    const gridCols = node.layoutMode === "HORIZONTAL" && node.layoutWrap ? Math.floor(node.gridColumns ?? 0) : 0;
+    if (gridCols >= 1) {
+      // Grid flow: a fixed number of columns, each as wide as its widest child
+      const place = { MIN: "start", CENTER: "center", MAX: "end", SPACE_BETWEEN: "start" } as const;
+      d.push(["display", "grid"], ["grid-template-columns", `repeat(${gridCols}, max-content)`], ["gap", `${px(node.counterSpacing ?? node.itemSpacing ?? 0)} ${px(node.itemSpacing ?? 0)}`]);
+      const gridPad = [node.paddingTop, node.paddingRight, node.paddingBottom, node.paddingLeft].map((v) => v ?? 0);
+      if (gridPad.some((v) => v > 0)) d.push(["padding", gridPad.map(px).join(" ")]);
+      d.push(["justify-items", place[node.primaryAxisAlign ?? "MIN"]], ["align-items", node.counterAxisAlign === "BASELINE" ? "baseline" : place[node.counterAxisAlign ?? "MIN"]]);
+      effectDecls();
+      return d;
+    }
     d.push(["display", "flex"], ["flex-direction", node.layoutMode === "HORIZONTAL" ? "row" : "column"]);
     if (node.layoutWrap) {
       // wrapped lines are spaced by the line gap: row-gap / column-gap swap with the direction
@@ -117,7 +189,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     } else if (node.itemSpacing) d.push(["gap", px(node.itemSpacing)]);
     const pad = [node.paddingTop, node.paddingRight, node.paddingBottom, node.paddingLeft].map((v) => v ?? 0);
     if (pad.some((v) => v > 0)) d.push(["padding", pad.map(px).join(" ")]);
-    d.push(["justify-content", justify[node.primaryAxisAlign ?? "MIN"]], ["align-items", justify[node.counterAxisAlign ?? "MIN"]]);
+    d.push(["justify-content", justify[node.primaryAxisAlign ?? "MIN"]], ["align-items", node.counterAxisAlign === "BASELINE" ? "baseline" : justify[node.counterAxisAlign ?? "MIN"]]);
   }
   effectDecls();
   return d;
@@ -149,6 +221,10 @@ export function tailwindClass([prop, value]: Decl): string {
       const [w, , ...color] = value.split(" ");
       return `border-[${w}] border-solid border-[${tw(color.join(" "))}]`;
     }
+    case "outline": {
+      const [w, style, ...color] = value.split(" ");
+      return `outline outline-[${w}] ${style === "solid" ? "outline-solid" : style === "dotted" ? "outline-dotted" : "outline-dashed"} outline-[${tw(color.join(" "))}]`;
+    }
     case "overflow":
       return "overflow-hidden";
     case "color":
@@ -170,8 +246,17 @@ export function tailwindClass([prop, value]: Decl): string {
   }
 }
 
-const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "node";
-const pascal = (name: string) => name.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(" ").map((w) => w[0]!.toUpperCase() + w.slice(1)).join("") || "Component";
+const slug = (name: string) => {
+  const full = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  // a long text layer would make a class name as long as the text: keep a few words
+  const short = full.length > 32 ? (full.slice(0, 32).replace(/-[^-]*$/, "") || full.slice(0, 32)) : full;
+  return short || "node";
+};
+const pascal = (name: string) => {
+  const id = name.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(" ").filter(Boolean).map((w) => w[0]!.toUpperCase() + w.slice(1)).join("") || "Component";
+  // a component name cannot start with a digit
+  return /^[0-9]/.test(id) ? `C${id}` : id;
+};
 const camel = (prop: string) => prop.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const escJsx = (s: string) => escHtml(s).replace(/[{}]/g, (c) => (c === "{" ? "&#123;" : "&#125;"));
@@ -222,15 +307,25 @@ function jsx(w: Walked, depth: number): string {
 
 /** Generate code for a node and its visible descendants in the requested language. */
 export function generateCode(node: DesignNode, children: ChildrenOf, language: Language): string {
+  if (language === "swiftui") return generateSwiftUI(node, children);
+  if (language === "compose") return generateCompose(node, children);
+  if (language === "uikit") return generateUIKit(node, children);
+  if (language === "androidxml") return generateAndroidXml(node, children);
+  if (language === "flutter") return generateFlutter(node, children);
   const root = walk(node, children, false, new Map());
   switch (language) {
     case "css":
       return css(root);
     case "html":
       return `${html(root, 0, (w) => w.cls)}\n\n<style>\n${css(root)}\n</style>`;
+    case "vue":
+      // a single-file component: the markup indented inside <template>, the rules in a scoped style block
+      return `<template>\n${html(root, 1, (w) => w.cls)}\n</template>\n\n<style scoped>\n${css(root)}\n</style>`;
     case "tailwind":
       return html(root, 0, (w) => w.decls.map(tailwindClass).join(" "));
     case "react":
       return `export function ${pascal(node.name)}() {\n  return (\n${jsx(root, 2)}\n  );\n}`;
+    default:
+      return "";
   }
 }

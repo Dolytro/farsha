@@ -154,3 +154,49 @@ describe('size limits', () => {
     expect(r.height).toBe(90);
   });
 });
+
+describe('grid flow (wrap with a fixed number of columns)', () => {
+  const kids = [
+    { id: 'a', width: 40, height: 20 },
+    { id: 'b', width: 60, height: 30 },
+    { id: 'c', width: 50, height: 10 },
+    { id: 'd', width: 20, height: 40 },
+    { id: 'e', width: 30, height: 20 },
+  ];
+  const frame = { layoutMode: 'HORIZONTAL' as const, layoutWrap: true, gridColumns: 2, itemSpacing: 10, counterSpacing: 6, paddingLeft: 5, paddingTop: 5, paddingRight: 5, paddingBottom: 5, width: 300, height: 300, primarySizing: 'HUG' as const, counterSizing: 'HUG' as const };
+
+  it('lines children up in columns as wide as their widest child, rows as tall as their tallest', () => {
+    const r = computeAutoLayout(frame, kids)!;
+    // columns: a, c, e -> 50 wide, 40 wide? (a 40, c 50, e 30) = 50 ; b, d -> 60 wide
+    expect(r.positions.a).toEqual({ x: 5, y: 5 });
+    expect(r.positions.b).toEqual({ x: 5 + 50 + 10, y: 5 });
+    expect(r.positions.c).toEqual({ x: 5, y: 5 + 30 + 6 });
+    expect(r.positions.d).toEqual({ x: 5 + 50 + 10, y: 5 + 30 + 6 });
+    expect(r.positions.e).toEqual({ x: 5, y: 5 + 30 + 6 + 40 + 6 });
+  });
+
+  it('a hugging frame takes the size of the grid plus padding', () => {
+    const r = computeAutoLayout(frame, kids)!;
+    expect(r.width).toBe(5 + 50 + 10 + 60 + 5);
+    expect(r.height).toBe(5 + 30 + 6 + 40 + 6 + 20 + 5);
+  });
+
+  it('a fixed frame keeps its size, and centre alignment centres children in their cells', () => {
+    const r = computeAutoLayout({ ...frame, primarySizing: 'FIXED', counterSizing: 'FIXED', primaryAxisAlign: 'CENTER', counterAxisAlign: 'CENTER' }, kids)!;
+    expect([r.width, r.height]).toEqual([300, 300]);
+    expect(r.positions.a).toEqual({ x: 5 + (50 - 40) / 2, y: 5 + (30 - 20) / 2 });
+  });
+
+  it('children that fill keep their size in a grid, and columns beyond the child count are dropped', () => {
+    const r = computeAutoLayout({ ...frame, gridColumns: 9 }, [{ id: 'a', width: 10, height: 10, fillWidth: true }, { id: 'b', width: 10, height: 10 }])!;
+    expect(r.sizes).toEqual({});
+    expect(r.positions.b).toEqual({ x: 5 + 10 + 10, y: 5 });
+  });
+
+  it('without gridColumns, or without wrap, the layout is the ordinary one', () => {
+    const wrapped = computeAutoLayout({ ...frame, gridColumns: 0, primarySizing: 'FIXED', width: 100 }, kids)!;
+    expect(wrapped.positions.c!.y).toBeGreaterThan(5);
+    const noWrap = computeAutoLayout({ ...frame, layoutWrap: false }, kids)!;
+    expect(noWrap.positions.b).toEqual({ x: 5 + 40 + 10, y: 5 });
+  });
+});

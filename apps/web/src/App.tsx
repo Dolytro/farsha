@@ -16,6 +16,7 @@ import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
 import { placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
+import { afterDuplicate, duplicateOffset } from "./duplicate-offset";
 import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { CommandPalette } from "./components/CommandPalette";
 import { Presenter } from "./components/Presenter";
@@ -26,6 +27,7 @@ import { FindBar } from "./components/FindBar";
 import { CommentPopover } from "./components/CommentPopover";
 import { PreferencesDialog } from "./components/PreferencesDialog";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
+import { BatchRenameDialog } from "./components/BatchRenameDialog";
 import { saveVersion } from "./versions";
 import { startFrame } from "./prototype";
 import { buildCommands } from "./commands";
@@ -45,7 +47,7 @@ import { fitText as refitText } from "./text-layout";
 import { setTextAlign, toggleTextStyle } from "./text-actions";
 import { wrapInSection } from "./section-actions";
 import { placeImagePicker } from "./place-image";
-import { removePaint, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
+import { arrowRotation, removePaint, rotateSelectionBy, setOpacityFromKey, swapFillAndStroke } from "./object-actions";
 import { pickColorFromScreen } from "./eyedropper";
 
 /** Run a "Copy as ..." action and report the result in a toast. */
@@ -94,6 +96,12 @@ export function App() {
   const hideLeft = useEditor((s) => s.hideLeftPanel);
   const hideRight = useEditor((s) => s.hideRightPanel);
   const preset = useEditor((s) => s.prefs.preset);
+  const reduceMotion = useEditor((s) => s.prefs.reduceMotion);
+  // Accessibility: the stylesheet turns animations and transitions off under data-motion="reduce".
+  useEffect(() => {
+    if (reduceMotion) document.documentElement.dataset.motion = "reduce";
+    else delete document.documentElement.dataset.motion;
+  }, [reduceMotion]);
   // The interface preset is a data attribute that the stylesheet reads (density, roundness, accent, panel width).
   useEffect(() => {
     document.documentElement.dataset.ui = preset;
@@ -217,9 +225,17 @@ export function App() {
   // Shared link: load the file once. Editor: autosave to Drive while signed in.
   useEffect(() => {
     if (route.kind === "viewer") {
+      const wanted = route.nodeId;
       void loadShared(route.fileId).then(() => {
         const s = useEditor.getState();
-        const v = zoomFit(s.doc, s.pageId, []);
+        // a link to a layer opens on it: its page, selected and zoomed to
+        const target = wanted && s.doc.hasNode(wanted) ? wanted : undefined;
+        const page = target ? s.doc.pages().find((p) => p.id === target || s.doc.isAncestor(p.id, target)) : undefined;
+        if (target && page) {
+          if (page.id !== s.pageId) s.setPage(page.id);
+          s.select([target]);
+        }
+        const v = zoomFit(s.doc, page?.id ?? s.pageId, target && page ? [target] : []);
         if (v) s.setViewport(v);
       });
       return;
@@ -295,6 +311,10 @@ export function App() {
         // Enter on a pen path edits its points
         e.preventDefault();
         s.setEditingPath(selection[0]!);
+      } else if (key === "enter" && !mod && !e.altKey && !e.shiftKey && selection.length === 1 && !s.viewer && !s.devMode && doc.getNode(selection[0]!)?.type === "TEXT") {
+        // Enter on a text layer edits its text (Figma)
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("farsha:edit-text", { detail: selection[0] }));
       } else if (key === "enter" && !mod && !e.altKey && selection.length && !s.viewer) {
         // Enter selects the children, Shift+Enter the parent
         e.preventDefault();
@@ -410,6 +430,10 @@ export function App() {
       } else if (mod && key === "z") {
         e.preventDefault();
         e.shiftKey ? doc.redo() : doc.undo();
+      } else if (mod && !e.shiftKey && !e.altKey && key === "r" && selection.length > 1 && !s.viewer) {
+        // Figma's "Rename layers" for a multi-selection
+        e.preventDefault();
+        s.setBatchRenameOpen(true);
       } else if (mod && !e.shiftKey && !e.altKey && key === "r" && selection.length === 1 && !s.viewer) {
         // Figma's "Rename" (Ctrl+R)
         e.preventDefault();
@@ -462,7 +486,11 @@ export function App() {
         reorderSelection(doc, selection, mod ? (up ? Infinity : -Infinity) : up ? 1 : -1);
       } else if (mod && key === "d") {
         e.preventDefault();
-        s.select(duplicateNodes(doc, selection, 10, true, s.prefs.renameDuplicates));
+        // Ctrl+D right after an Alt+drag copy repeats that move
+        const offset = duplicateOffset(selection);
+        const copies = duplicateNodes(doc, selection, offset, true, s.prefs.renameDuplicates);
+        afterDuplicate(selection, copies, offset);
+        s.select(copies);
       } else if (key === "delete" || key === "backspace") {
         doc.stopCapturing();
         selection.forEach((id) => doc.hasNode(id) && doc.deleteNode(id));
@@ -470,6 +498,9 @@ export function App() {
       } else if (key === "escape") {
         s.select([]);
         s.setTool("select");
+      } else if (mod && e.altKey && (key === "arrowleft" || key === "arrowright") && selection.length && !s.viewer && s.prefs.arrowRotate) {
+        e.preventDefault();
+        rotateSelectionBy(doc, selection, arrowRotation(key === "arrowright", e.shiftKey));
       } else if (key.startsWith("arrow") && selection.length) {
         e.preventDefault();
         const step = e.shiftKey ? s.prefs.bigNudge : s.prefs.nudge;
@@ -607,6 +638,7 @@ export function App() {
       <FindBar />
       <PreferencesDialog />
       <ShortcutsDialog />
+      <BatchRenameDialog />
     </div>
   );
 }

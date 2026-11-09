@@ -28,6 +28,16 @@ export function ComponentPropsSection({ doc, node }: { doc: DesignDoc; node: Des
     };
     return (
       <section className="props__section">
+        <h3 className="props__heading">Description</h3>
+        <textarea
+          className="field__input field__input--wide field__input--area"
+          rows={2}
+          maxLength={500}
+          aria-label="Component description"
+          placeholder="What is this component for?"
+          value={node.description ?? ""}
+          onChange={(e) => doc.setStyle(node.id, { description: e.target.value || null })}
+        />
         <h3 className="props__heading props__heading--row">
           Component properties
           <span className="props__tools">
@@ -96,13 +106,28 @@ export function ComponentPropsSection({ doc, node }: { doc: DesignDoc; node: Des
     );
   }
 
-  const main = node.componentId ? doc.getNode(node.componentId) : undefined;
-  if (main?.type !== "FRAME" || !main.componentProps?.length) return null;
+  if (!node.componentId) return null;
+  const main = doc.getNode(node.componentId);
+  const mains = doc
+    .pages()
+    .flatMap((p) => doc.descendants(p.id))
+    .filter((n) => n.type === "FRAME" && n.isComponent && n.id !== node.id && !doc.isAncestor(node.id, n.id) && !doc.isAncestor(n.id, node.id));
   const values = node.propValues ?? {};
+  const list = main?.type === "FRAME" ? (main.componentProps ?? []) : [];
   return (
     <section className="props__section">
-      <h3 className="props__heading">Properties</h3>
-      {main.componentProps.map((p) => {
+      {mains.length > 0 && (
+        <Select className="field__select field__select--wide" aria-label="Swap instance" value={node.componentId} onChange={(e) => attempt(() => doc.swapInstance(node.id, e.target.value))}>
+          {mains.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+              {m.type === "FRAME" && m.variantProps ? ` (${Object.entries(m.variantProps).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}
+            </option>
+          ))}
+        </Select>
+      )}
+      {list.length > 0 && <h3 className="props__heading">Properties</h3>}
+      {list.map((p) => {
         const value = values[p.id] ?? p.defaultValue;
         return p.type === "BOOLEAN" ? (
           <label className="props__check" key={p.id}>

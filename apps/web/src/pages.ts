@@ -37,6 +37,19 @@ export function addPage(doc: DesignDoc): string {
   return id;
 }
 
+/** Move a page to a new place in the page list (index 0 is the first page). Returns false when nothing moved. One undo step. */
+export function movePage(doc: DesignDoc, id: string, toIndex: number): boolean {
+  const pages = doc.pages();
+  const from = pages.findIndex((p) => p.id === id);
+  if (from < 0) return false;
+  const to = Math.max(0, Math.min(pages.length - 1, Math.round(toIndex)));
+  if (to === from) return false;
+  doc.stopCapturing();
+  doc.reorderNode(id, to);
+  doc.stopCapturing();
+  return true;
+}
+
 /** The page to show after deleting `id`: the previous one, else the next. Null if it is the only page. */
 export function deletePage(doc: DesignDoc, id: string): string | null {
   const pages = doc.pages();

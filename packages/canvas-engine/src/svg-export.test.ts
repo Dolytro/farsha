@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
 import { exportSvg } from "./svg-export";
 import { backgroundBlurOf, effectsFilter, shapeMarkup } from "./appearance";
-import { applyTextList, layoutText, textFontStyle, textPlacement } from "./text";
+import { applyTextList, fontFeatureSettings, layoutText, textFontStyle, textPlacement } from "./text";
 
 const solid = (color: string, opacity = 1) => [{ type: "SOLID" as const, color, opacity }];
 
@@ -259,6 +259,99 @@ describe("advanced strokes", () => {
     expect(svg).toContain('stroke-linejoin="bevel"');
   });
 
+  it("turns a miter angle into a miter limit", () => {
+    expect(rect({ strokeMiterAngle: 60 })).toContain('stroke-miterlimit="2"');
+    expect(rect({ strokeMiterAngle: 28.96 })).not.toContain("miterlimit");
+    expect(rect({ strokeMiterAngle: 60, strokeJoin: "BEVEL" })).not.toContain("miterlimit");
+  });
+
+  it("blends a fill with the one below it", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { fills: [{ type: "SOLID", color: "#ff0000", opacity: 1 }, { type: "SOLID", color: "#0000ff", opacity: 1, blendMode: "MULTIPLY" }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg.match(/mix-blend-mode:multiply/g)).toHaveLength(1);
+  });
+
+  it("exports a frame's contents only", () => {
+    const doc = new DesignDoc();
+    const frame = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id, props: { width: 100, height: 100, fills: [{ type: "SOLID", color: "#123456", opacity: 1 }] } as never });
+    doc.createNode("RECTANGLE", { parentId: frame, props: { width: 10, height: 10, fills: [{ type: "SOLID", color: "#abcdef", opacity: 1 }] } as never });
+    expect(exportSvg(doc, [frame])?.svg).toContain("#123456");
+    const only = exportSvg(doc, [frame], { contentsOnly: true })?.svg ?? "";
+    expect(only).not.toContain("#123456");
+    expect(only).toContain("#abcdef");
+  });
+
+
+  it("applies image adjustments through a filter on the picture", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1, adjustments: { contrast: 100, saturation: -100 } }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain("<filter");
+    expect(svg).toContain('slope="2"');
+    expect(svg).toContain('values="0"');
+    const plain = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1 }] } as never });
+    expect(exportSvg(doc, [plain])?.svg ?? "").not.toContain("<filter");
+  });
+
+
+  it("warms and tints an image through per-channel slopes", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1, adjustments: { temperature: 100, tint: -100 } }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain('<feFuncR type="linear" slope="1.3"');
+    expect(svg).toContain('<feFuncG type="linear" slope="1.3"');
+    expect(svg).toContain('<feFuncB type="linear" slope="0.7"');
+  });
+
+  it("lifts shadows and darkens highlights with a tone curve table", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1, adjustments: { shadows: 100, highlights: -100 } }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain('type="table" tableValues="0.25 0.38 0.5 0.63 0.75"');
+  });
+
+  it("cuts the layer out of a drop shadow when it is not shown behind transparent areas", () => {
+    const doc = new DesignDoc();
+    const make = (showBehind?: boolean) => doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 40, height: 40, effects: [{ type: "DROP_SHADOW", x: 2, y: 2, blur: 4, color: "#000000", opacity: 0.5, visible: true, ...(showBehind === undefined ? {} : { showBehind }) }] } as never });
+    expect(exportSvg(doc, [make()])?.svg ?? "").not.toContain('operator="out"');
+    expect(exportSvg(doc, [make(true)])?.svg ?? "").not.toContain('operator="out"');
+    const svg = exportSvg(doc, [make(false)])?.svg ?? "";
+    expect(svg).toContain('<feComposite in="k0" in2="SourceAlpha" operator="out" result="s0"/>');
+  });
+
+  it("repeats a picture at its own size in Tile mode", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 200, height: 100, fills: [{ type: "IMAGE", assetId, scaleMode: "TILE", imageWidth: 32, imageHeight: 16, tileScale: 2, opacity: 1 }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain('width="64" height="32"');
+    expect(svg).toContain('preserveAspectRatio="none"');
+  });
+
+  it("zooms and moves a picture in Crop mode about the centre of the layer", () => {
+    const doc = new DesignDoc();
+    const assetId = doc.addAsset("image/png", new Uint8Array([1, 2, 3]));
+    const make = (extra: object) => doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 200, height: 100, fills: [{ type: "IMAGE", assetId, scaleMode: "CROP", opacity: 1, ...extra }] } as never });
+    const svg = exportSvg(doc, [make({ cropZoom: 2, cropX: 10, cropY: -20 })])?.svg ?? "";
+    expect(svg).toContain('transform="translate(110 30) scale(2) translate(-100 -50)"');
+    expect(svg).toContain('preserveAspectRatio="xMidYMid slice"');
+    expect(exportSvg(doc, [make({})])?.svg ?? "").not.toContain("scale(");
+    // out-of-range numbers are clamped
+    expect(exportSvg(doc, [make({ cropZoom: 999 })])?.svg ?? "").toContain("scale(10)");
+    expect(exportSvg(doc, [make({ cropZoom: "x", cropX: NaN })])?.svg ?? "").not.toContain("NaN");
+  });
+
+  it("turns OpenType features into font-feature-settings and ignores unknown ones", () => {
+    expect(fontFeatureSettings(["tnum", "-liga", "evil\"; x", "tnum"])).toBe('"tnum" 1, "liga" 0');
+    expect(fontFeatureSettings([])).toBeUndefined();
+    expect(fontFeatureSettings("tnum")).toBeUndefined();
+    expect(textFontStyle({ fontFeatures: ["zero"] })).toEqual({ style: { fontFeatureSettings: '"zero" 1' } });
+  });
+
   it("leaves a plain stroke plain", () => {
     const svg = rect({});
     expect(svg).not.toContain("stroke-dasharray");
@@ -399,6 +492,9 @@ describe("text links", () => {
   it("underline linked text unless it has its own decoration", () => {
     expect(textFontStyle({ textLink: "https://x.dev" })).toEqual({ textDecoration: "underline" });
     expect(textFontStyle({ textLink: "https://x.dev", textDecoration: "STRIKETHROUGH" })).toEqual({ textDecoration: "line-through" });
+    expect(textFontStyle({ textDecoration: "UNDERLINE", textDecorationStyle: "WAVY" })).toEqual({ textDecoration: "underline wavy" });
+    expect(textFontStyle({ textCase: "SMALL_CAPS" })).toEqual({ fontVariant: "small-caps" });
+    expect(textFontStyle({ textDecoration: "STRIKETHROUGH", textDecorationStyle: "DOTTED" })).toEqual({ textDecoration: "line-through dotted" });
     expect(textFontStyle({})).toEqual({});
   });
 });
@@ -466,5 +562,98 @@ describe("noise, texture and glass effects", () => {
   it("survives bad numbers", () => {
     const m = effectsFilter(node([{ type: "NOISE", size: Number.NaN, density: Number.NaN, opacity: Number.NaN, visible: true }]))!.markup;
     expect(m).not.toContain("NaN");
+  });
+});
+
+describe("mask types", () => {
+  function build(maskType?: string) {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { width: 100, height: 100 } });
+    doc.createNode("RECTANGLE", { parentId: frame, props: { name: "Mask", width: 100, height: 100, isMask: true, ...(maskType ? { maskType } : {}), fills: [{ type: "SOLID", color: "#336699", opacity: 1 }] } as never });
+    doc.createNode("RECTANGLE", { parentId: frame, props: { name: "Below", width: 100, height: 100, fills: [{ type: "SOLID", color: "#ff0000", opacity: 1 }] } as never });
+    return exportSvg(doc, [frame])?.svg ?? "";
+  }
+
+  it("an alpha mask draws its shape in white", () => {
+    const svg = build();
+    expect(svg).toMatch(/<mask[^>]*>.*fill="#fff"/);
+    expect(svg).not.toMatch(/<mask[^>]*>[^]*#336699[^]*<\/mask>/);
+  });
+
+  it("a luminance mask draws the shape with its own fill", () => {
+    const svg = build("LUMINANCE");
+    expect(svg).toMatch(/<mask[^>]*>[^]*#336699[^]*<\/mask>/);
+  });
+});
+
+describe("text colours per range", () => {
+  it("draws coloured characters in their own fill and ignores an unsafe colour", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("TEXT", { parentId: page, props: { characters: "Hello", runs: [{ start: 0, end: 2, color: "#FF0000" }, { start: 3, end: 5, color: 'x" onload="y' }] } as never });
+    const svg = exportSvg(doc, [id])?.svg ?? "";
+    expect(svg).toContain('fill="#ff0000"');
+    expect(svg).toContain(">He</tspan>");
+    expect(svg).not.toContain("onload");
+  });
+});
+
+describe("gradient strokes", () => {
+  const gradient = { type: "GRADIENT_LINEAR" as const, angle: 90, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] };
+  it("paints a shape stroke with the gradient", () => {
+    const { doc, rect } = setup();
+    doc.setStyle(rect, { strokes: [gradient] });
+    const out = exportSvg(doc, [rect])!.svg;
+    expect(out).toMatch(/<linearGradient id="sg-[^"]+-0"/);
+    expect(out).toMatch(/stroke="url\(#sg-[^"]+-0\)"/);
+    expect(out).toContain('stop-color="#0000ff"');
+  });
+  it("each stroke of a layer gets its own gradient and plain ones stay colours", () => {
+    const { doc, rect } = setup();
+    doc.setStyle(rect, { strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }, gradient] });
+    const out = exportSvg(doc, [rect])!.svg;
+    expect(out).toContain('stroke="#00ff00"');
+    expect(out).toMatch(/stroke="url\(#sg-[^"]+-1\)"/);
+  });
+});
+
+describe("text with several fills", () => {
+  it("draws the text once per fill, bottom first, and keeps a single fill as before", () => {
+    const { doc, text } = setup();
+    const single = exportSvg(doc, [text])!.svg;
+    expect((single.match(/<text /g) ?? []).length).toBe(1);
+    doc.setStyle(text, { fills: [{ type: "SOLID", color: "#111111", opacity: 1 }, { type: "GRADIENT_LINEAR", angle: 0, opacity: 0.5, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }] });
+    const out = exportSvg(doc, [text])!.svg;
+    expect((out.match(/<text /g) ?? []).length).toBe(2);
+    expect(out.indexOf('fill="#111111"')).toBeLessThan(out.indexOf("url(#tg-"));
+    expect(out).toContain('fill-opacity="0.5"');
+    expect(out).toMatch(/<linearGradient id="tg-[^"]+-1"/);
+  });
+});
+
+describe("text strokes", () => {
+  it("outlines the letters with the first stroke", () => {
+    const { doc, text } = setup();
+    doc.setStyle(text, { strokes: solid("#ff0000"), strokeWidth: 3 });
+    const out = exportSvg(doc, [text])!.svg;
+    expect(out).toContain('stroke="#ff0000"');
+    expect(out).toContain('stroke-width="3"');
+    expect(out).not.toContain("paint-order");
+  });
+  it("an outside stroke is twice as wide and drawn behind the fill", () => {
+    const { doc, text } = setup();
+    doc.setStyle(text, { strokes: solid("#ff0000"), strokeWidth: 3, strokeAlign: "OUTSIDE" });
+    const out = exportSvg(doc, [text])!.svg;
+    expect(out).toContain('stroke-width="6"');
+    expect(out).toContain('paint-order="stroke"');
+  });
+  it("a gradient stroke gets a definition and no stroke means no attributes", () => {
+    const { doc, text } = setup();
+    expect(exportSvg(doc, [text])!.svg).not.toContain("stroke=");
+    doc.setStyle(text, { strokes: [{ type: "GRADIENT_LINEAR", angle: 0, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }], strokeWidth: 2 });
+    const out = exportSvg(doc, [text])!.svg;
+    expect(out).toMatch(/<linearGradient id="ts-/);
+    expect(out).toMatch(/stroke="url\(#ts-/);
   });
 });

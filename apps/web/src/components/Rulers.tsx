@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { rulerTicks, unionBox } from "@farsha/canvas-engine";
 import type { Box, RulerGuide } from "@farsha/types";
 import { useEditor } from "../store";
+import { moveGuideTo } from "../guide-edit";
 
 const SIZE = 20;
 const RED = "#f24822";
@@ -19,6 +20,7 @@ export function Rulers() {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [typing, setTyping] = useState<{ index: number; text: string } | null>(null);
 
   useEffect(() => {
     const el = ref.current;
@@ -119,7 +121,7 @@ export function Rulers() {
           return (
             <g key={i}>
               <line {...line} stroke={RED} strokeWidth={active ? 2 : 1} pointerEvents="none" />
-              {!viewer && <line {...line} className="rulers__hit" stroke="transparent" strokeWidth={8} pointerEvents="stroke" style={{ cursor: g.axis === "x" ? "col-resize" : "row-resize" }} onPointerDown={(e) => begin(e, g.axis, i)} />}
+              {!viewer && <line {...line} className="rulers__hit" stroke="transparent" strokeWidth={8} pointerEvents="stroke" style={{ cursor: g.axis === "x" ? "col-resize" : "row-resize" }} onPointerDown={(e) => begin(e, g.axis, i)} onDoubleClick={() => setTyping({ index: i, text: String(g.position) })} />}
               {active && (
                 <text className="rulers__tag" x={g.axis === "x" ? p + 6 : SIZE + 6} y={g.axis === "x" ? SIZE + 14 : p - 6} fill={RED}>
                   {g.position}
@@ -135,6 +137,35 @@ export function Rulers() {
       <svg className="rulers__bar rulers__bar--y" width={SIZE} height={size.height} onPointerDown={(e) => begin(e, "x", null)} style={{ cursor: "col-resize" }}>
         {bar("y")}
       </svg>
+      {typing && stored[typing.index] && (() => {
+        const g = stored[typing.index]!;
+        const p = toScreen(g.axis, g.position);
+        const commit = () => {
+          const next = moveGuideTo(stored, typing.index, typing.text);
+          setTyping(null);
+          if (next === stored) return;
+          doc.stopCapturing();
+          doc.setStyle(pageId, { guides: next });
+          doc.stopCapturing();
+        };
+        return (
+          <input
+            className="rulers__input"
+            aria-label="Guide position"
+            autoFocus
+            value={typing.text}
+            style={g.axis === "x" ? { left: p + 6, top: SIZE + 4 } : { left: SIZE + 6, top: p - 24 }}
+            onChange={(e) => setTyping({ index: typing.index, text: e.target.value })}
+            onFocus={(e) => e.target.select()}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              else if (e.key === "Escape") setTyping(null);
+              e.stopPropagation();
+            }}
+          />
+        );
+      })()}
       <div className="rulers__corner" />
     </div>
   );

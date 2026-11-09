@@ -78,3 +78,54 @@ describe("boolean operations", () => {
     expect(r.rings[0]).toHaveLength(3);
   });
 });
+
+describe("boolean operations with ellipse arcs", () => {
+  it("a pie is the part of the circle it covers, not the whole circle", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const pie = doc.createNode("ELLIPSE", { parentId: page, props: { x: 0, y: 0, width: 100, height: 100, arcSweep: 90 } as never });
+    const other = doc.createNode("RECTANGLE", { parentId: page, props: { x: 200, y: 0, width: 10, height: 10 } });
+    const r = booleanShapes(doc, [pie, other], "UNION")!;
+    // the quarter from 3 o'clock to 6 o'clock sits in the lower right corner of its box
+    const pieRing = r.rings.find((ring) => ring.some(([x]) => x < 100));
+    expect(pieRing).toBeTruthy();
+    const xs = pieRing!.map((p) => p[0]);
+    const ys = pieRing!.map((p) => p[1]);
+    expect(Math.min(...xs)).toBeCloseTo(50, 0);
+    expect(Math.min(...ys)).toBeCloseTo(50, 0);
+    expect(Math.max(...xs)).toBeCloseTo(100, 0);
+    expect(Math.max(...ys)).toBeCloseTo(100, 0);
+  });
+
+  it("subtracting a ring's hole leaves the ring: intersecting a ring with a square in its middle is empty", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const ring = doc.createNode("ELLIPSE", { parentId: page, props: { x: 0, y: 0, width: 100, height: 100, arcRatio: 0.5 } as never });
+    const hole = doc.createNode("RECTANGLE", { parentId: page, props: { x: 40, y: 40, width: 20, height: 20 } });
+    expect(booleanShapes(doc, [ring, hole], "INTERSECT")).toBeNull();
+  });
+
+  it("a plain ellipse still flattens to the full outline", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const e = doc.createNode("ELLIPSE", { parentId: page, props: { x: 0, y: 0, width: 100, height: 100 } });
+    const o = doc.createNode("RECTANGLE", { parentId: page, props: { x: 200, y: 0, width: 10, height: 10 } });
+    const r = booleanShapes(doc, [e, o], "UNION")!;
+    expect(r.box.width).toBe(210);
+  });
+});
+
+describe("boolean operations with rounded polygons", () => {
+  it("a rounded square is smaller than its box: the corners are cut", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const rounded = doc.createNode("VECTOR", { parentId: page, props: { x: 0, y: 0, width: 100, height: 100, viewBox: "0 0 100 100", markup: '<path d="M0 0Z"/>', shapeKind: "POLYGON", shapeSides: 4, shapeRadius: 20, fills: [], strokes: [], strokeWidth: 1 } as never });
+    const sharp = doc.createNode("VECTOR", { parentId: page, props: { x: 200, y: 0, width: 100, height: 100, viewBox: "0 0 100 100", markup: '<polygon points="0,0 100,0 100,100 0,100"/>', fills: [], strokes: [], strokeWidth: 1 } as never });
+    const r = booleanShapes(doc, [rounded, sharp], "UNION")!;
+    const ring = r.rings.find((ring) => ring.every(([x]) => x < 150))!;
+    // a diamond (4 sides starting at the top) rounded at the corners never reaches the box's very tips
+    const tipY = Math.min(...ring.map((p) => p[1]));
+    expect(tipY).toBeGreaterThan(0.1);
+    expect(ring.length).toBeGreaterThan(8);
+  });
+});

@@ -20,6 +20,8 @@ const HINT: Record<LayoutGrid["type"], string> = {
 export function LayoutGridSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
   if (node.type !== "FRAME") return null;
   const grids = node.layoutGrids ?? [];
+  const styles = doc.gridStyles();
+  const style = node.gridStyleId ? doc.getGridStyle(node.gridStyleId) : undefined;
   const set = (next: LayoutGrid[]) => doc.setStyle(node.id, { layoutGrids: next });
   const patch = (i: number, p: Partial<LayoutGrid>) => set(grids.map((g, j) => (j === i ? { ...g, ...p } : g)));
   const field = (i: number, label: string, key: "count" | "gutter" | "margin" | "size", value: number | undefined, min: number, title: string) => (
@@ -43,6 +45,58 @@ export function LayoutGridSection({ doc, node }: { doc: DesignDoc; node: DesignN
           +
         </button>
       </h3>
+      {(styles.length > 0 || grids.length > 0) && (
+        <div className="fill-row fill-row--gap">
+          <Select
+            className="field__select field__select--wide"
+            aria-label="Grid style"
+            title="Grid style"
+            value={style?.id ?? "NONE"}
+            onChange={(e) => {
+              doc.stopCapturing();
+              if (e.target.value === "NEW") doc.applyGridStyle(node.id, doc.createGridStyle(`Grid style ${styles.length + 1}`, grids));
+              else doc.applyGridStyle(node.id, e.target.value === "NONE" ? null : e.target.value);
+              doc.stopCapturing();
+            }}
+          >
+            <option value="NONE">No grid style</option>
+            {styles.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+            {grids.length > 0 && !style && <option value="NEW">+ Create style from grids</option>}
+          </Select>
+          {style && (
+            <button className="props__add" title="Delete this grid style (frames keep their grids)" onClick={() => doc.deleteGridStyle(style.id)}>
+              −
+            </button>
+          )}
+        </div>
+      )}
+      {style && (
+        <input
+          key={`${style.id}:${style.name}`}
+          className="field__input field--gap"
+          style={{ width: "100%" }}
+          aria-label="Grid style name"
+          title="Rename this grid style"
+          defaultValue={style.name}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") e.currentTarget.blur();
+            else if (e.key === "Escape") {
+              e.currentTarget.value = style.name;
+              e.currentTarget.blur();
+            }
+          }}
+          onBlur={(e) => {
+            const name = e.currentTarget.value.trim();
+            if (name && name !== style.name) doc.updateGridStyle(style.id, { name });
+            else e.currentTarget.value = style.name;
+          }}
+        />
+      )}
       {grids.length === 0 && <p className="props__hint">No layout grid yet. Click + to add a 10 px grid, then change its type to Columns or Rows. Shift+G shows or hides the grids.</p>}
       {grids.map((g, i) => (
         <div className="grid-item" key={i}>

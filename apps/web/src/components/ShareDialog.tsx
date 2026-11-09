@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { isLinkShared, setLinkShared } from "../drive/drive";
 import { connect, save } from "../drive/session";
 import { getToken } from "../drive/google";
-import { shareUrl, type ViewerMode } from "../route";
+import { embedCode, shareUrl, type ViewerMode } from "../route";
 import { useEditor } from "../store";
 import { Select } from "./Select";
 
@@ -13,6 +13,9 @@ export function ShareDialog() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const selection = useEditor((st) => st.selection);
+  const [toLayer, setToLayer] = useState(false);
+  const layerId = selection.length === 1 ? selection[0] : undefined;
 
   const fileId = drive.fileId;
 
@@ -23,6 +26,18 @@ export function ShareDialog() {
     setError(null);
     isLinkShared(t, fileId).then(setShared, (e: Error) => setError(e.message));
   }, [shareOpen, fileId]);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setShareOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [shareOpen, setShareOpen]);
 
   if (!shareOpen) return null;
 
@@ -46,7 +61,17 @@ export function ShareDialog() {
       setShared(on);
     });
 
-  const url = fileId ? shareUrl(window.location.origin, fileId, mode) : "";
+  const url = fileId ? shareUrl(window.location.origin, fileId, mode, toLayer ? layerId : undefined) : "";
+  const [embedCopied, setEmbedCopied] = useState(false);
+  const copyEmbed = async () => {
+    try {
+      await navigator.clipboard.writeText(embedCode(url));
+      setEmbedCopied(true);
+      setTimeout(() => setEmbedCopied(false), 1200);
+    } catch {
+      setError("Couldn't copy the embed code.");
+    }
+  };
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
@@ -96,12 +121,26 @@ export function ShareDialog() {
                     <option value="inspect">Inspect (Google sign-in required)</option>
                   </Select>
                 </div>
+                {layerId && (
+                  <label className="modal__row">
+                    <input type="checkbox" checked={toLayer} onChange={(e) => setToLayer(e.target.checked)} />
+                    <span>Open on the selected layer</span>
+                  </label>
+                )}
                 <div className="modal__row">
                   <input className="modal__link" readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
                   <button className="dev__copy" onClick={() => void copy()}>
                     {copied ? "Copied" : "Copy link"}
                   </button>
                 </div>
+                {mode === "view" && (
+                  <div className="modal__row">
+                    <span className="modal__label">Embed</span>
+                    <button className="dev__copy" onClick={() => void copyEmbed()}>
+                      {embedCopied ? "Copied" : "Copy embed code"}
+                    </button>
+                  </div>
+                )}
                 <p className="modal__hint">
                   Anyone with the link can view this design without signing in. Inspect links show measurements and code only after the visitor signs in with Google. Nobody can change your file. They see your latest save. Turn the checkbox off to stop sharing.
                 </p>

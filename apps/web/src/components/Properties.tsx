@@ -9,11 +9,16 @@ import { AlignRow } from "./AlignRow";
 import { PrototypePanel } from "./PrototypePanel";
 import { VariantsSection } from "./VariantsSection";
 import { ComponentPropsSection } from "./ComponentPropsSection";
+import { ExplicitModeSection } from "./ExplicitModeSection";
+import { BLEND_MODES } from "../blend-modes";
 import { LayoutGridSection } from "./LayoutGridSection";
 import { ExportSection } from "./ExportSection";
 import { FillSection } from "./FillSection";
 import { TypographySection } from "./TypographySection";
 import { EffectsSection, StrokeSection } from "./AppearanceSections";
+import { PolygonSection } from "./PolygonSection";
+import { ArcSection } from "./ArcSection";
+import { MaskSection } from "./MaskSection";
 import { Select } from "./Select";
 import { ColorSwatch } from "./ColorSwatch";
 import { VariableBindings } from "./VariableBindings";
@@ -22,25 +27,8 @@ import { rotateSelectionBy } from "../object-actions";
 import { FRAME_PRESETS, presetLabel, presetOf } from "../frame-presets";
 import { SelectionColors } from "./SelectionColors";
 import { LocalStyles } from "./LocalStyles";
+import { MultiSection } from "./MultiSection";
 
-const BLEND_MODES: [BlendMode, string][] = [
-  ["NORMAL", "Normal"],
-  ["DARKEN", "Darken"],
-  ["MULTIPLY", "Multiply"],
-  ["COLOR_BURN", "Color burn"],
-  ["LIGHTEN", "Lighten"],
-  ["SCREEN", "Screen"],
-  ["COLOR_DODGE", "Color dodge"],
-  ["OVERLAY", "Overlay"],
-  ["SOFT_LIGHT", "Soft light"],
-  ["HARD_LIGHT", "Hard light"],
-  ["DIFFERENCE", "Difference"],
-  ["EXCLUSION", "Exclusion"],
-  ["HUE", "Hue"],
-  ["SATURATION", "Saturation"],
-  ["COLOR", "Color"],
-  ["LUMINOSITY", "Luminosity"],
-];
 
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
@@ -124,6 +112,7 @@ export function Properties() {
         )}
         {selection.length === 0 && !viewer && <LocalStyles />}
         {selection.length === 0 && !viewer && <ExportSection doc={doc} ids={[]} pageId={pageId} />}
+        {selection.length > 1 && !viewer && !devMode && <MultiSection doc={doc} ids={selection} />}
         {selection.length > 0 && !viewer && <SelectionColors />}
         <p className="props__empty">{selection.length > 1 ? `${selection.length} layers selected` : "Select a layer to edit its properties"}</p>
       </aside>
@@ -340,8 +329,13 @@ export function Properties() {
 
       <VariableBindings doc={doc} node={node} />
 
+      <PolygonSection doc={doc} node={node} />
+      <ArcSection doc={doc} node={node} />
+      <MaskSection doc={doc} node={node} />
+
       <VariantsSection doc={doc} node={node} />
       <ComponentPropsSection doc={doc} node={node} />
+      <ExplicitModeSection doc={doc} node={node} />
       <ChildSizingSection doc={doc} node={node} />
       <AutoLayoutSection doc={doc} node={node} select={select} />
       <LayoutGridSection doc={doc} node={node} />

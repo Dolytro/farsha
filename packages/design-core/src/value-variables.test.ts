@@ -98,3 +98,43 @@ describe('number and boolean variables', () => {
     expect(copy.valueVariables('NUMBER')[0]!.name).toBe('W');
   });
 });
+
+describe('variable scopes', () => {
+  it('limits which properties a number variable can be bound to', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const rect = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10 } });
+    const radius = doc.createValueVariable('NUMBER', 'radius', '12');
+    doc.setVariableScopes(radius, ['CORNER_RADIUS']);
+    expect(doc.getColorVariable(radius)!.scopes).toEqual(['CORNER_RADIUS']);
+    expect(() => doc.bindProperty(rect, 'width', radius)).toThrow(/scope/);
+    doc.bindProperty(rect, 'cornerRadius', radius);
+    expect((doc.getNode(rect) as unknown as { cornerRadius: number }).cornerRadius).toBe(12);
+  });
+
+  it('an empty list, or all groups, means no limit; unknown scopes are dropped; other kinds are refused', () => {
+    const doc = new DesignDoc();
+    const n = doc.createValueVariable('NUMBER', 'n', '1');
+    doc.setVariableScopes(n, ['SIZE', 'NOPE', 'SIZE']);
+    expect(doc.getColorVariable(n)!.scopes).toEqual(['SIZE']);
+    doc.setVariableScopes(n, []);
+    expect(doc.getColorVariable(n)!.scopes).toBeUndefined();
+    doc.setVariableScopes(n, ['SIZE', 'CORNER_RADIUS', 'OPACITY', 'SPACING', 'FONT_SIZE', 'STROKE_WIDTH', 'ROTATION']);
+    expect(doc.getColorVariable(n)!.scopes).toBeUndefined();
+    const b = doc.createValueVariable('BOOLEAN', 'b', 'true');
+    expect(() => doc.setVariableScopes(b, ['SIZE'])).toThrow(/number and colour/);
+    expect(() => doc.setVariableScopes('missing', ['SIZE'])).toThrow();
+  });
+
+  it('keeps existing bindings when the scope later excludes them, and survives a save and load', () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const rect = doc.createNode('RECTANGLE', { parentId: page, props: { width: 10, height: 10 } });
+    const n = doc.createValueVariable('NUMBER', 'n', '40');
+    doc.bindProperty(rect, 'width', n);
+    doc.setVariableScopes(n, ['OPACITY']);
+    expect((doc.getNode(rect) as unknown as { width: number }).width).toBe(40);
+    const copy = DesignDoc.fromState(doc.encodeState());
+    expect(copy.getColorVariable(n)!.scopes).toEqual(['OPACITY']);
+  });
+});

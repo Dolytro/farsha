@@ -4,16 +4,17 @@ import type { DesignDoc } from "@farsha/design-core";
 import { StyleMenu, StylePill } from "./StyleMenu";
 import { VariableButton, VariableChip } from "./VariableMenu";
 import { paintCss } from "@farsha/code-generator";
-import { paintColor, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@farsha/types";
+import { paintColor, type BlendMode, type DesignNode, type GradientPaint, type GradientStop, type ImageScaleMode, type Paint } from "@farsha/types";
 import { readImage } from "../images";
 import { pickVideoForLayer } from "../place-image";
 import { HexInput } from "./HexInput";
 import { useEditor } from "../store";
 import { Select } from "./Select";
+import { BLEND_MODES } from "../blend-modes";
 
 type Kind = Paint["type"];
 const KIND_LABEL: Record<Kind, string> = { SOLID: "Solid", GRADIENT_LINEAR: "Linear", GRADIENT_RADIAL: "Radial", GRADIENT_ANGULAR: "Angular", GRADIENT_DIAMOND: "Diamond", IMAGE: "Image" };
-const SCALE_LABEL: Record<ImageScaleMode, string> = { FILL: "Fill", FIT: "Fit", STRETCH: "Stretch" };
+const SCALE_LABEL: Record<ImageScaleMode, string> = { FILL: "Fill", FIT: "Fit", STRETCH: "Stretch", TILE: "Tile", CROP: "Crop" };
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
@@ -44,7 +45,7 @@ export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
   const fills = style && editingStyle ? style.paints : node.fills;
   const setFills = (next: Paint[]) => (style ? doc.updateFillStyle(style.id, { paints: next }) : doc.setStyle(node.id, { fills: next }));
   // Text is drawn with a single colour, so it keeps one fill.
-  const canAdd = !style && (node.type !== "TEXT" || fills.length === 0);
+  const canAdd = !style;
   return (
     <section className="props__section">
       <h3 className="props__heading props__heading--row">
@@ -86,7 +87,8 @@ export function FillSection({ doc, node }: { doc: DesignDoc; node: DesignNode })
   );
 }
 
-function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDoc; nodeId: string; paint: Paint; setPaint: (p: Paint) => void; remove: () => void; bind?: (variableId: string | null) => void }) {
+/** One paint with its type picker and editor. `kinds` limits the types offered (strokes: solid and linear / radial gradients) and then hides the fill-only controls (blend mode, video). */
+export function FillRow({ doc, nodeId, paint, setPaint, remove, bind, kinds }: { doc: DesignDoc; nodeId: string; paint: Paint; setPaint: (p: Paint) => void; remove: () => void; bind?: (variableId: string | null) => void; kinds?: Kind[] }) {
   const setStops = (g: GradientPaint, stops: GradientStop[]) => setPaint({ ...g, stops });
   return (
     <div className="fill-item">
@@ -97,21 +99,28 @@ function FillRow({ doc, nodeId, paint, setPaint, remove, bind }: { doc: DesignDo
           onChange={(e) => {
             // Video is not a paint: it turns the rectangle into a video layer
             if (e.target.value === "VIDEO") pickVideoForLayer(nodeId);
-            else setPaint(convertPaint(paint, e.target.value as Kind));
+            else setPaint({ ...convertPaint(paint, e.target.value as Kind), ...(paint.blendMode ? { blendMode: paint.blendMode } : {}) } as Paint);
           }}
         >
-          {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
+          {(kinds ?? (Object.keys(KIND_LABEL) as Kind[])).map((k) => (
             <option key={k} value={k}>
               {KIND_LABEL[k]}
             </option>
           ))}
-          {doc.getNode(nodeId)?.type === "RECTANGLE" && <option value="VIDEO">Video</option>}
+          {!kinds && doc.getNode(nodeId)?.type === "RECTANGLE" && <option value="VIDEO">Video</option>}
         </Select>
-        {bind && paint.type === "SOLID" && !paint.variableId && <VariableButton doc={doc} onPick={bind} />}
+        {bind && paint.type === "SOLID" && !paint.variableId && <VariableButton doc={doc} use={doc.getNode(nodeId)?.type === "TEXT" ? "TEXT_FILL" : "FILL"} onPick={bind} />}
         <button className="props__add" title="Remove fill" onClick={remove}>
           −
         </button>
       </div>
+      {!kinds && <Select className="field__select field__select--wide" aria-label="Fill blend mode" title="Blend mode of this fill" value={paint.blendMode ?? "NORMAL"} onChange={(e) => setPaint({ ...paint, blendMode: e.target.value === "NORMAL" ? undefined : (e.target.value as BlendMode) })}>
+        {BLEND_MODES.map(([mode, label]) => (
+          <option key={mode} value={mode}>
+            {label}
+          </option>
+        ))}
+      </Select>}
       {paint.type === "SOLID" && paint.variableId && bind && <VariableChip doc={doc} variableId={paint.variableId} onDetach={() => bind(null)} />}
 
       {paint.type === "IMAGE" ? (
@@ -188,7 +197,7 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
       const image = await readImage(file);
       const assetId = doc.addAsset(image.mime, image.bytes);
       doc.stopCapturing();
-      setPaint({ ...paint, assetId });
+      setPaint({ ...paint, assetId, imageWidth: image.width, imageHeight: image.height });
       doc.stopCapturing();
     } catch (err) {
       showToast(err instanceof Error ? `Couldn't add the image: ${err.message}` : "Couldn't add the image");
@@ -203,10 +212,67 @@ function ImageFill({ doc, paint, setPaint }: { doc: DesignDoc; nodeId: string; p
           </option>
         ))}
       </Select>
+      {paint.scaleMode === "CROP" && (
+        <>
+          {([["Zoom", "cropZoom", "Zoom (%)", 100, (v: number) => Math.min(1000, Math.max(10, v)) / 100, (p: typeof paint) => Math.round((p.cropZoom ?? 1) * 100)], ["Move X", "cropX", "Move the picture sideways (px)", 1, (v: number) => v, (p: typeof paint) => Math.round(p.cropX ?? 0)], ["Move Y", "cropY", "Move the picture up or down (px)", 1, (v: number) => v, (p: typeof paint) => Math.round(p.cropY ?? 0)]] as const).map(([label, key, title, _unit, toValue, read]) => (
+            <label className="field field--row field--gap" key={key} title={title}>
+              <span className="field__label field__label--text">{label}</span>
+              <input
+                className="field__input"
+                type="number"
+                aria-label={`Crop ${label.toLowerCase()}`}
+                value={read(paint)}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (e.target.value === "" || !Number.isFinite(v)) return;
+                  setPaint({ ...paint, [key]: toValue(v) });
+                }}
+              />
+            </label>
+          ))}
+        </>
+      )}
+      {paint.scaleMode === "TILE" && (
+        <label className="field field--row field--gap" title="Tile size (% of the picture's own size)">
+          <span className="field__label field__label--text">Tile</span>
+          <input
+            className="field__input"
+            type="number"
+            min={1}
+            max={1000}
+            aria-label="Tile scale"
+            value={Math.round((paint.tileScale ?? 1) * 100)}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (!Number.isFinite(v) || e.target.value === "") return;
+              setPaint({ ...paint, tileScale: Math.min(1000, Math.max(1, v)) / 100 });
+            }}
+          />
+        </label>
+      )}
       <label className="props__link props__file">
         {paint.assetId ? "Change image" : "Choose image"}
         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(e) => void choose(e.target.files?.[0])} />
       </label>
+      {(["exposure", "contrast", "saturation", "temperature", "tint", "highlights", "shadows"] as const).map((key) => (
+        <label className="field field--row field--gap" key={key} title={`Image ${key} (-100 to 100)`}>
+          <span className="field__label field__label--text">{key[0]!.toUpperCase() + key.slice(1)}</span>
+          <input
+            className="field__input"
+            type="number"
+            min={-100}
+            max={100}
+            aria-label={`Image ${key}`}
+            value={paint.adjustments?.[key] ?? 0}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (!Number.isFinite(v) || e.target.value === "") return;
+              const next = { ...paint.adjustments, [key]: Math.min(100, Math.max(-100, v)) };
+              setPaint({ ...paint, adjustments: next });
+            }}
+          />
+        </label>
+      ))}
       <label className="field field--gap" title="Image opacity (%)">
         <span className="field__label">%</span>
         <input className="field__input" type="number" min={0} max={100} value={Math.round(paint.opacity * 100)} onChange={(e) => setPaint({ ...paint, opacity: clamp01(Number(e.target.value) / 100) })} />

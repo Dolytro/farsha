@@ -49,3 +49,31 @@ describe("canvas preferences", () => {
     expect(parsePrefs(JSON.stringify({ hoverHighlight: false, showDimensions: "no", rightDragPan: true }))).toMatchObject({ hoverHighlight: false, showDimensions: true, rightDragPan: true });
   });
 });
+
+describe("newer preferences", () => {
+  it("defaults: flip while resizing on, the rest off", () => {
+    const p = parsePrefs(null);
+    expect(p.flipWhileResizing).toBe(true);
+    expect([p.hideUiWhileChanging, p.arrowRotate, p.smartQuotes]).toEqual([false, false, false]);
+  });
+  it("reads them back and ignores bad values", () => {
+    const p = parsePrefs(JSON.stringify({ flipWhileResizing: false, hideUiWhileChanging: true, arrowRotate: "yes" }));
+    expect([p.flipWhileResizing, p.hideUiWhileChanging, p.arrowRotate]).toEqual([false, true, false]);
+  });
+});
+
+describe("reduce motion preference", () => {
+  it("is off by default and read from saved preferences", () => {
+    expect(parsePrefs(null).reduceMotion).toBe(false);
+    expect(parsePrefs(JSON.stringify({ reduceMotion: true })).reduceMotion).toBe(true);
+    expect(parsePrefs(JSON.stringify({ reduceMotion: "yes" })).reduceMotion).toBe(false);
+  });
+});
+
+describe("snap to pixel grid preference", () => {
+  it("is on by default and can be switched off", () => {
+    expect(parsePrefs(null).pixelSnap).toBe(true);
+    expect(parsePrefs(JSON.stringify({ pixelSnap: false })).pixelSnap).toBe(false);
+    expect(parsePrefs(JSON.stringify({ pixelSnap: "no" })).pixelSnap).toBe(true);
+  });
+});

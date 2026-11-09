@@ -33,12 +33,58 @@ export function polygonPoints(sides: number, inner = 0): [number, number][] {
   return pts.map(([x, y]) => [((x - minX) / w) * 100, ((y - minY) / h) * 100]);
 }
 
-export function polygonShape(sides = 3): ShapeVector {
-  return { viewBox: "0 0 100 100", markup: `<polygon points="${polygonPoints(sides).map((p) => `${r(p[0])},${r(p[1])}`).join(" ")}" ${NS}/>` };
+/**
+ * A closed outline through the points with every corner rounded: the corner is cut `radius` away from the vertex along both edges
+ * (no more than half an edge) and joined by a curve that bends at the vertex.
+ */
+/** For every corner: where its rounding starts (on the edge to the previous point), the corner itself, and where it ends. */
+function roundedCorners(points: [number, number][], radius: number): { a: [number, number]; cur: [number, number]; b: [number, number] }[] {
+  const n = points.length;
+  const rad = Math.max(0, radius);
+  return points.map((cur, i) => {
+    const prev = points[(i + n - 1) % n]!;
+    const next = points[(i + 1) % n]!;
+    const dPrev = Math.hypot(prev[0] - cur[0], prev[1] - cur[1]) || 1;
+    const dNext = Math.hypot(next[0] - cur[0], next[1] - cur[1]) || 1;
+    const t = Math.min(rad, dPrev / 2, dNext / 2);
+    return {
+      a: [cur[0] + ((prev[0] - cur[0]) * t) / dPrev, cur[1] + ((prev[1] - cur[1]) * t) / dPrev] as [number, number],
+      cur,
+      b: [cur[0] + ((next[0] - cur[0]) * t) / dNext, cur[1] + ((next[1] - cur[1]) * t) / dNext] as [number, number],
+    };
+  });
 }
 
-export function starShape(points = 5, inner = 0.382): ShapeVector {
-  return { viewBox: "0 0 100 100", markup: `<polygon points="${polygonPoints(points, inner).map((p) => `${r(p[0])},${r(p[1])}`).join(" ")}" ${NS}/>` };
+export function roundedPolygonPath(points: [number, number][], radius: number): string {
+  if (points.length < 3) return "";
+  const out = roundedCorners(points, radius).map(({ a, cur, b }, i) => `${i === 0 ? "M" : "L"}${r(a[0])} ${r(a[1])}Q${r(cur[0])} ${r(cur[1])} ${r(b[0])} ${r(b[1])}`);
+  return `${out.join("")}Z`;
+}
+
+/** The same rounded outline as straight segments (each corner curve in `steps` pieces), for boolean operations. */
+export function roundedPolygonOutline(points: [number, number][], radius: number, steps = 6): [number, number][] {
+  if (points.length < 3) return [];
+  const ring: [number, number][] = [];
+  for (const { a, cur, b } of roundedCorners(points, radius)) {
+    for (let k = 0; k <= steps; k++) {
+      const t = k / steps;
+      const m = 1 - t;
+      ring.push([m * m * a[0] + 2 * m * t * cur[0] + t * t * b[0], m * m * a[1] + 2 * m * t * cur[1] + t * t * b[1]]);
+    }
+  }
+  return ring;
+}
+
+function outline(pts: [number, number][], radius: number): string {
+  return radius > 0 ? `<path d="${roundedPolygonPath(pts, radius)}" ${NS}/>` : `<polygon points="${pts.map((p) => `${r(p[0])},${r(p[1])}`).join(" ")}" ${NS}/>`;
+}
+
+export function polygonShape(sides = 3, radius = 0): ShapeVector {
+  return { viewBox: "0 0 100 100", markup: outline(polygonPoints(sides), radius) };
+}
+
+export function starShape(points = 5, inner = 0.382, radius = 0): ShapeVector {
+  return { viewBox: "0 0 100 100", markup: outline(polygonPoints(points, inner), radius) };
 }
 
 /** A horizontal line `length` long; the layer is rotated to point anywhere else. */

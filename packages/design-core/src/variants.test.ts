@@ -95,3 +95,44 @@ describe('variants', () => {
     expect(() => doc.addVariant(doc.createNode('FRAME', { parentId: page }))).toThrow();
   });
 });
+
+describe('switching variants keeps overrides', () => {
+  it('the text an instance changed survives a variant switch, and the new variant still styles the rest', () => {
+    const { doc, page, main } = setup();
+    const v2 = doc.addVariant(main);
+    doc.setStyle(doc.children(v2).find((c) => c.type === 'TEXT')!.id, { opacity: 0.4 });
+    const inst = doc.createInstance(main, page, 400, 0);
+    const label = doc.children(inst).find((c) => c.type === 'TEXT')!;
+    doc.setText(label.id, { characters: 'Mine' });
+    doc.swapInstanceVariant(inst, 'Property 1', 'Variant 2');
+    const after = doc.children(inst).find((c) => c.type === 'TEXT') as unknown as { id: string; characters: string; opacity: number; overrides?: string[] };
+    expect(after.id).toBe(label.id); // the same layer, re-linked instead of rebuilt
+    expect(after.characters).toBe('Mine');
+    expect(after.opacity).toBe(0.4);
+    expect(after.overrides).toContain('characters');
+    doc.swapInstanceVariant(inst, 'Property 1', 'Variant 1');
+    expect((doc.children(inst).find((c) => c.type === 'TEXT') as unknown as { characters: string; opacity: number }).characters).toBe('Mine');
+    expect((doc.children(inst).find((c) => c.type === 'TEXT') as unknown as { opacity: number }).opacity).toBe(1);
+  });
+
+  it('swapping to a different component keeps overrides on layers with the same name and type', () => {
+    const { doc, page, main } = setup();
+    const other = doc.createNode('FRAME', { parentId: page, props: { name: 'Pill', x: 0, y: 100, width: 80, height: 30 } });
+    doc.createNode('TEXT', { parentId: other, props: { characters: 'Pill text' } });
+    const otherMain = doc.createComponent([other]);
+    const inst = doc.createInstance(main, page, 300, 0);
+    const label = doc.children(inst).find((c) => c.type === 'TEXT')!;
+    doc.setText(label.id, { characters: 'Kept' });
+    doc.swapInstance(inst, otherMain);
+    expect((doc.children(inst).find((c) => c.type === 'TEXT') as unknown as { characters: string }).characters).toBe('Kept');
+  });
+
+  it('a layer that has no match in the new variant is dropped, and a new one appears', () => {
+    const { doc, page, main } = setup();
+    const v2 = doc.addVariant(main);
+    doc.createNode('RECTANGLE', { parentId: v2, props: { name: 'Badge', width: 10, height: 10 } });
+    const inst = doc.createInstance(main, page, 400, 0);
+    doc.swapInstanceVariant(inst, 'Property 1', 'Variant 2');
+    expect(doc.children(inst).map((c) => c.type).sort()).toEqual(['RECTANGLE', 'TEXT']);
+  });
+});

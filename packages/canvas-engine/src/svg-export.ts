@@ -1,6 +1,6 @@
 import type { DesignDoc } from "@farsha/design-core";
 import { cssBlendMode, paintColor, type Box, type DesignNode, type Paint } from "@farsha/types";
-import { textFill, effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
+import { textFill, textFills, textStroke, effectsFilter, isDrawnVector, letterSpacingAttr, shapeGeometry, shapeMarkup, textBaseline, vectorMarkerDefs, vectorPaintAttrs } from "./appearance";
 import { unionBox } from "./measure";
 import { maskMarkup } from "./mask";
 import { nodeTransform } from "./transform";
@@ -65,7 +65,7 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
   const opacity = (n.opacity !== 1 ? ` opacity="${num(n.opacity)}"` : "") + (blend ? ` style="mix-blend-mode:${blend}"` : "");
   const fill = paint(n, "fills");
   const fillAttrs = fill ? ` fill="${esc(paintColor(fill))}"${fill.opacity !== 1 ? ` fill-opacity="${num(fill.opacity)}"` : ""}` : ' fill="none"';
-  const kids = renderList(doc, doc.children(n.id), clipIds);
+  const kids = renderList(doc, doc.paintOrder(n.id), clipIds);
 
   switch (n.type) {
     case "ELLIPSE":
@@ -73,18 +73,19 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
     case "TEXT": {
       const tf = textFill(n);
       const textFillAttrs = tf.defs ? ` fill="${tf.fill}"` : fillAttrs;
-      const tfDefs = tf.defs ? `<defs>${tf.defs}</defs>` : "";
+      const tsForDefs = textStroke(n);
+      const tfDefs = tf.defs || tsForDefs?.defs ? `<defs>${tf.defs}${tsForDefs?.defs ?? ""}</defs>` : "";
       const place = textPlacement(n);
       const anchor = `${place.anchor === "start" && !place.rtl ? "" : ` text-anchor="${place.anchor}"`}${place.rtl ? ' direction="rtl" unicode-bidi="plaintext"' : ""}`;
       const x = place.x;
       const { lines, starts, wordSpacing, lineGap, indent, lineHeight, height: textHeight } = layoutText(n, measure);
       const style = textFontStyle(n);
-      const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;
+      const decoration = `${style.fontStyle ? ' font-style="italic"' : ""}${style.fontVariant ? ' font-variant="small-caps"' : ""}${style.style ? ` style="font-feature-settings:${style.style.fontFeatureSettings.replace(/"/g, "'")}"` : ""}${style.textDecoration ? ` text-decoration="${style.textDecoration}"` : ""}`;
       const spans = lines
         .flatMap((l, i) =>
           lineSegments(l, starts[i] ?? 0, n.runs).map((seg, j) => {
             const deco = seg.underline && seg.strikethrough ? "underline line-through" : seg.underline ? "underline" : seg.strikethrough ? "line-through" : "";
-            const look = `${seg.bold ? ' font-weight="700"' : ""}${seg.italic ? ' font-style="italic"' : ""}${deco ? ` text-decoration="${deco}"` : ""}`;
+            const look = `${seg.bold ? ' font-weight="700"' : ""}${seg.italic ? ' font-style="italic"' : ""}${deco ? ` text-decoration="${deco}"` : ""}${seg.color ? ` fill="${seg.color}"` : ""}`;
             const startX = x + (place.anchor === "start" && !place.rtl ? indent[i] ?? 0 : 0);
             const pos = j === 0 ? ` x="${num(startX)}" dy="${i ? num(lineHeight + (lineGap[i] ?? 0)) : 0}"${wordSpacing[i] ? ` word-spacing="${num(wordSpacing[i]!)}"` : ""}` : "";
             return `<tspan${pos}${look}>${esc(seg.text)}</tspan>`;
@@ -98,7 +99,16 @@ function renderBody(doc: DesignDoc, n: DesignNode, clipIds: string[]): string {
         const offset = n.textAlign === "CENTER" ? ' startOffset="50%" text-anchor="middle"' : n.textAlign === "RIGHT" ? ' startOffset="100%" text-anchor="end"' : "";
         return `<g transform="${transform}"${opacity}>${tfDefs}<defs><path id="${pid}" d="${pathD}" fill="none"/></defs><text${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${textFillAttrs} xml:space="preserve"><textPath href="#${pid}"${offset}>${esc(lines.join(" "))}</textPath></text></g>`;
       }
-      return `<g transform="${transform}"${opacity}>${tfDefs}<text x="${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${textFillAttrs} xml:space="preserve">${spans}</text></g>`;
+      // several fills: the text is drawn once per fill, bottom first
+      const fills = textFills(n);
+      const ts = textStroke(n);
+      const strokeAttrs = ts ? ` stroke="${ts.stroke}" stroke-width="${num(ts.width)}"${ts.opacity !== 1 ? ` stroke-opacity="${num(ts.opacity)}"` : ""} stroke-linejoin="round"${ts.behind ? ' paint-order="stroke"' : ""}` : "";
+      const one = (fillAttrsOf: string) => `<text x=""${num(x)}" y="${num(textBaseline(n) + verticalTextOffset(n, textHeight))}"${anchor}${letterSpacingAttr(n)}${decoration} font-family="${esc(n.fontFamily)}" font-size="${num(n.fontSize)}" font-weight="${n.fontWeight}"${fillAttrsOf}${strokeAttrs} xml:space="preserve">${spans}</text>`;
+      if (fills.length > 1) {
+        const defs = fills.filter((f) => f.defs).map((f) => f.defs).join("") + (tsForDefs?.defs ?? "");
+        return `<g transform="${transform}"${opacity}>${defs ? `<defs>${defs}</defs>` : ""}${fills.map((f) => one(` fill="${f.fill}"${f.opacity !== 1 ? ` fill-opacity="${num(f.opacity)}"` : ""}`)).join("")}</g>`;
+      }
+      return `<g transform="${transform}"${opacity}>${tfDefs}${one(textFillAttrs)}</g>`;
     }
     case "FRAME": {
       const clipId = `clip-${n.id}`;
@@ -153,7 +163,7 @@ function exportSlice(doc: DesignDoc, slice: DesignNode, bounds: Box, clipIds: st
  * Standalone SVG of the given layers, cropped to their bounding box (the same crop Figma uses for
  * "Copy as SVG" / SVG export). Layers whose ancestor is also listed are drawn once, inside that ancestor.
  */
-export function exportSvg(doc: DesignDoc, ids: string[], opts: { measure?: Measure } = {}): SvgExport | null {
+export function exportSvg(doc: DesignDoc, ids: string[], opts: { measure?: Measure; contentsOnly?: boolean } = {}): SvgExport | null {
   measure = opts.measure ?? approxMeasure;
   const tops = ids.filter((id) => doc.hasNode(id) && !ids.some((o) => o !== id && doc.isAncestor(o, id)));
   const nodes = tops.map((id) => doc.getNode(id)).filter((n): n is DesignNode => !!n && n.type !== "PAGE" && n.type !== "DOCUMENT" && n.visible);
@@ -168,7 +178,7 @@ export function exportSvg(doc: DesignDoc, ids: string[], opts: { measure?: Measu
     .map((n) => {
       const abs = doc.absoluteBox(n.id)!;
       // Draw each top-level layer at its offset inside the crop (its own parent transforms are dropped).
-      return `<g transform="translate(${num(abs.x - bounds.x - n.x)} ${num(abs.y - bounds.y - n.y)})">${render(doc, n, clipIds)}</g>`;
+      return `<g transform="translate(${num(abs.x - bounds.x - n.x)} ${num(abs.y - bounds.y - n.y)})">${render(doc, opts.contentsOnly && n.type === "FRAME" ? ({ ...n, fills: [], strokes: [], effects: [] } as DesignNode) : n, clipIds)}</g>`;
     })
     .join("");
   const w = num(bounds.width);

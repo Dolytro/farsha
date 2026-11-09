@@ -246,3 +246,463 @@ describe("angular and diamond gradient css", () => {
     expect(paintCss({ type: "GRADIENT_DIAMOND", stops, angle: 0, opacity: 1 })).toMatch(/^radial-gradient\(closest-side, /);
   });
 });
+
+describe("tiled image fills", () => {
+  it("repeats the picture at its own size times the tile scale", () => {
+    expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "TILE", imageWidth: 32, imageHeight: 16, tileScale: 2, opacity: 1 })).toBe("url(image) 0 0 / 64px 32px repeat");
+    expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "TILE", opacity: 1 })).toBe("url(image) 0 0 / 256px 256px repeat");
+    expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "FIT", opacity: 1 })).toBe("url(image) center / contain no-repeat");
+    expect(paintCss({ type: "IMAGE", assetId: "a", scaleMode: "CROP", cropZoom: 1.5, cropX: 12, cropY: -4, opacity: 1 })).toBe("url(image) calc(50% + 12px) calc(50% + -4px) / 150% auto no-repeat");
+  });
+});
+
+describe("SwiftUI", () => {
+  it("makes a View struct with a ZStack, offsets, a rounded fill and a font", () => {
+    const { doc, frame } = setup();
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "swiftui");
+    expect(code).toContain("import SwiftUI");
+    expect(code).toContain("struct Card: View {");
+    expect(code).toContain("ZStack(alignment: .topLeading) {");
+    expect(code).toContain("RoundedRectangle(cornerRadius: 8).fill(Color(red: 0.22, green: 0.545, blue: 1))");
+    expect(code).toContain(".offset(x: 20, y: 30)");
+    expect(code).toContain('Text("Buy <now>")');
+    expect(code).toContain(".fontWeight(.semibold)");
+    expect(code).toContain(".frame(width: 300, height: 200, alignment: .topLeading)");
+  });
+
+  it("turns auto layout into stacks with spacing and padding", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const row = doc.createNode("FRAME", { parentId: page, props: { name: "Row", width: 200, height: 40, layoutMode: "HORIZONTAL", itemSpacing: 12, paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8, counterAxisAlign: "CENTER" } as never });
+    doc.createNode("ELLIPSE", { parentId: row, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#ff0000", opacity: 0.5 }] } });
+    const code = generateCode(doc.getNode(row)!, (id) => doc.children(id), "swiftui");
+    expect(code).toContain("HStack(alignment: .center, spacing: 12) {");
+    expect(code).toContain(".padding(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))");
+    expect(code).toContain("Ellipse().fill(Color(red: 1, green: 0, blue: 0).opacity(0.5))");
+    expect(code).not.toContain(".offset(");
+  });
+
+  it("writes gradients, strokes and drop shadows", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("RECTANGLE", {
+      parentId: page,
+      props: {
+        name: "Banner",
+        width: 100,
+        height: 50,
+        fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#000000", opacity: 1 }, { position: 1, color: "#ffffff", opacity: 1 }] }],
+        strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }],
+        strokeWidth: 2,
+        effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }],
+      } as never,
+    });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "swiftui");
+    expect(code).toContain("LinearGradient(gradient: Gradient(stops: [.init(color: Color(red: 0, green: 0, blue: 0), location: 0), .init(color: Color(red: 1, green: 1, blue: 1), location: 1)]), startPoint: UnitPoint(x: 0.5, y: 0), endPoint: UnitPoint(x: 0.5, y: 1))");
+    expect(code).toContain(".overlay(Rectangle().stroke(Color(red: 0, green: 1, blue: 0), lineWidth: 2))");
+    expect(code).toContain(".shadow(color: Color(red: 0, green: 0, blue: 0).opacity(0.25), radius: 4, x: 0, y: 4)");
+  });
+
+  it("escapes quotes and new lines in text", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("TEXT", { parentId: page, props: { name: "T", characters: 'Say "hi"\nthere\\' } });
+    expect(generateCode(doc.getNode(id)!, (i) => doc.children(i), "swiftui")).toContain('Text("Say \\"hi\\"\\nthere\\\\")');
+  });
+
+  it("never names the struct after a SwiftUI type or starts it with a digit", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("RECTANGLE", { parentId: page, props: { name: "Rectangle", width: 10, height: 10 } });
+    const b = doc.createNode("FRAME", { parentId: page, props: { name: "2 columns", width: 10, height: 10 } });
+    expect(generateCode(doc.getNode(a)!, (i) => doc.children(i), "swiftui")).toContain("struct RectangleView: View {");
+    expect(generateCode(doc.getNode(b)!, (i) => doc.children(i), "swiftui")).toContain("struct V2Columns: View {");
+  });
+});
+
+describe("Jetpack Compose", () => {
+  it("makes a composable with a Box, offsets, a rounded background and text arguments", () => {
+    const { doc, frame } = setup();
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "compose");
+    expect(code).toContain("@Composable\nfun Card() {");
+    expect(code).toContain("import androidx.compose.material3.Text");
+    expect(code).toContain(".offset(x = 20.dp, y = 30.dp)");
+    expect(code).toContain(".size(120.dp, 44.dp)");
+    expect(code).toContain(".background(Color(0xFF388BFF), RoundedCornerShape(8.dp))");
+    expect(code).toContain('text = "Buy <now>",');
+    expect(code).toContain("fontWeight = FontWeight.SemiBold,");
+  });
+
+  it("turns auto layout into Row / Column with spacing and padding", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const row = doc.createNode("FRAME", { parentId: page, props: { name: "Row", width: 200, height: 40, layoutMode: "HORIZONTAL", itemSpacing: 12, paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8, counterAxisAlign: "CENTER" } as never });
+    doc.createNode("ELLIPSE", { parentId: row, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#ff0000", opacity: 0.5 }] } });
+    const code = generateCode(doc.getNode(row)!, (id) => doc.children(id), "compose");
+    expect(code).toContain("fun RowLayout() {");
+    expect(code).toContain("horizontalArrangement = Arrangement.spacedBy(12.dp),");
+    expect(code).toContain("verticalAlignment = Alignment.CenterVertically");
+    expect(code).toContain(".padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 4.dp)");
+    expect(code).toContain(".background(Color(0x80FF0000), CircleShape)");
+    expect(code).not.toContain(".offset(");
+  });
+
+  it("writes gradients, borders and shadows, and escapes strings", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("RECTANGLE", {
+      parentId: page,
+      props: {
+        name: "Banner",
+        width: 100,
+        height: 50,
+        fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#000000", opacity: 1 }, { position: 1, color: "#ffffff", opacity: 1 }] }],
+        strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }],
+        strokeWidth: 2,
+        effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }],
+      } as never,
+    });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "compose");
+    expect(code).toContain(".background(Brush.linearGradient(0f to Color(0xFF000000), 1f to Color(0xFFFFFFFF), start = Offset(50f, 0f), end = Offset(50f, 50f)), RectangleShape)");
+    expect(code).toContain(".border(2.dp, Color(0xFF00FF00), RectangleShape)");
+    expect(code).toContain(".shadow(elevation = 4.dp, shape = RectangleShape, ambientColor = Color(0x40000000), spotColor = Color(0x40000000))");
+    const t = doc.createNode("TEXT", { parentId: page, props: { name: "T", characters: 'Cost $5 "x"\n' } });
+    expect(generateCode(doc.getNode(t)!, (i) => doc.children(i), "compose")).toContain('text = "Cost \\$5 \\"x\\"\\n",');
+  });
+});
+
+describe("grid flow CSS", () => {
+  it("is a CSS grid with a fixed number of columns", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("FRAME", { parentId: page, props: { name: "Grid", width: 200, height: 100, layoutMode: "HORIZONTAL", layoutWrap: true, gridColumns: 3, itemSpacing: 8, counterSpacing: 4, paddingTop: 2, paddingRight: 2, paddingBottom: 2, paddingLeft: 2, primaryAxisAlign: "CENTER" } as never });
+    const decls = declarations(doc.getNode(id)!, {});
+    const get = (k: string) => decls.find(([p]) => p === k)?.[1];
+    expect(get("display")).toBe("grid");
+    expect(get("grid-template-columns")).toBe("repeat(3, max-content)");
+    expect(get("gap")).toBe("4px 8px");
+    expect(get("justify-items")).toBe("center");
+    expect(get("flex-direction")).toBeUndefined();
+  });
+  it("without columns the wrap stays a flex layout", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("FRAME", { parentId: page, props: { name: "Wrap", width: 200, height: 100, layoutMode: "HORIZONTAL", layoutWrap: true } as never });
+    expect(declarations(doc.getNode(id)!, {}).find(([p]) => p === "display")?.[1]).toBe("flex");
+  });
+});
+
+describe("UIKit", () => {
+  it("makes a UIView subclass that builds frames, a label and a rounded view in setup()", () => {
+    const { doc, frame } = setup();
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "uikit");
+    expect(code).toContain("import UIKit");
+    expect(code).toContain("final class Card: UIView {");
+    expect(code).toContain("private func setup() {");
+    expect(code).toContain("let button = UIView()");
+    expect(code).toContain("button.backgroundColor = UIColor(red: 0.22, green: 0.545, blue: 1, alpha: 1)");
+    expect(code).toContain("button.layer.cornerRadius = 8");
+    expect(code).toContain("button.frame = CGRect(x: 20, y: 30, width: 120, height: 44)");
+    expect(code).toContain("addSubview(button)");
+    expect(code).toContain("let buyNow = UILabel()");
+    expect(code).toContain('buyNow.text = "Buy <now>"');
+    expect(code).toContain(".semibold");
+  });
+
+  it("turns auto layout into a UIStackView with spacing and margins", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const row = doc.createNode("FRAME", { parentId: page, props: { name: "Row", width: 200, height: 40, layoutMode: "HORIZONTAL", itemSpacing: 12, paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8, counterAxisAlign: "CENTER" } as never });
+    const inner = doc.createNode("FRAME", { parentId: row, props: { name: "Chip", width: 30, height: 20, layoutMode: "VERTICAL", paddingLeft: 3 } as never });
+    doc.createNode("ELLIPSE", { parentId: inner, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#ff0000", opacity: 0.5 }] } });
+    const code = generateCode(doc.getNode(row)!, (id) => doc.children(id), "uikit");
+    expect(code).toContain("let stack = UIStackView()");
+    expect(code).toContain("stack.axis = .horizontal");
+    expect(code).toContain("stack.spacing = 12");
+    expect(code).toContain("let chip = UIStackView()");
+    expect(code).toContain("chip.axis = .vertical");
+    expect(code).toContain("chip.isLayoutMarginsRelativeArrangement = true");
+    expect(code).toContain("stack.addArrangedSubview(chip)");
+    expect(code).toContain("dot.layer.cornerRadius = 5");
+    expect(code).toContain("chip.addArrangedSubview(dot)");
+    expect(code).toContain("stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8)");
+    // the chip hugs its content: 3 of margin plus the 10 wide dot
+    expect(code).toContain("chip.widthAnchor.constraint(equalToConstant: 13).isActive = true");
+  });
+
+  it("writes gradients, borders and shadows", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const parent = doc.createNode("FRAME", { parentId: page, props: { name: "Host", width: 200, height: 100 } });
+    doc.createNode("RECTANGLE", {
+      parentId: parent,
+      props: {
+        name: "Banner",
+        width: 100,
+        height: 50,
+        opacity: 0.5,
+        fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#000000", opacity: 1 }, { position: 1, color: "#ffffff", opacity: 1 }] }],
+        strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }],
+        strokeWidth: 2,
+        effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }],
+      } as never,
+    });
+    const code = generateCode(doc.getNode(parent)!, (i) => doc.children(i), "uikit");
+    expect(code).toContain("let bannerGradient = CAGradientLayer()");
+    expect(code).toContain("bannerGradient.startPoint = CGPoint(x: 0.5, y: 0)");
+    expect(code).toContain("bannerGradient.endPoint = CGPoint(x: 0.5, y: 1)");
+    expect(code).toContain("banner.layer.insertSublayer(bannerGradient, at: 0)");
+    expect(code).toContain("banner.layer.borderWidth = 2");
+    expect(code).toContain("banner.layer.shadowOpacity = 0.25");
+    expect(code).toContain("banner.layer.shadowRadius = 4");
+    expect(code).toContain("banner.alpha = 0.5");
+  });
+
+  it("escapes text, avoids UIKit class names, and gives repeated names unique variables", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const root = doc.createNode("FRAME", { parentId: page, props: { name: "UIView", width: 100, height: 100 } });
+    doc.createNode("TEXT", { parentId: root, props: { name: "T", characters: 'Say "hi"' } });
+    doc.createNode("TEXT", { parentId: root, props: { name: "T", characters: 'Say "hi"' } });
+    const code = generateCode(doc.getNode(root)!, (i) => doc.children(i), "uikit");
+    expect(code).toContain("final class UIViewView: UIView {");
+    expect(code).toContain('.text = "Say \\"hi\\""');
+    expect(code).toContain("let sayHi = UILabel()");
+    expect(code).toContain("let sayHi2 = UILabel()");
+  });
+
+  it("a single text layer becomes the only subview", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("TEXT", { parentId: page, props: { name: "Title", characters: "Hi" } });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "uikit");
+    expect(code).toContain("final class Title: UIView {");
+    expect(code).toContain("addSubview(");
+  });
+});
+
+describe("Android XML", () => {
+  it("makes a FrameLayout with margins and a drawable for the rounded fill", () => {
+    const { doc, frame } = setup();
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "androidxml");
+    expect(code).toContain("<!-- res/layout/card.xml -->");
+    expect(code).toContain("<FrameLayout");
+    expect(code).toContain('xmlns:android="http://schemas.android.com/apk/res/android"');
+    expect(code).toContain('android:layout_width="300dp"');
+    expect(code).toContain('android:layout_marginStart="20dp"');
+    expect(code).toContain('android:layout_marginTop="30dp"');
+    expect(code).toContain('android:background="@drawable/button_bg"');
+    expect(code).toContain("<!-- res/drawable/button_bg.xml -->");
+    expect(code).toContain('<solid android:color="#FF388BFF" />');
+    expect(code).toContain('<corners android:radius="8dp" />');
+    expect(code).toContain('android:text="Buy &lt;now&gt;"');
+    expect(code).toContain('android:textStyle="bold"');
+    expect(code).toContain('android:textSize="16sp"');
+  });
+
+  it("turns auto layout into a LinearLayout with padding, gravity and gap margins", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const row = doc.createNode("FRAME", { parentId: page, props: { name: "Row", width: 200, height: 40, layoutMode: "HORIZONTAL", itemSpacing: 12, paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8, counterAxisAlign: "CENTER" } as never });
+    doc.createNode("ELLIPSE", { parentId: row, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#ff0000", opacity: 0.5 }] } });
+    doc.createNode("ELLIPSE", { parentId: row, props: { name: "Dot", width: 10, height: 10, fills: [{ type: "SOLID", color: "#00ff00", opacity: 1 }] } });
+    const code = generateCode(doc.getNode(row)!, (id) => doc.children(id), "androidxml");
+    expect(code).toContain("<LinearLayout");
+    expect(code).toContain('android:orientation="horizontal"');
+    expect(code).toContain('android:paddingStart="8dp"');
+    expect(code).toContain('android:gravity="start|center_vertical"');
+    expect(code.match(/android:layout_marginStart="12dp"/g)).toHaveLength(1); // only the second dot
+    expect(code).toContain('<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">');
+    expect(code).toContain('<solid android:color="#80FF0000" />');
+    expect(code).toContain("res/drawable/dot_2_bg.xml");
+  });
+
+  it("writes gradients, strokes and elevation, and snaps the gradient angle", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("RECTANGLE", {
+      parentId: page,
+      props: {
+        name: "Banner",
+        width: 100,
+        height: 50,
+        fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#000000", opacity: 1 }, { position: 0.5, color: "#888888", opacity: 1 }, { position: 1, color: "#ffffff", opacity: 1 }] }],
+        strokes: [{ type: "SOLID", color: "#00ff00", opacity: 1 }],
+        strokeWidth: 2,
+        effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }],
+      } as never,
+    });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "androidxml");
+    expect(code).toContain('android:startColor="#FF000000"');
+    expect(code).toContain('android:centerColor="#FF888888"');
+    expect(code).toContain('android:endColor="#FFFFFFFF"');
+    expect(code).toContain('android:angle="270"'); // top to bottom in Farsha is 270 for Android
+    expect(code).toContain('<stroke android:width="2dp" android:color="#FF00FF00" />');
+    expect(code).toContain('android:elevation="4dp"');
+  });
+
+  it("a single text layer is its own TextView with the namespace on it", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("TEXT", { parentId: page, props: { name: "Title", characters: "Hi" } });
+    const code = generateCode(doc.getNode(id)!, (i) => doc.children(i), "androidxml");
+    expect(code).toMatch(/<TextView\s+xmlns:android=/);
+  });
+});
+
+describe("stroke position in CSS", () => {
+  const make = (strokeAlign: string, extra: Record<string, unknown> = {}) => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", { parentId: doc.pages()[0]!.id, props: { width: 10, height: 10, strokes: [{ type: "SOLID", color: "#ff0000", opacity: 1 }], strokeWidth: 4, strokeAlign, ...extra } as never });
+    return Object.fromEntries(declarations(doc.getNode(id)!));
+  };
+  it("inside strokes are a border", () => {
+    expect(make("INSIDE")).toMatchObject({ border: "4px solid #ff0000", "box-sizing": "border-box" });
+    expect(make("INSIDE")).not.toHaveProperty("outline");
+  });
+  it("outside strokes are an outline and no border", () => {
+    const d = make("OUTSIDE");
+    expect(d.outline).toBe("4px solid #ff0000");
+    expect(d).not.toHaveProperty("border");
+  });
+  it("centred strokes are half border and half outline", () => {
+    const d = make("CENTER");
+    expect(d.border).toBe("2px solid #ff0000");
+    expect(d.outline).toBe("2px solid #ff0000");
+  });
+  it("dashes carry over to outline and border", () => {
+    const d = make("OUTSIDE", { strokeDash: [8, 4] });
+    expect(d.outline).toBe("4px dashed #ff0000");
+  });
+  it("Tailwind writes an outline", () => {
+    expect(tailwindClass(["outline", "4px solid #ff0000"])).toContain("outline-[4px]");
+  });
+});
+
+describe("text stroke in CSS", () => {
+  const make = (strokeAlign: string) => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Hi", fontSize: 20, strokes: [{ type: "SOLID", color: "#ff0000", opacity: 1 }], strokeWidth: 2, strokeAlign } as never });
+    return Object.fromEntries(declarations(doc.getNode(id)!));
+  };
+  it("centred is a text stroke", () => {
+    const d = make("CENTER");
+    expect(d["-webkit-text-stroke"]).toBe("2px #ff0000");
+    expect(d).not.toHaveProperty("paint-order");
+  });
+  it("outside is twice as wide and painted behind the fill", () => {
+    const d = make("OUTSIDE");
+    expect(d["-webkit-text-stroke"]).toBe("4px #ff0000");
+    expect(d["paint-order"]).toBe("stroke fill");
+  });
+});
+
+describe("gradient text in CSS", () => {
+  it("clips the gradient to the letters", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Hi", fontSize: 20, fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }] } as never });
+    const d = Object.fromEntries(declarations(doc.getNode(id)!));
+    expect(d.background).toContain("linear-gradient");
+    expect(d["-webkit-background-clip"]).toBe("text");
+    expect(d["-webkit-text-fill-color"]).toBe("transparent");
+  });
+  it("a plain colour stays a colour", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Hi", fontSize: 20, fills: [{ type: "SOLID", color: "#00ff00", opacity: 1 }] } as never });
+    const d = Object.fromEntries(declarations(doc.getNode(id)!));
+    expect(d.color).toBe("#00ff00");
+    expect(d).not.toHaveProperty("background");
+  });
+});
+
+describe("gradient stroke in CSS", () => {
+  it("uses a transparent border with the gradient on the border box", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("RECTANGLE", {
+      parentId: doc.pages()[0]!.id,
+      props: { width: 10, height: 10, fills: [{ type: "SOLID", color: "#ffffff", opacity: 1 }], strokes: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }], strokeWidth: 3, strokeAlign: "INSIDE" } as never,
+    });
+    const d = Object.fromEntries(declarations(doc.getNode(id)!));
+    expect(d.border).toBe("3px solid transparent");
+    expect(d.background).toContain("padding-box");
+    expect(d.background).toContain("border-box");
+    expect(d.background).toContain("linear-gradient");
+  });
+});
+
+describe("Vue output", () => {
+  it("is a single-file component with a template and a scoped style", () => {
+    const doc = new DesignDoc();
+    const frame = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id, props: { name: "Card", width: 100, height: 50 } });
+    doc.createNode("TEXT", { parentId: frame, props: { characters: "Hello <b>", fontSize: 12 } as never });
+    const code = generateCode(doc.getNode(frame)!, (id) => doc.children(id), "vue");
+    expect(code.startsWith("<template>\n")).toBe(true);
+    expect(code).toContain("</template>\n\n<style scoped>");
+    expect(code.trimEnd().endsWith("</style>")).toBe(true);
+    expect(code).toContain("Hello &lt;b&gt;");
+    expect(code).toContain('class="card"');
+  });
+});
+
+describe("class and component names", () => {
+  it("shortens the class of a long text layer to a few words", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("TEXT", { parentId: doc.pages()[0]!.id, props: { characters: "Tile ta nijei ekta selection frame with four corner handles and a dot grid inside", fontSize: 12 } as never });
+    const code = generateCode(doc.getNode(id)!, (n) => doc.children(n), "html");
+    const cls = /class="([^"]+)"/.exec(code)![1]!;
+    expect(cls.length).toBeLessThanOrEqual(32);
+    expect(cls.startsWith("tile-ta-nijei")).toBe(true);
+    expect(cls.endsWith("-")).toBe(false);
+  });
+  it("a React component name never starts with a digit", () => {
+    const doc = new DesignDoc();
+    const id = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id, props: { name: "3D card", width: 10, height: 10 } });
+    expect(generateCode(doc.getNode(id)!, (n) => doc.children(n), "react")).toContain("export function C3DCard()");
+  });
+});
+
+describe("Flutter output", () => {
+  const build = () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { name: "Card", width: 200, height: 100, cornerRadius: 12, fills: [{ type: "SOLID", color: "#112233", opacity: 1 }], strokes: [{ type: "SOLID", color: "#ff0000", opacity: 1 }], strokeWidth: 2, effects: [{ type: "DROP_SHADOW", x: 0, y: 4, blur: 8, color: "#000000", opacity: 0.25, visible: true }] } as never });
+    doc.setStyle(frame, { layoutMode: "HORIZONTAL", itemSpacing: 8, paddingLeft: 10, paddingTop: 10, paddingRight: 10, paddingBottom: 10 } as never);
+    doc.createNode("TEXT", { parentId: frame, props: { characters: "It's $5", fontSize: 14, fontWeight: 600, fills: [{ type: "SOLID", color: "#ffffff", opacity: 1 }] } as never });
+    doc.createNode("ELLIPSE", { parentId: frame, props: { width: 20, height: 20, fills: [{ type: "GRADIENT_LINEAR", angle: 90, opacity: 1, stops: [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }] }] } as never });
+    return generateCode(doc.getNode(frame)!, (id) => doc.children(id), "flutter");
+  };
+  it("writes a StatelessWidget with a Container, a Row and a Text", () => {
+    const code = build();
+    expect(code).toContain("import 'package:flutter/material.dart';");
+    expect(code).toContain("class CardWidget extends StatelessWidget");
+    expect(code).toContain("Container(");
+    expect(code).toContain("Row(");
+    expect(code).toContain("spacing: 8,");
+    expect(code).toContain("Padding(");
+    expect(code).toContain("EdgeInsets.fromLTRB(10, 10, 10, 10)");
+    expect(code).toContain("Text(");
+  });
+  it("writes decoration: colour, radius, border, shadow, gradient and a circle", () => {
+    const code = build();
+    expect(code).toContain("color: Color(0xFF112233)");
+    expect(code).toContain("BorderRadius.circular(12)");
+    expect(code).toContain("Border.all(color: Color(0xFFFF0000), width: 2)");
+    expect(code).toContain("BoxShadow(color: Color(0x40000000), offset: Offset(0, 4), blurRadius: 8)");
+    expect(code).toContain("LinearGradient(");
+    expect(code).toContain("shape: BoxShape.circle");
+  });
+  it("escapes quotes and dollar signs in text and keeps the brackets balanced", () => {
+    const code = build();
+    expect(code).toContain("'It\\'s \\$5'");
+    const count = (c: string) => code.split(c).length - 1;
+    expect(count("(")).toBe(count(")"));
+    expect(count("[")).toBe(count("]"));
+    expect(count("{")).toBe(count("}"));
+  });
+  it("never names the class after a widget it uses", async () => {
+    const { flutterClassName } = await import("./flutter");
+    expect(flutterClassName("Text")).toBe("TextWidget");
+    expect(flutterClassName("3D card")).toBe("C3DCardWidget");
+    expect(flutterClassName("Login widget")).toBe("LoginWidget");
+  });
+});

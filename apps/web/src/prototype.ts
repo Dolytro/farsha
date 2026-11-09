@@ -1,5 +1,5 @@
 import type { DesignDoc } from "@farsha/design-core";
-import type { Box, DesignNode, Easing, Interaction } from "@farsha/types";
+import type { Box, ConditionClause, DesignNode, Easing, Interaction, InteractionAction, MediaOp } from "@farsha/types";
 import { topLevelFrames } from "./section-actions";
 
 /** Top-level frames of every page: the screens a prototype can navigate between. */
@@ -20,6 +20,18 @@ export function topFrameOf(doc: DesignDoc, id: string | undefined): DesignNode |
 export function startFrame(doc: DesignDoc, selection: string[]): string | undefined {
   const frames = prototypeFrames(doc);
   return topFrameOf(doc, selection[0])?.id ?? frames.find((f) => f.flowStart)?.id ?? frames[0]?.id;
+}
+
+export interface Flow {
+  frameId: string;
+  name: string;
+}
+
+/** Every flow of the file: the frames marked as starting points, in order, with their names ("Flow 1", "Flow 2" when unnamed). */
+export function flowsOf(doc: DesignDoc): Flow[] {
+  return prototypeFrames(doc)
+    .filter((f) => f.flowStart)
+    .map((f, i) => ({ frameId: f.id, name: (f.type === "FRAME" && f.flowName?.trim()) || `Flow ${i + 1}` }));
 }
 
 export interface Hotspot {
@@ -68,10 +80,35 @@ export function safeUrl(url: string): string | null {
   }
 }
 
+export const MAX_EXTRA_CONDITIONS = 5;
+
+/** Whether one comparison holds right now (the variable in the active mode; a missing variable never holds). Two numbers compare as numbers, anything else as text without regard to case. */
+export function conditionHolds(doc: DesignDoc, c: ConditionClause): boolean {
+  const v = doc.getColorVariable(c.variableId);
+  if (!v) return false;
+  const have = doc.resolveVariableValue(v, doc.activeModeId());
+  const bothNumbers = have.trim() !== "" && c.value.trim() !== "" && Number.isFinite(Number(have)) && Number.isFinite(Number(c.value));
+  const same = bothNumbers ? Number(have) === Number(c.value) : have.trim().toLowerCase() === c.value.trim().toLowerCase();
+  return c.op === "EQ" ? same : c.op === "NEQ" ? !same : bothNumbers && (c.op === "GT" ? Number(have) > Number(c.value) : Number(have) < Number(c.value));
+}
+
+/** The frame a Conditional action leads to: its "then" frame when its conditions hold (all of them, or any of them with join OR), else its "else" frame (undefined when there is none). */
+export function conditionTarget(doc: DesignDoc, a: Extract<InteractionAction, { type: "CONDITIONAL" }>): string | undefined {
+  const clauses: ConditionClause[] = [{ variableId: a.variableId, op: a.op, value: a.value }, ...(Array.isArray(a.more) ? a.more.slice(0, MAX_EXTRA_CONDITIONS) : [])];
+  const results = clauses.map((c) => conditionHolds(doc, c));
+  const ok = a.join === "OR" ? results.some(Boolean) : results.every(Boolean);
+  return ok ? a.thenId : a.elseId;
+}
+
 /** Where an interaction leads: the next frame and the new history, or null when it does nothing (or only opens a web address). */
 export function followInteraction(doc: DesignDoc, current: string, history: string[], interaction: Interaction): { frame: string; history: string[] } | null {
-  const action = interaction.action;
-  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO") return null;
+  let action = interaction.action;
+  if (action.type === "CONDITIONAL") {
+    const targetId = conditionTarget(doc, action);
+    if (!targetId) return null;
+    action = { type: "NAVIGATE", targetId };
+  }
+  if (action.type === "OPEN_URL" || action.type === "OPEN_OVERLAY" || action.type === "SWAP_OVERLAY" || action.type === "CLOSE_OVERLAY" || action.type === "SCROLL_TO" || action.type === "SET_MODE" || action.type === "SET_VARIABLE" || action.type === "CHANGE_TO" || action.type === "MEDIA") return null;
   if (action.type === "BACK") {
     const prev = history[history.length - 1];
     return prev ? { frame: prev, history: history.slice(0, -1) } : null;
@@ -136,10 +173,33 @@ export function easingFn(e: Easing | undefined): (t: number) => number {
 }
 
 /** CSS keyframes name, duration and timing function for a transition (null for an instant change). */
-export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string } | null {
+export function transitionAnimation(t: Interaction["transition"]): { name: string; durationMs: number; timing: string; leave?: string; leaveUnder?: boolean } | null {
   if (!t || t.type === "INSTANT" || t.type === "SMART_ANIMATE") return null;
-  const name = { DISSOLVE: "presenter-dissolve", SLIDE_IN_LEFT: "presenter-slide-left", SLIDE_IN_RIGHT: "presenter-slide-right", SLIDE_IN_TOP: "presenter-slide-top", SLIDE_IN_BOTTOM: "presenter-slide-bottom" }[t.type];
-  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)), timing: easingCss(t.easing) };
+  const names: Record<string, string> = { DISSOLVE: "presenter-dissolve", MOVE_IN_LEFT: "presenter-slide-left", MOVE_IN_RIGHT: "presenter-slide-right", MOVE_IN_TOP: "presenter-slide-top", MOVE_IN_BOTTOM: "presenter-slide-bottom" };
+  // Move out: the old frame leaves toward a side and reveals the new one. Push: the new frame comes in from a side and pushes the old one out the opposite way.
+  const opposite: Record<string, string> = { left: "right", right: "left", top: "bottom", bottom: "top" };
+  const side = t.type.split("_").pop()!.toLowerCase();
+  let name = names[t.type];
+  let leave: string | undefined;
+  let leaveUnder = false;
+  if (t.type.startsWith("SLIDE_IN_")) {
+    // Slide in: the new frame comes in over the old one, which drifts half as far the other way underneath it.
+    name = `presenter-slide-${side}`;
+    leave = `presenter-out-half-${opposite[side] ?? side}`;
+    leaveUnder = true;
+  } else if (t.type.startsWith("SLIDE_OUT_")) {
+    // Slide out: the old frame leaves toward a side while the new one arrives from half a frame away.
+    name = `presenter-in-half-${opposite[side] ?? side}`;
+    leave = `presenter-out-${side}`;
+  } else if (t.type.startsWith("MOVE_OUT_")) {
+    name = "presenter-hold";
+    leave = `presenter-out-${side}`;
+  } else if (t.type.startsWith("PUSH_")) {
+    name = `presenter-slide-${side}`;
+    leave = `presenter-out-${opposite[side] ?? side}`;
+  }
+  if (!name) return null;
+  return { name, durationMs: Math.min(5000, Math.max(50, Number.isFinite(t.durationMs) ? t.durationMs : 300)), timing: easingCss(t.easing), ...(leave ? { leave } : {}), ...(leaveUnder ? { leaveUnder } : {}) };
 }
 
 /** How big the prototype stage is in a window: fit the whole frame, or (vertical scrolling) fit the width and scroll the rest. */
@@ -149,18 +209,22 @@ export type ScrollMode = "NONE" | "VERTICAL" | "HORIZONTAL" | "BOTH";
  * How big the prototype stage is in a window: fit the whole frame, or fit the width and scroll down (VERTICAL),
  * fit the height and scroll across (HORIZONTAL), or show it at the size that fills the window's width and scroll both ways (BOTH).
  */
-export function stageLayout(frame: { width: number; height: number }, win: { w: number; h: number }, scroll: ScrollMode | boolean): { scale: number; stageWidth: number; stageHeight: number } {
+export type PresentScale = "FIT" | "FILL" | "ACTUAL";
+
+/** `zoom` only matters for a frame without scrolling: FIT shows it whole, FILL covers the window (the edges are cropped), ACTUAL shows it at 100%. */
+export function stageLayout(frame: { width: number; height: number }, win: { w: number; h: number }, scroll: ScrollMode | boolean, zoom: PresentScale = "FIT"): { scale: number; stageWidth: number; stageHeight: number } {
   const mode: ScrollMode = scroll === true ? "VERTICAL" : scroll === false ? "NONE" : scroll;
   const maxW = Math.max(1, win.w - 40);
   const maxH = Math.max(1, win.h - 40);
   const scale =
-    mode === "VERTICAL" ? Math.min(maxW / frame.width, 4) : mode === "HORIZONTAL" ? Math.min(maxH / frame.height, 4) : mode === "BOTH" ? 1 : Math.min(maxW / frame.width, maxH / frame.height, 4);
+    mode === "VERTICAL" ? Math.min(maxW / frame.width, 4) : mode === "HORIZONTAL" ? Math.min(maxH / frame.height, 4) : mode === "BOTH" ? 1 : zoom === "ACTUAL" ? 1 : zoom === "FILL" ? Math.min(Math.max(maxW / frame.width, maxH / frame.height), 4) : Math.min(maxW / frame.width, maxH / frame.height, 4);
   const w = frame.width * scale;
   const h = frame.height * scale;
+  const crop = mode === "NONE" && zoom !== "FIT";
   return {
     scale,
-    stageWidth: mode === "HORIZONTAL" || mode === "BOTH" ? Math.min(w, maxW) : w,
-    stageHeight: mode === "VERTICAL" || mode === "BOTH" ? Math.min(h, maxH) : h,
+    stageWidth: mode === "HORIZONTAL" || mode === "BOTH" || crop ? Math.min(w, maxW) : w,
+    stageHeight: mode === "VERTICAL" || mode === "BOTH" || crop ? Math.min(h, maxH) : h,
   };
 }
 
@@ -222,4 +286,25 @@ export function videosIn(doc: DesignDoc, frameId: string): VideoSpot[] {
     if (abs) out.push({ id: n.id, assetId: n.videoAssetId, box: { x: abs.x - origin.x, y: abs.y - origin.y, width: abs.width, height: abs.height } });
   }
   return out;
+}
+
+/** The state of a video after a media control: playing or paused, muted or not, and the playback time (skips stay between 0 and the length). */
+export function mediaState(
+  op: MediaOp,
+  now: { paused: boolean; muted: boolean; time: number; duration: number },
+  seconds = 10,
+): { paused: boolean; muted: boolean; time: number } {
+  const skip = Number.isFinite(seconds) && seconds > 0 ? Math.min(3600, seconds) : 10;
+  const length = Number.isFinite(now.duration) && now.duration > 0 ? now.duration : Infinity;
+  const clamp = (t: number) => Math.min(length, Math.max(0, t));
+  let { paused, muted, time } = now;
+  if (op === "PLAY") paused = false;
+  else if (op === "PAUSE") paused = true;
+  else if (op === "TOGGLE_PLAY") paused = !paused;
+  else if (op === "MUTE") muted = true;
+  else if (op === "UNMUTE") muted = false;
+  else if (op === "TOGGLE_MUTE") muted = !muted;
+  else if (op === "SKIP_FORWARD") time = clamp(time + skip);
+  else if (op === "SKIP_BACK") time = clamp(time - skip);
+  return { paused, muted, time };
 }

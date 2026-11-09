@@ -42,3 +42,13 @@ describe("automatic versions", () => {
     expect(list.find((v) => v.name === "Named")!.auto).toBeUndefined();
   });
 });
+
+describe("version description", () => {
+  it("keeps a trimmed description and drops an empty one", async () => {
+    const { addVersionTo } = await import("./version-list");
+    const a = addVersionTo([], { name: "v1", bytes: new Uint8Array(), now: 1, description: "  Before the redesign  " });
+    expect(a[0]?.description).toBe("Before the redesign");
+    const b = addVersionTo(a, { name: "v2", bytes: new Uint8Array(), now: 2, description: "   " });
+    expect(b[0]).not.toHaveProperty("description");
+  });
+});

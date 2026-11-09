@@ -2,7 +2,13 @@ import { ColorSwatch } from "./ColorSwatch";
 import { useEffect, useState } from "react";
 import { useEditor } from "../store";
 import { HexInput } from "./HexInput";
+import { Select } from "./Select";
+import { COLOR_SCOPES, COLOR_SCOPE_LABEL, NUMBER_SCOPES, NUMBER_SCOPE_LABEL } from "@farsha/types";
+
+const SCOPE_LABEL: Record<string, string> = { ...NUMBER_SCOPE_LABEL, ...COLOR_SCOPE_LABEL };
 import { fitText } from "../text-layout";
+import { exportVariables, importVariables, parseVariables } from "../variable-json";
+import { groupVariables, joinName, splitName } from "../variable-groups";
 
 /** Colour variables and their modes: one row per variable, one column per mode (for example Light and Dark). */
 export function VariablesDialog() {
@@ -11,7 +17,10 @@ export function VariablesDialog() {
   const doc = useEditor((s) => s.doc);
   useEditor((s) => s.version);
   const [renamingMode, setRenamingMode] = useState<string | null>(null);
+  const [picking, setPicking] = useState<string | null>(null);
   const [tab, setTab] = useState<"color" | "text" | "number" | "boolean">("color");
+  const [collectionId, setCollectionId] = useState("default");
+  const [renamingCollection, setRenamingCollection] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -26,9 +35,12 @@ export function VariablesDialog() {
   }, [open, setOpen]);
 
   if (!open) return null;
-  const modes = doc.modes();
-  const active = doc.activeModeId();
-  const variables = tab === "color" ? doc.colorVariables() : tab === "text" ? doc.textVariables() : doc.valueVariables(tab === "number" ? "NUMBER" : "BOOLEAN");
+  const collections = doc.collections();
+  const collection = collections.find((c) => c.id === collectionId) ?? collections[0]!;
+  const modes = doc.modes(collection.id);
+  const active = doc.activeModeId(collection.id);
+  const allOfKind = tab === "color" ? doc.colorVariables() : tab === "text" ? doc.textVariables() : doc.valueVariables(tab === "number" ? "NUMBER" : "BOOLEAN");
+  const variables = allOfKind.filter((v) => (v.collectionId ?? "default") === collection.id);
   const run = (fn: () => void) => {
     try {
       doc.stopCapturing();
@@ -41,6 +53,29 @@ export function VariablesDialog() {
     }
   };
 
+  const exportJson = () => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(exportVariables(doc), null, 2)], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "variables.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const importJson = (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 2_000_000) return useEditor.getState().showToast("That file is too big for a variables file");
+    void file.text().then((text) => {
+      try {
+        const n = importVariables(doc, parseVariables(text));
+        useEditor.getState().showToast(n === 1 ? "Imported 1 variable" : `Imported ${n} variables`);
+      } catch (err) {
+        useEditor.getState().showToast(err instanceof Error ? err.message : "Couldn't import that file");
+      }
+    });
+  };
+
   return (
     <div className="dialog" onPointerDown={() => setOpen(false)}>
       <div className="dialog__box dialog__box--wide" role="dialog" aria-label="Variables" onPointerDown={(e) => e.stopPropagation()}>
@@ -49,6 +84,52 @@ export function VariablesDialog() {
           <button className="icon-btn" aria-label="Close" onClick={() => setOpen(false)}>
             ✕
           </button>
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 0 8px" }}>
+          {renamingCollection ? (
+            <input
+              className="dialog__input"
+              aria-label="Collection name"
+              autoFocus
+              defaultValue={collection.name}
+              onFocus={(e) => e.currentTarget.select()}
+              onBlur={(e) => {
+                setRenamingCollection(false);
+                run(() => doc.renameCollection(collection.id, e.currentTarget.value));
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
+              }}
+            />
+          ) : (
+            <Select className="field__select field__select--wide" aria-label="Variable collection" value={collection.id} onChange={(e) => setCollectionId(e.target.value)}>
+              {collections.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          )}
+          <button className="props__button" title="Rename this collection" onClick={() => setRenamingCollection(true)}>
+            Rename
+          </button>
+          <button className="props__button" title="Add a collection with its own modes" onClick={() => run(() => setCollectionId(doc.addCollection("")))}>
+            + Collection
+          </button>
+          {collection.id !== "default" && (
+            <button
+              className="props__button"
+              title="Delete this collection with its modes and variables"
+              onClick={() => {
+                const id = collection.id;
+                setCollectionId("default");
+                run(() => doc.deleteCollection(id));
+              }}
+            >
+              Delete
+            </button>
+          )}
         </div>
         <div className="seg" role="tablist" aria-label="Variable type">
           <button className={`seg__btn${tab === "color" ? " seg__btn--active" : ""}`} role="tab" aria-selected={tab === "color"} onClick={() => setTab("color")}>
@@ -96,15 +177,42 @@ export function VariablesDialog() {
                 )}
               </span>
             ))}
-            <button className="props__add" title="Add mode" onClick={() => run(() => void doc.addMode(""))}>
+            <button className="props__add" title="Add mode" onClick={() => run(() => void doc.addMode("", collection.id))}>
               +
             </button>
           </div>
           {variables.length === 0 && <p className="dialog__note">{tab === "color" ? "No variables yet. Add one, then bind a fill or stroke to it with the ◆ button." : tab === "text" ? "No text variables yet. Add one, then pick it in the Variable field of a text layer." : "None yet. Add one, then bind it to a property in the Variables section of the Design panel."}</p>}
-          {variables.map((v) => (
+          {groupVariables(variables).flatMap((g) => [
+            ...(g.path ? [<div className="vars__group" key={`group-${g.path}`} style={{ fontWeight: 600, fontSize: 12, opacity: 0.75, padding: "8px 0 2px" }}>{g.path}</div>] : []),
+            ...g.items.map(({ variable: v, leaf }) => (
             <div className="vars__row" key={v.id} style={{ gridTemplateColumns: `minmax(120px, 1.4fr) repeat(${modes.length}, minmax(110px, 1fr)) 24px` }}>
-              <input className="dialog__input" aria-label="Variable name" defaultValue={v.name} key={v.name} onBlur={(e) => e.currentTarget.value !== v.name && run(() => (tab === "color" ? doc.updateColorVariable(v.id, { name: e.currentTarget.value }) : tab === "text" ? doc.updateTextVariable(v.id, { name: e.currentTarget.value }) : doc.updateValueVariable(v.id, { name: e.currentTarget.value })))} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
+              <input className="dialog__input" aria-label="Variable name" title={g.path ? `In the group ${g.path}. Type a / to make a subgroup.` : "Type a / in the name to put it in a group, like brand/primary"} defaultValue={leaf} key={v.name} onBlur={(e) => { const name = joinName(splitName(v.name).path, e.currentTarget.value); if (name && name !== v.name) run(() => (tab === "color" ? doc.updateColorVariable(v.id, { name }) : tab === "text" ? doc.updateTextVariable(v.id, { name }) : doc.updateValueVariable(v.id, { name }))); else e.currentTarget.value = leaf; }} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") e.currentTarget.blur(); }} />
               {modes.map((m) => {
+                const aliasId = doc.variableAlias(v.id, m.id);
+                const slot = `${v.id}:${m.id}`;
+                if (aliasId || picking === slot) {
+                  return (
+                    <Select
+                      key={m.id}
+                      className="field__select"
+                      aria-label={`Alias in ${m.name}`}
+                      title="This value follows another variable"
+                      value={aliasId ?? ""}
+                      onChange={(e) => {
+                        setPicking(null);
+                        run(() => doc.setVariableAlias(v.id, m.id, e.target.value || null));
+                      }}
+                    >
+                      <option value="">{aliasId ? "Detach (use its value)" : "Choose a variable…"}</option>
+                      {allOfKind.filter((o) => o.id !== v.id).map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {(o.collectionId ?? "default") === collection.id ? o.name : `${collections.find((c) => c.id === (o.collectionId ?? "default"))?.name ?? "Other"} / ${o.name}`}
+                        </option>
+                      ))}
+                    </Select>
+                  );
+                }
+                const valueEl = (() => {
                 const value = v.values[m.id] ?? (tab === "color" ? "#000000" : tab === "number" ? "0" : tab === "boolean" ? "false" : "");
                 if (tab === "number") {
                   return (
@@ -151,16 +259,69 @@ export function VariablesDialog() {
                     <HexInput value={value} onChange={(color) => run(() => doc.updateColorVariable(v.id, { modeId: m.id, color }))} />
                   </span>
                 );
+              })();
+                return (
+                  <span className="vars__cell" key={m.id} style={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
+                    <span style={{ flex: 1, minWidth: 0 }}>{valueEl}</span>
+                    {variables.length > 1 && (
+                      <button className="props__add" title="Make this value follow another variable" aria-label={`Make alias in ${m.name}`} onClick={() => setPicking(slot)}>
+                        ⛓
+                      </button>
+                    )}
+                  </span>
+                );
               })}
               <button className="props__add" title="Delete variable" onClick={() => run(() => doc.deleteColorVariable(v.id))}>
                 −
               </button>
             </div>
-          ))}
+            )),
+          ...(tab === "number" || tab === "color"
+            ? g.items.map(({ variable: v }) => {
+                const ALL: readonly string[] = tab === "number" ? NUMBER_SCOPES : COLOR_SCOPES;
+                return (
+                <details key={`scope-${v.id}`} className="vars__scope" style={{ margin: "0 0 6px 4px", fontSize: 12 }}>
+                  <summary aria-label={`Scope of ${v.name}`} style={{ cursor: "pointer", opacity: 0.75 }}>
+                    {v.name}: {v.scopes?.length ? v.scopes.map((x) => SCOPE_LABEL[x] ?? x).join(", ") : "can be used for anything"}
+                  </summary>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, padding: "4px 0" }}>
+                    {ALL.map((scope) => {
+                      const on = !v.scopes?.length || (v.scopes as string[]).includes(scope);
+                      return (
+                        <label key={scope} className="props__check">
+                          <input
+                            type="checkbox"
+                            aria-label={`${v.name} for ${SCOPE_LABEL[scope]}`}
+                            checked={on}
+                            onChange={(e) => {
+                              const current: string[] = v.scopes?.length ? [...v.scopes] : [...ALL];
+                              const next = e.target.checked ? [...current, scope] : current.filter((x) => x !== scope);
+                              run(() => doc.setVariableScopes(v.id, next.length ? next : [...ALL]));
+                            }}
+                          />
+                          {SCOPE_LABEL[scope]}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </details>
+                );
+              })
+            : []),
+          ])}
         </div>
-        <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9") : tab === "text" ? doc.createTextVariable(`Text ${variables.length + 1}`, "Text") : doc.createValueVariable(tab === "number" ? "NUMBER" : "BOOLEAN", `${tab === "number" ? "Number" : "Boolean"} ${variables.length + 1}`, tab === "number" ? "0" : "true")))}>
+        <button className="props__button" onClick={() => run(() => void (tab === "color" ? doc.createColorVariable(`Color ${variables.length + 1}`, "#d9d9d9", collection.id) : tab === "text" ? doc.createTextVariable(`Text ${variables.length + 1}`, "Text", collection.id) : doc.createValueVariable(tab === "number" ? "NUMBER" : "BOOLEAN", `${tab === "number" ? "Number" : "Boolean"} ${variables.length + 1}`, tab === "number" ? "0" : "true", collection.id)))}>
           {tab === "color" ? "+ Add color variable" : tab === "text" ? "+ Add text variable" : tab === "number" ? "+ Add number variable" : "+ Add boolean variable"}
         </button>
+        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+          <button className="props__button" onClick={exportJson}>
+            Export JSON
+          </button>
+          <label className="props__button" style={{ textAlign: "center", cursor: "pointer" }}>
+            Import JSON
+            <input type="file" accept="application/json,.json" hidden onChange={(e) => { importJson(e.target.files?.[0]); e.target.value = ""; }} />
+          </label>
+        </div>
         <p className="dialog__note">The highlighted mode is the one shown on the canvas. Layers bound to a variable follow it.</p>
       </div>
     </div>

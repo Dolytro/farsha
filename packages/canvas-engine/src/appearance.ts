@@ -1,4 +1,5 @@
-import { paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
+import { arcParams, ellipsePath } from "./ellipse-arc";
+import { cssBlendMode, paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
 
 /**
  * SVG markup for strokes and effects, shared by the canvas and by SVG/PNG export.
@@ -53,8 +54,10 @@ export function effectsFilter(n: DesignNode): { id: string; markup: string } | n
         `<feGaussianBlur in="${base}" stdDeviation="${num(Math.max(0, e.blur) / 2)}" result="b${i}"/>`,
         `<feOffset in="b${i}" dx="${num(e.x)}" dy="${num(e.y)}" result="o${i}"/>`,
         `<feFlood flood-color="${hex(e.color)}" flood-opacity="${unit(e.opacity)}" result="c${i}"/>`,
-        `<feComposite in="c${i}" in2="o${i}" operator="in" result="s${i}"/>`,
+        `<feComposite in="c${i}" in2="o${i}" operator="in" result="${e.showBehind === false ? `k${i}` : `s${i}`}"/>`,
       );
+      // "Show behind transparent areas" off: the shape's own area is cut out of the shadow
+      if (e.showBehind === false) parts.push(`<feComposite in="k${i}" in2="SourceAlpha" operator="out" result="s${i}"/>`);
       under.push(`s${i}`);
     } else if (e.type === "INNER_SHADOW") {
       const spread = Number.isFinite(e.spread) ? (e.spread as number) : 0;
@@ -124,6 +127,10 @@ export function smoothedRectPath(w: number, h: number, r: [number, number, numbe
 
 /** The outline of a rectangle-like or elliptical layer as one SVG shape element carrying `extra` attributes. */
 export function shapeGeometry(n: DesignNode, extra: string): string {
+  if (n.type === "ELLIPSE") {
+    const arc = ellipsePath(n.width, n.height, arcParams(n));
+    if (arc) return `<path d="${arc.d}"${arc.evenodd ? ' fill-rule="evenodd"' : ""}${extra}/>`;
+  }
   if (n.type === "ELLIPSE") return `<ellipse cx="${num(n.width / 2)}" cy="${num(n.height / 2)}" rx="${num(n.width / 2)}" ry="${num(n.height / 2)}"${extra}/>`;
   const r = cornerRadiiOf(n);
   const smooth = "cornerSmoothing" in n && typeof n.cornerSmoothing === "number" ? Math.min(1, Math.max(0, n.cornerSmoothing)) : 0;
@@ -138,6 +145,58 @@ export function shapeGeometry(n: DesignNode, extra: string): string {
   return `<rect width="${num(n.width)}" height="${num(n.height)}"${r ? ` rx="${num(r[0])}"` : ""}${extra}/>`;
 }
 const geometry = shapeGeometry;
+
+/** Zoom and offset of a picture in Crop mode, clamped (zoom 0.1 to 10, offsets within 10 times the layer), as an SVG transform; "" when nothing changes. */
+export function cropTransform(p: { cropZoom?: unknown; cropX?: unknown; cropY?: unknown }, width: number, height: number): string {
+  const ok = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+  const zoom = Math.min(10, Math.max(0.1, ok(p.cropZoom, 1)));
+  const dx = Math.min(width * 10, Math.max(-width * 10, ok(p.cropX, 0)));
+  const dy = Math.min(height * 10, Math.max(-height * 10, ok(p.cropY, 0)));
+  if (zoom === 1 && dx === 0 && dy === 0) return "";
+  const cx = width / 2;
+  const cy = height / 2;
+  return `translate(${num(cx + dx)} ${num(cy + dy)}) scale(${num(zoom, 1)}) translate(${num(-cx)} ${num(-cy)})`;
+}
+
+/** Size of one repeated picture in Tile mode: the picture's own size times `tileScale` (256 px when the size is unknown). */
+export function tileSize(p: { imageWidth?: number; imageHeight?: number; tileScale?: number }): { w: number; h: number } {
+  const ok = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : d);
+  const scale = Math.min(10, Math.max(0.01, ok(p.tileScale, 1)));
+  return { w: Math.max(1, ok(p.imageWidth, 256) * scale), h: Math.max(1, ok(p.imageHeight, 256) * scale) };
+}
+
+/**
+ * The `<filter>` that applies image adjustments (exposure, contrast, saturation, temperature, tint, highlights, shadows: each -100 to 100) to a picture, or "" when there is nothing to adjust.
+ * Exposure and contrast become one linear slope and intercept per colour channel; saturation is a colour matrix.
+ */
+export function imageAdjustFilter(id: string, adj: unknown): string {
+  if (!adj || typeof adj !== "object") return "";
+  const read = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(-100, v)) : 0);
+  const a = adj as Record<string, unknown>;
+  const exposure = read(a.exposure);
+  const contrast = read(a.contrast);
+  const saturation = read(a.saturation);
+  const temperature = read(a.temperature);
+  const tint = read(a.tint);
+  const highlights = read(a.highlights);
+  const shadows = read(a.shadows);
+  if (!exposure && !contrast && !saturation && !temperature && !tint && !highlights && !shadows) return "";
+  const gain = 2 ** (exposure / 50);
+  const factor = (100 + contrast) / 100;
+  const intercept = num(0.5 - 0.5 * factor);
+  // Temperature warms red and cools blue; tint pushes green against magenta.
+  const channelGain: Record<string, number> = { R: 1 + 0.3 * (temperature / 100), G: 1 - 0.3 * (tint / 100), B: 1 - 0.3 * (temperature / 100) };
+  const fn = ["R", "G", "B"].map((c) => `<feFunc${c} type="linear" slope="${num(gain * factor * channelGain[c]!, 1)}" intercept="${intercept}"/>`).join("");
+  // Shadows lift or crush the dark end of the tone curve, highlights the bright end (a five point table).
+  let tone = "";
+  if (highlights || shadows) {
+    const table = [0, 0.25, 0.5, 0.75, 1]
+      .map((x) => num(Math.min(1, Math.max(0, x + 0.25 * (shadows / 100) * (1 - x) ** 2 + 0.25 * (highlights / 100) * x ** 2))))
+      .join(" ");
+    tone = `<feComponentTransfer>${["R", "G", "B"].map((c) => `<feFunc${c} type="table" tableValues="${table}"/>`).join("")}</feComponentTransfer>`;
+  }
+  return `<filter id="${id}" color-interpolation-filters="sRGB"><feComponentTransfer>${fn}</feComponentTransfer>${tone}${saturation ? `<feColorMatrix type="saturate" values="${num((100 + saturation) / 100, 1)}"/>` : ""}</filter>`;
+}
 
 /** Fill and stroke of a rectangle, frame or ellipse. Inside/outside strokes are clipped/masked double-width strokes. */
 export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => string | undefined): string {
@@ -154,7 +213,13 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
       const href = fill.assetId ? imageHref?.(fill.assetId) : undefined;
       if (href) {
         const par = fill.scaleMode === "FIT" ? "xMidYMid meet" : fill.scaleMode === "STRETCH" ? "none" : "xMidYMid slice";
-        fillDef = `<pattern id="${gradientId}" patternUnits="userSpaceOnUse" width="${num(n.width)}" height="${num(n.height)}"><image href="${href.replace(/"/g, "&quot;")}" width="${num(n.width)}" height="${num(n.height)}" preserveAspectRatio="${par}"/></pattern>`;
+        const crop = fill.scaleMode === "CROP" ? cropTransform(fill, n.width, n.height) : "";
+        const filterId = `${gradientId}-adj`;
+        const filter = imageAdjustFilter(filterId, fill.adjustments);
+        const tile = fill.scaleMode === "TILE" ? tileSize(fill) : null;
+        const pw = tile ? tile.w : n.width;
+        const ph = tile ? tile.h : n.height;
+        fillDef = `<pattern id="${gradientId}" patternUnits="userSpaceOnUse" width="${num(pw)}" height="${num(ph)}">${filter}<image href="${href.replace(/"/g, "&quot;")}" width="${num(pw)}" height="${num(ph)}" preserveAspectRatio="${tile ? "none" : par}"${crop ? ` transform="${crop}"` : ""}${filter ? ` filter="url(#${filterId})"` : ""}/></pattern>`;
         fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
       } else fillAttrs = ' fill="#e5e5e5"';
     } else if (fill.type === "GRADIENT_ANGULAR" || fill.type === "GRADIENT_DIAMOND") {
@@ -164,7 +229,8 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
       fillDef = gradientDef(gradientId, fill);
       fillAttrs = ` fill="url(#${gradientId})" fill-opacity="${unit(fill.opacity)}"`;
     }
-    out += fillDef + geometry(n, fillAttrs);
+    const blend = cssBlendMode(fill.blendMode);
+    out += fillDef + geometry(n, blend ? `${fillAttrs} style="mix-blend-mode:${blend}"` : fillAttrs);
   });
   if (!strokes.length || !("strokeWidth" in n)) return out;
 
@@ -197,8 +263,17 @@ export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => stri
       `<mask id="sm-${id}" maskUnits="userSpaceOnUse" x="${num(-w)}" y="${num(-w)}" width="${num(n.width + w * 2)}" height="${num(n.height + w * 2)}">` +
       `<rect x="${num(-w)}" y="${num(-w)}" width="${num(n.width + w * 2)}" height="${num(n.height + w * 2)}" fill="#fff"/>${geometry(n, ' fill="#000"')}</mask>`;
   }
-  for (const stroke of strokes) {
-    const base = ` fill="none" stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}"${strokeExtras(n)}`;
+  for (const [si, stroke] of strokes.entries()) {
+    // a linear or radial gradient stroke is painted with the gradient (over the layer's box); other kinds use their first colour
+    let strokeDef = "";
+    let strokePaint = hex(paintColor(stroke));
+    if (isGradient(stroke)) {
+      const gid = `sg-${id}-${si}`;
+      strokeDef = gradientDef(gid, stroke);
+      strokePaint = `url(#${gid})`;
+    }
+    out += strokeDef;
+    const base = ` fill="none" stroke="${strokePaint}" stroke-opacity="${unit(stroke.opacity)}"${strokeExtras(n)}`;
     if (align === "INSIDE") out += geometry(n, `${base} stroke-width="${num(w * 2)}" clip-path="url(#sc-${id})"`);
     else if (align === "OUTSIDE") out += geometry(n, `${base} stroke-width="${num(w * 2)}" mask="url(#sm-${id})"`);
     else out += geometry(n, `${base} stroke-width="${num(w)}"`);
@@ -297,7 +372,40 @@ export function textFill(n: DesignNode): { defs: string; fill: string } {
   return { defs: "", fill: p ? hex(paintColor(p)) : "none" };
 }
 
+/** Every fill of a text layer, bottom first, as a `fill` value (with its gradient definition) and opacity: the text is drawn once per fill. */
+export function textFills(n: DesignNode): { defs: string; fill: string; opacity: number }[] {
+  const list = "fills" in n && Array.isArray(n.fills) ? n.fills : [];
+  return list.map((p, i) => {
+    if (isGradient(p)) {
+      const id = `tg-${safeId(n.id)}-${i}`;
+      return { defs: gradientDef(id, p), fill: `url(#${id})`, opacity: Number(unit(p.opacity)) };
+    }
+    return { defs: "", fill: hex(paintColor(p)), opacity: Number(unit(p.opacity)) };
+  });
+}
+
+/**
+ * The outline of a text layer: its first stroke as presentation values. An outside stroke is drawn twice as wide behind the
+ * fill (only the outer half shows); centred and inside strokes are drawn centred over the fill.
+ */
+export function textStroke(n: DesignNode): { defs: string; stroke: string; width: number; opacity: number; behind: boolean } | null {
+  if (n.type !== "TEXT") return null;
+  const p = n.strokes?.[0];
+  const w = Math.max(0, n.strokeWidth ?? 1);
+  if (!p || w <= 0 || p.type === "IMAGE") return null;
+  let defs = "";
+  let stroke = hex(paintColor(p));
+  if (isGradient(p)) {
+    const id = `ts-${safeId(n.id)}`;
+    defs = gradientDef(id, p);
+    stroke = `url(#${id})`;
+  }
+  const outside = n.strokeAlign === "OUTSIDE";
+  return { defs, stroke, width: outside ? w * 2 : w, opacity: Number(unit(p.opacity)), behind: outside };
+}
+
 const vectorGradientId = (n: DesignNode) => `vg-${safeId(n.id)}`;
+const vectorStrokeGradientId = (n: DesignNode) => `vgs-${safeId(n.id)}`;
 
 /** True for a VECTOR drawn with the Line / Arrow / Polygon / Star tools: it has its own fill and stroke instead of baked-in markup attributes. */
 export function isDrawnVector(n: DesignNode): boolean {
@@ -311,7 +419,7 @@ export function vectorPaintAttrs(n: DesignNode): string {
   const stroke = n.strokes?.[0];
   const parts = [fill ? `fill="${isGradient(fill) ? `url(#${vectorGradientId(n)})` : hex(paintColor(fill))}" fill-opacity="${unit(fill.opacity)}"` : 'fill="none"'];
   if (stroke) {
-    parts.push(`stroke="${hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}" stroke-width="${num(Math.max(0, n.strokeWidth ?? 1))}"${strokeExtras(n, "ROUND", "ROUND")}`);
+    parts.push(`stroke="${isGradient(stroke) ? `url(#${vectorStrokeGradientId(n)})` : hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}" stroke-width="${num(Math.max(0, n.strokeWidth ?? 1))}"${strokeExtras(n, "ROUND", "ROUND")}`);
     if (n.strokeStartCap && n.strokeStartCap !== "NONE") parts.push(`marker-start="url(#${markerId(n, "s")})"`);
     if (n.strokeEndCap && n.strokeEndCap !== "NONE") parts.push(`marker-end="url(#${markerId(n, "e")})"`);
   }
@@ -331,7 +439,10 @@ export function strokeExtras(n: DesignNode, defaultCap: "NONE" | "ROUND" | "SQUA
   const dashAttr = dash.length && dash.some((v) => v > 0) ? ` stroke-dasharray="${dash.map(num).join(" ")}"` : "";
   const capAttr = cap !== "NONE" || defaultCap !== "NONE" ? ` stroke-linecap="${CAP_ATTR[cap]}"` : "";
   const joinAttr = join !== "MITER" || defaultJoin !== "MITER" ? ` stroke-linejoin="${JOIN_ATTR[join]}"` : "";
-  return dashAttr + capAttr + joinAttr;
+  // a miter angle other than Figma's default 28.96 degrees becomes SVG's miter limit: 1 / sin(angle / 2)
+  const angle = typeof n.strokeMiterAngle === "number" && Number.isFinite(n.strokeMiterAngle) ? Math.min(180, Math.max(1, n.strokeMiterAngle)) : undefined;
+  const miterAttr = join === "MITER" && angle !== undefined && Math.abs(angle - 28.96) > 0.01 ? ` stroke-miterlimit="${num(1 / Math.sin((angle * Math.PI) / 360))}"` : "";
+  return dashAttr + capAttr + joinAttr + miterAttr;
 }
 
 const MARKER_SHAPES: Record<Exclude<LineEnd, "NONE">, (c: string) => string> = {
@@ -346,7 +457,8 @@ const MARKER_SHAPES: Record<Exclude<LineEnd, "NONE">, (c: string) => string> = {
 export function vectorMarkerDefs(n: DesignNode): string {
   if (n.type !== "VECTOR") return "";
   const fill = n.fills?.[0];
-  const gradient = isGradient(fill) ? gradientDef(vectorGradientId(n), fill) : "";
+  const strokePaint = n.strokes?.[0];
+  const gradient = (isGradient(fill) ? gradientDef(vectorGradientId(n), fill) : "") + (isGradient(strokePaint) ? gradientDef(vectorStrokeGradientId(n), strokePaint) : "");
   if (!n.strokes?.[0]) return gradient;
   const color = hex(paintColor(n.strokes[0]));
   // arrowheads grow with the stroke but are never smaller than 8 px

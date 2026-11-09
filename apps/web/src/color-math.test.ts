@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hexToHsv, hexToRgb, hslToRgb, hsvToHex, normalizeHex, rgbToHex, rgbToHsl, usedColors } from "./color-math";
+import { cssColor, parseCssColor, hexToHsv, hexToRgb, hslToRgb, hsvToHex, normalizeHex, rgbToHex, rgbToHsl, usedColors } from "./color-math";
 
 describe("normalizeHex", () => {
   it("accepts 3 and 6 digits with or without #, and rejects the rest", () => {
@@ -39,5 +39,20 @@ describe("usedColors", () => {
   it("lists solid colours once, most used first, ignoring gradients and junk", () => {
     const solid = (c: string) => ({ type: "SOLID", color: c, opacity: 1 });
     expect(usedColors([[solid("#FF0000"), solid("#00ff00")], [solid("#ff0000"), { type: "GRADIENT_LINEAR" }, null, solid("nope")]])).toEqual(["#ff0000", "#00ff00"]);
+  });
+});
+
+describe("CSS colours", () => {
+  it("writes rgb()", () => expect(cssColor("#112233")).toBe("rgb(17, 34, 51)"));
+  it("reads hex, rgb, hsl and hsb text", () => {
+    expect(parseCssColor("#ABC")).toBe("#aabbcc");
+    expect(parseCssColor("rgb(17, 34, 51)")).toBe("#112233");
+    expect(parseCssColor("rgb(17 34 51 / 50%)")).toBe("#112233");
+    expect(parseCssColor("rgb(100%, 0%, 0%)")).toBe("#ff0000");
+    expect(parseCssColor("hsl(0, 100%, 50%)")).toBe("#ff0000");
+    expect(parseCssColor("hsb(120, 100%, 100%)")).toBe("#00ff00");
+  });
+  it("rejects anything else", () => {
+    for (const bad of ["", "red", "rgb(1,2)", "rgb(a,b,c)", "rgb(1,2,3,4,5)", "javascript:1"]) expect(parseCssColor(bad)).toBeNull();
   });
 });

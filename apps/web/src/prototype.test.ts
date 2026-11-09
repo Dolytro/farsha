@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { followInteraction, hotspotsIn, prototypeFrames, startFrame, topFrameOf } from "./prototype";
+import { conditionTarget, followInteraction, hotspotsIn, mediaState, prototypeFrames, startFrame, topFrameOf } from "./prototype";
 
 function setup() {
   const doc = new DesignDoc();
@@ -51,5 +51,59 @@ describe("prototype", () => {
     expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "NAVIGATE", targetId: home } })).toBeNull();
     expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "BACK" } })).toBeNull();
     expect(followInteraction(doc, home, [], { trigger: "ON_CLICK", action: { type: "NAVIGATE", targetId: page } })).toBeNull();
+  });
+});
+
+describe("mediaState", () => {
+  const playing = { paused: false, muted: true, time: 5, duration: 20 };
+  it("plays, pauses and toggles", () => {
+    expect(mediaState("PAUSE", playing).paused).toBe(true);
+    expect(mediaState("PLAY", { ...playing, paused: true }).paused).toBe(false);
+    expect(mediaState("TOGGLE_PLAY", playing).paused).toBe(true);
+    expect(mediaState("TOGGLE_PLAY", { ...playing, paused: true }).paused).toBe(false);
+  });
+  it("mutes and unmutes", () => {
+    expect(mediaState("UNMUTE", playing).muted).toBe(false);
+    expect(mediaState("MUTE", { ...playing, muted: false }).muted).toBe(true);
+    expect(mediaState("TOGGLE_MUTE", playing).muted).toBe(false);
+  });
+  it("skips by 10 seconds or the given amount, staying inside the video", () => {
+    expect(mediaState("SKIP_FORWARD", playing).time).toBe(15);
+    expect(mediaState("SKIP_FORWARD", playing, 30).time).toBe(20);
+    expect(mediaState("SKIP_BACK", playing).time).toBe(0);
+    expect(mediaState("SKIP_BACK", { ...playing, time: 18 }, 3).time).toBe(15);
+    expect(mediaState("SKIP_FORWARD", { ...playing, duration: NaN }, 4).time).toBe(9);
+    expect(mediaState("SKIP_FORWARD", playing, -5).time).toBe(15);
+  });
+  it("leaves the rest of the state alone", () => {
+    expect(mediaState("SKIP_FORWARD", playing)).toMatchObject({ paused: false, muted: true });
+  });
+});
+
+describe("conditionTarget with several conditions", () => {
+  function vars() {
+    const doc = new DesignDoc();
+    const n = doc.createValueVariable("NUMBER", "score", "10");
+    const flag = doc.createValueVariable("BOOLEAN", "pro", "true");
+    return { doc, n, flag };
+  }
+  it("needs every condition by default and any one with OR", () => {
+    const { doc, n, flag } = vars();
+    const base = { type: "CONDITIONAL" as const, variableId: n, op: "GT" as const, value: "5", thenId: "yes", elseId: "no" };
+    expect(conditionTarget(doc, base)).toBe("yes");
+    const both = { ...base, more: [{ variableId: flag, op: "EQ" as const, value: "true" }] };
+    expect(conditionTarget(doc, both)).toBe("yes");
+    const failing = { ...base, more: [{ variableId: flag, op: "EQ" as const, value: "false" }] };
+    expect(conditionTarget(doc, failing)).toBe("no");
+    expect(conditionTarget(doc, { ...failing, join: "OR" })).toBe("yes");
+    expect(conditionTarget(doc, { ...failing, value: "50", join: "OR" })).toBe("no");
+  });
+  it("a missing variable never holds, and extra conditions are capped at five", () => {
+    const { doc, n } = vars();
+    const base = { type: "CONDITIONAL" as const, variableId: "gone", op: "EQ" as const, value: "x", thenId: "yes", elseId: "no" };
+    expect(conditionTarget(doc, base)).toBe("no");
+    expect(conditionTarget(doc, { ...base, join: "OR", more: [{ variableId: n, op: "EQ", value: "10" }] })).toBe("yes");
+    const many = { type: "CONDITIONAL" as const, variableId: n, op: "EQ" as const, value: "10", thenId: "yes", elseId: "no", join: "OR" as const, more: [...Array(5).fill({ variableId: n, op: "EQ", value: "0" }), { variableId: n, op: "EQ", value: "10" }] };
+    expect(conditionTarget(doc, { ...many, join: "OR", variableId: "gone" })).toBe("no");
   });
 });

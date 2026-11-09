@@ -81,7 +81,9 @@ export function buildMainMenu(): MenuNode[] {
       children: list(
         item("zoom-in"),
         item("zoom-out"),
+        item("zoom-50"),
         item("zoom-100"),
+        item("zoom-200"),
         item("zoom-fit"),
         item("zoom-selection"),
         item("frame-1", "Zoom to next frame", true),
@@ -95,7 +97,7 @@ export function buildMainMenu(): MenuNode[] {
         item("view-frameOutlines"),
         item("view-annotations"),
         item("view-pixelPreview"),
-        sub("Panels", list(item("panel-left"), item("panel-assets"), item("panel-design"), item("panel-prototype"), item("panel-right", undefined, true))),
+        sub("Panels", list(item("panel-left"), item("panel-left-minimize"), item("toggle-variables"), item("panel-assets"), item("panel-design"), item("panel-prototype"), item("panel-right", undefined, true))),
         item("pixel-grid"),
         item("rulers"),
         item("layout-grids"),
@@ -120,6 +122,7 @@ export function buildMainMenu(): MenuNode[] {
         item("remove-auto-layout"),
         item("create-component", undefined, true),
         item("reset-overrides", "Reset instance"),
+        item("push-to-main"),
         item("detach-instance"),
         item("front", undefined, true),
         item("forward"),
@@ -201,6 +204,16 @@ export function buildMainMenu(): MenuNode[] {
         item("preferences", "Preferences…", true),
         item("keyboard-shortcuts"),
         item("show-variables", "Variables…"),
+      ),
+    },
+    {
+      label: "Help",
+      children: list(
+        item("keyboard-shortcuts"),
+        item("help-github", undefined, true),
+        item("help-issues"),
+        item("help-privacy", undefined, true),
+        item("help-terms"),
       ),
     },
   ];

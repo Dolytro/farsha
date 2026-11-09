@@ -1,3 +1,4 @@
+import { FillRow, convertPaint } from "./FillSection";
 import { ColorSwatch } from "./ColorSwatch";
 import type { DesignDoc } from "@farsha/design-core";
 import { paintColor, type DesignNode, type Effect, type LineEnd, type Paint, type StrokeAlign, type StrokeCap, type StrokeJoin } from "@farsha/types";
@@ -23,12 +24,13 @@ const newEffect = (type: Effect["type"]): Effect =>
 
 /** Strokes are stored bottom to top and listed top first; position and weight are shared by all of them. */
 export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
-  if (!("strokes" in node) || !node.strokes) return null;
-  const strokes = node.strokes;
+  // text layers can be outlined too (their `strokes` key starts missing)
+  if (node.type !== "TEXT" && (!("strokes" in node) || !node.strokes)) return null;
+  const strokes: Paint[] = ("strokes" in node && node.strokes) || [];
   const align = ("strokeAlign" in node ? node.strokeAlign : undefined) ?? "CENTER";
   const setStrokes = (next: Paint[]) => doc.setStyle(node.id, { strokes: next });
   // Drawn vectors take one stroke; frames, rectangles and ellipses can stack several.
-  const canAdd = node.type !== "VECTOR" || strokes.length === 0;
+  const canAdd = (node.type !== "VECTOR" && node.type !== "TEXT") || strokes.length === 0;
   return (
     <section className="props__section">
       <h3 className="props__heading props__heading--row">
@@ -39,19 +41,90 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
           </button>
         )}
       </h3>
+      {(doc.strokeStyles().length > 0 || strokes.length > 0) && (() => {
+        const styles = doc.strokeStyles();
+        const style = node.strokeStyleId ? doc.getStrokeStyle(node.strokeStyleId) : undefined;
+        return (
+          <>
+            <div className="fill-row fill-row--gap">
+              <Select
+                className="field__select field__select--wide"
+                aria-label="Stroke style"
+                title="Stroke style"
+                value={style?.id ?? "NONE"}
+                onChange={(e) => {
+                  doc.stopCapturing();
+                  if (e.target.value === "NEW") doc.applyStrokeStyle(node.id, doc.createStrokeStyleFrom(`Stroke style ${styles.length + 1}`, node.id));
+                  else doc.applyStrokeStyle(node.id, e.target.value === "NONE" ? null : e.target.value);
+                  doc.stopCapturing();
+                }}
+              >
+                <option value="NONE">No stroke style</option>
+                {styles.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+                {strokes.length > 0 && !style && <option value="NEW">+ Create style from stroke</option>}
+              </Select>
+              {style && (
+                <button className="props__add" title="Delete this stroke style (layers keep their stroke)" onClick={() => doc.deleteStrokeStyle(style.id)}>
+                  −
+                </button>
+              )}
+            </div>
+            {style && (
+              <input
+                key={`${style.id}:${style.name}`}
+                className="field__input field--gap"
+                style={{ width: "100%" }}
+                aria-label="Stroke style name"
+                title="Rename this stroke style"
+                defaultValue={style.name}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Enter") e.currentTarget.blur();
+                  else if (e.key === "Escape") {
+                    e.currentTarget.value = style.name;
+                    e.currentTarget.blur();
+                  }
+                }}
+                onBlur={(e) => {
+                  const name = e.currentTarget.value.trim();
+                  if (name && name !== style.name) doc.updateStrokeStyle(style.id, { name });
+                  else e.currentTarget.value = style.name;
+                }}
+              />
+            )}
+          </>
+        );
+      })()}
       {strokes.map((_, k) => strokes.length - 1 - k).map((i) => {
         const stroke = strokes[i]!;
         const replace = (p: Paint) => setStrokes(strokes.map((s, j) => (j === i ? p : s)));
         const bound = stroke.type === "SOLID" && stroke.variableId;
+        // a gradient stroke is edited like a gradient fill (stops, angle), limited to solid, linear and radial
+        if (stroke.type === "GRADIENT_LINEAR" || stroke.type === "GRADIENT_RADIAL") {
+          return (
+            <FillRow key={i} doc={doc} nodeId={node.id} paint={stroke} setPaint={replace} remove={() => setStrokes(strokes.filter((_, j) => j !== i))} kinds={["SOLID", "GRADIENT_LINEAR", "GRADIENT_RADIAL"]} />
+          );
+        }
         return (
           <div key={i}>
+            {!bound && (
+              <Select className="field__select field__select--wide" aria-label="Stroke paint type" title="Paint type of this stroke" value="SOLID" onChange={(e) => replace(convertPaint(stroke, e.target.value as "GRADIENT_LINEAR" | "GRADIENT_RADIAL"))}>
+                <option value="SOLID">Solid</option>
+                <option value="GRADIENT_LINEAR">Linear</option>
+                <option value="GRADIENT_RADIAL">Radial</option>
+              </Select>
+            )}
             {bound ? <VariableChip doc={doc} variableId={stroke.variableId!} onDetach={() => doc.bindPaintVariable(node.id, "strokes", i, null)} /> : null}
             <div className="fill-row fill-row--gap">
               {!bound && (
                 <>
                   <ColorSwatch value={paintColor(stroke)} onChange={(color) => replace({ type: "SOLID", color, opacity: stroke.opacity })} />
                   <HexInput value={paintColor(stroke)} onChange={(color) => replace({ type: "SOLID", color, opacity: stroke.opacity })} />
-                  {stroke.type === "SOLID" && <VariableButton doc={doc} onPick={(variableId) => doc.bindPaintVariable(node.id, "strokes", i, variableId)} />}
+                  {stroke.type === "SOLID" && <VariableButton doc={doc} use="STROKE" onPick={(variableId) => doc.bindPaintVariable(node.id, "strokes", i, variableId)} />}
                 </>
               )}
               <input
@@ -120,7 +193,7 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
           )}
         </>
       )}
-      {strokes.length > 0 && (
+      {strokes.length > 0 && node.type !== "TEXT" && (
         <div className="props__grid props__grid--gap">
           <label className="field" title="Dash length in pixels (0 = solid line)">
             <span className="field__label">Dash</span>
@@ -156,6 +229,28 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
             <option value="BEVEL">Join: bevel</option>
             <option value="ROUND">Join: round</option>
           </Select>
+          {(node.strokeJoin ?? (node.type === "VECTOR" ? "ROUND" : "MITER")) === "MITER" && (
+            <label className="field" title="Corners sharper than this angle are bevelled (miter angle)">
+              <span className="field__label">Miter°</span>
+              <input
+                className="field__input"
+                type="number"
+                min={1}
+                max={180}
+                aria-label="Miter angle"
+                key={node.strokeMiterAngle ?? "default"}
+                defaultValue={node.strokeMiterAngle ?? 28.96}
+                onBlur={(e) => {
+                  const v = Number(e.currentTarget.value);
+                  doc.setStyle(node.id, { strokeMiterAngle: Number.isFinite(v) && e.currentTarget.value !== "" ? Math.min(180, Math.max(1, v)) : null });
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+              />
+            </label>
+          )}
           {node.type === "VECTOR" &&
             (["strokeStartCap", "strokeEndCap"] as const).map((key) => (
               <Select key={key} className="field__select" aria-label={key === "strokeStartCap" ? "Start point" : "End point"} value={node[key] ?? "NONE"} onChange={(e) => doc.setStyle(node.id, { [key]: e.target.value as LineEnd })}>
@@ -175,6 +270,8 @@ export function StrokeSection({ doc, node }: { doc: DesignDoc; node: DesignNode 
 
 export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode }) {
   const effects = node.effects ?? [];
+  const styles = doc.effectStyles();
+  const style = node.effectStyleId ? doc.getEffectStyle(node.effectStyleId) : undefined;
   const set = (next: Effect[]) => doc.setStyle(node.id, { effects: next });
   const patch = (i: number, p: Partial<Effect>) => set(effects.map((e, j) => (j === i ? ({ ...e, ...p } as Effect) : e)));
   const changeType = (i: number, type: Effect["type"]) => {
@@ -196,6 +293,58 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
           +
         </button>
       </h3>
+      {(styles.length > 0 || effects.length > 0) && (
+        <div className="fill-row fill-row--gap">
+          <Select
+            className="field__select field__select--wide"
+            aria-label="Effect style"
+            title="Effect style"
+            value={style?.id ?? "NONE"}
+            onChange={(e) => {
+              doc.stopCapturing();
+              if (e.target.value === "NEW") doc.applyEffectStyle(node.id, doc.createEffectStyle(`Effect style ${styles.length + 1}`, effects));
+              else doc.applyEffectStyle(node.id, e.target.value === "NONE" ? null : e.target.value);
+              doc.stopCapturing();
+            }}
+          >
+            <option value="NONE">No effect style</option>
+            {styles.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+            {effects.length > 0 && !style && <option value="NEW">+ Create style from effects</option>}
+          </Select>
+          {style && (
+            <button className="props__add" title="Delete this effect style (layers keep their effects)" onClick={() => doc.deleteEffectStyle(style.id)}>
+              −
+            </button>
+          )}
+        </div>
+      )}
+      {style && (
+        <input
+          key={`${style.id}:${style.name}`}
+          className="field__input field--gap"
+          style={{ width: "100%" }}
+          aria-label="Effect style name"
+          title="Rename this effect style"
+          defaultValue={style.name}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") e.currentTarget.blur();
+            else if (e.key === "Escape") {
+              e.currentTarget.value = style.name;
+              e.currentTarget.blur();
+            }
+          }}
+          onBlur={(e) => {
+            const name = e.currentTarget.value.trim();
+            if (name && name !== style.name) doc.updateEffectStyle(style.id, { name });
+            else e.currentTarget.value = style.name;
+          }}
+        />
+      )}
       {effects.map((e, i) => (
         <div className="effect" key={i}>
           <div className="effect__head">
@@ -239,6 +388,12 @@ export function EffectsSection({ doc, node }: { doc: DesignDoc; node: DesignNode
                 {numField(i, "B", "blur", e.blur, 0)}
                 {numField(i, "S", "spread", e.spread ?? 0)}
               </div>
+              {e.type === "DROP_SHADOW" && (
+                <label className="props__check" title="Show the shadow behind transparent areas of the layer">
+                  <input type="checkbox" aria-label="Show behind transparent areas" checked={e.showBehind !== false} onChange={(ev) => patch(i, { showBehind: ev.target.checked })} />
+                  <span>Show behind transparent areas</span>
+                </label>
+              )}
               <div className="fill-row">
                 <ColorSwatch value={e.color} onChange={(color) => patch(i, { color })} />
                 <HexInput value={e.color} onChange={(color) => patch(i, { color })} />

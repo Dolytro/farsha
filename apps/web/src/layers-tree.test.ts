@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { layerKind, layerRows, moveLayers } from "./layers-tree";
+import { layerKind, layerRows, moveLayers, toggleBranch } from "./layers-tree";
 
 function setup() {
   const doc = new DesignDoc();
@@ -71,5 +71,67 @@ describe("layerKind", () => {
     const inst = doc.createNode("FRAME", { parentId: page, props: { name: "Btn copy", componentId: main } });
     expect([frame, section, main, inst].map((id) => layerKind(doc, id))).toEqual(["frame", "section", "component", "instance"]);
     expect(layerKind(doc, page)).toBeUndefined();
+  });
+});
+
+import { treeKeyTarget, type LayerRow } from "./layers-tree";
+
+describe("treeKeyTarget", () => {
+  const rows: LayerRow[] = [
+    { id: "a", depth: 0, hasChildren: true },
+    { id: "a1", depth: 1, hasChildren: false },
+    { id: "a2", depth: 1, hasChildren: true },
+    { id: "a2x", depth: 2, hasChildren: false },
+    { id: "b", depth: 0, hasChildren: false },
+  ];
+  const none = new Set<string>();
+  it("moves up and down and stops at the ends", () => {
+    expect(treeKeyTarget(rows, "a", "ArrowDown", none)).toEqual({ select: "a1" });
+    expect(treeKeyTarget(rows, "a1", "ArrowUp", none)).toEqual({ select: "a" });
+    expect(treeKeyTarget(rows, "a", "ArrowUp", none)).toEqual({});
+    expect(treeKeyTarget(rows, "b", "ArrowDown", none)).toEqual({});
+    expect(treeKeyTarget(rows, "a1", "Home", none)).toEqual({ select: "a" });
+    expect(treeKeyTarget(rows, "a1", "End", none)).toEqual({ select: "b" });
+  });
+  it("starts from the top (or the bottom with End) when nothing in the list is selected", () => {
+    expect(treeKeyTarget(rows, undefined, "ArrowDown", none)).toEqual({ select: "a" });
+    expect(treeKeyTarget(rows, "gone", "End", none)).toEqual({ select: "b" });
+    expect(treeKeyTarget([], "a", "ArrowDown", none)).toEqual({});
+  });
+  it("Right opens a folded layer or enters an open one, Left folds or goes to the parent", () => {
+    expect(treeKeyTarget(rows, "a", "ArrowRight", new Set(["a"]))).toEqual({ toggle: { id: "a", collapse: false } });
+    expect(treeKeyTarget(rows, "a", "ArrowRight", none)).toEqual({ select: "a1" });
+    expect(treeKeyTarget(rows, "a1", "ArrowRight", none)).toEqual({});
+    expect(treeKeyTarget(rows, "a2", "ArrowLeft", none)).toEqual({ toggle: { id: "a2", collapse: true } });
+    expect(treeKeyTarget(rows, "a1", "ArrowLeft", none)).toEqual({ select: "a" });
+    expect(treeKeyTarget(rows, "a2x", "ArrowLeft", none)).toEqual({ select: "a2" });
+    expect(treeKeyTarget(rows, "b", "ArrowLeft", none)).toEqual({});
+  });
+});
+
+import { rangeBetween } from "./layers-tree";
+
+describe("rangeBetween", () => {
+  const rows: LayerRow[] = ["a", "b", "c", "d", "e"].map((id) => ({ id, depth: 0, hasChildren: false }));
+  it("selects everything from the anchor to the clicked layer, in either direction", () => {
+    expect(rangeBetween(rows, "b", "d")).toEqual(["b", "c", "d"]);
+    expect(rangeBetween(rows, "d", "b")).toEqual(["b", "c", "d"]);
+    expect(rangeBetween(rows, "c", "c")).toEqual(["c"]);
+  });
+  it("is just the clicked layer without a usable anchor, and empty for an unknown layer", () => {
+    expect(rangeBetween(rows, undefined, "c")).toEqual(["c"]);
+    expect(rangeBetween(rows, "gone", "c")).toEqual(["c"]);
+    expect(rangeBetween(rows, "a", "zzz")).toEqual([]);
+  });
+});
+
+describe("toggleBranch", () => {
+  it("opens a closed layer and everything inside it", () => {
+    const next = toggleBranch(new Set(["a", "b", "c", "x"]), "a", ["b", "c"]);
+    expect([...next]).toEqual(["x"]);
+  });
+  it("closes an open layer and everything inside it", () => {
+    const next = toggleBranch(new Set(["x"]), "a", ["b", "c"]);
+    expect([...next].sort()).toEqual(["a", "b", "c", "x"]);
   });
 });

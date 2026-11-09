@@ -27,14 +27,13 @@ export function cssVariableName(name: string): string {
 /** The colour variables bound to the fills and strokes of a layer (each variable once per role). */
 export function variablesUsed(doc: DesignDoc, node: DesignNode): VariableUse[] {
   const any = node as unknown as { fills?: Paint[]; strokes?: Paint[] };
-  const modes = doc.modes();
   const out: VariableUse[] = [];
   for (const [role, paints] of [["Fill", any.fills], ["Stroke", any.strokes]] as const) {
     for (const p of paints ?? []) {
       if (p.type !== "SOLID" || !p.variableId) continue;
       const v = doc.getColorVariable(p.variableId);
       if (!v || out.some((o) => o.id === v.id && o.role === role)) continue;
-      out.push({ id: v.id, name: v.name, cssName: cssVariableName(v.name), role, values: modes.map((m) => ({ mode: m.name, color: v.values[m.id] ?? "" })) });
+      out.push({ id: v.id, name: v.name, cssName: cssVariableName(v.name), role, values: doc.modes(v.collectionId ?? "default").map((m) => ({ mode: m.name, color: doc.resolveVariableValue(v, m.id) })) });
     }
   }
   return out;

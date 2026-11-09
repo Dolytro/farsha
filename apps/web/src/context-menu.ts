@@ -2,7 +2,7 @@ export type MenuAction =
   | "copy" | "cut" | "paste-here" | "paste-over"
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
-  | "group" | "frame-selection" | "use-as-mask" | "bool-union" | "bool-subtract" | "bool-intersect" | "bool-exclude" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides"
+  | "group" | "frame-selection" | "use-as-mask" | "bool-union" | "bool-subtract" | "bool-intersect" | "bool-exclude" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides" | "push-to-main"
   | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
@@ -71,6 +71,7 @@ export function buildMenu(c: MenuContext): MenuItem[] {
     if (c.hasInstance) {
       items.push(
         { action: "go-to-main", label: "Go to main component" },
+        { action: "push-to-main", label: "Push changes to main component" },
         { action: "reset-overrides", label: "Reset all overrides" },
         { action: "detach-instance", label: "Detach instance", shortcut: `${MOD}${ALT}B` },
       );
