@@ -3,7 +3,7 @@ export type MenuAction =
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
   | "group" | "frame-selection" | "use-as-mask" | "bool-union" | "bool-subtract" | "bool-intersect" | "bool-exclude" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides" | "push-to-main"
-  | "visibility" | "lock" | "delete";
+  | "move-to-page" | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
   action: MenuAction;
@@ -13,6 +13,8 @@ export interface MenuItem {
   submenu?: boolean;
   /** Draw a separator above this item. */
   divider?: boolean;
+  /** "Move to page" items: the page to move to, or "new" for a new page. */
+  pageId?: string;
 }
 
 export interface MenuContext {
@@ -25,6 +27,8 @@ export interface MenuContext {
   hasInstance: boolean;
   allHidden: boolean;
   allLocked: boolean;
+  /** The pages of the file, for "Move to page". */
+  pages?: { id: string; name: string; current: boolean }[];
 }
 
 const MOD = /Mac|iPhone|iPad/.test(typeof navigator === "undefined" ? "" : navigator.platform) ? "⌘" : "Ctrl+";
@@ -75,6 +79,10 @@ export function buildMenu(c: MenuContext): MenuItem[] {
         { action: "reset-overrides", label: "Reset all overrides" },
         { action: "detach-instance", label: "Detach instance", shortcut: `${MOD}${ALT}B` },
       );
+    }
+    if (c.pages) {
+      c.pages.filter((p) => !p.current).forEach((p, i) => items.push({ action: "move-to-page", label: p.name, pageId: p.id, divider: i === 0 }));
+      items.push({ action: "move-to-page", label: "New page", pageId: "new", divider: c.pages.length < 2 });
     }
     items.push(
       { action: "visibility", label: c.allHidden ? "Show" : "Hide", shortcut: `${MOD}${SHIFT}H`, divider: true },

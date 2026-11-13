@@ -5,12 +5,13 @@ import { addAutoLayout } from "../auto-layout-actions";
 import { createComponentFromSelection, detachSelection, mainsOf, resetSelection } from "../component-actions";
 import { copyAsCss, copyAsPng, copyAsSvg } from "../exporting";
 import { copyNodes, copyProperties, parseClip, pasteNodes, pasteOver, pasteProperties, pasteTarget, pasteText, topLevelOf } from "../clipboard";
+import { addPage, moveToPage } from "../pages";
 import { useEditor } from "../store";
 import { buildCommands } from "../commands";
 
 const MARGIN = 8;
 
-async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
+async function run(action: MenuAction, wx: number, wy: number, pageId?: string): Promise<void> {
   const s = useEditor.getState();
   const { doc, selection, select, showToast } = s;
   try {
@@ -106,6 +107,17 @@ async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
         if (page && page.id !== s.pageId) s.setPage(page.id);
         return select(mains);
       }
+      case "move-to-page": {
+        if (!pageId) return;
+        const target = pageId === "new" ? addPage(doc) : pageId;
+        const moved = moveToPage(doc, selection, target);
+        if (!moved.length) {
+          if (pageId === "new") doc.deleteNode(target);
+          return showToast("Nothing to move");
+        }
+        select([]);
+        return showToast(`Moved to ${doc.getNode(target)?.name ?? "page"}`);
+      }
       case "visibility": return toggleHidden(doc, selection);
       case "lock": return toggleLocked(doc, selection);
       case "delete":
@@ -171,26 +183,31 @@ export function ContextMenu() {
     hasInstance: nodes.some((n) => st.doc.instanceOf(n.id)),
     allHidden: nodes.length > 0 && nodes.every((n) => !n.visible),
     allLocked: nodes.length > 0 && nodes.every((n) => n.locked),
+    pages: st.doc.pages().map((p) => ({ id: p.id, name: p.name, current: p.id === st.pageId })),
   });
   if (!items.length) return null;
 
   let submenuShown = false;
+  let pagesShown = false;
   return (
     <div ref={ref} className="ctxmenu" role="menu" style={pos} onContextMenu={(e) => e.preventDefault()} onPointerDown={(e) => e.stopPropagation()}>
       {items.map((it) => {
         const head = Boolean(it.submenu) && !submenuShown;
         submenuShown = submenuShown || Boolean(it.submenu);
+        const pagesHead = it.pageId !== undefined && !pagesShown;
+        pagesShown = pagesShown || it.pageId !== undefined;
         return (
-          <div key={it.action}>
+          <div key={it.action + (it.pageId ?? "")}>
             {head && <div className="ctxmenu__sep" />}
             {head && <div className="ctxmenu__group">Copy/Paste as</div>}
             {it.divider && !it.submenu && <div className="ctxmenu__sep" />}
+            {pagesHead && <div className="ctxmenu__group">Move to page</div>}
             <button
               role="menuitem"
               className="ctxmenu__item"
               onClick={() => {
                 setMenu(null);
-                void run(it.action, menu.wx, menu.wy);
+                void run(it.action, menu.wx, menu.wy, it.pageId);
               }}
             >
               <span>{it.label}</span>

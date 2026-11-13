@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { addPage, adjacentPage, deletePage, duplicatePage, movePage, nextCopyPageName, nextPageName } from "./pages";
+import { addPage, adjacentPage, deletePage, duplicatePage, movePage, moveToPage, nextCopyPageName, nextPageName } from "./pages";
 
 describe("pages", () => {
   it("adds pages with unique names", () => {
@@ -108,5 +108,48 @@ describe("movePage", () => {
     movePage(doc, a, 2);
     doc.undo();
     expect(doc.pages().map((p) => p.id)).toEqual(before);
+  });
+});
+
+describe("moveToPage", () => {
+  function setup() {
+    const doc = new DesignDoc();
+    const first = doc.pages()[0]!.id;
+    const second = addPage(doc);
+    const frame = doc.createNode("FRAME", { parentId: first, props: { name: "Card", x: 100, y: 200, width: 300, height: 300 } });
+    const inner = doc.createNode("RECTANGLE", { parentId: frame, props: { name: "Inner", x: 10, y: 20, width: 30, height: 30 } });
+    const loose = doc.createNode("RECTANGLE", { parentId: first, props: { name: "Loose", x: 5, y: 6, width: 10, height: 10 } });
+    return { doc, first, second, frame, inner, loose };
+  }
+  it("moves a layer to another page and keeps its place", () => {
+    const { doc, first, second, loose } = setup();
+    expect(moveToPage(doc, [loose], second)).toEqual([loose]);
+    expect(doc.getNode(loose)!.parentId).toBe(second);
+    expect(doc.children(first).map((n) => n.name)).toEqual(["Card"]);
+    expect(doc.absoluteBox(loose)).toMatchObject({ x: 5, y: 6 });
+  });
+  it("keeps the canvas position of a layer taken out of a frame", () => {
+    const { doc, second, inner } = setup();
+    moveToPage(doc, [inner], second);
+    expect(doc.getNode(inner)!.parentId).toBe(second);
+    expect(doc.absoluteBox(inner)).toMatchObject({ x: 110, y: 220 });
+  });
+  it("moves a frame with everything inside it, once, even when its child is selected too", () => {
+    const { doc, second, frame, inner } = setup();
+    expect(moveToPage(doc, [frame, inner], second)).toEqual([frame]);
+    expect(doc.children(frame).map((n) => n.id)).toEqual([inner]);
+    expect(doc.getNode(inner)!.parentId).toBe(frame);
+  });
+  it("ignores layers already on that page, pages and a page that does not exist", () => {
+    const { doc, first, loose } = setup();
+    expect(moveToPage(doc, [loose], first)).toEqual([]);
+    expect(moveToPage(doc, [first], first)).toEqual([]);
+    expect(moveToPage(doc, [loose], "nope")).toEqual([]);
+  });
+  it("is one undo step", () => {
+    const { doc, first, second, frame, loose } = setup();
+    moveToPage(doc, [frame, loose], second);
+    doc.undo();
+    expect(doc.children(first).map((n) => n.name).sort()).toEqual(["Card", "Loose"]);
   });
 });
