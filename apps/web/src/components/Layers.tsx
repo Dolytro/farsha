@@ -1,6 +1,7 @@
 import { hideOtherLayers } from "../object-actions";
 import { useEffect, useRef, useState, type DragEvent, type ReactElement } from "react";
 import { rowWindow, scrollToRow } from "../virtual-rows";
+import { screenToWorld } from "@farsha/canvas-engine";
 import type { DesignNode } from "@farsha/types";
 import { useEditor } from "../store";
 import { addPage, deletePage, duplicatePage, movePage } from "../pages";
@@ -178,6 +179,16 @@ export function Layers() {
         aria-setsize={rows.length}
         aria-posinset={index + 1}
         aria-expanded={hasChildren ? !collapsed.has(n.id) : undefined}
+        onContextMenu={(e) => {
+          // Like Figma: the same menu as on the canvas; the layer is selected first when it is outside the selection.
+          e.preventDefault();
+          const s = useEditor.getState();
+          if (!s.selection.includes(n.id)) select([n.id]);
+          // "Paste here" has no click point in the list: use the middle of the canvas
+          const box = document.querySelector(".canvas__svg")?.getBoundingClientRect();
+          const w = box ? screenToWorld(s.viewport, box.width / 2, box.height / 2) : { x: 0, y: 0 };
+          s.setMenu({ x: e.clientX, y: e.clientY, wx: w.x, wy: w.y });
+        }}
         aria-label={`${n.name}, ${n.type.toLowerCase()}${n.visible ? "" : ", hidden"}${n.locked ? ", locked" : ""}`}
         className={`layers__item${selection.includes(n.id) ? " layers__item--selected" : ""}${n.visible ? "" : " layers__item--hidden"}${drop?.id === n.id ? ` layers__item--drop-${drop.where}` : ""}`}
         style={{ paddingLeft: 4 + depth * 16 }}
