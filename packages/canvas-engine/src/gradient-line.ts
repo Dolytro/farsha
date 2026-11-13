@@ -24,3 +24,36 @@ export function stopPositionAt(line: GradientLine, point: { x: number; y: number
   const t = ((point.x - line.x1) * vx + (point.y - line.y1) * vy) / len2;
   return Math.round(Math.min(1, Math.max(0, t)) * 1000) / 1000;
 }
+
+interface Stop {
+  position: number;
+  color: string;
+  opacity: number;
+}
+
+function rgb(hex: string): [number, number, number] | null {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const h = m[1]!.length === 3 ? m[1]!.replace(/./g, (c) => c + c) : m[1]!;
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+/** The colour and opacity a gradient has at position `t` (0 to 1), mixed between the two stops around it; a point outside the stops takes the nearest one. Null for no stops. */
+export function stopAt(stops: Stop[], t: number): { color: string; opacity: number } | null {
+  if (!stops.length) return null;
+  const sorted = [...stops].sort((a, b) => a.position - b.position);
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  if (t <= first.position) return { color: first.color, opacity: first.opacity };
+  if (t >= last.position) return { color: last.color, opacity: last.opacity };
+  const hi = sorted.findIndex((s) => s.position >= t);
+  const a = sorted[hi - 1]!;
+  const b = sorted[hi]!;
+  const k = b.position === a.position ? 0 : (t - a.position) / (b.position - a.position);
+  const ca = rgb(a.color);
+  const cb = rgb(b.color);
+  const opacity = Math.round((a.opacity + (b.opacity - a.opacity) * k) * 1000) / 1000;
+  if (!ca || !cb) return { color: k < 0.5 ? a.color : b.color, opacity };
+  const hex = ca.map((v, i) => Math.round(v + (cb[i]! - v) * k).toString(16).padStart(2, "0")).join("");
+  return { color: `#${hex}`, opacity };
+}

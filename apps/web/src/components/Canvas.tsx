@@ -20,7 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientLine, stopPositionAt, type GradientLine } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientLine, stopAt, stopPositionAt, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -240,6 +240,26 @@ export function Canvas() {
       if (abs && paint?.type === "GRADIENT_LINEAR") {
         doc.stopCapturing();
         drag.current = { kind: "gradientstop", id: selection[0], fill, stop, line: gradientLine(abs, paint.angle), wx: w.x, wy: w.y };
+      }
+      return;
+    }
+    if (el.dataset.gradientLine && selection[0]) {
+      // Clicking the gradient line adds a colour stop there (mixed from the stops around it) and starts dragging it
+      const fill = Number(el.dataset.gradientLine);
+      const node = doc.getNode(selection[0]);
+      const abs = doc.absoluteBox(selection[0]);
+      const fills = node && "fills" in node && Array.isArray(node.fills) ? node.fills : [];
+      const paint = fills[fill];
+      if (abs && paint?.type === "GRADIENT_LINEAR" && paint.stops.length < 16) {
+        const line = gradientLine(abs, paint.angle);
+        const position = stopPositionAt(line, w);
+        const mixed = stopAt(paint.stops, position);
+        if (mixed) {
+          doc.stopCapturing();
+          const stops = [...paint.stops, { position, color: mixed.color, opacity: mixed.opacity }];
+          doc.setStyle(selection[0], { fills: fills.map((f, i) => (i === fill ? { ...paint, stops } : f)) } as never);
+          drag.current = { kind: "gradientstop", id: selection[0], fill, stop: stops.length - 1, line, wx: w.x, wy: w.y };
+        }
       }
       return;
     }
@@ -1141,7 +1161,7 @@ export function Canvas() {
                     const f = selNode && "fills" in selNode && Array.isArray(selNode.fills) ? selNode.fills[gradientHandle.index] : undefined;
                     if (f?.type !== "GRADIENT_LINEAR") return null;
                     const line = gradientLine(sel, f.angle);
-                    return f.stops.map((s, j) => (
+                    return [<line key="hit" data-gradient-line={gradientHandle.index} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={10 / z} style={{ cursor: "copy" }} />, ...f.stops.map((s, j) => (
                       <circle
                         key={j}
                         data-gradient-stop={`${gradientHandle.index}:${j}`}
@@ -1153,7 +1173,7 @@ export function Canvas() {
                         strokeWidth={1.5 / z}
                         style={{ cursor: "ew-resize" }}
                       />
-                    ));
+                    ))];
                   })()}
                 </g>
               )}
