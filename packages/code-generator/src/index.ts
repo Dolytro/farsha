@@ -79,8 +79,27 @@ export function backgroundCss(fills: Paint[]): string {
     .join(", ");
 }
 
+/** Number variables become var(--name, 8px) for the properties that map to one CSS declaration. */
+const NUMBER_CSS: Record<string, string> = { width: "width", height: "height", cornerRadius: "border-radius", itemSpacing: "gap", fontSize: "font-size" };
+
+function withNumberVariables(node: DesignNode, decls: Decl[]): Decl[] {
+  const bindings = node.varBindings;
+  if (!bindings || !variableName) return decls;
+  const values = node as unknown as Record<string, unknown>;
+  return decls.map(([prop, value]) => {
+    const key = Object.keys(NUMBER_CSS).find((k) => NUMBER_CSS[k] === prop && bindings[k]);
+    const name = key ? variableName?.(bindings[key]!) : undefined;
+    // only when the declaration really is that one property (a border-radius from four separate corners is not)
+    return key && name && typeof values[key] === "number" && value === px(values[key] as number) ? [prop, `var(${name}, ${value})`] : [prop, value];
+  });
+}
+
 /** Computed style of one node as ordered CSS declarations. Children of a parent are placed absolutely. */
 export function declarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean; parentLayout?: "HORIZONTAL" | "VERTICAL" } = {}): Decl[] {
+  return withNumberVariables(node, plainDeclarations(node, opts));
+}
+
+function plainDeclarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean; parentLayout?: "HORIZONTAL" | "VERTICAL" }): Decl[] {
   const d: Decl[] = [];
   if (opts.absolute) d.push(["position", "absolute"], ["left", px(node.x)], ["top", px(node.y)]);
   else if (opts.hasChildren) d.push(["position", "relative"]);

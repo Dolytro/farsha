@@ -44,4 +44,13 @@ describe("variablesUsed", () => {
     doc.updateColorVariable(brand, { modeId: dark, color: "#abcdef" });
     expect(cssVariableBlock(variablesUsed(doc, doc.getNode(rect)!))).toBe(":root {\n  --brand-primary: #123456; /* Dark: #abcdef */\n}");
   });
+  it("lists number variables bound to size, radius, gap or font size, in pixels", () => {
+    const { doc, rect } = setup();
+    const radius = doc.createValueVariable("NUMBER", "Radius / Card", "12");
+    doc.bindProperty(rect, "cornerRadius", radius);
+    const uses = variablesUsed(doc, doc.getNode(rect)!);
+    expect(uses).toHaveLength(1);
+    expect(uses[0]).toMatchObject({ role: "Number", cssName: "--radius-card", values: [{ color: "12px" }] });
+    expect(cssVariableBlock(uses)).toBe(":root {\n  --radius-card: 12px;\n}");
+  });
 });

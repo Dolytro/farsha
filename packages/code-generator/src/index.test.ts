@@ -729,3 +729,25 @@ describe("variable names in code", () => {
     expect(generateCode(node([bound]), () => [], "css")).not.toContain("var(");
   });
 });
+
+describe("number variables in code", () => {
+  const nameOf = (id: string) => ({ r: "--radius", w: "--card-width", s: "--space" })[id];
+  const box = (extra: Record<string, unknown>) => ({ id: "n", type: "FRAME", name: "Card", x: 0, y: 0, width: 300, height: 200, rotation: 0, opacity: 1, visible: true, locked: false, parentId: "p", orderKey: "a", fills: [], strokes: [], strokeWidth: 0, cornerRadius: 8, ...extra }) as never;
+
+  it("writes var(--name, value) for bound width and corner radius", () => {
+    const css = generateCode(box({ varBindings: { cornerRadius: "r", width: "w" } }), () => [], "css", { variableName: nameOf });
+    expect(css).toContain("width: var(--card-width, 300px)");
+    expect(css).toContain("border-radius: var(--radius, 8px)");
+    expect(css).toContain("height: 200px");
+  });
+  it("names the gap of an auto layout frame", () => {
+    const css = generateCode(box({ layoutMode: "HORIZONTAL", itemSpacing: 12, varBindings: { itemSpacing: "s" } }), () => [], "css", { variableName: nameOf });
+    expect(css).toContain("gap: var(--space, 12px)");
+  });
+  it("leaves values plain without names, for unknown variables and for Tailwind", () => {
+    const n = box({ varBindings: { cornerRadius: "r" } });
+    expect(generateCode(n, () => [], "css")).toContain("border-radius: 8px");
+    expect(generateCode(box({ varBindings: { cornerRadius: "gone" } }), () => [], "css", { variableName: nameOf })).toContain("border-radius: 8px");
+    expect(generateCode(n, () => [], "tailwind", { variableName: nameOf })).not.toContain("var(");
+  });
+});
