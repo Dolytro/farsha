@@ -6,7 +6,7 @@ import { useEditor } from "../store";
 import { addPage, deletePage, duplicatePage, movePage } from "../pages";
 import { zoomFit } from "../actions";
 import { Select } from "./Select";
-import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow, treeKeyTarget, type TreeKey, rangeBetween, toggleBranch } from "../layers-tree";
+import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type LayerKindFilter, type LayerRow, treeKeyTarget, type TreeKey, rangeBetween, revealAncestors, toggleBranch } from "../layers-tree";
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
@@ -105,6 +105,29 @@ export function Layers() {
   });
   const rowHeight = Number.parseFloat(typeof document !== "undefined" ? getComputedStyle(document.documentElement).getPropertyValue("--row-h") : "") || 24;
   const visible = rowWindow(rows.length, rowHeight, scroll.top, scroll.height);
+
+  // Selecting a layer (on the canvas, with Tab, from a link) opens the folded layers above it and scrolls its row into view, like Figma.
+  // It only runs when the selection changes, so folding a parent by hand afterwards is respected.
+  const reveal = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selection.length) return;
+    setCollapsed((c) => revealAncestors(doc, selection, c));
+    reveal.current = selection[0]!;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection]);
+  useEffect(() => {
+    const id = reveal.current;
+    const list = listRef.current;
+    if (!id || !list) return;
+    const at = rows.findIndex((r) => r.id === id);
+    // The row is missing until the parents have opened (next render); give up when a search or type filter hides it
+    if (at < 0) {
+      if (query || kind !== "all") reveal.current = null;
+      return;
+    }
+    reveal.current = null;
+    list.scrollTop = scrollToRow(at, rowHeight, list.scrollTop, list.clientHeight);
+  });
 
   // Press an eye or a lock and drag down the list: every layer you cross gets the same state (Figma)
   const sweep = useRef<{ prop: "visible" | "locked"; value: boolean } | null>(null);

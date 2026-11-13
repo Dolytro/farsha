@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { layerKind, layerRows, moveLayers, toggleBranch } from "./layers-tree";
+import { layerKind, layerRows, moveLayers, revealAncestors, toggleBranch } from "./layers-tree";
 
 function setup() {
   const doc = new DesignDoc();
@@ -133,5 +133,26 @@ describe("toggleBranch", () => {
   it("closes an open layer and everything inside it", () => {
     const next = toggleBranch(new Set(["x"]), "a", ["b", "c"]);
     expect([...next].sort()).toEqual(["a", "b", "c", "x"]);
+  });
+});
+
+describe("revealAncestors", () => {
+  it("opens the folded layers above a selected layer and leaves the others folded", () => {
+    const { doc, frame, inner } = setup();
+    const other = doc.createNode("FRAME", { parentId: doc.pages()[0]!.id, props: { name: "Other", x: 0, y: 0, width: 50, height: 50 } });
+    const next = revealAncestors(doc, [inner], new Set([frame, other]));
+    expect([...next]).toEqual([other]);
+  });
+  it("opens every level of a deep layer", () => {
+    const { doc, frame } = setup();
+    const mid = doc.createNode("FRAME", { parentId: frame, props: { name: "Mid", x: 0, y: 0, width: 50, height: 50 } });
+    const deep = doc.createNode("RECTANGLE", { parentId: mid, props: { name: "Deep", x: 0, y: 0, width: 1, height: 1 } });
+    const next = revealAncestors(doc, [deep], new Set([frame, mid]));
+    expect(next.size).toBe(0);
+  });
+  it("returns the same set when nothing is folded above the layer", () => {
+    const { doc, a, frame } = setup();
+    const folded = new Set([frame]);
+    expect(revealAncestors(doc, [a], folded)).toBe(folded);
   });
 });
