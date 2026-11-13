@@ -20,7 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -33,6 +33,7 @@ import { openLocalFile } from "../local-file";
 import { nearestFrame } from "../actions";
 import { connectorPath, connectorsIn } from "../prototype";
 import { loadDefaults, withDefaults } from "../defaults";
+import { nextLayerName } from "../layer-names";
 
 
 type Drag =
@@ -42,6 +43,7 @@ type Drag =
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
   | { kind: "multirotate"; wx: number; wy: number; items: TurnItem[]; cx: number; cy: number; start: number }
   | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
+  | { kind: "gradientstop"; id: string; fill: number; stop: number; line: GradientLine; wx: number; wy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
   | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
@@ -230,6 +232,50 @@ export function Canvas() {
       }
       return;
     }
+    if (el.dataset.gradientStop && selection[0]) {
+      // Dragging a colour stop of a linear gradient slides it along the gradient line
+      const [fill, stop] = el.dataset.gradientStop.split(":").map(Number) as [number, number];
+      const node = doc.getNode(selection[0]);
+      const abs = doc.absoluteBox(selection[0]);
+      const fills = node && "fills" in node && Array.isArray(node.fills) ? node.fills : [];
+      const paint = fills[fill];
+      const line = abs && paint && paint.type !== "SOLID" && paint.type !== "IMAGE" ? gradientAxis(paint, abs) : null;
+      if (line && e.altKey && paint && (paint.type === "GRADIENT_LINEAR" || paint.type === "GRADIENT_RADIAL")) {
+        // Alt+click on a stop removes it (a gradient keeps two)
+        const stops = withoutStop(paint.stops, stop);
+        if (stops !== paint.stops) {
+          doc.stopCapturing();
+          doc.setStyle(selection[0], { fills: fills.map((f, i) => (i === fill ? { ...paint, stops } : f)) } as never);
+          doc.stopCapturing();
+        }
+        return;
+      }
+      if (line) {
+        doc.stopCapturing();
+        drag.current = { kind: "gradientstop", id: selection[0], fill, stop, line, wx: w.x, wy: w.y };
+      }
+      return;
+    }
+    if (el.dataset.gradientLine && selection[0]) {
+      // Clicking the gradient line adds a colour stop there (mixed from the stops around it) and starts dragging it
+      const fill = Number(el.dataset.gradientLine);
+      const node = doc.getNode(selection[0]);
+      const abs = doc.absoluteBox(selection[0]);
+      const fills = node && "fills" in node && Array.isArray(node.fills) ? node.fills : [];
+      const paint = fills[fill];
+      const line = abs && paint && paint.type !== "SOLID" && paint.type !== "IMAGE" ? gradientAxis(paint, abs) : null;
+      if (abs && line && paint && (paint.type === "GRADIENT_LINEAR" || paint.type === "GRADIENT_RADIAL") && paint.stops.length < 16) {
+        const position = stopPositionAt(line, w);
+        const mixed = stopAt(paint.stops, position);
+        if (mixed) {
+          doc.stopCapturing();
+          const stops = [...paint.stops, { position, color: mixed.color, opacity: mixed.opacity }];
+          doc.setStyle(selection[0], { fills: fills.map((f, i) => (i === fill ? { ...paint, stops } : f)) } as never);
+          drag.current = { kind: "gradientstop", id: selection[0], fill, stop: stops.length - 1, line, wx: w.x, wy: w.y };
+        }
+      }
+      return;
+    }
     if (el.dataset.rotate && selection.length > 1 && !viewer) {
       // Several layers turn together round the middle of the box that holds them
       const items = selection.map((id) => doc.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n && !n.locked).map((n) => ({ id: n.id, x: n.x, y: n.y, width: n.width, height: n.height, rotation: n.rotation }));
@@ -339,7 +385,7 @@ export function Canvas() {
     const id = doc.createNode(type, {
       parentId: parentFrame?.id ?? pageId,
       props: withDefaults(type, {
-        name: NAMES[tool],
+        name: NAMES[tool] && tool !== "text" && tool !== "section" && tool !== "slice" ? nextLayerName(doc, NAMES[tool]!) : NAMES[tool],
         x: w.x - pb.x,
         y: w.y - pb.y,
         width: 1,
@@ -381,7 +427,7 @@ export function Canvas() {
       let aligned = false;
       if (d.startBox && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping) {
         const page = doc.getNode(pageId);
-        const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const guideList = useEditor.getState().rulers && !useEditor.getState().guidesHidden && page?.type === "PAGE" ? (page.guides ?? []) : [];
         const grid = parentGridLines(Object.keys(d.origins)[0]);
         const snap = snapMove({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets, 5 / viewport.zoom, {
           xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],
@@ -433,6 +479,15 @@ export function Canvas() {
         const angle = ((snapped % 360) + 360) % 360;
         doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
       }
+    } else if (d.kind === "gradientstop") {
+      const node = doc.getNode(d.id);
+      if (node && "fills" in node && Array.isArray(node.fills)) {
+        let position = stopPositionAt(d.line, w);
+        if (e.shiftKey) position = Math.round(position * 20) / 20;
+        doc.setStyle(d.id, {
+          fills: node.fills.map((f, i) => (i === d.fill && (f.type === "GRADIENT_LINEAR" || f.type === "GRADIENT_RADIAL") ? { ...f, stops: f.stops.map((s, j) => (j === d.stop ? { ...s, position } : s)) } : f)),
+        } as never);
+      }
     } else if (d.kind === "multiresize") {
       const to = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
       const next = resizeGroup(d.items, d.box, to);
@@ -461,7 +516,7 @@ export function Canvas() {
       // Edges snap to other layers and ruler guides unless Ctrl is held; not while the ratio is kept, resizing from the centre, or flipping
       if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping && !opts.keepRatio && !opts.fromCenter && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation) {
         const page = doc.getNode(pageId);
-        const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const guideList = useEditor.getState().rulers && !useEditor.getState().guidesHidden && page?.type === "PAGE" ? (page.guides ?? []) : [];
         const grid = parentGridLines(d.id);
         const snapped = snapResize({ x: next.x + d.offset.x, y: next.y + d.offset.y, width: next.width, height: next.height }, d.corner, d.targets, 5 / viewport.zoom, {
           xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],
@@ -617,6 +672,15 @@ export function Canvas() {
 
   const onDoubleClick = (e: React.MouseEvent) => {
     if (devMode) return;
+    // Double-clicking a frame's name above it renames it (the name box opens in the Layers list)
+    const labelId = (e.target as SVGElement).dataset?.labelId;
+    if (labelId && !viewer && doc.hasNode(labelId)) {
+      const st = useEditor.getState();
+      select([labelId]);
+      st.setLeftTab("layers");
+      st.setRenaming(labelId);
+      return;
+    }
     const w = world(e);
     const deep = hitTest(doc, pageId, w.x, w.y, true);
     if (!deep) return;
@@ -878,7 +942,7 @@ export function Canvas() {
       const f = selNode.fills[i]!;
       if (f.type === "SOLID" || f.type === "IMAGE") continue;
       const a = (f.angle * Math.PI) / 180;
-      return { index: i, x: sel.x + sel.width / 2 + (Math.cos(a) * sel.width) / 2, y: sel.y + sel.height / 2 + (Math.sin(a) * sel.height) / 2 };
+      return { index: i, type: f.type, x: sel.x + sel.width / 2 + (Math.cos(a) * sel.width) / 2, y: sel.y + sel.height / 2 + (Math.sin(a) * sel.height) / 2 };
     }
     return null;
   })();
@@ -1102,9 +1166,32 @@ export function Canvas() {
               </g>
               {gradientHandle && sel && (
                 <g>
-                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
-                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
-                  <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
+                  {gradientHandle.type !== "GRADIENT_RADIAL" && gradientHandle.type !== "GRADIENT_DIAMOND" && (
+                    <>
+                      <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
+                      <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
+                      <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
+                    </>
+                  )}
+                  {(() => {
+                    // The colour stops of a linear gradient sit on the gradient line; drag one to move it
+                    const f = selNode && "fills" in selNode && Array.isArray(selNode.fills) ? selNode.fills[gradientHandle.index] : undefined;
+                    const line = f && f.type !== "SOLID" && f.type !== "IMAGE" ? gradientAxis(f, sel) : null;
+                    if (!line || (f?.type !== "GRADIENT_LINEAR" && f?.type !== "GRADIENT_RADIAL")) return null;
+                    return [<line key="hit" data-gradient-line={gradientHandle.index} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={10 / z} style={{ cursor: "copy" }} />, ...f.stops.map((s, j) => (
+                      <circle
+                        key={j}
+                        data-gradient-stop={`${gradientHandle.index}:${j}`}
+                        cx={line.x1 + (line.x2 - line.x1) * s.position}
+                        cy={line.y1 + (line.y2 - line.y1) * s.position}
+                        r={4 / z}
+                        fill={/^#[0-9a-fA-F]{3,8}$/.test(s.color) ? s.color : "#888"}
+                        stroke="#fff"
+                        strokeWidth={1.5 / z}
+                        style={{ cursor: "ew-resize" }}
+                      />
+                    ))];
+                  })()}
                 </g>
               )}
               {showDimensions && (
@@ -1123,7 +1210,7 @@ export function Canvas() {
           ))}
           {editingPath && !viewer && !devMode && tool === "select" && <VectorEditLayer nodeId={editingPath} svgRef={svgRef} viewport={viewport} />}
           <CommentsLayer zoom={z} />
-          {tool === "pencil" && !viewer && !devMode && <PencilLayer svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
+          {(tool === "pencil" || tool === "marker" || tool === "highlighter") && !viewer && !devMode && <PencilLayer kind={tool} svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
           {tool === "pen" && !viewer && !devMode && <PenLayer svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
           {marquee && <rect x={marquee.x} y={marquee.y} width={marquee.width} height={marquee.height} fill={ACCENT} fillOpacity={0.08} stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />}
 

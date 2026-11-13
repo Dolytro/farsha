@@ -32,6 +32,8 @@ export type NodeType =
 
 export interface SolidPaint {
   type: 'SOLID';
+  /** False hides this fill or stroke without deleting it (the eye in the Design panel). Missing means shown. */
+  visible?: boolean;
   /** CSS hex colour, e.g. `#388bff` */
   color: string;
   opacity: number;
@@ -50,6 +52,8 @@ export interface GradientStop {
 
 export interface GradientPaint {
   type: 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | 'GRADIENT_DIAMOND';
+  /** False hides this fill or stroke without deleting it. Missing means shown. */
+  visible?: boolean;
   stops: GradientStop[];
   /** Degrees; 0 = left to right, 90 = top to bottom. For an angular gradient where the sweep starts. Ignored by radial and diamond gradients. */
   angle: number;
@@ -61,6 +65,8 @@ export type ImageScaleMode = 'FILL' | 'FIT' | 'STRETCH' | 'TILE' | 'CROP';
 
 export interface ImagePaint {
   type: 'IMAGE';
+  /** False hides this fill or stroke without deleting it. Missing means shown. */
+  visible?: boolean;
   /** Reference to an asset stored in the document; null until an image is chosen. */
   assetId: string | null;
   scaleMode: ImageScaleMode;
@@ -851,4 +857,9 @@ export function paintOpacity(p: Paint): number {
 export function cssBlendMode(mode: string | undefined): string | undefined {
   const known = ['DARKEN','MULTIPLY','COLOR_BURN','LIGHTEN','SCREEN','COLOR_DODGE','OVERLAY','SOFT_LIGHT','HARD_LIGHT','DIFFERENCE','EXCLUSION','HUE','SATURATION','COLOR','LUMINOSITY'];
   return mode && known.includes(mode) ? mode.toLowerCase().replace(/_/g, '-') : undefined;
+}
+
+/** The paints that are shown (a paint is shown unless its `visible` is false). */
+export function shownPaints<T extends { visible?: boolean }>(paints: T[] | undefined | null): T[] {
+  return Array.isArray(paints) ? paints.filter((p) => p.visible !== false) : [];
 }

@@ -706,3 +706,59 @@ describe("Flutter output", () => {
     expect(flutterClassName("Login widget")).toBe("LoginWidget");
   });
 });
+
+describe("variable names in code", () => {
+  const bound = { type: "SOLID" as const, color: "#388BFF", opacity: 1, variableId: "v1" };
+  const nameOf = (id: string) => (id === "v1" ? "--brand-primary" : undefined);
+  const node = (fills: unknown[]) => ({ id: "n", type: "RECTANGLE", name: "Box", x: 0, y: 0, width: 10, height: 10, rotation: 0, opacity: 1, visible: true, locked: false, parentId: "p", orderKey: "a", fills, strokes: [], strokeWidth: 0, cornerRadius: 0 }) as never;
+
+  it("writes var(--name, #fallback) for a fill that follows a variable", () => {
+    const css = generateCode(node([bound]), () => [], "css", { variableName: nameOf });
+    expect(css).toContain("background: var(--brand-primary, #388bff)");
+  });
+  it("keeps the plain colour when no names are given or the variable is unknown", () => {
+    expect(generateCode(node([bound]), () => [], "css")).toContain("background: #388bff");
+    expect(generateCode(node([{ ...bound, variableId: "gone" }]), () => [], "css", { variableName: nameOf })).toContain("background: #388bff");
+  });
+  it("keeps a translucent colour plain and leaves Tailwind alone", () => {
+    expect(generateCode(node([{ ...bound, opacity: 0.5 }]), () => [], "css", { variableName: nameOf })).toContain("rgba(");
+    expect(generateCode(node([bound]), () => [], "tailwind", { variableName: nameOf })).not.toContain("var(");
+  });
+  it("does not leak the names into the next call", () => {
+    generateCode(node([bound]), () => [], "css", { variableName: nameOf });
+    expect(generateCode(node([bound]), () => [], "css")).not.toContain("var(");
+  });
+});
+
+describe("number variables in code", () => {
+  const nameOf = (id: string) => ({ r: "--radius", w: "--card-width", s: "--space" })[id];
+  const box = (extra: Record<string, unknown>) => ({ id: "n", type: "FRAME", name: "Card", x: 0, y: 0, width: 300, height: 200, rotation: 0, opacity: 1, visible: true, locked: false, parentId: "p", orderKey: "a", fills: [], strokes: [], strokeWidth: 0, cornerRadius: 8, ...extra }) as never;
+
+  it("writes var(--name, value) for bound width and corner radius", () => {
+    const css = generateCode(box({ varBindings: { cornerRadius: "r", width: "w" } }), () => [], "css", { variableName: nameOf });
+    expect(css).toContain("width: var(--card-width, 300px)");
+    expect(css).toContain("border-radius: var(--radius, 8px)");
+    expect(css).toContain("height: 200px");
+  });
+  it("names the gap of an auto layout frame", () => {
+    const css = generateCode(box({ layoutMode: "HORIZONTAL", itemSpacing: 12, varBindings: { itemSpacing: "s" } }), () => [], "css", { variableName: nameOf });
+    expect(css).toContain("gap: var(--space, 12px)");
+  });
+  it("leaves values plain without names, for unknown variables and for Tailwind", () => {
+    const n = box({ varBindings: { cornerRadius: "r" } });
+    expect(generateCode(n, () => [], "css")).toContain("border-radius: 8px");
+    expect(generateCode(box({ varBindings: { cornerRadius: "gone" } }), () => [], "css", { variableName: nameOf })).toContain("border-radius: 8px");
+    expect(generateCode(n, () => [], "tailwind", { variableName: nameOf })).not.toContain("var(");
+  });
+});
+
+describe("hidden fills and strokes in code", () => {
+  const node = (extra: Record<string, unknown>) => ({ id: "n", type: "RECTANGLE", name: "Box", x: 0, y: 0, width: 10, height: 10, rotation: 0, opacity: 1, visible: true, locked: false, parentId: "p", orderKey: "a", cornerRadius: 0, strokeWidth: 2, strokeAlign: "INSIDE", fills: [], strokes: [], ...extra }) as never;
+  const red = { type: "SOLID", color: "#ff0000", opacity: 1 };
+  it("leaves a hidden fill and a hidden stroke out of the CSS", () => {
+    expect(generateCode(node({ fills: [red] }), () => [], "css")).toContain("background: #ff0000");
+    expect(generateCode(node({ fills: [{ ...red, visible: false }] }), () => [], "css")).not.toContain("background");
+    expect(generateCode(node({ strokes: [red] }), () => [], "css")).toContain("border: 2px solid #ff0000");
+    expect(generateCode(node({ strokes: [{ ...red, visible: false }] }), () => [], "css")).not.toContain("border");
+  });
+});

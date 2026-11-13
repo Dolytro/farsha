@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { armPasteMode, copyNodes, duplicateNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
+import { armPasteMode, copyNodes, duplicateNodes, copyProperties, hasCopiedProperties, parseClip, pasteProperties, pasteNodes, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteColor, pastedColor, pasteText, resetClipboardState, selectAllIn, takePasteMode } from "./clipboard";
 
 function setup() {
   const doc = new DesignDoc();
@@ -313,5 +313,31 @@ describe("copying an instance keeps what it overrides", () => {
     const plain = doc.createInstance(mainId, page, 600, 0);
     const [copy] = duplicateNodes(doc, [plain]);
     expect((doc.children(copy!).find((n) => n.type === "TEXT") as unknown as { characters: string }).characters).toBe("Old");
+  });
+});
+
+describe("pasted colours", () => {
+  it("reads hex and CSS colours but not plain words", () => {
+    expect(pastedColor("#FF0000")).toBe("#ff0000");
+    expect(pastedColor("  #0af ")).toBe("#00aaff");
+    expect(pastedColor("rgb(255, 0, 0)")).toBe("#ff0000");
+    expect(pastedColor("bad")).toBeNull();
+    expect(pastedColor("fee")).toBeNull();
+    expect(pastedColor("#12")).toBeNull();
+    expect(pastedColor("hello\n#fff")).toBeNull();
+  });
+  it("gives every selected layer that colour as its only fill, in one undo step", () => {
+    const { doc, rect, text } = setup();
+    expect(pasteColor(doc, [rect, text], "#00ff00")).toBe(2);
+    expect(doc.getNode(rect)).toMatchObject({ fills: [{ type: "SOLID", color: "#00ff00", opacity: 1 }] });
+    expect(doc.getNode(text)).toMatchObject({ fills: [{ type: "SOLID", color: "#00ff00" }] });
+    doc.undo();
+    expect(doc.getNode(rect)).not.toMatchObject({ fills: [{ color: "#00ff00" }] });
+  });
+  it("skips locked layers and layers without fills", () => {
+    const { doc, rect, frame, page } = setup();
+    doc.setStyle(rect, { locked: true });
+    expect(pasteColor(doc, [rect, page], "#00ff00")).toBe(0);
+    expect(pasteColor(doc, [frame], "#00ff00")).toBe(1);
   });
 });

@@ -163,3 +163,16 @@ export function toggleBranch(collapsed: ReadonlySet<string>, id: string, descend
   else for (const x of all) next.add(x);
   return next;
 }
+
+/** Selecting a layer on the canvas opens every folded layer above it in the list. Returns `collapsed` itself when nothing needs opening. */
+export function revealAncestors(doc: DesignDoc, ids: string[], collapsed: ReadonlySet<string>): ReadonlySet<string> {
+  let next: Set<string> | null = null;
+  for (const id of ids) {
+    let parent = doc.getNode(id)?.parentId;
+    while (parent) {
+      if (collapsed.has(parent)) (next ??= new Set(collapsed)).delete(parent);
+      parent = doc.getNode(parent)?.parentId;
+    }
+  }
+  return next ?? collapsed;
+}

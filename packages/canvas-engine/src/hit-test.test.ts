@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { hitTest } from "./hit-test";
+import { hitTest, hitTestAll } from "./hit-test";
 import { zoomAt, screenToWorld } from "./viewport";
 
 describe("hitTest", () => {
@@ -77,5 +77,28 @@ describe("first on top stacking", () => {
     expect(hitTest(doc, page, 5, 5, true)?.id).toBe(b);
     doc.setStyle(frame, { layoutFirstOnTop: true });
     expect(hitTest(doc, page, 5, 5, true)?.id).toBe(a);
+  });
+});
+
+describe("hitTestAll", () => {
+  it("lists every layer under the point, topmost first", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const frame = doc.createNode("FRAME", { parentId: page, props: { x: 100, y: 100, width: 200, height: 200 } });
+    const rect = doc.createNode("RECTANGLE", { parentId: frame, props: { x: 10, y: 10, width: 50, height: 50 } });
+    const behind = doc.createNode("RECTANGLE", { parentId: page, props: { x: 0, y: 0, width: 400, height: 400 } });
+    doc.reorderNode(behind, 0);
+    expect(hitTestAll(doc, page, 120, 120).map((n) => n.id)).toEqual([rect, frame, behind]);
+    expect(hitTestAll(doc, page, 250, 250).map((n) => n.id)).toEqual([frame, behind]);
+    expect(hitTestAll(doc, page, 900, 900)).toEqual([]);
+  });
+  it("skips hidden and locked layers", () => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("RECTANGLE", { parentId: page, props: { x: 0, y: 0, width: 50, height: 50 } });
+    const b = doc.createNode("RECTANGLE", { parentId: page, props: { x: 0, y: 0, width: 50, height: 50, visible: false } });
+    const c = doc.createNode("RECTANGLE", { parentId: page, props: { x: 0, y: 0, width: 50, height: 50, locked: true } });
+    expect(hitTestAll(doc, page, 10, 10).map((n) => n.id)).toEqual([a]);
+    expect([b, c]).toHaveLength(2);
   });
 });

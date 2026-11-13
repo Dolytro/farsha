@@ -3,6 +3,7 @@ import type { DesignDoc } from "@farsha/design-core";
 import type { DesignNode, NodeType } from "@farsha/types";
 import { fitSize } from "./images";
 import { svgToClip } from "./svg-import";
+import { parseCssColor } from "./color-math";
 
 /** Prefix on the clipboard text so Farsha can tell its own payload from ordinary text. */
 export const CLIP_PREFIX = "farsha:";
@@ -281,6 +282,26 @@ export function pasteText(doc: DesignDoc, text: string, parentId: string, x: num
   });
   doc.stopCapturing();
   return [id];
+}
+
+/** A colour written as text (#abc, #aabbcc, rgb(), hsl()) as "#rrggbb", or null. A bare word like "bad" is never a colour here, so ordinary text still pastes as text. */
+export function pastedColor(text: string): string | null {
+  const t = text.trim();
+  if (t.length > 40 || t.includes("\n")) return null;
+  return t.startsWith("#") || /^(rgb|hsl)a?\(/i.test(t) ? parseCssColor(t) : null;
+}
+
+/** Pasting a colour over a selection gives every selected layer that colour as its only fill (one undo step). Returns how many layers changed. */
+export function pasteColor(doc: DesignDoc, ids: string[], color: string): number {
+  const targets = ids.filter((id) => {
+    const n = doc.getNode(id);
+    return !!n && !n.locked && "fills" in n;
+  });
+  if (!targets.length) return 0;
+  doc.stopCapturing();
+  for (const id of targets) doc.setStyle(id, { fills: [{ type: "SOLID", color, opacity: 1 }] } as never);
+  doc.stopCapturing();
+  return targets.length;
 }
 
 /** Ctrl+A: every visible, unlocked sibling of the selection, or all top-level layers. */

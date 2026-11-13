@@ -8,7 +8,15 @@ const ACCENT = "#0d99ff";
  * The Pencil tool (Shift+P): drag to draw freehand. On release the stroke is simplified and smoothed into an editable pen path,
  * and a stroke that ends near its start becomes a closed shape.
  */
-export function PencilLayer({ svgRef, viewport, spaceDown }: { svgRef: RefObject<SVGSVGElement | null>; viewport: Viewport; spaceDown: boolean }) {
+/** What each freehand tool draws: the Pencil is a hairline, the Marker a thick round stroke, the Highlighter a wide see-through yellow one. */
+const BRUSHES = {
+  pencil: { name: "Vector", color: "#000000", width: 1, opacity: 1 },
+  marker: { name: "Marker", color: "#000000", width: 8, opacity: 1 },
+  highlighter: { name: "Highlighter", color: "#ffe14d", width: 24, opacity: 0.5 },
+} as const;
+
+export function PencilLayer({ kind = "pencil", svgRef, viewport, spaceDown }: { kind?: keyof typeof BRUSHES; svgRef: RefObject<SVGSVGElement | null>; viewport: Viewport; spaceDown: boolean }) {
+  const brush = BRUSHES[kind];
   const [raw, setRaw] = useState<{ x: number; y: number }[]>([]);
   const drawing = useRef(false);
   const z = viewport.zoom;
@@ -31,7 +39,7 @@ export function PencilLayer({ svgRef, viewport, spaceDown }: { svgRef: RefObject
     const id = doc.createNode("VECTOR", {
       parentId: frame?.id ?? pageId,
       props: {
-        name: "Vector",
+        name: brush.name,
         x: geo.box.x - origin.x,
         y: geo.box.y - origin.y,
         width: geo.box.width,
@@ -41,8 +49,9 @@ export function PencilLayer({ svgRef, viewport, spaceDown }: { svgRef: RefObject
         penPoints: translatePoints(points, -geo.box.x, -geo.box.y),
         penClosed: closed,
         fills: [],
-        strokes: [{ type: "SOLID", color: "#000000", opacity: 1 }],
-        strokeWidth: 1,
+        strokes: [{ type: "SOLID", color: brush.color, opacity: brush.opacity }],
+        strokeWidth: brush.width,
+        ...(kind === "pencil" ? {} : { strokeCap: "ROUND", strokeJoin: "ROUND" }),
       },
     });
     doc.stopCapturing();

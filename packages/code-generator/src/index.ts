@@ -1,4 +1,4 @@
-import { cssBlendMode, paintColor, type DesignNode, type Paint } from "@farsha/types";
+import { cssBlendMode, paintColor, shownPaints, type DesignNode, type Paint } from "@farsha/types";
 import { generateAndroidXml } from "./androidxml";
 import { generateCompose } from "./compose";
 import { generateFlutter } from "./flutter";
@@ -24,9 +24,25 @@ export function toRgba(hex: string, opacity = 1): string {
   return opacity >= 1 ? `#${m[1]!.toLowerCase()}` : `rgba(${r}, ${g}, ${b}, ${Math.round(opacity * 100) / 100})`;
 }
 
+/** Gives the CSS custom property name of a colour variable, or undefined when it is unknown. */
+export type VariableName = (variableId: string) => string | undefined;
+
+/** Set by generateCode while it runs, so the CSS helpers can write var(--name, #fallback) for paints that follow a variable. */
+let variableName: VariableName | undefined;
+
+/** A paint as a CSS colour: var(--name, #hex) for an opaque solid paint bound to a known variable, else the plain colour. */
+function colorCss(p: Paint): string {
+  const plain = toRgba(paintColor(p), p.opacity);
+  if (p.type === "SOLID" && p.variableId && p.opacity >= 1) {
+    const name = variableName?.(p.variableId);
+    if (name) return `var(${name}, ${plain})`;
+  }
+  return plain;
+}
+
 /** CSS background value of a paint (solid colour or a linear/radial gradient). */
 export function paintCss(p: Paint): string {
-  if (p.type === "SOLID") return toRgba(p.color, p.opacity);
+  if (p.type === "SOLID") return colorCss(p);
   if (p.type === "IMAGE") {
     if (p.scaleMode === "TILE") {
       const k = typeof p.tileScale === "number" && Number.isFinite(p.tileScale) && p.tileScale > 0 ? Math.min(10, Math.max(0.01, p.tileScale)) : 1;
@@ -54,7 +70,7 @@ export function paintCss(p: Paint): string {
 
 /** CSS `background` for fills stored bottom to top: CSS lists the top layer first, and a solid colour can only be the bottom layer. */
 export function backgroundCss(fills: Paint[]): string {
-  const top = [...fills].reverse();
+  const top = shownPaints(fills).reverse();
   return top
     .map((p, i) => {
       const css = paintCss(p);
@@ -63,8 +79,27 @@ export function backgroundCss(fills: Paint[]): string {
     .join(", ");
 }
 
+/** Number variables become var(--name, 8px) for the properties that map to one CSS declaration. */
+const NUMBER_CSS: Record<string, string> = { width: "width", height: "height", cornerRadius: "border-radius", itemSpacing: "gap", fontSize: "font-size" };
+
+function withNumberVariables(node: DesignNode, decls: Decl[]): Decl[] {
+  const bindings = node.varBindings;
+  if (!bindings || !variableName) return decls;
+  const values = node as unknown as Record<string, unknown>;
+  return decls.map(([prop, value]) => {
+    const key = Object.keys(NUMBER_CSS).find((k) => NUMBER_CSS[k] === prop && bindings[k]);
+    const name = key ? variableName?.(bindings[key]!) : undefined;
+    // only when the declaration really is that one property (a border-radius from four separate corners is not)
+    return key && name && typeof values[key] === "number" && value === px(values[key] as number) ? [prop, `var(${name}, ${value})`] : [prop, value];
+  });
+}
+
 /** Computed style of one node as ordered CSS declarations. Children of a parent are placed absolutely. */
 export function declarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean; parentLayout?: "HORIZONTAL" | "VERTICAL" } = {}): Decl[] {
+  return withNumberVariables(node, plainDeclarations(node, opts));
+}
+
+function plainDeclarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean; parentLayout?: "HORIZONTAL" | "VERTICAL" }): Decl[] {
   const d: Decl[] = [];
   if (opts.absolute) d.push(["position", "absolute"], ["left", px(node.x)], ["top", px(node.y)]);
   else if (opts.hasChildren) d.push(["position", "relative"]);
@@ -97,8 +132,8 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   };
 
   if (node.type === "TEXT") {
-    const fill = node.fills[0];
-    if (fill) d.push(["color", toRgba(paintColor(fill), fill.opacity)]);
+    const fill = shownPaints(node.fills)[0];
+    if (fill) d.push(["color", colorCss(fill)]);
     // gradient text: the gradient is the background, clipped to the letters
     if (fill && fill.type !== "SOLID" && fill.type !== "IMAGE") d.push(["background", paintCss(fill)], ["-webkit-background-clip", "text"], ["background-clip", "text"], ["-webkit-text-fill-color", "transparent"]);
     d.push(["font-family", node.fontFamily], ["font-size", px(node.fontSize)], ["font-weight", String(node.fontWeight)]);
@@ -106,7 +141,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
     if (node.italic) d.push(["font-style", "italic"]);
     // an outline on the letters: centred is a plain text stroke, outside is a double-width one painted behind the fill
-    const outline = node.strokes?.[0];
+    const outline = shownPaints(node.strokes)[0];
     if (outline && outline.type !== "IMAGE" && (node.strokeWidth ?? 1) > 0) {
       const w = node.strokeWidth ?? 1;
       const outside = node.strokeAlign === "OUTSIDE";
@@ -132,12 +167,13 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     return d;
   }
 
-  if ("fills" in node && node.fills?.length) d.push(["background", backgroundCss(node.fills)]);
+  if ("fills" in node && shownPaints(node.fills).length) d.push(["background", backgroundCss(node.fills ?? [])]);
   if (node.type === "ELLIPSE") d.push(["border-radius", "50%"]);
   else if ("cornerRadii" in node && node.cornerRadii?.length === 4 && node.cornerRadii.some((r) => r > 0)) d.push(["border-radius", node.cornerRadii.map(px).join(" ")]);
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
-  if ("strokes" in node && node.strokes?.[0] && node.strokeWidth !== undefined) {
-    const color = toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity);
+  const stroke0 = "strokes" in node ? shownPaints(node.strokes)[0] : undefined;
+  if ("strokes" in node && stroke0 && node.strokeWidth !== undefined) {
+    const color = colorCss(stroke0);
     const align = "strokeAlign" in node ? node.strokeAlign : undefined;
     if (align === "OUTSIDE") {
       // an outside stroke sits beyond the box: an outline (it follows the corner radius in current browsers)
@@ -148,7 +184,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     } else {
       d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${color}`]);
       // a gradient stroke: transparent border, the fill clipped to the padding box and the gradient to the border box
-      const st = node.strokes[0];
+      const st = stroke0;
       if (st.type === "GRADIENT_LINEAR" || st.type === "GRADIENT_RADIAL") {
         const own = d.findIndex(([k]) => k === "background");
         const fillCss = own >= 0 ? d[own]![1] : "linear-gradient(transparent, transparent)";
@@ -306,7 +342,17 @@ function jsx(w: Walked, depth: number): string {
 }
 
 /** Generate code for a node and its visible descendants in the requested language. */
-export function generateCode(node: DesignNode, children: ChildrenOf, language: Language): string {
+export function generateCode(node: DesignNode, children: ChildrenOf, language: Language, opts: { variableName?: VariableName } = {}): string {
+  // CSS, HTML, Vue and React name the variables a fill, stroke or text colour follows; the Tailwind classes keep plain colours
+  variableName = language === "tailwind" ? undefined : opts.variableName;
+  try {
+    return generate(node, children, language);
+  } finally {
+    variableName = undefined;
+  }
+}
+
+function generate(node: DesignNode, children: ChildrenOf, language: Language): string {
   if (language === "swiftui") return generateSwiftUI(node, children);
   if (language === "compose") return generateCompose(node, children);
   if (language === "uikit") return generateUIKit(node, children);
