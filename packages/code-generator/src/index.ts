@@ -24,9 +24,25 @@ export function toRgba(hex: string, opacity = 1): string {
   return opacity >= 1 ? `#${m[1]!.toLowerCase()}` : `rgba(${r}, ${g}, ${b}, ${Math.round(opacity * 100) / 100})`;
 }
 
+/** Gives the CSS custom property name of a colour variable, or undefined when it is unknown. */
+export type VariableName = (variableId: string) => string | undefined;
+
+/** Set by generateCode while it runs, so the CSS helpers can write var(--name, #fallback) for paints that follow a variable. */
+let variableName: VariableName | undefined;
+
+/** A paint as a CSS colour: var(--name, #hex) for an opaque solid paint bound to a known variable, else the plain colour. */
+function colorCss(p: Paint): string {
+  const plain = toRgba(paintColor(p), p.opacity);
+  if (p.type === "SOLID" && p.variableId && p.opacity >= 1) {
+    const name = variableName?.(p.variableId);
+    if (name) return `var(${name}, ${plain})`;
+  }
+  return plain;
+}
+
 /** CSS background value of a paint (solid colour or a linear/radial gradient). */
 export function paintCss(p: Paint): string {
-  if (p.type === "SOLID") return toRgba(p.color, p.opacity);
+  if (p.type === "SOLID") return colorCss(p);
   if (p.type === "IMAGE") {
     if (p.scaleMode === "TILE") {
       const k = typeof p.tileScale === "number" && Number.isFinite(p.tileScale) && p.tileScale > 0 ? Math.min(10, Math.max(0.01, p.tileScale)) : 1;
@@ -98,7 +114,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
 
   if (node.type === "TEXT") {
     const fill = node.fills[0];
-    if (fill) d.push(["color", toRgba(paintColor(fill), fill.opacity)]);
+    if (fill) d.push(["color", colorCss(fill)]);
     // gradient text: the gradient is the background, clipped to the letters
     if (fill && fill.type !== "SOLID" && fill.type !== "IMAGE") d.push(["background", paintCss(fill)], ["-webkit-background-clip", "text"], ["background-clip", "text"], ["-webkit-text-fill-color", "transparent"]);
     d.push(["font-family", node.fontFamily], ["font-size", px(node.fontSize)], ["font-weight", String(node.fontWeight)]);
@@ -137,7 +153,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   else if ("cornerRadii" in node && node.cornerRadii?.length === 4 && node.cornerRadii.some((r) => r > 0)) d.push(["border-radius", node.cornerRadii.map(px).join(" ")]);
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
   if ("strokes" in node && node.strokes?.[0] && node.strokeWidth !== undefined) {
-    const color = toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity);
+    const color = colorCss(node.strokes[0]);
     const align = "strokeAlign" in node ? node.strokeAlign : undefined;
     if (align === "OUTSIDE") {
       // an outside stroke sits beyond the box: an outline (it follows the corner radius in current browsers)
@@ -306,7 +322,17 @@ function jsx(w: Walked, depth: number): string {
 }
 
 /** Generate code for a node and its visible descendants in the requested language. */
-export function generateCode(node: DesignNode, children: ChildrenOf, language: Language): string {
+export function generateCode(node: DesignNode, children: ChildrenOf, language: Language, opts: { variableName?: VariableName } = {}): string {
+  // CSS, HTML, Vue and React name the variables a fill, stroke or text colour follows; the Tailwind classes keep plain colours
+  variableName = language === "tailwind" ? undefined : opts.variableName;
+  try {
+    return generate(node, children, language);
+  } finally {
+    variableName = undefined;
+  }
+}
+
+function generate(node: DesignNode, children: ChildrenOf, language: Language): string {
   if (language === "swiftui") return generateSwiftUI(node, children);
   if (language === "compose") return generateCompose(node, children);
   if (language === "uikit") return generateUIKit(node, children);

@@ -706,3 +706,26 @@ describe("Flutter output", () => {
     expect(flutterClassName("Login widget")).toBe("LoginWidget");
   });
 });
+
+describe("variable names in code", () => {
+  const bound = { type: "SOLID" as const, color: "#388BFF", opacity: 1, variableId: "v1" };
+  const nameOf = (id: string) => (id === "v1" ? "--brand-primary" : undefined);
+  const node = (fills: unknown[]) => ({ id: "n", type: "RECTANGLE", name: "Box", x: 0, y: 0, width: 10, height: 10, rotation: 0, opacity: 1, visible: true, locked: false, parentId: "p", orderKey: "a", fills, strokes: [], strokeWidth: 0, cornerRadius: 0 }) as never;
+
+  it("writes var(--name, #fallback) for a fill that follows a variable", () => {
+    const css = generateCode(node([bound]), () => [], "css", { variableName: nameOf });
+    expect(css).toContain("background: var(--brand-primary, #388bff)");
+  });
+  it("keeps the plain colour when no names are given or the variable is unknown", () => {
+    expect(generateCode(node([bound]), () => [], "css")).toContain("background: #388bff");
+    expect(generateCode(node([{ ...bound, variableId: "gone" }]), () => [], "css", { variableName: nameOf })).toContain("background: #388bff");
+  });
+  it("keeps a translucent colour plain and leaves Tailwind alone", () => {
+    expect(generateCode(node([{ ...bound, opacity: 0.5 }]), () => [], "css", { variableName: nameOf })).toContain("rgba(");
+    expect(generateCode(node([bound]), () => [], "tailwind", { variableName: nameOf })).not.toContain("var(");
+  });
+  it("does not leak the names into the next call", () => {
+    generateCode(node([bound]), () => [], "css", { variableName: nameOf });
+    expect(generateCode(node([bound]), () => [], "css")).not.toContain("var(");
+  });
+});
