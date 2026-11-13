@@ -18,7 +18,7 @@ import { isImageFile } from "./images";
 import { placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
 import { afterDuplicate, duplicateOffset } from "./duplicate-offset";
-import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
+import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, pasteColor, pastedColor, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { CommandPalette } from "./components/CommandPalette";
 import { Presenter } from "./components/Presenter";
 import { VersionHistory } from "./components/VersionHistory";
@@ -205,6 +205,15 @@ export function App() {
         return;
       } else if (!text) {
         return; // other html: not supported, leave the default behaviour alone
+      } else if (s.selection.length && !s.viewer && pastedColor(text)) {
+        // A colour pasted over a selection fills it (Figma)
+        const n = pasteColor(s.doc, s.selection, pastedColor(text)!);
+        if (n) {
+          e.preventDefault();
+          s.showToast(`Fill set to ${pastedColor(text)!.toUpperCase()}`);
+          return;
+        }
+        ids = pasteText(s.doc, text, parentId, cx, cy);
       } else {
         ids = pasteText(s.doc, text, parentId, cx, cy);
       }

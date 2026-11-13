@@ -32,6 +32,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Undo / redo | ✅ | |
 | Copy, cut, paste (Ctrl+C / X / V), paste text | ✅ | |
 | Paste over selection (Ctrl+Shift+V), paste to replace (Ctrl+Alt+Shift+V) | ✅ | |
+| Paste a colour (#abc, #aabbcc, rgb(), hsl() as text) while layers are selected: it becomes their only fill (words like "bad" still paste as text; locked layers and layers without fills are skipped) | ✅ | |
 | Copy / paste properties (Ctrl+Alt+C / V) (menu) | ✅ | |
 | Copy as PNG (Ctrl+Shift+C); Dev Mode Ctrl+C copies CSS | ✅ | |
 | Copy as SVG / CSS / PNG from the right-click menu | ✅ | |
