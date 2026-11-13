@@ -751,3 +751,14 @@ describe("number variables in code", () => {
     expect(generateCode(n, () => [], "tailwind", { variableName: nameOf })).not.toContain("var(");
   });
 });
+
+describe("hidden fills and strokes in code", () => {
+  const node = (extra: Record<string, unknown>) => ({ id: "n", type: "RECTANGLE", name: "Box", x: 0, y: 0, width: 10, height: 10, rotation: 0, opacity: 1, visible: true, locked: false, parentId: "p", orderKey: "a", cornerRadius: 0, strokeWidth: 2, strokeAlign: "INSIDE", fills: [], strokes: [], ...extra }) as never;
+  const red = { type: "SOLID", color: "#ff0000", opacity: 1 };
+  it("leaves a hidden fill and a hidden stroke out of the CSS", () => {
+    expect(generateCode(node({ fills: [red] }), () => [], "css")).toContain("background: #ff0000");
+    expect(generateCode(node({ fills: [{ ...red, visible: false }] }), () => [], "css")).not.toContain("background");
+    expect(generateCode(node({ strokes: [red] }), () => [], "css")).toContain("border: 2px solid #ff0000");
+    expect(generateCode(node({ strokes: [{ ...red, visible: false }] }), () => [], "css")).not.toContain("border");
+  });
+});

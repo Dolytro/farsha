@@ -1,4 +1,4 @@
-import { cssBlendMode, paintColor, type DesignNode, type Paint } from "@farsha/types";
+import { cssBlendMode, paintColor, shownPaints, type DesignNode, type Paint } from "@farsha/types";
 import { generateAndroidXml } from "./androidxml";
 import { generateCompose } from "./compose";
 import { generateFlutter } from "./flutter";
@@ -70,7 +70,7 @@ export function paintCss(p: Paint): string {
 
 /** CSS `background` for fills stored bottom to top: CSS lists the top layer first, and a solid colour can only be the bottom layer. */
 export function backgroundCss(fills: Paint[]): string {
-  const top = [...fills].reverse();
+  const top = shownPaints(fills).reverse();
   return top
     .map((p, i) => {
       const css = paintCss(p);
@@ -132,7 +132,7 @@ function plainDeclarations(node: DesignNode, opts: { absolute?: boolean; hasChil
   };
 
   if (node.type === "TEXT") {
-    const fill = node.fills[0];
+    const fill = shownPaints(node.fills)[0];
     if (fill) d.push(["color", colorCss(fill)]);
     // gradient text: the gradient is the background, clipped to the letters
     if (fill && fill.type !== "SOLID" && fill.type !== "IMAGE") d.push(["background", paintCss(fill)], ["-webkit-background-clip", "text"], ["background-clip", "text"], ["-webkit-text-fill-color", "transparent"]);
@@ -141,7 +141,7 @@ function plainDeclarations(node: DesignNode, opts: { absolute?: boolean; hasChil
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
     if (node.italic) d.push(["font-style", "italic"]);
     // an outline on the letters: centred is a plain text stroke, outside is a double-width one painted behind the fill
-    const outline = node.strokes?.[0];
+    const outline = shownPaints(node.strokes)[0];
     if (outline && outline.type !== "IMAGE" && (node.strokeWidth ?? 1) > 0) {
       const w = node.strokeWidth ?? 1;
       const outside = node.strokeAlign === "OUTSIDE";
@@ -167,12 +167,13 @@ function plainDeclarations(node: DesignNode, opts: { absolute?: boolean; hasChil
     return d;
   }
 
-  if ("fills" in node && node.fills?.length) d.push(["background", backgroundCss(node.fills)]);
+  if ("fills" in node && shownPaints(node.fills).length) d.push(["background", backgroundCss(node.fills ?? [])]);
   if (node.type === "ELLIPSE") d.push(["border-radius", "50%"]);
   else if ("cornerRadii" in node && node.cornerRadii?.length === 4 && node.cornerRadii.some((r) => r > 0)) d.push(["border-radius", node.cornerRadii.map(px).join(" ")]);
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
-  if ("strokes" in node && node.strokes?.[0] && node.strokeWidth !== undefined) {
-    const color = colorCss(node.strokes[0]);
+  const stroke0 = "strokes" in node ? shownPaints(node.strokes)[0] : undefined;
+  if ("strokes" in node && stroke0 && node.strokeWidth !== undefined) {
+    const color = colorCss(stroke0);
     const align = "strokeAlign" in node ? node.strokeAlign : undefined;
     if (align === "OUTSIDE") {
       // an outside stroke sits beyond the box: an outline (it follows the corner radius in current browsers)
@@ -183,7 +184,7 @@ function plainDeclarations(node: DesignNode, opts: { absolute?: boolean; hasChil
     } else {
       d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${color}`]);
       // a gradient stroke: transparent border, the fill clipped to the padding box and the gradient to the border box
-      const st = node.strokes[0];
+      const st = stroke0;
       if (st.type === "GRADIENT_LINEAR" || st.type === "GRADIENT_RADIAL") {
         const own = d.findIndex(([k]) => k === "background");
         const fillCss = own >= 0 ? d[own]![1] : "linear-gradient(transparent, transparent)";
