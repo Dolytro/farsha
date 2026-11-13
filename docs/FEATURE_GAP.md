@@ -110,6 +110,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Rulers (Shift+R) and guides, layout guides (Shift+G) (menu) | 🟡 | Rulers with selection range, drag out guides, move them, drop on a ruler to delete, layers snap to guides, guides are saved per page and undoable. Layout grids done: a Layout grid section on frames (columns, rows or a square grid with count, gutter, margin, size, colour, opacity, show / hide) and Shift+G shows or hides them; grids are not exported; ✅ layers snap to the column and row edges of the frame they sit in while moving and resizing (square grids too, unless the cells are tiny). ✅ typing an exact guide position (double-click a guide). ✅ View > Show / hide guides (Ctrl+;): hides the guide lines and their snapping but keeps the rulers; dragging a new guide out of a ruler shows them again; remembered in this browser. Missing: frame-level rulers, a guide readout while dragging layers |
 | Outlines, mask outlines, frame outlines (menu) | ❌ | P3 |
 | Minimize UI / hide UI (Ctrl+\\) (menu) | ✅ | Hides both panels and the toolbar; also in Actions |
+| Resize the side panels (drag the inner edge of the left or right panel, 200 to 480 px and at most 40% of the window; double-click the edge to reset; remembered in this browser) | ✅ | P2 |
 | Multiplayer cursors (menu) | ❌ | P3 |
 | Comments (Shift+C) and annotations (Shift+Y) visibility (menu) | ❌ | P2 |
 | Dev Mode toggle (Shift+D) | ✅ | |

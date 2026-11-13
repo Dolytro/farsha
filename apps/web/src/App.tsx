@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Canvas } from "./components/Canvas";
 import { Rulers } from "./components/Rulers";
+import { PanelResizers } from "./components/PanelResizers";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
@@ -615,6 +616,7 @@ export function App() {
   return (
     <div className={`editor${uiHidden ? " editor--minimal" : ""}${hideLeft ? " editor--no-left" : ""}${hideRight ? " editor--no-right" : ""}`}>
       <Layers />
+      {!uiHidden && <PanelResizers left={!hideLeft} right={!hideRight} />}
       <div className="workspace">
         <Canvas />
         {rulers && !viewer && <Rulers />}
