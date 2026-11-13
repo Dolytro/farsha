@@ -1640,3 +1640,18 @@ textarea:focus-visible {
     font-variant-numeric: tabular-nums;
   }
 }
+
+// Shown beside the cloud button while the browser has no network (use-online.ts).
+.layers__offline {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #f5a623 22%, transparent);
+  color: #b36b00;
+  font-size: calc(var(--font-size) - 2px);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] .layers__offline {
+  color: #ffb84d;
+}

@@ -12,6 +12,7 @@ import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
 import { PopMenu } from "./PopMenu";
+import { useOnline } from "../use-online";
 import { CommentsList } from "./CommentsList";
 import { renameCurrentFile } from "../drive/session";
 
@@ -75,6 +76,7 @@ export function Layers() {
   const [pageMenu, setPageMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [renamingFile, setRenamingFile] = useState(false);
   const drive = useEditor((s) => s.drive);
+  const online = useOnline();
   // The open page can disappear (undo, delete, a collaborator): fall back to the first one.
   useEffect(() => {
     if (!doc.hasNode(pageId)) setPage(doc.pages()[0]!.id);
@@ -349,6 +351,11 @@ export function Layers() {
         )}
         {!viewer && (
           <span className="layers__actions">
+            {!online && (
+              <span className="layers__offline" role="status" title="You are offline. Your work is kept in this browser and saved to Drive when you are back online.">
+                Offline
+              </span>
+            )}
             <DriveMenu />
             <button className="icon-btn" title="Undo (Ctrl+Z)" onClick={() => doc.undo()}>↶</button>
             <button className="icon-btn" title="Redo (Ctrl+Shift+Z)" onClick={() => doc.redo()}>↷</button>
