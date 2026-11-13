@@ -27,7 +27,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 |---|---|---|
 | Click select, Shift multi-select, marquee | ✅ | |
 | Move, resize from corners, nudge with arrows | ✅ | |
-| Duplicate (Ctrl+D), delete, group / ungroup | ✅ | |
+| Duplicate (Ctrl+D), delete, group / ungroup; ✅ Ctrl+D on frames lying on the page puts the copy 100 px to their right (several frames move together past the box round them; other layers keep the 10 px offset; an Alt+drag repeat still wins) | ✅ | |
 | Bring forward / backward / to front / to back | ✅ | |
 | Undo / redo | ✅ | |
 | Copy, cut, paste (Ctrl+C / X / V), paste text | ✅ | |

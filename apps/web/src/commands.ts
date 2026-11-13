@@ -138,7 +138,7 @@ export function buildCommands(): Command[] {
     { id: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, needsSelection: true, run: () => {
         // Ctrl+D after an Alt+drag copy repeats that move
         const ids = sel();
-        const offset = duplicateOffset(ids);
+        const offset = duplicateOffset(ids, 10, doc());
         const copies = duplicateNodes(doc(), ids, offset, true, state().prefs.renameDuplicates);
         afterDuplicate(ids, copies, offset);
         state().select(copies);

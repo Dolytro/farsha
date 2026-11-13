@@ -501,7 +501,7 @@ export function App() {
       } else if (mod && key === "d") {
         e.preventDefault();
         // Ctrl+D right after an Alt+drag copy repeats that move
-        const offset = duplicateOffset(selection);
+        const offset = duplicateOffset(selection, 10, doc);
         const copies = duplicateNodes(doc, selection, offset, true, s.prefs.renameDuplicates);
         afterDuplicate(selection, copies, offset);
         s.select(copies);
