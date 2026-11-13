@@ -1602,3 +1602,41 @@ textarea:focus-visible {
 .pages__item--drop {
   box-shadow: inset 0 2px 0 var(--c-accent, #0d99ff);
 }
+
+// Frame tool: the device size list in the Design panel (FramePresetsSection.tsx).
+.presets {
+  margin-bottom: 8px;
+
+  &__group {
+    padding: 4px 0;
+    color: var(--c-muted);
+    font-size: calc(var(--font-size) - 1px);
+    font-weight: 600;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-height: var(--row-h);
+    padding: 0 8px;
+    border: 0;
+    border-radius: calc(var(--radius) - 1px);
+    background: none;
+    color: var(--c-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--c-hover, rgba(127, 127, 127, 0.14));
+    }
+  }
+
+  &__size {
+    color: var(--c-muted);
+    font-variant-numeric: tabular-nums;
+  }
+}

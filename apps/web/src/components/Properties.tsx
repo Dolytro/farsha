@@ -30,6 +30,7 @@ import { SelectionColors } from "./SelectionColors";
 import { LocalStyles } from "./LocalStyles";
 import { MultiSection } from "./MultiSection";
 import { PopMenu } from "./PopMenu";
+import { FramePresetsSection } from "./FramePresetsSection";
 import { buildCommands } from "../commands";
 
 /** The zoom menu beside the percentage (Figma: Zoom in / out, fit, selection, 50%, 100%, 200%). */
@@ -39,7 +40,7 @@ const ZOOM_MENU: { id: string; divider?: boolean }[] = [{ id: "zoom-in" }, { id:
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
 export function Properties() {
-  const { doc, pageId, selection, select, viewport, setViewport, devMode, setDevMode, prototypeMode, setPrototypeMode, viewer, setShareOpen } = useEditor();
+  const { doc, pageId, selection, select, viewport, setViewport, devMode, setDevMode, prototypeMode, setPrototypeMode, viewer, setShareOpen, tool } = useEditor();
   const [zoomMenu, setZoomMenu] = useState<{ x: number; y: number } | null>(null);
   const zoomClosedAt = useRef(0);
   const signedIn = useEditor((s) => s.drive.user !== null);
@@ -130,6 +131,7 @@ export function Properties() {
       <aside className="props">
         {header}
         {!viewer && <AlignRow />}
+        {selection.length === 0 && !viewer && !devMode && tool === "frame" && <FramePresetsSection />}
         {selection.length === 0 && !viewer && (
           <section className="props__section">
             <h3 className="props__heading">Page</h3>

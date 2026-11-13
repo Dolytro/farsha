@@ -72,3 +72,8 @@ export function presetOf(width: number, height: number): FramePreset | undefined
 
 /** The label of a preset: "Phone · iPhone 16 (393 × 852)". */
 export const presetLabel = (p: FramePreset): string => `${p.group} · ${p.name} (${p.width} × ${p.height})`;
+
+/** The properties of a new frame of this preset, centred on a point of the canvas (whole pixels). */
+export function presetFrameProps(p: FramePreset, center: { x: number; y: number }) {
+  return { name: p.name, x: Math.round(center.x - p.width / 2), y: Math.round(center.y - p.height / 2), width: p.width, height: p.height };
+}
