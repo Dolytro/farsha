@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gradientAxis, gradientLine, stopAt, stopPositionAt } from "./gradient-line";
+import { gradientAxis, gradientLine, stopAt, stopPositionAt, withoutStop } from "./gradient-line";
 
 const box = { x: 100, y: 50, width: 200, height: 100 };
 
@@ -66,5 +66,18 @@ describe("gradientAxis", () => {
   it("has no line for angular and diamond gradients", () => {
     expect(gradientAxis({ type: "GRADIENT_ANGULAR", angle: 0 }, box)).toBeNull();
     expect(gradientAxis({ type: "GRADIENT_DIAMOND", angle: 0 }, box)).toBeNull();
+  });
+});
+
+describe("withoutStop", () => {
+  it("drops one stop", () => {
+    expect(withoutStop(["a", "b", "c"], 1)).toEqual(["a", "c"]);
+  });
+  it("keeps two stops and ignores a bad index", () => {
+    const two = ["a", "b"];
+    expect(withoutStop(two, 0)).toBe(two);
+    const three = ["a", "b", "c"];
+    expect(withoutStop(three, 5)).toBe(three);
+    expect(withoutStop(three, -1)).toBe(three);
   });
 });

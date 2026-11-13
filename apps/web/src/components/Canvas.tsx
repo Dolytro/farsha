@@ -20,7 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, stopAt, stopPositionAt, type GradientLine } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -236,8 +236,19 @@ export function Canvas() {
       const [fill, stop] = el.dataset.gradientStop.split(":").map(Number) as [number, number];
       const node = doc.getNode(selection[0]);
       const abs = doc.absoluteBox(selection[0]);
-      const paint = node && "fills" in node && Array.isArray(node.fills) ? node.fills[fill] : undefined;
+      const fills = node && "fills" in node && Array.isArray(node.fills) ? node.fills : [];
+      const paint = fills[fill];
       const line = abs && paint && paint.type !== "SOLID" && paint.type !== "IMAGE" ? gradientAxis(paint, abs) : null;
+      if (line && e.altKey && paint && (paint.type === "GRADIENT_LINEAR" || paint.type === "GRADIENT_RADIAL")) {
+        // Alt+click on a stop removes it (a gradient keeps two)
+        const stops = withoutStop(paint.stops, stop);
+        if (stops !== paint.stops) {
+          doc.stopCapturing();
+          doc.setStyle(selection[0], { fills: fills.map((f, i) => (i === fill ? { ...paint, stops } : f)) } as never);
+          doc.stopCapturing();
+        }
+        return;
+      }
       if (line) {
         doc.stopCapturing();
         drag.current = { kind: "gradientstop", id: selection[0], fill, stop, line, wx: w.x, wy: w.y };

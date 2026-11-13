@@ -70,3 +70,9 @@ export function gradientAxis(paint: { type: string; angle: number }, box: { x: n
   }
   return null;
 }
+
+/** The stops without the one at `index`; a gradient keeps at least two stops, so a list of two (or a bad index) comes back unchanged. */
+export function withoutStop<T>(stops: T[], index: number): T[] {
+  if (stops.length <= 2 || index < 0 || index >= stops.length) return stops;
+  return stops.filter((_, i) => i !== index);
+}
