@@ -29,4 +29,15 @@ describe("buildMenu", () => {
     expect(labels).toContain("Show");
     expect(labels).toContain("Unlock");
   });
+  it("lists the layers under the pointer in a Select layer group when there are several", () => {
+    const under = [{ id: "a", label: "Button" }, { id: "b", label: "Card" }];
+    const items = buildMenu({ devMode: false, readOnlyViewer: false, selectionCount: 1, hasGroup: false, hasInstance: false, allHidden: false, allLocked: false, under });
+    const picks = items.filter((i) => i.action === "select-layer");
+    expect(picks.map((i) => [i.label, i.layerId])).toEqual([["Button", "a"], ["Card", "b"]]);
+    expect(picks[0]!.heading).toBe("Select layer");
+  });
+  it("has no Select layer group for a single layer under the pointer", () => {
+    const items = buildMenu({ devMode: false, readOnlyViewer: false, selectionCount: 1, hasGroup: false, hasInstance: false, allHidden: false, allLocked: false, under: [{ id: "a", label: "Button" }] });
+    expect(items.some((i) => i.action === "select-layer")).toBe(false);
+  });
 });

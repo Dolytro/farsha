@@ -3,7 +3,7 @@ export type MenuAction =
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
   | "group" | "frame-selection" | "use-as-mask" | "bool-union" | "bool-subtract" | "bool-intersect" | "bool-exclude" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides" | "push-to-main"
-  | "select-all" | "toggle-ui" | "move-to-page" | "visibility" | "lock" | "delete";
+  | "select-layer" | "select-all" | "toggle-ui" | "move-to-page" | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
   action: MenuAction;
@@ -15,6 +15,10 @@ export interface MenuItem {
   divider?: boolean;
   /** "Move to page" items: the page to move to, or "new" for a new page. */
   pageId?: string;
+  /** "Select layer" items: the layer to select. */
+  layerId?: string;
+  /** A small title drawn above this item (the first item of a group). */
+  heading?: string;
 }
 
 export interface MenuContext {
@@ -29,6 +33,8 @@ export interface MenuContext {
   allLocked: boolean;
   /** The pages of the file, for "Move to page". */
   pages?: { id: string; name: string; current: boolean }[];
+  /** Layers under the pointer, topmost first, for "Select layer". */
+  under?: { id: string; label: string }[];
 }
 
 const MOD = /Mac|iPhone|iPad/.test(typeof navigator === "undefined" ? "" : navigator.platform) ? "⌘" : "Ctrl+";
@@ -50,6 +56,9 @@ export function buildMenu(c: MenuContext): MenuItem[] {
   }
   if (has) {
     items.push({ action: "paste-over", label: "Paste over selection", shortcut: `${MOD}${SHIFT}V` });
+    if (c.under && c.under.length > 1) {
+      c.under.slice(0, 12).forEach((l, i) => items.push({ action: "select-layer", label: l.label, layerId: l.id, divider: i === 0, heading: i === 0 ? "Select layer" : undefined }));
+    }
     items.push(
       { action: "copy-css", label: "Copy as CSS", submenu: true, divider: true },
       { action: "copy-svg", label: "Copy as SVG", submenu: true },

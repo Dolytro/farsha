@@ -123,7 +123,7 @@ interface EditorState {
   renaming: string | null;
   setRenaming: (id: string | null) => void;
   /** Right-click menu: screen position and the canvas point it was opened on. */
-  menu: { x: number; y: number; wx: number; wy: number } | null;
+  menu: { x: number; y: number; wx: number; wy: number; fromList?: boolean } | null;
   setMenu: (m: EditorState["menu"]) => void;
   /** Short message shown at the bottom of the canvas, like Figma's "Copied" toasts. */
   toast: string | null;

@@ -56,6 +56,26 @@ function deepestHit(doc: DesignDoc, pageId: string, wx: number, wy: number): Des
   return walk(pageId, 0, 0);
 }
 
+/**
+ * Every visible, unlocked layer under a world point, topmost first (a layer comes after the layers inside it).
+ * Used by the right-click "Select layer" list.
+ */
+export function hitTestAll(doc: DesignDoc, pageId: string, wx: number, wy: number): DesignNode[] {
+  const out: DesignNode[] = [];
+  const walk = (parentId: string, ox: number, oy: number) => {
+    const kids = doc.paintOrder(parentId);
+    for (let i = kids.length - 1; i >= 0; i--) {
+      const n = kids[i]!;
+      if (!n.visible || n.locked) continue;
+      const abs = { x: ox + n.x, y: oy + n.y, width: n.width, height: n.height };
+      walk(n.id, abs.x, abs.y);
+      if (contains(pickBox(abs), ...localPoint(abs, n.rotation, wx, wy))) out.push(n);
+    }
+  };
+  walk(pageId, 0, 0);
+  return out;
+}
+
 /** Absolute (page-space) bounds of a node. */
 export function absoluteBounds(doc: DesignDoc, id: string): Bounds | undefined {
   return doc.absoluteBox(id);

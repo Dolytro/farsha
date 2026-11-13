@@ -6,12 +6,13 @@ import { createComponentFromSelection, detachSelection, mainsOf, resetSelection 
 import { copyAsCss, copyAsPng, copyAsSvg } from "../exporting";
 import { copyNodes, copyProperties, parseClip, pasteNodes, pasteOver, pasteProperties, pasteTarget, pasteText, topLevelOf } from "../clipboard";
 import { moveSelectionToPage } from "../pages";
+import { hitTestAll } from "@farsha/canvas-engine";
 import { useEditor } from "../store";
 import { buildCommands } from "../commands";
 
 const MARGIN = 8;
 
-async function run(action: MenuAction, wx: number, wy: number, pageId?: string): Promise<void> {
+async function run(action: MenuAction, wx: number, wy: number, pageId?: string, layerId?: string): Promise<void> {
   const s = useEditor.getState();
   const { doc, selection, select, showToast } = s;
   try {
@@ -100,6 +101,7 @@ async function run(action: MenuAction, wx: number, wy: number, pageId?: string):
       case "detach-instance": return select(detachSelection(doc, selection));
       case "reset-overrides": return resetSelection(doc, selection);
       case "push-to-main": return buildCommands().find((c) => c.id === "push-to-main")?.run();
+      case "select-layer": return layerId ? select([layerId]) : undefined;
       case "select-all": return buildCommands().find((c) => c.id === "select-all")?.run();
       case "toggle-ui": return buildCommands().find((c) => c.id === "hide-ui")?.run();
       case "go-to-main": {
@@ -181,6 +183,7 @@ export function ContextMenu() {
     hasInstance: nodes.some((n) => st.doc.instanceOf(n.id)),
     allHidden: nodes.length > 0 && nodes.every((n) => !n.visible),
     allLocked: nodes.length > 0 && nodes.every((n) => n.locked),
+    under: menu.fromList ? undefined : hitTestAll(st.doc, st.pageId, menu.wx, menu.wy).map((n) => ({ id: n.id, label: n.name })),
     pages: st.doc.pages().map((p) => ({ id: p.id, name: p.name, current: p.id === st.pageId })),
   });
   if (!items.length) return null;
@@ -195,17 +198,18 @@ export function ContextMenu() {
         const pagesHead = it.pageId !== undefined && !pagesShown;
         pagesShown = pagesShown || it.pageId !== undefined;
         return (
-          <div key={it.action + (it.pageId ?? "")}>
+          <div key={it.action + (it.pageId ?? it.layerId ?? "")}>
             {head && <div className="ctxmenu__sep" />}
             {head && <div className="ctxmenu__group">Copy/Paste as</div>}
             {it.divider && !it.submenu && <div className="ctxmenu__sep" />}
+            {it.heading && <div className="ctxmenu__group">{it.heading}</div>}
             {pagesHead && <div className="ctxmenu__group">Move to page</div>}
             <button
               role="menuitem"
               className="ctxmenu__item"
               onClick={() => {
                 setMenu(null);
-                void run(it.action, menu.wx, menu.wy, it.pageId);
+                void run(it.action, menu.wx, menu.wy, it.pageId, it.layerId);
               }}
             >
               <span>{it.label}</span>

@@ -206,7 +206,7 @@ export function Layers() {
           // "Paste here" has no click point in the list: use the middle of the canvas
           const box = document.querySelector(".canvas__svg")?.getBoundingClientRect();
           const w = box ? screenToWorld(s.viewport, box.width / 2, box.height / 2) : { x: 0, y: 0 };
-          s.setMenu({ x: e.clientX, y: e.clientY, wx: w.x, wy: w.y });
+          s.setMenu({ x: e.clientX, y: e.clientY, wx: w.x, wy: w.y, fromList: true });
         }}
         aria-label={`${n.name}, ${n.type.toLowerCase()}${n.visible ? "" : ", hidden"}${n.locked ? ", locked" : ""}`}
         className={`layers__item${selection.includes(n.id) ? " layers__item--selected" : ""}${n.visible ? "" : " layers__item--hidden"}${drop?.id === n.id ? ` layers__item--drop-${drop.where}` : ""}`}
