@@ -10,6 +10,7 @@ import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type L
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
+import { PageMenu } from "./PageMenu";
 import { CommentsList } from "./CommentsList";
 import { renameCurrentFile } from "../drive/session";
 
@@ -53,6 +54,7 @@ export function Layers() {
   const pages = doc.pages();
   const setPage = useEditor((s) => s.setPage);
   const [renamingPage, setRenamingPage] = useState<string | null>(null);
+  const [pageMenu, setPageMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [renamingFile, setRenamingFile] = useState(false);
   const drive = useEditor((s) => s.drive);
   // The open page can disappear (undo, delete, a collaborator): fall back to the first one.
@@ -363,6 +365,11 @@ export function Layers() {
             }}
             onClick={() => setPage(p.id)}
             onDoubleClick={() => canEdit && setRenamingPage(p.id)}
+            onContextMenu={(e) => {
+              if (!canEdit) return;
+              e.preventDefault();
+              setPageMenu({ id: p.id, x: e.clientX, y: e.clientY });
+            }}
           >
             {renamingPage === p.id ? (
               <RenameInput
@@ -404,6 +411,35 @@ export function Layers() {
           </li>
         ))}
       </ul>
+      {pageMenu && pages.some((p) => p.id === pageMenu.id) && (
+        <PageMenu
+          x={pageMenu.x}
+          y={pageMenu.y}
+          onClose={() => setPageMenu(null)}
+          items={[
+            { label: "Rename", run: () => setRenamingPage(pageMenu.id) },
+            {
+              label: "Duplicate page",
+              run: () => {
+                const copy = duplicatePage(doc, pageMenu.id);
+                if (copy) setPage(copy);
+              },
+            },
+            ...(pages.length > 1
+              ? [
+                  {
+                    label: "Delete page",
+                    divider: true,
+                    run: () => {
+                      const next = deletePage(doc, pageMenu.id);
+                      if (next && pageMenu.id === pageId) setPage(next);
+                    },
+                  },
+                ]
+              : []),
+          ]}
+        />
+      )}
       <div className="layers__tabs" role="tablist">
         {(["layers", "assets", "comments"] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} className={`layers__tab${tab === t ? " layers__tab--active" : ""}`} onClick={() => setTab(t)}>

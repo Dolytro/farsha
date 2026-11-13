@@ -56,7 +56,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Find (Ctrl+F), find next / previous (menu) | ✅ | Find, find and replace, next / previous (Enter, Ctrl+Shift+F / D) |
 | Draggable layer reorder, drag to reparent (drop on a frame or group) | ✅ | |
 | Layers panel: expand / collapse, search, lock icon, rename, ✅ selecting a layer (on the canvas, Tab, a share link) opens the folded layers above it and scrolls its row into view (folding a parent by hand afterwards is kept) | ✅ | |
-| Pages: add, rename (double-click), duplicate (the ⧉ button, File menu or Actions; the copy lands after the original and keeps the page background), delete, switch (click, Page Up / Down); each page remembers its pan and zoom | ✅ | |
+| Pages: add, rename (double-click or right-click > Rename), right-click a page for Rename / Duplicate page / Delete page, duplicate (the ⧉ button, File menu or Actions; the copy lands after the original and keeps the page background), delete, switch (click, Page Up / Down); each page remembers its pan and zoom | ✅ | |
 
 ## 3. Design panel (right sidebar)
 
