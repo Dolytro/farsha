@@ -63,6 +63,9 @@ interface EditorState {
   /** Rulers (and the guides dragged out of them) are shown. Toggled with Shift+R, remembered in this browser. */
   rulers: boolean;
   setRulers: (on: boolean) => void;
+  /** View > Guides (Ctrl+;): hide the guide lines (and their snapping) but keep the rulers. Remembered in this browser. */
+  guidesHidden: boolean;
+  setGuidesHidden: (hidden: boolean) => void;
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
@@ -165,6 +168,14 @@ function readRulers(): boolean {
   }
 }
 
+function readGuidesHidden(): boolean {
+  try {
+    return localStorage.getItem("farsha.guidesHidden") === "1";
+  } catch {
+    return false;
+  }
+}
+
 const DEFAULT_VIEWPORT: Viewport = { x: 60, y: 80, zoom: 0.5 };
 /** Last pan and zoom of each page, by page id. */
 const pageViews = new Map<string, Viewport>();
@@ -245,6 +256,15 @@ export const useEditor = create<EditorState>((set) => ({
       /* private window: the setting just won't be remembered */
     }
     set({ rulers });
+  },
+  guidesHidden: readGuidesHidden(),
+  setGuidesHidden: (guidesHidden) => {
+    try {
+      localStorage.setItem("farsha.guidesHidden", guidesHidden ? "1" : "0");
+    } catch {
+      /* private window: the setting just won't be remembered */
+    }
+    set({ guidesHidden });
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),

@@ -368,6 +368,10 @@ export function App() {
         // Figma's "Layout grids"
         e.preventDefault();
         if (!toggleLayoutGrids(doc, selection)) s.showToast("Select a frame with a layout grid");
+      } else if (mod && !e.shiftKey && !e.altKey && key === ";" && !s.viewer) {
+        // Figma's "Show / Hide guides"
+        e.preventDefault();
+        s.setGuidesHidden(!s.guidesHidden);
       } else if (e.shiftKey && !e.altKey && !mod && key === "r" && !s.viewer) {
         // Figma's "Show / Hide rulers"
         e.preventDefault();

@@ -100,6 +100,7 @@ export function buildMainMenu(): MenuNode[] {
         sub("Panels", list(item("panel-left"), item("panel-left-minimize"), item("toggle-variables"), item("panel-assets"), item("panel-design"), item("panel-prototype"), item("panel-right", undefined, true))),
         item("pixel-grid"),
         item("rulers"),
+        item("guides"),
         item("layout-grids"),
         item("outlines"),
         item("hide-ui", undefined, true),

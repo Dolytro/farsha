@@ -15,7 +15,7 @@ type Drag = { index: number | null; guide: RulerGuide; outside: boolean };
  * move it, drop it back on a ruler to delete it. Guides live on the page, so they are saved and undoable.
  */
 export function Rulers() {
-  const { doc, pageId, selection, viewport, viewer } = useEditor();
+  const { doc, pageId, selection, viewport, viewer, guidesHidden } = useEditor();
   useEditor((s) => s.version);
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -42,6 +42,7 @@ export function Rulers() {
   // Drag a new guide out of a ruler, or pick up an existing one.
   const begin = (e: React.PointerEvent, axis: "x" | "y", index: number | null) => {
     if (viewer || e.button !== 0) return;
+    if (guidesHidden) useEditor.getState().setGuidesHidden(false);
     e.preventDefault();
     e.stopPropagation();
     const rect = ref.current!.getBoundingClientRect();
@@ -114,7 +115,7 @@ export function Rulers() {
   return (
     <div ref={ref} className="rulers">
       <svg className="rulers__guides" width={size.width} height={size.height}>
-        {guides.map((g, i) => {
+        {(guidesHidden ? [] : guides).map((g, i) => {
           const p = toScreen(g.axis, g.position);
           const line = g.axis === "x" ? { x1: p, x2: p, y1: SIZE, y2: size.height } : { y1: p, y2: p, x1: SIZE, x2: size.width };
           const active = drag?.index === i || (drag?.index === null && i === guides.length - 1);

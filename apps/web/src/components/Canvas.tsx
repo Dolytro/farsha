@@ -381,7 +381,7 @@ export function Canvas() {
       let aligned = false;
       if (d.startBox && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping) {
         const page = doc.getNode(pageId);
-        const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const guideList = useEditor.getState().rulers && !useEditor.getState().guidesHidden && page?.type === "PAGE" ? (page.guides ?? []) : [];
         const grid = parentGridLines(Object.keys(d.origins)[0]);
         const snap = snapMove({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets, 5 / viewport.zoom, {
           xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],
@@ -461,7 +461,7 @@ export function Canvas() {
       // Edges snap to other layers and ruler guides unless Ctrl is held; not while the ratio is kept, resizing from the centre, or flipping
       if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping && !opts.keepRatio && !opts.fromCenter && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation) {
         const page = doc.getNode(pageId);
-        const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const guideList = useEditor.getState().rulers && !useEditor.getState().guidesHidden && page?.type === "PAGE" ? (page.guides ?? []) : [];
         const grid = parentGridLines(d.id);
         const snapped = snapResize({ x: next.x + d.offset.x, y: next.y + d.offset.y, width: next.width, height: next.height }, d.corner, d.targets, 5 / viewport.zoom, {
           xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],

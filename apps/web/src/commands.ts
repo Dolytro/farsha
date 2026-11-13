@@ -603,6 +603,7 @@ export function buildCommands(): Command[] {
     },
     { id: "hide-ui", label: "Show / hide UI", shortcut: `${MOD}\\`, keywords: "minimize panels fullscreen focus", run: () => state().setUiHidden(!state().uiHidden) },
     { id: "rulers", label: "Show / hide rulers", shortcut: `${SHIFT}R`, keywords: "view guides", run: () => state().setRulers(!state().rulers) },
+    { id: "guides", label: "Show / hide guides", shortcut: `${MOD};`, keywords: "view rulers lines", run: () => state().setGuidesHidden(!state().guidesHidden) },
     { id: "dev-mode", label: "Toggle Dev Mode", shortcut: `${SHIFT}D`, keywords: "inspect code", run: () => state().setDevMode(!state().devMode) },
     {
       id: "copy-css",
