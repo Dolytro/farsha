@@ -10,7 +10,7 @@ describe("buildMenu", () => {
     expect(actions({ devMode: true })).toEqual(["copy-css"]);
     expect(actions({ devMode: true, selectionCount: 0 })).toEqual([]);
   });
-  it("offers only paste on empty canvas", () => expect(actions({ selectionCount: 0 })).toEqual(["paste-here"]));
+  it("offers paste, select all and show / hide UI on empty canvas", () => expect(actions({ selectionCount: 0 })).toEqual(["paste-here", "select-all", "toggle-ui"]));
   it("shows Ungroup only with a group selected", () => {
     expect(actions({})).not.toContain("ungroup");
     expect(actions({ hasGroup: true })).toContain("ungroup");

@@ -3,7 +3,7 @@ export type MenuAction =
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
   | "group" | "frame-selection" | "use-as-mask" | "bool-union" | "bool-subtract" | "bool-intersect" | "bool-exclude" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides" | "push-to-main"
-  | "move-to-page" | "visibility" | "lock" | "delete";
+  | "select-all" | "toggle-ui" | "move-to-page" | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
   action: MenuAction;
@@ -45,6 +45,9 @@ export function buildMenu(c: MenuContext): MenuItem[] {
     items.push({ action: "copy", label: "Copy", shortcut: `${MOD}C` }, { action: "cut", label: "Cut", shortcut: `${MOD}X` });
   }
   items.push({ action: "paste-here", label: "Paste here", shortcut: `${MOD}V` });
+  if (!has) {
+    items.push({ action: "select-all", label: "Select all", shortcut: `${MOD}A`, divider: true }, { action: "toggle-ui", label: "Show / hide UI", shortcut: `${MOD}\\` });
+  }
   if (has) {
     items.push({ action: "paste-over", label: "Paste over selection", shortcut: `${MOD}${SHIFT}V` });
     items.push(
