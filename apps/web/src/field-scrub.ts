@@ -17,6 +17,23 @@ export function scrubbedValue(start: number, dx: number, o: ScrubOptions = {}): 
   return Math.round(v * 100) / 100;
 }
 
+/** Shift + Up / Down in a number field changes it by ten steps and Alt + Up / Down by a tenth (the browser only knows one step). Returns the remover. */
+export function installFieldArrows(): () => void {
+  const key = (e: KeyboardEvent) => {
+    const input = e.target;
+    if (!(input instanceof HTMLInputElement) || input.type !== "number" || input.disabled || input.readOnly) return;
+    if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || (!e.shiftKey && !e.altKey) || e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const start = Number(input.value) || 0;
+    const value = scrubbedValue(start, e.key === "ArrowUp" ? 1 : -1, { min: input.min === "" ? undefined : Number(input.min), max: input.max === "" ? undefined : Number(input.max), step: input.step && input.step !== "any" ? Number(input.step) : 1, shift: e.shiftKey, alt: e.altKey && !e.shiftKey });
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, String(value));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  document.addEventListener("keydown", key, true);
+  return () => document.removeEventListener("keydown", key, true);
+}
+
 /**
  * Dragging the label of a number field (W, H, X, Y, the degree sign, ...) changes its value, like Figma. The new value goes in as typed text,
  * so each field's own handler runs. A press that does not move focuses the field as a click on the label normally does.

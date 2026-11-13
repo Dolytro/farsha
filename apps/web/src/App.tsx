@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Canvas } from "./components/Canvas";
 import { Rulers } from "./components/Rulers";
 import { PanelResizers } from "./components/PanelResizers";
-import { installFieldScrub } from "./field-scrub";
+import { installFieldArrows, installFieldScrub } from "./field-scrub";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
@@ -626,7 +626,12 @@ export function App() {
   // Dragging the label of a number field (X, Y, W, H, ...) scrubs its value; one undo step per drag
   useEffect(() => {
     const st = () => useEditor.getState();
-    return installFieldScrub(() => st().doc.stopCapturing(), () => st().doc.stopCapturing());
+    const stopScrub = installFieldScrub(() => st().doc.stopCapturing(), () => st().doc.stopCapturing());
+    const stopArrows = installFieldArrows();
+    return () => {
+      stopScrub();
+      stopArrows();
+    };
   }, []);
 
   return (
