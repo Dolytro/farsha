@@ -1722,3 +1722,9 @@ textarea:focus-visible {
     }
   }
 }
+
+// Number fields can be scrubbed by dragging their label (field-scrub.ts).
+.field:has(input[type="number"]) .field__label {
+  cursor: ew-resize;
+  user-select: none;
+}
