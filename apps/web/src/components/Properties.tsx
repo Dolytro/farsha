@@ -210,6 +210,12 @@ export function Properties() {
             </svg>
           </button>
         </div>
+        {node.type === "FRAME" && !node.isSection && (
+          <label className="props__check" title="Hide whatever sticks out of the frame">
+            <input type="checkbox" checked={node.clipsContent !== false} onChange={(e) => doc.setStyle(node.id, { clipsContent: e.target.checked })} />
+            Clip content
+          </label>
+        )}
       </section>
 
       <section className="props__section">
