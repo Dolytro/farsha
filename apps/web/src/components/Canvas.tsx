@@ -33,6 +33,7 @@ import { openLocalFile } from "../local-file";
 import { nearestFrame } from "../actions";
 import { connectorPath, connectorsIn } from "../prototype";
 import { loadDefaults, withDefaults } from "../defaults";
+import { nextLayerName } from "../layer-names";
 
 
 type Drag =
@@ -384,7 +385,7 @@ export function Canvas() {
     const id = doc.createNode(type, {
       parentId: parentFrame?.id ?? pageId,
       props: withDefaults(type, {
-        name: NAMES[tool],
+        name: NAMES[tool] && tool !== "text" && tool !== "section" && tool !== "slice" ? nextLayerName(doc, NAMES[tool]!) : NAMES[tool],
         x: w.x - pb.x,
         y: w.y - pb.y,
         width: 1,

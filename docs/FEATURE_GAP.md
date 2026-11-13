@@ -9,7 +9,7 @@ Sources: items marked (menu) were read from Figma's live editor menus (File, Edi
 | Feature | Status | Pri |
 |---|---|---|
 | Move (V), Hand (H) | ✅ | |
-| Frame (F), Rectangle (R), Ellipse (O), Text (T) | ✅ | |
+| Frame (F), Rectangle (R), Ellipse (O), Text (T); ✅ drawn shapes are numbered like Figma (Rectangle 1, Rectangle 2, Frame 1; one past the highest number in the file; text, sections and slices keep their names; groups and frame selections are not numbered yet) | ✅ | |
 | Scale tool (K) | ✅ | One layer at a time; keeps the ratio (Alt scales from the centre) |
 | Section, Slice | ✅ | P3 |
 | Line (L), Arrow (Shift+L) | ✅ | Drawn by dragging (Shift snaps to 15°), editable stroke colour / width, rotation, caps, joins, dashes and arrowheads (Stroke section). No handles on the line ends |
