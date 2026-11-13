@@ -1210,7 +1210,7 @@ export function Canvas() {
           ))}
           {editingPath && !viewer && !devMode && tool === "select" && <VectorEditLayer nodeId={editingPath} svgRef={svgRef} viewport={viewport} />}
           <CommentsLayer zoom={z} />
-          {tool === "pencil" && !viewer && !devMode && <PencilLayer svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
+          {(tool === "pencil" || tool === "marker" || tool === "highlighter") && !viewer && !devMode && <PencilLayer kind={tool} svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
           {tool === "pen" && !viewer && !devMode && <PenLayer svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
           {marquee && <rect x={marquee.x} y={marquee.y} width={marquee.width} height={marquee.height} fill={ACCENT} fillOpacity={0.08} stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />}
 

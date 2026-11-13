@@ -386,6 +386,8 @@ export function buildCommands(): Command[] {
     tool("star", "Star", ""),
     tool("pen", "Pen", "P"),
     tool("pencil", "Pencil", `${SHIFT}P`),
+    tool("marker", "Marker", ""),
+    tool("highlighter", "Highlighter", ""),
     tool("text", "Text", "T"),
     {
       id: "zoom-fit",

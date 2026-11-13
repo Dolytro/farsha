@@ -335,7 +335,7 @@ Components
 
 Other
 - Plugins and widgets: a small sandboxed plugin API (large)
-- Figma Draw tools (brush, marker, highlighter) and the Switch to Draw mode
+- Figma Draw tools: ✅ Marker (thick round black stroke, 8 px) and Highlighter (wide see-through yellow stroke, 24 px at 50%) in the Draw group of the toolbar and the Actions palette (no shortcuts; they use the Pencil's simplify and smooth, and the result is an editable pen path). Still missing: the Brush with pressure, the Switch to Draw mode
 - Import: PDF, Sketch, .fig (partial)
 - ✅ Autosave history entries (every 10 minutes of editing, in the browser). ✅ version descriptions (a Description box when saving a version). Still missing: version history shared through Drive
 
