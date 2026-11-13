@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Canvas } from "./components/Canvas";
 import { Rulers } from "./components/Rulers";
 import { PanelResizers } from "./components/PanelResizers";
-import { installFieldArrows, installFieldScrub } from "./field-scrub";
+import { installFieldArrows, installFieldExpressions, installFieldScrub } from "./field-scrub";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
@@ -628,9 +628,11 @@ export function App() {
     const st = () => useEditor.getState();
     const stopScrub = installFieldScrub(() => st().doc.stopCapturing(), () => st().doc.stopCapturing());
     const stopArrows = installFieldArrows();
+    const stopExpressions = installFieldExpressions();
     return () => {
       stopScrub();
       stopArrows();
+      stopExpressions();
     };
   }, []);
 

@@ -1,3 +1,5 @@
+import { evalFieldExpression, isPlainNumberText } from "./field-expression";
+
 export interface ScrubOptions {
   min?: number;
   max?: number;
@@ -17,11 +19,83 @@ export function scrubbedValue(start: number, dx: number, o: ScrubOptions = {}): 
   return Math.round(v * 100) / 100;
 }
 
+/**
+ * Number fields take sums: while a `.field__input` number field has focus it is a text box, so "100+20", "(8+4)*2" or "*2" can be typed;
+ * the result goes in when you press Enter or leave the field (Escape puts the old value back). Plain numbers reach the field's own handler as you type,
+ * anything else is held back until then, so no handler ever sees half a sum. Returns the remover.
+ */
+export function installFieldExpressions(): () => void {
+  const old = new WeakMap<HTMLInputElement, string>();
+  const isField = (t: EventTarget | null): t is HTMLInputElement => t instanceof HTMLInputElement && t.classList.contains("field__input") && (t.type === "number" || old.has(t));
+  const set = (input: HTMLInputElement, value: string) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  const finish = (input: HTMLInputElement, keep: boolean) => {
+    const before = old.get(input);
+    if (before === undefined) return;
+    old.delete(input);
+    const typed = input.value;
+    input.type = "number";
+    if (!keep || isPlainNumberText(typed)) {
+      // restore, or a plain number the field already has
+      if (!keep) input.value = before;
+      return;
+    }
+    const result = evalFieldExpression(typed, Number(before) || 0);
+    if (result === null) {
+      input.value = before;
+      return;
+    }
+    const min = input.min === "" ? -Infinity : Number(input.min);
+    const max = input.max === "" ? Infinity : Number(input.max);
+    set(input, String(Math.min(max, Math.max(min, result))));
+  };
+  const focusin = (e: FocusEvent) => {
+    const input = e.target;
+    if (!(input instanceof HTMLInputElement) || input.type !== "number" || !input.classList.contains("field__input") || input.disabled || input.readOnly) return;
+    old.set(input, input.value);
+    input.type = "text";
+    input.inputMode = "decimal";
+    input.select();
+  };
+  const focusout = (e: FocusEvent) => isField(e.target) && finish(e.target, true);
+  const inputEvent = (e: Event) => {
+    const input = e.target;
+    // half a sum must not reach React's onChange (it would read it as NaN)
+    if (isField(input) && old.has(input) && !isPlainNumberText(input.value)) e.stopPropagation();
+  };
+  const key = (e: KeyboardEvent) => {
+    const input = e.target;
+    if (!isField(input) || !old.has(input)) return;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      finish(input, true);
+      input.blur();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      finish(input, false);
+      input.blur();
+    }
+  };
+  document.addEventListener("focusin", focusin);
+  document.addEventListener("focusout", focusout);
+  document.addEventListener("input", inputEvent, true);
+  document.addEventListener("keydown", key, true);
+  return () => {
+    document.removeEventListener("focusin", focusin);
+    document.removeEventListener("focusout", focusout);
+    document.removeEventListener("input", inputEvent, true);
+    document.removeEventListener("keydown", key, true);
+  };
+}
+
 /** Shift + Up / Down in a number field changes it by ten steps and Alt + Up / Down by a tenth (the browser only knows one step). Returns the remover. */
 export function installFieldArrows(): () => void {
   const key = (e: KeyboardEvent) => {
     const input = e.target;
-    if (!(input instanceof HTMLInputElement) || input.type !== "number" || input.disabled || input.readOnly) return;
+    if (!(input instanceof HTMLInputElement) || (input.type !== "number" && input.inputMode !== "decimal") || input.disabled || input.readOnly) return;
     if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || (!e.shiftKey && !e.altKey) || e.ctrlKey || e.metaKey) return;
     e.preventDefault();
     e.stopPropagation();
