@@ -20,7 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientLine, stopPositionAt, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -42,6 +42,7 @@ type Drag =
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
   | { kind: "multirotate"; wx: number; wy: number; items: TurnItem[]; cx: number; cy: number; start: number }
   | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
+  | { kind: "gradientstop"; id: string; fill: number; stop: number; line: GradientLine; wx: number; wy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
   | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
@@ -227,6 +228,18 @@ export function Canvas() {
       if (abs) {
         doc.stopCapturing();
         drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
+      }
+      return;
+    }
+    if (el.dataset.gradientStop && selection[0]) {
+      // Dragging a colour stop of a linear gradient slides it along the gradient line
+      const [fill, stop] = el.dataset.gradientStop.split(":").map(Number) as [number, number];
+      const node = doc.getNode(selection[0]);
+      const abs = doc.absoluteBox(selection[0]);
+      const paint = node && "fills" in node && Array.isArray(node.fills) ? node.fills[fill] : undefined;
+      if (abs && paint?.type === "GRADIENT_LINEAR") {
+        doc.stopCapturing();
+        drag.current = { kind: "gradientstop", id: selection[0], fill, stop, line: gradientLine(abs, paint.angle), wx: w.x, wy: w.y };
       }
       return;
     }
@@ -432,6 +445,15 @@ export function Canvas() {
         const snapped = e.shiftKey ? Math.round(raw / 15) * 15 : Math.round(raw * 10) / 10;
         const angle = ((snapped % 360) + 360) % 360;
         doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
+      }
+    } else if (d.kind === "gradientstop") {
+      const node = doc.getNode(d.id);
+      if (node && "fills" in node && Array.isArray(node.fills)) {
+        let position = stopPositionAt(d.line, w);
+        if (e.shiftKey) position = Math.round(position * 20) / 20;
+        doc.setStyle(d.id, {
+          fills: node.fills.map((f, i) => (i === d.fill && f.type === "GRADIENT_LINEAR" ? { ...f, stops: f.stops.map((s, j) => (j === d.stop ? { ...s, position } : s)) } : f)),
+        } as never);
       }
     } else if (d.kind === "multiresize") {
       const to = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
@@ -1114,6 +1136,25 @@ export function Canvas() {
                   <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
                   <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
                   <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
+                  {(() => {
+                    // The colour stops of a linear gradient sit on the gradient line; drag one to move it
+                    const f = selNode && "fills" in selNode && Array.isArray(selNode.fills) ? selNode.fills[gradientHandle.index] : undefined;
+                    if (f?.type !== "GRADIENT_LINEAR") return null;
+                    const line = gradientLine(sel, f.angle);
+                    return f.stops.map((s, j) => (
+                      <circle
+                        key={j}
+                        data-gradient-stop={`${gradientHandle.index}:${j}`}
+                        cx={line.x1 + (line.x2 - line.x1) * s.position}
+                        cy={line.y1 + (line.y2 - line.y1) * s.position}
+                        r={4 / z}
+                        fill={/^#[0-9a-fA-F]{3,8}$/.test(s.color) ? s.color : "#888"}
+                        stroke="#fff"
+                        strokeWidth={1.5 / z}
+                        style={{ cursor: "ew-resize" }}
+                      />
+                    ));
+                  })()}
                 </g>
               )}
               {showDimensions && (
