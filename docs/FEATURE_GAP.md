@@ -165,6 +165,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 - Text: wrapping uses canvas measureText in the browser (an estimate in exports); limited fonts, no Google Fonts yet.
 - Images are stored inline in the document (no separate asset pipeline).
 - Accessibility: ✅ the layers list is a tree (roles, levels, expanded and selected states, Up / Down / Left / Right / Home / End / Enter keys) and the canvas announces the page and selection; Reduce motion preference. Still minimal: moving layers and editing properties from the keyboard alone, canvas content for screen readers.
+- ✅ A crash while drawing the editor shows a "Something went wrong" page with Reload and Report an issue instead of a blank screen (`ErrorBoundary.tsx`; the working copy is kept in the browser; in development `?crash-test` shows it).
 - Touch / trackpad gestures beyond pinch zoom, mobile layout of the editor.
 
 ## Suggested build order
