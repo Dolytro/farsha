@@ -20,7 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientLine, stopAt, stopPositionAt, type GradientLine } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, stopAt, stopPositionAt, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -237,9 +237,10 @@ export function Canvas() {
       const node = doc.getNode(selection[0]);
       const abs = doc.absoluteBox(selection[0]);
       const paint = node && "fills" in node && Array.isArray(node.fills) ? node.fills[fill] : undefined;
-      if (abs && paint?.type === "GRADIENT_LINEAR") {
+      const line = abs && paint && paint.type !== "SOLID" && paint.type !== "IMAGE" ? gradientAxis(paint, abs) : null;
+      if (line) {
         doc.stopCapturing();
-        drag.current = { kind: "gradientstop", id: selection[0], fill, stop, line: gradientLine(abs, paint.angle), wx: w.x, wy: w.y };
+        drag.current = { kind: "gradientstop", id: selection[0], fill, stop, line, wx: w.x, wy: w.y };
       }
       return;
     }
@@ -250,8 +251,8 @@ export function Canvas() {
       const abs = doc.absoluteBox(selection[0]);
       const fills = node && "fills" in node && Array.isArray(node.fills) ? node.fills : [];
       const paint = fills[fill];
-      if (abs && paint?.type === "GRADIENT_LINEAR" && paint.stops.length < 16) {
-        const line = gradientLine(abs, paint.angle);
+      const line = abs && paint && paint.type !== "SOLID" && paint.type !== "IMAGE" ? gradientAxis(paint, abs) : null;
+      if (abs && line && paint && (paint.type === "GRADIENT_LINEAR" || paint.type === "GRADIENT_RADIAL") && paint.stops.length < 16) {
         const position = stopPositionAt(line, w);
         const mixed = stopAt(paint.stops, position);
         if (mixed) {
@@ -472,7 +473,7 @@ export function Canvas() {
         let position = stopPositionAt(d.line, w);
         if (e.shiftKey) position = Math.round(position * 20) / 20;
         doc.setStyle(d.id, {
-          fills: node.fills.map((f, i) => (i === d.fill && f.type === "GRADIENT_LINEAR" ? { ...f, stops: f.stops.map((s, j) => (j === d.stop ? { ...s, position } : s)) } : f)),
+          fills: node.fills.map((f, i) => (i === d.fill && (f.type === "GRADIENT_LINEAR" || f.type === "GRADIENT_RADIAL") ? { ...f, stops: f.stops.map((s, j) => (j === d.stop ? { ...s, position } : s)) } : f)),
         } as never);
       }
     } else if (d.kind === "multiresize") {
@@ -929,7 +930,7 @@ export function Canvas() {
       const f = selNode.fills[i]!;
       if (f.type === "SOLID" || f.type === "IMAGE") continue;
       const a = (f.angle * Math.PI) / 180;
-      return { index: i, x: sel.x + sel.width / 2 + (Math.cos(a) * sel.width) / 2, y: sel.y + sel.height / 2 + (Math.sin(a) * sel.height) / 2 };
+      return { index: i, type: f.type, x: sel.x + sel.width / 2 + (Math.cos(a) * sel.width) / 2, y: sel.y + sel.height / 2 + (Math.sin(a) * sel.height) / 2 };
     }
     return null;
   })();
@@ -1153,14 +1154,18 @@ export function Canvas() {
               </g>
               {gradientHandle && sel && (
                 <g>
-                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
-                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
-                  <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
+                  {gradientHandle.type !== "GRADIENT_RADIAL" && gradientHandle.type !== "GRADIENT_DIAMOND" && (
+                    <>
+                      <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
+                      <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
+                      <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
+                    </>
+                  )}
                   {(() => {
                     // The colour stops of a linear gradient sit on the gradient line; drag one to move it
                     const f = selNode && "fills" in selNode && Array.isArray(selNode.fills) ? selNode.fills[gradientHandle.index] : undefined;
-                    if (f?.type !== "GRADIENT_LINEAR") return null;
-                    const line = gradientLine(sel, f.angle);
+                    const line = f && f.type !== "SOLID" && f.type !== "IMAGE" ? gradientAxis(f, sel) : null;
+                    if (!line || (f?.type !== "GRADIENT_LINEAR" && f?.type !== "GRADIENT_RADIAL")) return null;
                     return [<line key="hit" data-gradient-line={gradientHandle.index} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={10 / z} style={{ cursor: "copy" }} />, ...f.stops.map((s, j) => (
                       <circle
                         key={j}

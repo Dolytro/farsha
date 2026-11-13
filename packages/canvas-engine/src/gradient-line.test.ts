@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gradientLine, stopAt, stopPositionAt } from "./gradient-line";
+import { gradientAxis, gradientLine, stopAt, stopPositionAt } from "./gradient-line";
 
 const box = { x: 100, y: 50, width: 200, height: 100 };
 
@@ -53,5 +53,18 @@ describe("stopAt", () => {
   });
   it("keeps a colour it cannot read from the closer stop", () => {
     expect(stopAt([{ position: 0, color: "red", opacity: 1 }, { position: 1, color: "#00ff00", opacity: 1 }], 0.8)?.color).toBe("#00ff00");
+  });
+});
+
+describe("gradientAxis", () => {
+  it("is the gradient line for a linear gradient", () => {
+    expect(gradientAxis({ type: "GRADIENT_LINEAR", angle: 0 }, box)).toEqual(gradientLine(box, 0));
+  });
+  it("runs from the middle to the right edge for a radial gradient", () => {
+    expect(gradientAxis({ type: "GRADIENT_RADIAL", angle: 45 }, box)).toEqual({ x1: 200, y1: 100, x2: 300, y2: 100 });
+  });
+  it("has no line for angular and diamond gradients", () => {
+    expect(gradientAxis({ type: "GRADIENT_ANGULAR", angle: 0 }, box)).toBeNull();
+    expect(gradientAxis({ type: "GRADIENT_DIAMOND", angle: 0 }, box)).toBeNull();
   });
 });

@@ -57,3 +57,16 @@ export function stopAt(stops: Stop[], t: number): { color: string; opacity: numb
   const hex = ca.map((v, i) => Math.round(v + (cb[i]! - v) * k).toString(16).padStart(2, "0")).join("");
   return { color: `#${hex}`, opacity };
 }
+
+/**
+ * The line the colour stops of a gradient sit on, for the stops shown on the canvas: the gradient line of a linear gradient, and for a
+ * radial one the radius from the middle to the right edge. Angular and diamond gradients have none (null).
+ */
+export function gradientAxis(paint: { type: string; angle: number }, box: { x: number; y: number; width: number; height: number }): GradientLine | null {
+  if (paint.type === "GRADIENT_LINEAR") return gradientLine(box, paint.angle);
+  if (paint.type === "GRADIENT_RADIAL") {
+    const cy = box.y + box.height / 2;
+    return { x1: box.x + box.width / 2, y1: cy, x2: box.x + box.width, y2: cy };
+  }
+  return null;
+}
