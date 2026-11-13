@@ -5,7 +5,7 @@ import { addAutoLayout } from "../auto-layout-actions";
 import { createComponentFromSelection, detachSelection, mainsOf, resetSelection } from "../component-actions";
 import { copyAsCss, copyAsPng, copyAsSvg } from "../exporting";
 import { copyNodes, copyProperties, parseClip, pasteNodes, pasteOver, pasteProperties, pasteTarget, pasteText, topLevelOf } from "../clipboard";
-import { addPage, moveToPage } from "../pages";
+import { moveSelectionToPage } from "../pages";
 import { useEditor } from "../store";
 import { buildCommands } from "../commands";
 
@@ -109,14 +109,10 @@ async function run(action: MenuAction, wx: number, wy: number, pageId?: string):
       }
       case "move-to-page": {
         if (!pageId) return;
-        const target = pageId === "new" ? addPage(doc) : pageId;
-        const moved = moveToPage(doc, selection, target);
-        if (!moved.length) {
-          if (pageId === "new") doc.deleteNode(target);
-          return showToast("Nothing to move");
-        }
+        const name = moveSelectionToPage(doc, selection, pageId);
+        if (!name) return showToast("Nothing to move");
         select([]);
-        return showToast(`Moved to ${doc.getNode(target)?.name ?? "page"}`);
+        return showToast(`Moved to ${name}`);
       }
       case "visibility": return toggleHidden(doc, selection);
       case "lock": return toggleLocked(doc, selection);

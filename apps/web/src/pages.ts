@@ -69,6 +69,17 @@ export function adjacentPage(doc: DesignDoc, id: string, dir: 1 | -1): string {
   return (pages[Math.min(pages.length - 1, Math.max(0, i + dir))] ?? pages[0]!).id;
 }
 
+/** Move the layers to a page, or to a freshly made one when `target` is "new". Returns the name of the page they landed on, or null when nothing could move (no page is added then). */
+export function moveSelectionToPage(doc: DesignDoc, ids: string[], target: string): string | null {
+  const page = target === "new" ? addPage(doc) : target;
+  const moved = moveToPage(doc, ids, page);
+  if (!moved.length) {
+    if (target === "new") doc.deleteNode(page);
+    return null;
+  }
+  return doc.getNode(page)?.name ?? "page";
+}
+
 /**
  * Right-click > Move to page: take the layers off their parent and put them on another page at the same canvas position
  * (one undo step). Layers inside an instance, page-level layers already on that page and pages themselves stay put.

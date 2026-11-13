@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DesignDoc } from "@farsha/design-core";
-import { addPage, adjacentPage, deletePage, duplicatePage, movePage, moveToPage, nextCopyPageName, nextPageName } from "./pages";
+import { addPage, adjacentPage, deletePage, duplicatePage, movePage, moveSelectionToPage, moveToPage, nextCopyPageName, nextPageName } from "./pages";
 
 describe("pages", () => {
   it("adds pages with unique names", () => {
@@ -151,5 +151,21 @@ describe("moveToPage", () => {
     moveToPage(doc, [frame, loose], second);
     doc.undo();
     expect(doc.children(first).map((n) => n.name).sort()).toEqual(["Card", "Loose"]);
+  });
+});
+
+describe("moveSelectionToPage", () => {
+  it("moves to a new page and names it", () => {
+    const doc = new DesignDoc();
+    const first = doc.pages()[0]!.id;
+    const r = doc.createNode("RECTANGLE", { parentId: first, props: { name: "R", x: 1, y: 2, width: 5, height: 5 } });
+    expect(moveSelectionToPage(doc, [r], "new")).toBe("Page 2");
+    expect(doc.pages()).toHaveLength(2);
+    expect(doc.getNode(r)!.parentId).toBe(doc.pages()[1]!.id);
+  });
+  it("adds no page when nothing can move", () => {
+    const doc = new DesignDoc();
+    expect(moveSelectionToPage(doc, [], "new")).toBeNull();
+    expect(doc.pages()).toHaveLength(1);
   });
 });
