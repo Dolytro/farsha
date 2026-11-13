@@ -617,6 +617,15 @@ export function Canvas() {
 
   const onDoubleClick = (e: React.MouseEvent) => {
     if (devMode) return;
+    // Double-clicking a frame's name above it renames it (the name box opens in the Layers list)
+    const labelId = (e.target as SVGElement).dataset?.labelId;
+    if (labelId && !viewer && doc.hasNode(labelId)) {
+      const st = useEditor.getState();
+      select([labelId]);
+      st.setLeftTab("layers");
+      st.setRenaming(labelId);
+      return;
+    }
     const w = world(e);
     const deep = hitTest(doc, pageId, w.x, w.y, true);
     if (!deep) return;
