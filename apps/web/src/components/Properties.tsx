@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import type { BlendMode } from "@farsha/types";
 import { useEditor } from "../store";
 import { connect } from "../drive/session";
@@ -28,12 +29,19 @@ import { FRAME_PRESETS, presetLabel, presetOf } from "../frame-presets";
 import { SelectionColors } from "./SelectionColors";
 import { LocalStyles } from "./LocalStyles";
 import { MultiSection } from "./MultiSection";
+import { PopMenu } from "./PopMenu";
+import { buildCommands } from "../commands";
+
+/** The zoom menu beside the percentage (Figma: Zoom in / out, fit, selection, 50%, 100%, 200%). */
+const ZOOM_MENU: { id: string; divider?: boolean }[] = [{ id: "zoom-in" }, { id: "zoom-out" }, { id: "zoom-fit", divider: true }, { id: "zoom-selection" }, { id: "zoom-50", divider: true }, { id: "zoom-100" }, { id: "zoom-200" }];
 
 
 type NumKey = "x" | "y" | "width" | "height" | "rotation";
 
 export function Properties() {
   const { doc, pageId, selection, select, viewport, setViewport, devMode, setDevMode, prototypeMode, setPrototypeMode, viewer, setShareOpen } = useEditor();
+  const [zoomMenu, setZoomMenu] = useState<{ x: number; y: number } | null>(null);
+  const zoomClosedAt = useRef(0);
   const signedIn = useEditor((s) => s.drive.user !== null);
   useEditor((s) => s.version);
   const node = selection.length === 1 ? doc.getNode(selection[0]!) : undefined;
@@ -57,9 +65,33 @@ export function Properties() {
             Share
           </button>
         )}
-        <button className="props__zoom" title="Reset zoom to 100%" onClick={() => setViewport({ ...viewport, zoom: 1 })}>
+        <button
+          className="props__zoom"
+          title="Zoom options"
+          aria-haspopup="menu"
+          onClick={(e) => {
+            const b = e.currentTarget.getBoundingClientRect();
+            // A press on the button already closed an open menu: that click must not open it again
+            if (Date.now() - zoomClosedAt.current < 250) return;
+            setZoomMenu({ x: b.right - 190, y: b.bottom + 4 });
+          }}
+        >
           {Math.round(viewport.zoom * 100)}%
         </button>
+        {zoomMenu && (
+          <PopMenu
+            x={zoomMenu.x}
+            y={zoomMenu.y}
+            onClose={() => {
+              zoomClosedAt.current = Date.now();
+              setZoomMenu(null);
+            }}
+            items={ZOOM_MENU.flatMap(({ id, divider }) => {
+              const c = buildCommands().find((x) => x.id === id);
+              return c ? [{ label: c.label, shortcut: c.shortcut, divider, run: () => void c.run() }] : [];
+            })}
+          />
+        )}
       </div>
     </header>
   );

@@ -11,7 +11,7 @@ import { isContainer, LAYER_KINDS, layerRows, moveLayers, type DropWhere, type L
 import { DriveMenu } from "./DriveMenu";
 import { Assets } from "./Assets";
 import { MainMenu } from "./MainMenu";
-import { PageMenu } from "./PageMenu";
+import { PopMenu } from "./PopMenu";
 import { CommentsList } from "./CommentsList";
 import { renameCurrentFile } from "../drive/session";
 
@@ -442,7 +442,7 @@ export function Layers() {
         ))}
       </ul>
       {pageMenu && pages.some((p) => p.id === pageMenu.id) && (
-        <PageMenu
+        <PopMenu
           x={pageMenu.x}
           y={pageMenu.y}
           onClose={() => setPageMenu(null)}

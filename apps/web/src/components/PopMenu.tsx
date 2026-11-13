@@ -1,15 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-export interface PageMenuItem {
+export interface PopMenuItem {
   label: string;
   run: () => void;
   divider?: boolean;
+  shortcut?: string;
 }
 
 const MARGIN = 8;
 
-/** Right-click menu of a page in the Pages list (Rename, Duplicate page, Delete page). Closes on Esc, an outside press, a scroll or a resize. */
-export function PageMenu({ x, y, items, onClose }: { x: number; y: number; items: PageMenuItem[]; onClose: () => void }) {
+/** A small menu opened at a point (the Pages list right-click menu, the zoom menu). Closes on Esc, an outside press, a scroll or a resize. */
+export function PopMenu({ x, y, items, onClose }: { x: number; y: number; items: PopMenuItem[]; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ left: x, top: y });
 
@@ -53,6 +54,7 @@ export function PageMenu({ x, y, items, onClose }: { x: number; y: number; items
             }}
           >
             <span>{it.label}</span>
+            {it.shortcut && <kbd>{it.shortcut}</kbd>}
           </button>
         </div>
       ))}
