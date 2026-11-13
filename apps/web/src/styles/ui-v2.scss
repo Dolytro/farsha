@@ -429,6 +429,20 @@ textarea:focus-visible {
   color: var(--c-muted);
 }
 
+.pages__fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
 .pages {
   padding: 0 8px;
 

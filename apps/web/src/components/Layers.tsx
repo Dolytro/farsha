@@ -55,6 +55,23 @@ export function Layers() {
   const pages = doc.pages();
   const setPage = useEditor((s) => s.setPage);
   const [renamingPage, setRenamingPage] = useState<string | null>(null);
+  // The Pages list folds like Figma's (the caret beside the title); remembered in this browser
+  const [pagesFolded, setPagesFolded] = useState(() => {
+    try {
+      return localStorage.getItem("farsha.pagesFolded") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const foldPages = () =>
+    setPagesFolded((f) => {
+      try {
+        localStorage.setItem("farsha.pagesFolded", f ? "0" : "1");
+      } catch {
+        /* private window: the setting just won't be remembered */
+      }
+      return !f;
+    });
   const [pageMenu, setPageMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [renamingFile, setRenamingFile] = useState(false);
   const drive = useEditor((s) => s.drive);
@@ -339,14 +356,16 @@ export function Layers() {
         )}
       </header>
       <h2 className="panel-title pages__title">
-        Pages
+        <button className="pages__fold" aria-expanded={!pagesFolded} title={pagesFolded ? "Show pages" : "Hide pages"} onClick={foldPages}>
+          <span aria-hidden>{pagesFolded ? "▸" : "▾"}</span> Pages
+        </button>
         {canEdit && (
           <button className="icon-btn" title="Add page" onClick={() => setPage(addPage(doc))}>
             +
           </button>
         )}
       </h2>
-      <ul className="pages">
+      <ul className="pages" hidden={pagesFolded}>
         {pages.map((p) => (
           <li
             key={p.id}
