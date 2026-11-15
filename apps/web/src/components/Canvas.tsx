@@ -20,6 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
+import { spacingBands } from "../spacing-overlay";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -1084,6 +1085,34 @@ export function Canvas() {
               </text>
               );
             })}
+
+          {devMode && selNode?.type === "FRAME" && selNode.layoutMode && !rotated && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb) return null;
+            const kids = doc.children(selNode.id).filter((c) => c.visible && c.layoutPositioning !== "ABSOLUTE").map((c) => doc.absoluteBox(c.id)).filter((b): b is Box => !!b);
+            return (
+              <g pointerEvents="none" data-spacing-overlay="">
+                {spacingBands(selNode, fb, kids).map((b, i) => {
+                  const label = String(b.value);
+                  const w = (label.length * 6 + 8) / z;
+                  const cx = b.x + b.width / 2;
+                  const cy = b.y + b.height / 2;
+                  const showLabel = b.kind === "gap" || (b.width >= w && b.height >= 12 / z);
+                  return (
+                    <g key={i} data-spacing={b.kind} data-value={b.value}>
+                      <rect x={b.x} y={b.y} width={b.width} height={b.height} fill={b.kind === "padding" ? "#7ed321" : "#f24822"} fillOpacity={0.25} />
+                      {showLabel && (
+                        <>
+                          <rect x={cx - w / 2} y={cy - 8 / z} width={w} height={16 / z} rx={3 / z} fill="#0d99ff" />
+                          <text x={cx} y={cy + 3.5 / z} textAnchor="middle" fontSize={10 / z} fill="#fff">{label}</text>
+                        </>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })()}
 
           {hoverBox && <rect x={hoverBox.x} y={hoverBox.y} width={hoverBox.width} height={hoverBox.height} fill="none" stroke={altDown ? RED : ACCENT} strokeWidth={sw * 1.5} pointerEvents="none" />}
 

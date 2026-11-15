@@ -99,7 +99,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Asset export (SVG / PNG / JPG) from inspect | ✅ | Export section at the bottom of the Dev panel (same scales and formats as Design) |
 | Ready-for-dev status, annotations, compare changes | ❌ |
 | iOS / Android snippets, Code Connect, variables in code | ❌ |
-| Spacing and padding visualization (box model) | ❌ |
+| Spacing and padding visualization (box model) | ✅ | Box model in the Dev panel; ✅ on the canvas in Dev Mode, an auto layout frame you select shows its padding as green bands and the gaps between children as red bands, each with its value (not shown for turned frames; gaps are measured between neighbours, so space-between and wrap show real distances) |
 
 ## 7. View menu and canvas helpers
 
