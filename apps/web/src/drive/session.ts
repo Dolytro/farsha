@@ -2,6 +2,7 @@ import { DesignDoc } from "@farsha/design-core";
 import { useEditor } from "../store";
 import { createFile, downloadFile, DriveError, getUser, renameFile, updateFile, type DriveFile } from "./drive";
 import { getToken, signIn, signOut } from "./google";
+import { shouldSaveWhenOnline } from "./retry";
 
 const AUTOSAVE_MS = 2000;
 
@@ -118,19 +119,34 @@ export async function loadShared(fileId: string): Promise<void> {
   }
 }
 
-/** Debounced autosave while signed in and the file already exists in Drive. */
+/** Debounced autosave while signed in and the file already exists in Drive. Edits made offline are saved when the connection comes back. */
 export function startAutosave(): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let pending = false;
   let lastVersion = useEditor.getState().version;
   const stop = useEditor.subscribe((s) => {
     if (s.version === lastVersion) return;
     lastVersion = s.version;
     if (!s.drive.user || !s.drive.fileId || s.viewer) return;
     clearTimeout(timer);
-    timer = setTimeout(() => void save(false), AUTOSAVE_MS);
+    timer = setTimeout(() => {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        pending = true;
+        return;
+      }
+      void save(false);
+    }, AUTOSAVE_MS);
   });
+  const onOnline = () => {
+    const s = useEditor.getState();
+    if (!shouldSaveWhenOnline({ failed: s.drive.status === "error", pending, signedIn: !!s.drive.user, hasFile: !!s.drive.fileId, viewer: !!s.viewer })) return;
+    pending = false;
+    void save(false);
+  };
+  window.addEventListener("online", onOnline);
   return () => {
     stop();
     clearTimeout(timer);
+    window.removeEventListener("online", onOnline);
   };
 }

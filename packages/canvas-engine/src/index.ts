@@ -19,3 +19,4 @@ export * from "./mask";
 export * from "./layout-grid";
 export * from "./boolean";
 export * from "./ellipse-arc";
+export * from "./gradient-line";

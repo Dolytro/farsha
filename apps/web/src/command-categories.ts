@@ -18,7 +18,7 @@ export function categoryMap(menu: MenuNode[], commandIds: string[]): Map<string,
   for (const section of menu) walk(section.children ?? [], section.label);
   for (const id of commandIds) {
     if (out.has(id)) continue;
-    out.set(id, id.startsWith("tool-") ? "Tools" : id.startsWith("align-") ? "Arrange" : id.startsWith("preset-") || id.startsWith("theme-") ? "Preferences" : "Other");
+    out.set(id, id.startsWith("tool-") ? "Tools" : id.startsWith("align-") ? "Arrange" : id.startsWith("move-to-") ? "Object" : id.startsWith("preset-") || id.startsWith("theme-") ? "Preferences" : "Other");
   }
   return out;
 }

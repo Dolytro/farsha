@@ -159,7 +159,42 @@ textarea:focus-visible {
 }
 
 .editor {
-  grid-template-columns: var(--panel-w) 1fr var(--panel-w);
+  position: relative;
+  grid-template-columns: var(--left-w, var(--panel-w)) 1fr var(--right-w, var(--panel-w));
+}
+
+// Drag handles on the inner edges of the two side panels (PanelResizers.tsx).
+.panel-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 20;
+  width: 7px;
+  cursor: col-resize;
+  touch-action: none;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 1px;
+    background: transparent;
+    transition: background 0.12s;
+  }
+
+  &:hover::after {
+    background: var(--c-accent);
+  }
+
+  &--left {
+    left: calc(var(--left-w, var(--panel-w)) - 3px);
+  }
+
+  &--right {
+    right: calc(var(--right-w, var(--panel-w)) - 4px);
+  }
 }
 
 .icon-btn {
@@ -427,6 +462,20 @@ textarea:focus-visible {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--c-muted);
+}
+
+.pages__fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
 }
 
 .pages {
@@ -863,7 +912,7 @@ textarea:focus-visible {
 
 // View > Panels: each side panel can be hidden on its own.
 .editor--no-left {
-  grid-template-columns: 1fr var(--panel-w);
+  grid-template-columns: 1fr var(--right-w, var(--panel-w));
 
   > .layers {
     display: none;
@@ -871,7 +920,7 @@ textarea:focus-visible {
 }
 
 .editor--no-right {
-  grid-template-columns: var(--panel-w) 1fr;
+  grid-template-columns: var(--left-w, var(--panel-w)) 1fr;
 
   > .props {
     display: none;
@@ -1552,4 +1601,130 @@ textarea:focus-visible {
 /* Dragging a page onto another one puts it in that place. */
 .pages__item--drop {
   box-shadow: inset 0 2px 0 var(--c-accent, #0d99ff);
+}
+
+// Frame tool: the device size list in the Design panel (FramePresetsSection.tsx).
+.presets {
+  margin-bottom: 8px;
+
+  &__group {
+    padding: 4px 0;
+    color: var(--c-muted);
+    font-size: calc(var(--font-size) - 1px);
+    font-weight: 600;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-height: var(--row-h);
+    padding: 0 8px;
+    border: 0;
+    border-radius: calc(var(--radius) - 1px);
+    background: none;
+    color: var(--c-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--c-hover, rgba(127, 127, 127, 0.14));
+    }
+  }
+
+  &__size {
+    color: var(--c-muted);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Shown beside the cloud button while the browser has no network (use-online.ts).
+.layers__offline {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #f5a623 22%, transparent);
+  color: #b36b00;
+  font-size: calc(var(--font-size) - 2px);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] .layers__offline {
+  color: #ffb84d;
+}
+
+// The page shown when the editor crashes (ErrorBoundary.tsx). It uses plain colours so it still works if the theme failed.
+.crash {
+  position: fixed;
+  inset: 0;
+  z-index: 1100; // above the boot loader (1000), which would otherwise stay on top when the editor crashed before it was ready
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--c-canvas, #1e1e1e);
+  color: var(--c-text, #f5f5f5);
+  font-family: system-ui, sans-serif;
+
+  &__card {
+    width: min(440px, 100%);
+    padding: 24px;
+    border-radius: 12px;
+    background: var(--c-panel, #2c2c2c);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  &__title {
+    margin: 0 0 8px;
+    font-size: 18px;
+  }
+
+  &__text {
+    margin: 0 0 16px;
+    color: var(--c-muted, #aaa);
+    line-height: 1.5;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__button {
+    padding: 8px 14px;
+    border: 1px solid rgba(127, 127, 127, 0.4);
+    border-radius: 8px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+
+    &--primary {
+      border-color: transparent;
+      background: var(--c-accent, #0d99ff);
+      color: #fff;
+    }
+  }
+
+  &__details {
+    margin-top: 16px;
+    color: var(--c-muted, #aaa);
+    font-size: 12px;
+
+    pre {
+      margin: 8px 0 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  }
+}
+
+// Number fields can be scrubbed by dragging their label (field-scrub.ts).
+.field:has(input[type="number"]) .field__label {
+  cursor: ew-resize;
+  user-select: none;
 }

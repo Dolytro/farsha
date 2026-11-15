@@ -10,7 +10,7 @@ import { copyAsCss, copyAsPng, copyAsSvg, exportLayers } from "./exporting";
 import { duplicateNodes, selectAllIn, topLevelOf } from "./clipboard";
 import { afterDuplicate, duplicateOffset } from "./duplicate-offset";
 import { createComponentFromSelection, detachSelection, pushSelectionToMain, resetSelection } from "./component-actions";
-import { duplicatePage } from "./pages";
+import { duplicatePage, moveSelectionToPage } from "./pages";
 import { duplicateFile, openLocalFilePicker, saveLocalCopy } from "./local-file";
 import { placeImagePicker } from "./place-image";
 import { deleteContents, hideOtherLayers, removeInteractions, removePaint, rotateSelectionBy, swapFillAndStroke } from "./object-actions";
@@ -53,6 +53,21 @@ const tool = (id: Tool, label: string, key: string): Command => ({ id: `tool-${i
 const align = (mode: AlignMode, label: string, key: string): Command => ({ id: `align-${mode}`, label: `Align ${label}`, shortcut: `${ALT}${key}`, needsSelection: true, run: () => void alignSelection(doc(), sel(), mode) });
 
 /** Everything the command palette (Ctrl+/) can run. Each command reads the editor state when it runs. */
+/** "Move to page: Page 2", ... and "Move to new page": the Actions version of right-click > Move to page. */
+function moveToPageCommands(): Command[] {
+  const s = state();
+  const move = (target: string) => () => {
+    const name = moveSelectionToPage(s.doc, s.selection, target);
+    if (!name) return s.showToast("Nothing to move");
+    s.select([]);
+    s.showToast(`Moved to ${name}`);
+  };
+  return [
+    ...s.doc.pages().filter((p) => p.id !== s.pageId).map((p) => ({ id: `move-to-${p.id}`, label: `Move to page: ${p.name}`, keywords: "send layers other page", needsSelection: true, run: move(p.id) })),
+    { id: "move-to-new", label: "Move to new page", keywords: "send layers other page", needsSelection: true, run: move("new") },
+  ];
+}
+
 export function buildCommands(): Command[] {
   return [
     { id: "undo", label: "Undo", shortcut: `${MOD}Z`, run: () => doc().undo() },
@@ -79,6 +94,7 @@ export function buildCommands(): Command[] {
         if (copy) state().setPage(copy);
       },
     },
+    ...moveToPageCommands(),
     { id: "duplicate-file", label: "Duplicate file", keywords: "copy document", run: () => duplicateFile() },
     { id: "find", label: "Find…", shortcut: `${MOD}F`, keywords: "search layers text", run: () => state().setFindOpen(true) },
     { id: "find-replace", label: "Find and replace…", keywords: "search replace text", run: () => state().setFindOpen(true, true) },
@@ -122,7 +138,7 @@ export function buildCommands(): Command[] {
     { id: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, needsSelection: true, run: () => {
         // Ctrl+D after an Alt+drag copy repeats that move
         const ids = sel();
-        const offset = duplicateOffset(ids);
+        const offset = duplicateOffset(ids, 10, doc());
         const copies = duplicateNodes(doc(), ids, offset, true, state().prefs.renameDuplicates);
         afterDuplicate(ids, copies, offset);
         state().select(copies);
@@ -370,6 +386,8 @@ export function buildCommands(): Command[] {
     tool("star", "Star", ""),
     tool("pen", "Pen", "P"),
     tool("pencil", "Pencil", `${SHIFT}P`),
+    tool("marker", "Marker", ""),
+    tool("highlighter", "Highlighter", ""),
     tool("text", "Text", "T"),
     {
       id: "zoom-fit",
@@ -603,6 +621,7 @@ export function buildCommands(): Command[] {
     },
     { id: "hide-ui", label: "Show / hide UI", shortcut: `${MOD}\\`, keywords: "minimize panels fullscreen focus", run: () => state().setUiHidden(!state().uiHidden) },
     { id: "rulers", label: "Show / hide rulers", shortcut: `${SHIFT}R`, keywords: "view guides", run: () => state().setRulers(!state().rulers) },
+    { id: "guides", label: "Show / hide guides", shortcut: `${MOD};`, keywords: "view rulers lines", run: () => state().setGuidesHidden(!state().guidesHidden) },
     { id: "dev-mode", label: "Toggle Dev Mode", shortcut: `${SHIFT}D`, keywords: "inspect code", run: () => state().setDevMode(!state().devMode) },
     {
       id: "copy-css",

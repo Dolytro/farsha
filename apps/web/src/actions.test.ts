@@ -196,3 +196,29 @@ describe("centerOnBox", () => {
     expect(60 * v.zoom + v.y).toBe(300);
   });
 });
+
+describe("numbered names for groups and frames", () => {
+  function pair() {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const a = doc.createNode("RECTANGLE", { parentId: page, props: { name: "A", x: 0, y: 0, width: 10, height: 10 } });
+    const b = doc.createNode("RECTANGLE", { parentId: page, props: { name: "B", x: 20, y: 0, width: 10, height: 10 } });
+    const c = doc.createNode("RECTANGLE", { parentId: page, props: { name: "C", x: 40, y: 0, width: 10, height: 10 } });
+    const d = doc.createNode("RECTANGLE", { parentId: page, props: { name: "D", x: 60, y: 0, width: 10, height: 10 } });
+    return { doc, a, b, c, d };
+  }
+  it("names groups Group 1, Group 2", () => {
+    const { doc, a, b, c, d } = pair();
+    const [g1] = groupSelection(doc, [a, b]);
+    const [g2] = groupSelection(doc, [c, d]);
+    expect(doc.getNode(g1!)!.name).toBe("Group 1");
+    expect(doc.getNode(g2!)!.name).toBe("Group 2");
+  });
+  it("names frame selections Frame 1, Frame 2", () => {
+    const { doc, a, b, c, d } = pair();
+    const [f1] = frameSelection(doc, [a, b]);
+    const [f2] = frameSelection(doc, [c, d]);
+    expect(doc.getNode(f1!)!.name).toBe("Frame 1");
+    expect(doc.getNode(f2!)!.name).toBe("Frame 2");
+  });
+});

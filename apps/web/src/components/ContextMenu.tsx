@@ -5,12 +5,14 @@ import { addAutoLayout } from "../auto-layout-actions";
 import { createComponentFromSelection, detachSelection, mainsOf, resetSelection } from "../component-actions";
 import { copyAsCss, copyAsPng, copyAsSvg } from "../exporting";
 import { copyNodes, copyProperties, parseClip, pasteNodes, pasteOver, pasteProperties, pasteTarget, pasteText, topLevelOf } from "../clipboard";
+import { moveSelectionToPage } from "../pages";
+import { hitTestAll } from "@farsha/canvas-engine";
 import { useEditor } from "../store";
 import { buildCommands } from "../commands";
 
 const MARGIN = 8;
 
-async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
+async function run(action: MenuAction, wx: number, wy: number, pageId?: string, layerId?: string): Promise<void> {
   const s = useEditor.getState();
   const { doc, selection, select, showToast } = s;
   try {
@@ -99,12 +101,22 @@ async function run(action: MenuAction, wx: number, wy: number): Promise<void> {
       case "detach-instance": return select(detachSelection(doc, selection));
       case "reset-overrides": return resetSelection(doc, selection);
       case "push-to-main": return buildCommands().find((c) => c.id === "push-to-main")?.run();
+      case "select-layer": return layerId ? select([layerId]) : undefined;
+      case "select-all": return buildCommands().find((c) => c.id === "select-all")?.run();
+      case "toggle-ui": return buildCommands().find((c) => c.id === "hide-ui")?.run();
       case "go-to-main": {
         const mains = mainsOf(doc, selection);
         if (!mains.length) return showToast("The main component no longer exists");
         const page = doc.pages().find((p) => p.id === mains[0] || doc.isAncestor(p.id, mains[0]!));
         if (page && page.id !== s.pageId) s.setPage(page.id);
         return select(mains);
+      }
+      case "move-to-page": {
+        if (!pageId) return;
+        const name = moveSelectionToPage(doc, selection, pageId);
+        if (!name) return showToast("Nothing to move");
+        select([]);
+        return showToast(`Moved to ${name}`);
       }
       case "visibility": return toggleHidden(doc, selection);
       case "lock": return toggleLocked(doc, selection);
@@ -171,26 +183,33 @@ export function ContextMenu() {
     hasInstance: nodes.some((n) => st.doc.instanceOf(n.id)),
     allHidden: nodes.length > 0 && nodes.every((n) => !n.visible),
     allLocked: nodes.length > 0 && nodes.every((n) => n.locked),
+    under: menu.fromList ? undefined : hitTestAll(st.doc, st.pageId, menu.wx, menu.wy).map((n) => ({ id: n.id, label: n.name })),
+    pages: st.doc.pages().map((p) => ({ id: p.id, name: p.name, current: p.id === st.pageId })),
   });
   if (!items.length) return null;
 
   let submenuShown = false;
+  let pagesShown = false;
   return (
     <div ref={ref} className="ctxmenu" role="menu" style={pos} onContextMenu={(e) => e.preventDefault()} onPointerDown={(e) => e.stopPropagation()}>
       {items.map((it) => {
         const head = Boolean(it.submenu) && !submenuShown;
         submenuShown = submenuShown || Boolean(it.submenu);
+        const pagesHead = it.pageId !== undefined && !pagesShown;
+        pagesShown = pagesShown || it.pageId !== undefined;
         return (
-          <div key={it.action}>
+          <div key={it.action + (it.pageId ?? it.layerId ?? "")}>
             {head && <div className="ctxmenu__sep" />}
             {head && <div className="ctxmenu__group">Copy/Paste as</div>}
             {it.divider && !it.submenu && <div className="ctxmenu__sep" />}
+            {it.heading && <div className="ctxmenu__group">{it.heading}</div>}
+            {pagesHead && <div className="ctxmenu__group">Move to page</div>}
             <button
               role="menuitem"
               className="ctxmenu__item"
               onClick={() => {
                 setMenu(null);
-                void run(it.action, menu.wx, menu.wy);
+                void run(it.action, menu.wx, menu.wy, it.pageId, it.layerId);
               }}
             >
               <span>{it.label}</span>

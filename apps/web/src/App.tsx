@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Canvas } from "./components/Canvas";
 import { Rulers } from "./components/Rulers";
+import { PanelResizers } from "./components/PanelResizers";
+import { installFieldArrows, installFieldExpressions, installFieldScrub } from "./field-scrub";
 import { Layers } from "./components/Layers";
 import { Properties } from "./components/Properties";
 import { Toolbar } from "./components/Toolbar";
@@ -17,7 +19,7 @@ import { isImageFile } from "./images";
 import { placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
 import { afterDuplicate, duplicateOffset } from "./duplicate-offset";
-import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
+import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, pasteColor, pastedColor, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
 import { CommandPalette } from "./components/CommandPalette";
 import { Presenter } from "./components/Presenter";
 import { VersionHistory } from "./components/VersionHistory";
@@ -204,6 +206,15 @@ export function App() {
         return;
       } else if (!text) {
         return; // other html: not supported, leave the default behaviour alone
+      } else if (s.selection.length && !s.viewer && pastedColor(text)) {
+        // A colour pasted over a selection fills it (Figma)
+        const n = pasteColor(s.doc, s.selection, pastedColor(text)!);
+        if (n) {
+          e.preventDefault();
+          s.showToast(`Fill set to ${pastedColor(text)!.toUpperCase()}`);
+          return;
+        }
+        ids = pasteText(s.doc, text, parentId, cx, cy);
       } else {
         ids = pasteText(s.doc, text, parentId, cx, cy);
       }
@@ -368,6 +379,10 @@ export function App() {
         // Figma's "Layout grids"
         e.preventDefault();
         if (!toggleLayoutGrids(doc, selection)) s.showToast("Select a frame with a layout grid");
+      } else if (mod && !e.shiftKey && !e.altKey && key === ";" && !s.viewer) {
+        // Figma's "Show / Hide guides"
+        e.preventDefault();
+        s.setGuidesHidden(!s.guidesHidden);
       } else if (e.shiftKey && !e.altKey && !mod && key === "r" && !s.viewer) {
         // Figma's "Show / Hide rulers"
         e.preventDefault();
@@ -487,7 +502,7 @@ export function App() {
       } else if (mod && key === "d") {
         e.preventDefault();
         // Ctrl+D right after an Alt+drag copy repeats that move
-        const offset = duplicateOffset(selection);
+        const offset = duplicateOffset(selection, 10, doc);
         const copies = duplicateNodes(doc, selection, offset, true, s.prefs.renameDuplicates);
         afterDuplicate(selection, copies, offset);
         s.select(copies);
@@ -608,9 +623,23 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Dragging the label of a number field (X, Y, W, H, ...) scrubs its value; one undo step per drag
+  useEffect(() => {
+    const st = () => useEditor.getState();
+    const stopScrub = installFieldScrub(() => st().doc.stopCapturing(), () => st().doc.stopCapturing());
+    const stopArrows = installFieldArrows();
+    const stopExpressions = installFieldExpressions();
+    return () => {
+      stopScrub();
+      stopArrows();
+      stopExpressions();
+    };
+  }, []);
+
   return (
     <div className={`editor${uiHidden ? " editor--minimal" : ""}${hideLeft ? " editor--no-left" : ""}${hideRight ? " editor--no-right" : ""}`}>
       <Layers />
+      {!uiHidden && <PanelResizers left={!hideLeft} right={!hideRight} />}
       <div className="workspace">
         <Canvas />
         {rulers && !viewer && <Rulers />}

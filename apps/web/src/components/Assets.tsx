@@ -1,9 +1,23 @@
-import { screenToWorld } from "@farsha/canvas-engine";
-import { useState } from "react";
+import { exportSvg, screenToWorld } from "@farsha/canvas-engine";
+import { useRef, useState } from "react";
 import { useEditor } from "../store";
 import { COMPONENT_DRAG, filterAssets } from "../asset-search";
 import { zoomFit } from "../actions";
 import { groupVariables } from "../variable-groups";
+import { canvasMeasure } from "../text-layout";
+import { fitSize } from "../images";
+
+const PREVIEW = 160;
+
+/** A small picture of a component for the drag ghost, or null when it has nothing to draw. */
+function previewOf(doc: ReturnType<typeof useEditor.getState>["doc"], id: string): HTMLImageElement | null {
+  const out = exportSvg(doc, [id], { measure: canvasMeasure });
+  if (!out) return null;
+  const size = fitSize(out.width, out.height, PREVIEW);
+  const img = new Image(size.width, size.height);
+  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(out.svg)}`;
+  return img;
+}
 
 /** Figma's Assets tab: every main component of the file; a click places an instance in the middle of the canvas. */
 export function Assets() {
@@ -12,6 +26,8 @@ export function Assets() {
   const viewer = useEditor((s) => s.viewer);
   useEditor((s) => s.version);
   const [query, setQuery] = useState("");
+  // Drag ghosts are drawn when the pointer enters a row, so the picture is ready by the time a drag starts
+  const previews = useRef(new Map<string, HTMLImageElement>());
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
   const all = doc.pages().flatMap((p) => doc.descendants(p.id).filter((n) => n.type === "FRAME" && n.isComponent));
   const mains = filterAssets(all, query);
@@ -69,7 +85,7 @@ export function Assets() {
             ]
           : []),
         ...(folded.has(g.path) ? [] : g.items.map(({ variable: n, leaf }) => (
-        <li key={n.id} className="layers__item assets__item" title={viewer ? "Right-click to go to the main component" : "Click to place an instance, drag it onto the canvas, right-click to go to the main component"} onClick={() => !viewer && place(n.id)} onContextMenu={(e) => { e.preventDefault(); goToMain(n.id); }} draggable={!viewer} onDragStart={(e) => { e.dataTransfer.setData(COMPONENT_DRAG, n.id); e.dataTransfer.effectAllowed = "copy"; }}>
+        <li key={n.id} className="layers__item assets__item" title={viewer ? "Right-click to go to the main component" : "Click to place an instance, drag it onto the canvas, right-click to go to the main component"} onClick={() => !viewer && place(n.id)} onContextMenu={(e) => { e.preventDefault(); goToMain(n.id); }} draggable={!viewer} onPointerEnter={() => { if (!viewer) { const img = previewOf(doc, n.id); if (img) previews.current.set(n.id, img); } }} onDragStart={(e) => { e.dataTransfer.setData(COMPONENT_DRAG, n.id); e.dataTransfer.effectAllowed = "copy"; const img = previews.current.get(n.id); if (img?.complete && img.naturalWidth > 0) e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2); }}>
           <span className="layers__type layers__type--component">❖</span>
           <span className="layers__name">{leaf}{n.type === "FRAME" && n.variantProps ? ` (${Object.entries(n.variantProps).map(([k, v]) => `${k}=${v}`).join(", ")})` : ""}</span>
           {n.type === "FRAME" && n.description && <span className="layers__hint" title={n.description} style={{ opacity: 0.6, fontSize: 11, marginLeft: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 90 }}>{n.description}</span>}
