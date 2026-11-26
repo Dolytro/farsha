@@ -20,7 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
-import { spacingBands } from "../spacing-overlay";
+import { spacingBands, spacingDrag, type SpacingSide } from "../spacing-overlay";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, gradientCenterPoint, centerFromPoint, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
@@ -44,6 +44,7 @@ type Drag =
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
   | { kind: "multirotate"; wx: number; wy: number; items: TurnItem[]; cx: number; cy: number; start: number }
   | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
+  | { kind: "spacing"; id: string; side: SpacingSide; horizontal: boolean; start: { top: number; right: number; bottom: number; left: number; gap: number }; wx: number; wy: number }
   | { kind: "gradientcenter"; id: string; fill: number; wx: number; wy: number }
   | { kind: "gradientstop"; id: string; fill: number; stop: number; line: GradientLine; wx: number; wy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
@@ -232,6 +233,15 @@ export function Canvas() {
       if (abs) {
         doc.stopCapturing();
         drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
+      }
+      return;
+    }
+    if (el.dataset.spacingHandle && selection[0]) {
+      // Dragging a handle of an auto layout frame changes its padding or gap
+      const n = doc.getNode(selection[0]);
+      if (n?.type === "FRAME" && n.layoutMode) {
+        doc.stopCapturing();
+        drag.current = { kind: "spacing", id: n.id, side: el.dataset.spacingHandle as SpacingSide, horizontal: n.layoutMode === "HORIZONTAL", start: { top: n.paddingTop ?? 0, right: n.paddingRight ?? 0, bottom: n.paddingBottom ?? 0, left: n.paddingLeft ?? 0, gap: n.itemSpacing ?? 0 }, wx: w.x, wy: w.y };
       }
       return;
     }
@@ -489,6 +499,10 @@ export function Canvas() {
         const angle = ((snapped % 360) + 360) % 360;
         doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
       }
+    } else if (d.kind === "spacing") {
+      // along the band's axis; padding grows away from the frame edge
+      const delta = d.side === "gap" ? (d.horizontal ? dx : dy) : d.side === "top" ? dy : d.side === "bottom" ? -dy : d.side === "left" ? dx : -dx;
+      doc.setStyle(d.id, spacingDrag(d.side, d.start, delta, { alt: e.altKey, shift: e.shiftKey }) as never);
     } else if (d.kind === "gradientcenter") {
       const node = doc.getNode(d.id);
       const abs = doc.absoluteBox(d.id);
@@ -1103,6 +1117,31 @@ export function Canvas() {
               </text>
               );
             })}
+
+          {!devMode && !viewer && selection.length === 1 && selNode?.type === "FRAME" && selNode.layoutMode && !rotated && !selNode.locked && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb) return null;
+            const kids = doc.children(selNode.id).filter((c) => c.visible && c.layoutPositioning !== "ABSOLUTE").map((c) => doc.absoluteBox(c.id)).filter((b): b is Box => !!b);
+            return (
+              <g data-spacing-handles="">
+                {spacingBands(selNode, fb, kids, { includeZero: true }).filter((b) => b.side !== "gap" || selNode.primaryAxisAlign !== "SPACE_BETWEEN").map((b, i) => {
+                  const vertical = b.side === "left" || b.side === "right" || (b.side === "gap" && selNode.layoutMode === "HORIZONTAL");
+                  const pw = (vertical ? 5 : 20) / z;
+                  const ph = (vertical ? 20 : 5) / z;
+                  // a thin or empty padding band: keep the pill a little inside the frame so it does not sit on the resize edge
+                  const inset = 8 / z;
+                  const cx = b.side === "left" ? b.x + Math.max(b.width / 2, inset) : b.side === "right" ? b.x + b.width - Math.max(b.width / 2, inset) : b.x + b.width / 2;
+                  const cy = b.side === "top" ? b.y + Math.max(b.height / 2, inset) : b.side === "bottom" ? b.y + b.height - Math.max(b.height / 2, inset) : b.y + b.height / 2;
+                  return (
+                    <g key={i} className="spacing-handle" data-spacing-band={b.side}>
+                      <rect className="spacing-handle__band" x={b.x} y={b.y} width={b.width} height={b.height} pointerEvents="none" />
+                      <rect className="spacing-handle__pill" data-spacing-handle={b.side} x={cx - pw / 2} y={cy - ph / 2} width={pw} height={ph} rx={2 / z} style={{ cursor: vertical ? "ew-resize" : "ns-resize" }} />
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })()}
 
           {devMode && selNode?.type === "FRAME" && selNode.layoutMode && !rotated && (() => {
             const fb = doc.absoluteBox(selNode.id);

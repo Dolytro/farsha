@@ -1728,3 +1728,9 @@ textarea:focus-visible {
   cursor: ew-resize;
   user-select: none;
 }
+
+// Handles on a selected auto layout frame: drag to change its padding or gap
+.spacing-handle__band { fill: #f24822; fill-opacity: 0; }
+.spacing-handle__pill { fill: #f24822; stroke: #fff; stroke-width: 1px; vector-effect: non-scaling-stroke; opacity: 0.55; }
+.spacing-handle:hover .spacing-handle__band { fill-opacity: 0.2; }
+.spacing-handle:hover .spacing-handle__pill { opacity: 1; }
