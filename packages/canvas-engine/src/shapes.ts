@@ -112,3 +112,25 @@ export function lineBetween(x1: number, y1: number, x2: number, y2: number, snap
   const ey = y1 + Math.sin(rad) * length;
   return { x: (x1 + ex) / 2 - length / 2, y: (y1 + ey) / 2, length, rotation: angle === 180 ? 180 : angle };
 }
+
+/** The first inner corner of a star (the one right of the top point) in the 100 x 100 drawing box: the spot of the ratio dot. */
+export function starInnerDot(points: number, ratio: number): [number, number] {
+  return polygonPoints(points, Math.min(0.95, Math.max(0.05, ratio)))[1]!;
+}
+
+/** The ratio (0.05 to 0.95, two decimals) whose inner dot is closest to a point given in the 100 x 100 drawing box. */
+export function starRatioAt(points: number, p: [number, number]): number {
+  const dist = (r: number) => {
+    const d = starInnerDot(points, r);
+    return Math.hypot(d[0] - p[0], d[1] - p[1]);
+  };
+  let lo = 0.05;
+  let hi = 0.95;
+  for (let i = 0; i < 40; i++) {
+    const a = lo + (hi - lo) / 3;
+    const b = hi - (hi - lo) / 3;
+    if (dist(a) < dist(b)) hi = b;
+    else lo = a;
+  }
+  return Math.round(((lo + hi) / 2) * 100) / 100;
+}

@@ -20,9 +20,10 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
+import { DEFAULT_STAR_RATIO, polygonPatch } from "../shape-params";
 import { cornerDot, draggedRadius, withCornerRadius, type Corner } from "../corner-radius";
 import { spacingBands, spacingDrag, type SpacingSide } from "../spacing-overlay";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, arcParams, arcPoint, arcAt, dragArcStart, dragArcEnd, dragArcRatio, gradientCenterPoint, centerFromPoint, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, starInnerDot, starRatioAt, arcParams, arcPoint, arcAt, dragArcStart, dragArcEnd, dragArcRatio, gradientCenterPoint, centerFromPoint, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -48,6 +49,7 @@ type Drag =
   | { kind: "spacing"; id: string; side: SpacingSide; horizontal: boolean; start: { top: number; right: number; bottom: number; left: number; gap: number }; wx: number; wy: number }
   | { kind: "radius"; id: string; corner: Corner; box: Box; radii: [number, number, number, number]; wx: number; wy: number }
   | { kind: "arc"; id: string; part: "start" | "end" | "ratio"; box: Box; params: { start: number; sweep: number; ratio: number }; wx: number; wy: number }
+  | { kind: "starratio"; id: string; box: Box; points: number; wx: number; wy: number }
   | { kind: "gradientcenter"; id: string; fill: number; wx: number; wy: number }
   | { kind: "gradientstop"; id: string; fill: number; stop: number; line: GradientLine; wx: number; wy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
@@ -236,6 +238,16 @@ export function Canvas() {
       if (abs) {
         doc.stopCapturing();
         drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
+      }
+      return;
+    }
+    if (el.dataset.starHandle && selection[0]) {
+      // Dragging the dot of a star changes how deep its points are
+      const n = doc.getNode(selection[0]);
+      const box = doc.absoluteBox(selection[0]);
+      if (n?.type === "VECTOR" && n.shapeKind === "STAR" && box) {
+        doc.stopCapturing();
+        drag.current = { kind: "starratio", id: n.id, box, points: n.shapeSides ?? 5, wx: w.x, wy: w.y };
       }
       return;
     }
@@ -521,6 +533,12 @@ export function Canvas() {
         const snapped = e.shiftKey ? Math.round(raw / 15) * 15 : Math.round(raw * 10) / 10;
         const angle = ((snapped % 360) + 360) % 360;
         doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
+      }
+    } else if (d.kind === "starratio") {
+      const node = doc.getNode(d.id);
+      if (node?.type === "VECTOR" && node.shapeKind === "STAR") {
+        const ratio = starRatioAt(d.points, [((w.x - d.box.x) / (d.box.width || 1)) * 100, ((w.y - d.box.y) / (d.box.height || 1)) * 100]);
+        doc.patchNodes({ [d.id]: polygonPatch("STAR", d.points, ratio, node.shapeRadius ?? 0) });
       }
     } else if (d.kind === "arc") {
       const at = arcAt(d.box, w);
@@ -1345,6 +1363,13 @@ export function Canvas() {
               )}
             </g>
           )}
+
+          {!devMode && !viewer && !changing && selection.length === 1 && selNode?.type === "VECTOR" && selNode.shapeKind === "STAR" && !rotated && !selNode.locked && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb || Math.min(fb.width, fb.height) * z < 40) return null;
+            const d = starInnerDot(selNode.shapeSides ?? 5, selNode.starRatio ?? DEFAULT_STAR_RATIO);
+            return <circle className="radius-dot" data-star-handle="1" cx={fb.x + (d[0] / 100) * fb.width} cy={fb.y + (d[1] / 100) * fb.height} r={4 / z} style={{ cursor: "pointer" }} />;
+          })()}
 
           {!devMode && !viewer && !changing && selection.length === 1 && selNode?.type === "ELLIPSE" && !rotated && !selNode.locked && (() => {
             const fb = doc.absoluteBox(selNode.id);
