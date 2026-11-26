@@ -19,6 +19,21 @@ describe("layout starts", () => {
   });
 });
 
+describe("list hanging indent", () => {
+  const measure = (t: string) => t.length * 10;
+  it("wraps list text in a narrower column and indents the continuation lines by the marker", () => {
+    const l = layoutText({ ...base, characters: "aaa bbb ccc", width: 100, textAutoResize: "HEIGHT", textList: "BULLET" }, measure);
+    // marker "• " is 20 wide, so 80 is left: "aaa bbb" fits on the first line (marker + 7 chars = 90)
+    expect(l.lines).toEqual(["• aaa bbb", "ccc"]);
+    expect(l.indent).toEqual([0, 20]);
+    expect(l.starts).toEqual([-2, 8]);
+  });
+  it("does not indent plain paragraphs or auto width lists", () => {
+    expect(layoutText({ ...base, characters: "aaa bbb ccc", width: 60, textAutoResize: "HEIGHT" }, measure).indent.every((v) => v === 0)).toBe(true);
+    expect(layoutText({ ...base, characters: "aaa bbb ccc", textList: "NUMBER" }, measure).indent).toEqual([0]);
+  });
+});
+
 describe("lineSegments", () => {
   it("splits a line where the style changes", () => {
     expect(lineSegments("Hello world", 0, [{ start: 6, end: 11, bold: true }])).toEqual([{ text: "Hello " }, { text: "world", bold: true }]);
