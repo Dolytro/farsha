@@ -173,7 +173,8 @@ function plainDeclarations(node: DesignNode, opts: { absolute?: boolean; hasChil
     if (node.textDirection === "RTL") d.push(["direction", "rtl"]);
     if (node.paragraphIndent) d.push(["text-indent", px(node.paragraphIndent)]);
     if (node.maxLines && node.maxLines > 0) d.push(["display", "-webkit-box"], ["-webkit-line-clamp", String(node.maxLines)], ["-webkit-box-orient", "vertical"], ["overflow", "hidden"]);
-    if (node.characters.includes("\n") || (node.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT") d.push(["white-space", "pre-wrap"]);
+    if (node.textList === "BULLET" || node.textList === "NUMBER") d.push(["margin", "0"], ["padding-left", "1.25em"]);
+    if ((node.characters.includes("\n") && !(node.textList === "BULLET" || node.textList === "NUMBER")) || (node.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT") d.push(["white-space", "pre-wrap"]);
     effectDecls();
     return d;
   }
@@ -333,10 +334,16 @@ function css(w: Walked): string {
   return [rule, ...w.kids.map(css)].join("\n\n");
 }
 
+/** The tag of a text layer: a paragraph, or a list when it has bullets or numbers. */
+const textTag = (n: DesignNode): "p" | "ul" | "ol" => (n.type === "TEXT" && n.textList === "BULLET" ? "ul" : n.type === "TEXT" && n.textList === "NUMBER" ? "ol" : "p");
+const listItems = (n: DesignNode, esc: (s: string) => string, pad: string): string =>
+  n.type === "TEXT" ? n.characters.split("\n").map((line) => `${pad}<li>${esc(line)}</li>`).join("\n") : "";
+
 function html(w: Walked, depth: number, classOf: (w: Walked) => string): string {
   const pad = "  ".repeat(depth);
-  const tag = w.node.type === "TEXT" ? "p" : "div";
+  const tag = w.node.type === "TEXT" ? textTag(w.node) : "div";
   const open = `${pad}<${tag} class="${classOf(w)}">`;
+  if (w.node.type === "TEXT" && tag !== "p") return `${open}\n${listItems(w.node, escHtml, pad + "  ")}\n${pad}</${tag}>`;
   if (w.node.type === "TEXT") return `${open}${escHtml(w.node.characters)}</${tag}>`;
   if (!w.kids.length) return `${open}</${tag}>`;
   return `${open}\n${w.kids.map((k) => html(k, depth + 1, classOf)).join("\n")}\n${pad}</${tag}>`;
@@ -344,9 +351,10 @@ function html(w: Walked, depth: number, classOf: (w: Walked) => string): string 
 
 function jsx(w: Walked, depth: number): string {
   const pad = "  ".repeat(depth);
-  const tag = w.node.type === "TEXT" ? "p" : "div";
+  const tag = w.node.type === "TEXT" ? textTag(w.node) : "div";
   const style = w.decls.map(([p, v]) => `${camel(p)}: ${JSON.stringify(v)}`).join(", ");
   const open = `${pad}<${tag} style={{ ${style} }}>`;
+  if (w.node.type === "TEXT" && tag !== "p") return `${open}\n${listItems(w.node, escJsx, pad + "  ")}\n${pad}</${tag}>`;
   if (w.node.type === "TEXT") return `${open}${escJsx(w.node.characters)}</${tag}>`;
   if (!w.kids.length) return `${pad}<${tag} style={{ ${style} }} />`;
   return `${open}\n${w.kids.map((k) => jsx(k, depth + 1)).join("\n")}\n${pad}</${tag}>`;

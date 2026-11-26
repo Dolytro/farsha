@@ -771,3 +771,29 @@ describe("hidden fills and strokes in code", () => {
     expect(generateCode(node({ strokes: [{ ...red, visible: false }] }), () => [], "css")).not.toContain("border");
   });
 });
+
+describe("lists in code", () => {
+  const make = (textList: "BULLET" | "NUMBER" | undefined) => {
+    const doc = new DesignDoc();
+    const page = doc.pages()[0]!.id;
+    const id = doc.createNode("TEXT", { parentId: page, props: { name: "Todo", characters: "Milk <2>\nBread", textList } as never });
+    return { doc, node: doc.getNode(id)! };
+  };
+  it("writes bullets as ul and numbers as ol with one li per paragraph", () => {
+    const b = make("BULLET");
+    const html = generateCode(b.node, (i) => b.doc.children(i), "html");
+    expect(html).toContain('<ul class="');
+    expect(html).toContain("<li>Milk &lt;2&gt;</li>");
+    expect(html).toContain("<li>Bread</li>");
+    expect(html).toContain("padding-left: 1.25em");
+    expect(html).not.toContain("white-space: pre-wrap");
+    const n = make("NUMBER");
+    expect(generateCode(n.node, (i) => n.doc.children(i), "react")).toMatch(/<ol style=[\s\S]*<li>Bread<\/li>[\s\S]*<\/ol>/);
+  });
+  it("keeps plain text a paragraph", () => {
+    const p = make(undefined);
+    const html = generateCode(p.node, (i) => p.doc.children(i), "html");
+    expect(html).toContain("<p class=");
+    expect(html).not.toContain("<li>");
+  });
+});
