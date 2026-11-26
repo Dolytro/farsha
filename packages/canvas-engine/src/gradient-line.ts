@@ -62,11 +62,11 @@ export function stopAt(stops: Stop[], t: number): { color: string; opacity: numb
  * The line the colour stops of a gradient sit on, for the stops shown on the canvas: the gradient line of a linear gradient, and for a
  * radial one the radius from the middle to the right edge. Angular and diamond gradients have none (null).
  */
-export function gradientAxis(paint: { type: string; angle: number }, box: { x: number; y: number; width: number; height: number }): GradientLine | null {
+export function gradientAxis(paint: { type: string; angle: number; centerX?: number; centerY?: number }, box: { x: number; y: number; width: number; height: number }): GradientLine | null {
   if (paint.type === "GRADIENT_LINEAR") return gradientLine(box, paint.angle);
   if (paint.type === "GRADIENT_RADIAL") {
-    const cy = box.y + box.height / 2;
-    return { x1: box.x + box.width / 2, y1: cy, x2: box.x + box.width, y2: cy };
+    const c = gradientCenterPoint(paint, box);
+    return { x1: c.x, y1: c.y, x2: c.x + box.width / 2, y2: c.y };
   }
   return null;
 }
@@ -75,4 +75,26 @@ export function gradientAxis(paint: { type: string; angle: number }, box: { x: n
 export function withoutStop<T>(stops: T[], index: number): T[] {
   if (stops.length <= 2 || index < 0 || index >= stops.length) return stops;
   return stops.filter((_, i) => i !== index);
+}
+
+const unitFrac = (v: number | undefined) => (typeof v === "number" && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.5);
+
+/** The centre of a radial gradient as fractions of the box (0.5, 0.5 unless it was moved). */
+export function gradientCenter(paint: { centerX?: number; centerY?: number }): { x: number; y: number } {
+  return { x: unitFrac(paint.centerX), y: unitFrac(paint.centerY) };
+}
+
+/** The centre of a radial gradient in the box's own coordinates. */
+export function gradientCenterPoint(paint: { centerX?: number; centerY?: number }, box: { x: number; y: number; width: number; height: number }): { x: number; y: number } {
+  const c = gradientCenter(paint);
+  return { x: box.x + box.width * c.x, y: box.y + box.height * c.y };
+}
+
+/** The centre fractions for a pointer position: kept inside the box, rounded to 1/1000, and snapped to the middle when within `snap` pixels of it. */
+export function centerFromPoint(box: { x: number; y: number; width: number; height: number }, point: { x: number; y: number }, snap = 0): { centerX: number; centerY: number } {
+  const f = (v: number, o: number, size: number) => {
+    const t = size > 0 ? Math.min(1, Math.max(0, (v - o) / size)) : 0.5;
+    return Math.abs(t - 0.5) * size <= snap ? 0.5 : Math.round(t * 1000) / 1000;
+  };
+  return { centerX: f(point.x, box.x, box.width), centerY: f(point.y, box.y, box.height) };
 }

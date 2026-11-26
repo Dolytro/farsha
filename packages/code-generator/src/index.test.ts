@@ -245,6 +245,11 @@ describe("angular and diamond gradient css", () => {
     expect(paintCss({ type: "GRADIENT_ANGULAR", stops, angle: 0, opacity: 1 })).toMatch(/^conic-gradient\(from 90deg, /);
     expect(paintCss({ type: "GRADIENT_DIAMOND", stops, angle: 0, opacity: 1 })).toMatch(/^radial-gradient\(closest-side, /);
   });
+  it("puts a moved radial centre in the css", () => {
+    const stops = [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }];
+    expect(paintCss({ type: "GRADIENT_RADIAL", stops, angle: 0, opacity: 1, centerX: 0.25, centerY: 1 })).toMatch(/^radial-gradient\(circle at 25% 100%, /);
+    expect(paintCss({ type: "GRADIENT_RADIAL", stops, angle: 0, opacity: 1 })).toMatch(/^radial-gradient\(circle, /);
+  });
 });
 
 describe("tiled image fills", () => {

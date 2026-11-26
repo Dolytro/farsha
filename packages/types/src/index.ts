@@ -57,6 +57,9 @@ export interface GradientPaint {
   stops: GradientStop[];
   /** Degrees; 0 = left to right, 90 = top to bottom. For an angular gradient where the sweep starts. Ignored by radial and diamond gradients. */
   angle: number;
+  /** Where a radial gradient is centred, as a fraction of the layer's width and height (0.5 is the middle, the default). */
+  centerX?: number;
+  centerY?: number;
   opacity: number;
   blendMode?: BlendMode;
 }

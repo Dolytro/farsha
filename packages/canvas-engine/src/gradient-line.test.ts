@@ -81,3 +81,22 @@ describe("withoutStop", () => {
     expect(withoutStop(three, -1)).toBe(three);
   });
 });
+
+import { centerFromPoint, gradientCenter, gradientCenterPoint } from "./gradient-line";
+
+describe("radial gradient centre", () => {
+  const box = { x: 100, y: 50, width: 200, height: 100 };
+  it("defaults to the middle and clamps bad values", () => {
+    expect(gradientCenter({})).toEqual({ x: 0.5, y: 0.5 });
+    expect(gradientCenter({ centerX: 3, centerY: Number.NaN })).toEqual({ x: 1, y: 0.5 });
+  });
+  it("places the axis from the moved centre", () => {
+    expect(gradientCenterPoint({ centerX: 0.25, centerY: 1 }, box)).toEqual({ x: 150, y: 150 });
+    expect(gradientAxis({ type: "GRADIENT_RADIAL", angle: 0, centerX: 0.25, centerY: 1 }, box)).toEqual({ x1: 150, y1: 150, x2: 250, y2: 150 });
+  });
+  it("turns a pointer into fractions, inside the box, snapping to the middle", () => {
+    expect(centerFromPoint(box, { x: 150, y: 75 })).toEqual({ centerX: 0.25, centerY: 0.25 });
+    expect(centerFromPoint(box, { x: -999, y: 999 })).toEqual({ centerX: 0, centerY: 1 });
+    expect(centerFromPoint(box, { x: 203, y: 98 }, 5)).toEqual({ centerX: 0.5, centerY: 0.5 });
+  });
+});

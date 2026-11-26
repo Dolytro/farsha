@@ -65,7 +65,11 @@ export function paintCss(p: Paint): string {
     .join(", ");
   if (p.type === "GRADIENT_ANGULAR") return `conic-gradient(from ${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
   if (p.type === "GRADIENT_DIAMOND") return `radial-gradient(closest-side, ${stops})`; // CSS has no diamond gradient
-  return p.type === "GRADIENT_RADIAL" ? `radial-gradient(circle, ${stops})` : `linear-gradient(${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
+  if (p.type === "GRADIENT_RADIAL") {
+    const at = p.centerX !== undefined || p.centerY !== undefined ? ` at ${Math.round((p.centerX ?? 0.5) * 100)}% ${Math.round((p.centerY ?? 0.5) * 100)}%` : "";
+    return `radial-gradient(circle${at}, ${stops})`;
+  }
+  return `linear-gradient(${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
 }
 
 /** CSS `background` for fills stored bottom to top: CSS lists the top layer first, and a solid colour can only be the bottom layer. */

@@ -21,7 +21,7 @@ import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
 import { spacingBands } from "../spacing-overlay";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, gradientCenterPoint, centerFromPoint, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -44,6 +44,7 @@ type Drag =
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
   | { kind: "multirotate"; wx: number; wy: number; items: TurnItem[]; cx: number; cy: number; start: number }
   | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
+  | { kind: "gradientcenter"; id: string; fill: number; wx: number; wy: number }
   | { kind: "gradientstop"; id: string; fill: number; stop: number; line: GradientLine; wx: number; wy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
@@ -232,6 +233,12 @@ export function Canvas() {
         doc.stopCapturing();
         drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
       }
+      return;
+    }
+    if (el.dataset.gradientCenter && selection[0]) {
+      // Dragging the dot in the middle of a radial gradient moves its centre
+      doc.stopCapturing();
+      drag.current = { kind: "gradientcenter", id: selection[0], fill: Number(el.dataset.gradientCenter), wx: w.x, wy: w.y };
       return;
     }
     if (el.dataset.gradientStop && selection[0]) {
@@ -481,6 +488,13 @@ export function Canvas() {
         const snapped = e.shiftKey ? Math.round(raw / 15) * 15 : Math.round(raw * 10) / 10;
         const angle = ((snapped % 360) + 360) % 360;
         doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
+      }
+    } else if (d.kind === "gradientcenter") {
+      const node = doc.getNode(d.id);
+      const abs = doc.absoluteBox(d.id);
+      if (abs && node && "fills" in node && Array.isArray(node.fills)) {
+        const c = centerFromPoint(abs, w, e.shiftKey ? 0 : 6 / viewport.zoom);
+        doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.fill && f.type === "GRADIENT_RADIAL" ? { ...f, ...c } : f)) } as never);
       }
     } else if (d.kind === "gradientstop") {
       const node = doc.getNode(d.id);
@@ -1211,7 +1225,8 @@ export function Canvas() {
                     const f = selNode && "fills" in selNode && Array.isArray(selNode.fills) ? selNode.fills[gradientHandle.index] : undefined;
                     const line = f && f.type !== "SOLID" && f.type !== "IMAGE" ? gradientAxis(f, sel) : null;
                     if (!line || (f?.type !== "GRADIENT_LINEAR" && f?.type !== "GRADIENT_RADIAL")) return null;
-                    return [<line key="hit" data-gradient-line={gradientHandle.index} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={10 / z} style={{ cursor: "copy" }} />, ...f.stops.map((s, j) => (
+                    const underCentre = (pos: number) => f.type === "GRADIENT_RADIAL" && pos <= 0.001;
+                    return [<line key="hit" data-gradient-line={gradientHandle.index} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={10 / z} style={{ cursor: "copy" }} />, ...f.stops.map((s, j) => underCentre(s.position) ? null : (
                       <circle
                         key={j}
                         data-gradient-stop={`${gradientHandle.index}:${j}`}
@@ -1224,6 +1239,12 @@ export function Canvas() {
                         style={{ cursor: "ew-resize" }}
                       />
                     ))];
+                  })()}
+                  {(() => {
+                    const f = selNode && "fills" in selNode && Array.isArray(selNode.fills) ? selNode.fills[gradientHandle.index] : undefined;
+                    if (f?.type !== "GRADIENT_RADIAL") return null;
+                    const c = gradientCenterPoint(f, sel);
+                    return <circle data-gradient-center={gradientHandle.index} cx={c.x} cy={c.y} r={6 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "move" }} />;
                   })()}
                 </g>
               )}

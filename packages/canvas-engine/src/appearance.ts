@@ -1,4 +1,5 @@
 import { arcParams, ellipsePath } from "./ellipse-arc";
+import { gradientCenter } from "./gradient-line";
 import { cssBlendMode, paintColor, shownPaints, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
 
 /**
@@ -352,7 +353,10 @@ export function gradientDef(id: string, p: GradientPaint): string {
     .sort((a, b) => a.position - b.position)
     .map((s) => `<stop offset="${unit(s.position, 0)}" stop-color="${hex(s.color)}" stop-opacity="${unit(s.opacity)}"/>`)
     .join("");
-  if (p.type === "GRADIENT_RADIAL") return `<radialGradient id="${id}" cx="0.5" cy="0.5" r="0.5">${stops}</radialGradient>`;
+  if (p.type === "GRADIENT_RADIAL") {
+    const c = gradientCenter(p);
+    return `<radialGradient id="${id}" cx="${unit(c.x)}" cy="${unit(c.y)}" r="0.5">${stops}</radialGradient>`;
+  }
   const a = ((Number.isFinite(p.angle) ? p.angle : 0) * Math.PI) / 180;
   const dx = Math.cos(a) / 2;
   const dy = Math.sin(a) / 2;
