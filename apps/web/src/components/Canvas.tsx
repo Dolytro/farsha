@@ -530,6 +530,7 @@ export function Canvas() {
       } else setGuides([]);
       if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation && !(opts.keepRatio && !locked)) next = snapBoxToPixels(next);
       doc.resizeNode(d.id, next);
+      setDragGaps(doc.getNode(d.id)?.rotation ? [] : neighbourGaps({ x: next.x + d.offset.x, y: next.y + d.offset.y, width: next.width, height: next.height }, d.targets));
       if (flipping) {
         const now = doc.getNode(d.id);
         const wantX = d.flipX !== turned.flipX;
