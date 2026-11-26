@@ -21,7 +21,7 @@ import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
 import { spacingBands } from "../spacing-overlay";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -113,6 +113,7 @@ export function Canvas() {
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
+  const [dragGaps, setDragGaps] = useState<ReturnType<typeof neighbourGaps>>([]);
   const svgRef = useRef<SVGSVGElement>(null);
   const [spaceDown, setSpaceDown] = useState(false);
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -439,6 +440,7 @@ export function Canvas() {
         setGuides(snap.guides);
         aligned = snap.guides.length > 0;
       } else setGuides([]);
+      if (d.startBox && d.targets.length > 0) setDragGaps(neighbourGaps({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets));
       // Snap to pixel grid: the first layer lands on a whole pixel (the others keep their distance to it), unless a smart guide already holds it
       const first = Object.values(d.origins)[0];
       if (first && !aligned && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap) ({ dx, dy } = snapMoveToPixels(first, { dx, dy }));
@@ -572,6 +574,7 @@ export function Canvas() {
     setChanging(false);
     setMarquee(null);
     setGuides([]);
+    setDragGaps([]);
     if (!d || d.kind === "pan" || d.kind === "marquee") return;
     if (d.kind === "move") {
       // Let go over another frame (or over empty canvas): the layers move into that frame (or out to the page), keeping their place on the canvas
@@ -921,7 +924,7 @@ export function Canvas() {
   const hoverBox = hoverHighlight && hoverId && !selection.includes(hoverId) ? doc.absoluteBox(hoverId) : undefined;
   // Measurements are an inspect feature: public view-only links don't get them.
   const canInspect = !viewer || (viewer === "inspect" && signedIn);
-  const measurements = canInspect && altDown && sel && hoverBox ? measure(sel, hoverBox) : [];
+  const measurements = canInspect && altDown && sel && hoverBox ? measure(sel, hoverBox) : dragGaps;
   const RED = "#f24822";
   const hs = 8 / z;
   const sw = 1 / z;
