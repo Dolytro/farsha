@@ -62,3 +62,27 @@ describe("ellipse arcs in SVG export", () => {
     expect(exportSvg(doc, [full])?.svg ?? "").toContain("<ellipse");
   });
 });
+
+import { arcAt, arcPoint, dragArcEnd, dragArcRatio, dragArcStart } from "./ellipse-arc";
+
+describe("arc handles", () => {
+  const box = { x: 0, y: 0, width: 200, height: 100 };
+  it("places and reads points on the ellipse", () => {
+    expect(arcPoint(box, 0)).toEqual({ x: 200, y: 50 });
+    const p = arcPoint(box, 90, 0.5);
+    expect(Math.round(p.x)).toBe(100);
+    expect(Math.round(p.y)).toBe(75);
+    const at = arcAt(box, { x: 100, y: 100 });
+    expect(Math.round(at.angle)).toBe(90);
+    expect(at.fraction).toBeCloseTo(1);
+  });
+  it("keeps the end when the start moves, and the start when the end moves", () => {
+    expect(dragArcStart({ start: 0, sweep: 180, ratio: 0 }, 90)).toEqual({ start: 90, sweep: 90 });
+    expect(dragArcEnd({ start: 0, sweep: 180, ratio: 0 }, 270)).toBe(270);
+    expect(dragArcEnd({ start: 30, sweep: 300, ratio: 0 }, 30)).toBe(360);
+  });
+  it("clamps the ratio", () => {
+    expect(dragArcRatio(1.4)).toBe(0.99);
+    expect(dragArcRatio(0.333)).toBe(0.33);
+  });
+});

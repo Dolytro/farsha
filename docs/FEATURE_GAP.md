@@ -288,6 +288,7 @@ Assets / Tools / Agents rails, context menu, Share dialog, Dev Mode paywall). No
 - ✅ Dropping dragged layers on another frame moves them into it, and dropping them on empty canvas moves them out to the page (they keep their place on the canvas; into an auto layout frame they take the slot under the pointer; layers inside instances and locked layers stay put).
 - ✅ Dragging a layer inside an auto layout frame reorders it: it takes the slot under the pointer (one layer at a time; it snaps into place when the mouse is released).
 - ✅ Reorder pages by dragging one onto another in the page list (one undo step).
+- ✅ Ellipse arc dots on the canvas (a selected ellipse shows a start dot and an end dot on the rim and a ratio dot on the start line; drag the start dot to turn the arc with the end fixed, the end dot to change the sweep, the ratio dot for the inner radius; Shift snaps angles to 15 degrees; one undo step; the dots sit above the resize edges, so at 3 o'clock they cover the middle of the right edge).
 - ✅ Ellipse arc: Start, Sweep and Ratio fields in an Arc section for ellipses (pie, ring, ring sector; canvas and SVG / PNG export). Boolean operations and flatten follow the arc (a ring with a hole is one outline with a slit); CSS code and hit-testing still treat it as a full ellipse; no handles on the canvas.
 Menus and commands
 - Edit: ✅ Copy as text, Copy as CSS (all layers), Select all with same text properties / instance / variant. ✅ Select all matching properties (Ctrl+Alt+A, checked in the browser). Still missing: animated SVG

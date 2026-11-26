@@ -22,7 +22,7 @@ import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
 import { cornerDot, draggedRadius, withCornerRadius, type Corner } from "../corner-radius";
 import { spacingBands, spacingDrag, type SpacingSide } from "../spacing-overlay";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, gradientCenterPoint, centerFromPoint, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, arcParams, arcPoint, arcAt, dragArcStart, dragArcEnd, dragArcRatio, gradientCenterPoint, centerFromPoint, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
 import { placeMediaFile } from "../place-image";
@@ -47,6 +47,7 @@ type Drag =
   | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
   | { kind: "spacing"; id: string; side: SpacingSide; horizontal: boolean; start: { top: number; right: number; bottom: number; left: number; gap: number }; wx: number; wy: number }
   | { kind: "radius"; id: string; corner: Corner; box: Box; radii: [number, number, number, number]; wx: number; wy: number }
+  | { kind: "arc"; id: string; part: "start" | "end" | "ratio"; box: Box; params: { start: number; sweep: number; ratio: number }; wx: number; wy: number }
   | { kind: "gradientcenter"; id: string; fill: number; wx: number; wy: number }
   | { kind: "gradientstop"; id: string; fill: number; stop: number; line: GradientLine; wx: number; wy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
@@ -235,6 +236,16 @@ export function Canvas() {
       if (abs) {
         doc.stopCapturing();
         drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
+      }
+      return;
+    }
+    if (el.dataset.arcHandle && selection[0]) {
+      // Dragging a dot of an ellipse changes its arc: the start, the end or the inner ratio
+      const n = doc.getNode(selection[0]);
+      const box = doc.absoluteBox(selection[0]);
+      if (n?.type === "ELLIPSE" && box) {
+        doc.stopCapturing();
+        drag.current = { kind: "arc", id: n.id, part: el.dataset.arcHandle as "start" | "end" | "ratio", box, params: arcParams(n), wx: w.x, wy: w.y };
       }
       return;
     }
@@ -511,6 +522,14 @@ export function Canvas() {
         const angle = ((snapped % 360) + 360) % 360;
         doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
       }
+    } else if (d.kind === "arc") {
+      const at = arcAt(d.box, w);
+      const snap = (v: number) => (e.shiftKey ? Math.round(v / 15) * 15 : v);
+      if (d.part === "start") {
+        const r = dragArcStart(d.params, snap(at.angle));
+        doc.setStyle(d.id, { arcStart: r.start, arcSweep: r.sweep } as never);
+      } else if (d.part === "end") doc.setStyle(d.id, { arcSweep: dragArcEnd(d.params, snap(at.angle)) } as never);
+      else doc.setStyle(d.id, { arcRatio: dragArcRatio(at.fraction) } as never);
     } else if (d.kind === "radius") {
       const r = draggedRadius(d.box, d.corner, d.radii[d.corner], { x: d.wx, y: d.wy }, w);
       doc.setStyle(d.id, (e.altKey ? { cornerRadii: withCornerRadius(d.radii, d.corner, r) } : { cornerRadius: r, cornerRadii: null }) as never);
@@ -1326,6 +1345,22 @@ export function Canvas() {
               )}
             </g>
           )}
+
+          {!devMode && !viewer && !changing && selection.length === 1 && selNode?.type === "ELLIPSE" && !rotated && !selNode.locked && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb || Math.min(fb.width, fb.height) * z < 40) return null;
+            const p = arcParams(selNode);
+            const dots: { part: "start" | "end" | "ratio"; at: { x: number; y: number } }[] = [
+              { part: "start", at: arcPoint(fb, p.start) },
+              { part: "end", at: arcPoint(fb, p.start + p.sweep) },
+              { part: "ratio", at: arcPoint(fb, p.start, Math.max(p.ratio, 0.06)) },
+            ];
+            return (
+              <g data-arc-handles="">
+                {dots.map((d) => <circle key={d.part} className="radius-dot" data-arc-handle={d.part} cx={d.at.x} cy={d.at.y} r={4 / z} style={{ cursor: "pointer" }} />)}
+              </g>
+            );
+          })()}
 
           {guides.map((g, i) => (
             <line key={i} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke={RED} strokeWidth={sw} pointerEvents="none" />
