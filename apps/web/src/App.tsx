@@ -379,6 +379,9 @@ export function App() {
         // Figma's "Layout grids"
         e.preventDefault();
         if (!toggleLayoutGrids(doc, selection)) s.showToast("Select a frame with a layout grid");
+      } else if (mod && !e.shiftKey && !e.altKey && key === "l" && selection.length && !s.viewer) {
+        e.preventDefault();
+        buildCommands().find((c) => c.id === "copy-link")?.run();
       } else if (mod && !e.shiftKey && !e.altKey && key === ";" && !s.viewer) {
         // Figma's "Show / Hide guides"
         e.preventDefault();

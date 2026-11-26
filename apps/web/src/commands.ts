@@ -20,6 +20,7 @@ import { setSection, wrapInSection } from "./section-actions";
 import { adjustText, patchText, setTextAlign, setTextCase, setTextVerticalAlign, textLayersIn, toggleTextStyle } from "./text-actions";
 import { safeUrl } from "./prototype";
 import { copyAsCssAll, copyAsText } from "./copy-as";
+import { shareUrl } from "./route";
 import { resizeToFit, setLockAspect, setSizing } from "./layout-actions";
 import { UI_PRESETS } from "./prefs";
 import { pickColorFromScreen } from "./eyedropper";
@@ -629,6 +630,25 @@ export function buildCommands(): Command[] {
       needsSelection: true,
       keywords: "code",
       run: async () => state().showToast((await copyAsCss(doc(), sel())) ? "Copied as CSS" : "Select a layer first"),
+    },
+    {
+      id: "copy-link",
+      label: "Copy link to selection",
+      shortcut: `${MOD}L`,
+      needsSelection: true,
+      keywords: "share url layer view",
+      run: async () => {
+        const id = sel()[0];
+        const fileId = state().drive.fileId;
+        if (!id) return state().showToast("Select a layer first");
+        if (!fileId) return state().showToast("Save the file to Google Drive first (sign in)");
+        try {
+          await navigator.clipboard.writeText(shareUrl(window.location.origin, fileId, "view", id));
+          state().showToast("Link copied (turn on link sharing in Share so others can open it)");
+        } catch {
+          state().showToast("The browser blocked copying");
+        }
+      },
     },
     {
       id: "copy-text",
