@@ -74,11 +74,23 @@ export function Rulers() {
     move(e.nativeEvent);
   };
 
+  // Figma: with a layer selected, the numbers count from the top left of the top-level frame it sits in (guides stay on the page)
+  const origin = (() => {
+    let node = selection[0] ? doc.getNode(selection[0]) : undefined;
+    let top: typeof node;
+    while (node && node.type !== "PAGE" && node.type !== "DOCUMENT") {
+      if (node.type === "FRAME") top = node;
+      node = node.parentId ? doc.getNode(node.parentId) : undefined;
+    }
+    const b = top ? doc.absoluteBox(top.id) : undefined;
+    return { x: b?.x ?? 0, y: b?.y ?? 0 };
+  })();
   const sel: Box | undefined = unionBox(selection.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b));
   const bar = (axis: "x" | "y") => {
     const length = axis === "x" ? size.width : size.height;
-    const from = toWorld(axis, 0);
-    const to = toWorld(axis, length);
+    const o = origin[axis];
+    const from = toWorld(axis, 0) - o;
+    const to = toWorld(axis, length) - o;
     return (
       <>
         {sel && (
@@ -92,7 +104,7 @@ export function Rulers() {
           />
         )}
         {rulerTicks(from, to, zoom).map((t) => {
-          const p = toScreen(axis, t.value);
+          const p = toScreen(axis, t.value + o);
           const len = t.major ? 8 : 4;
           return (
             <g key={t.value}>
