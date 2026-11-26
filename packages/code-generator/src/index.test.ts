@@ -749,6 +749,10 @@ describe("number variables in code", () => {
     const css = generateCode(box({ layoutMode: "HORIZONTAL", itemSpacing: 12, varBindings: { itemSpacing: "s" } }), () => [], "css", { variableName: nameOf });
     expect(css).toContain("gap: var(--space, 12px)");
   });
+  it("names bound padding sides inside the padding shorthand", () => {
+    const css = generateCode(box({ layoutMode: "HORIZONTAL", paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8, varBindings: { paddingLeft: "s", paddingRight: "s" } }), () => [], "css", { variableName: nameOf });
+    expect(css).toContain("padding: 4px var(--space, 8px) 4px var(--space, 8px)");
+  });
   it("leaves values plain without names, for unknown variables and for Tailwind", () => {
     const n = box({ varBindings: { cornerRadius: "r" } });
     expect(generateCode(n, () => [], "css")).toContain("border-radius: 8px");

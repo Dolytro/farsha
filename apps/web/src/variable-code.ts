@@ -36,9 +36,9 @@ export function variablesUsed(doc: DesignDoc, node: DesignNode): VariableUse[] {
       out.push({ id: v.id, name: v.name, cssName: cssVariableName(v.name), role, values: doc.modes(v.collectionId ?? "default").map((m) => ({ mode: m.name, color: doc.resolveVariableValue(v, m.id) })) });
     }
   }
-  // number variables bound to a size, radius, gap or font size: the CSS the code tabs write for them is in pixels
+  // number variables bound to a size, radius, gap, padding or font size: the CSS the code tabs write for them is in pixels
   const bound = (node as { varBindings?: Record<string, string> }).varBindings ?? {};
-  for (const prop of ["width", "height", "cornerRadius", "itemSpacing", "fontSize"]) {
+  for (const prop of ["width", "height", "cornerRadius", "itemSpacing", "fontSize", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"]) {
     const v = bound[prop] ? doc.getColorVariable(bound[prop]!) : undefined;
     if (!v || out.some((o) => o.id === v.id && o.role === "Number")) continue;
     const px = (value: string) => (Number.isFinite(Number(value)) ? `${Number(value)}px` : value);

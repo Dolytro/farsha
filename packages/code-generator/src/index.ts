@@ -90,7 +90,14 @@ function withNumberVariables(node: DesignNode, decls: Decl[]): Decl[] {
   const bindings = node.varBindings;
   if (!bindings || !variableName) return decls;
   const values = node as unknown as Record<string, unknown>;
+  const sides = ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] as const;
   return decls.map(([prop, value]) => {
+    if (prop === "padding" && sides.some((k) => bindings[k])) {
+      // padding is one declaration of four sides; each side bound to a number variable becomes var(--name, 8px)
+      const nums = sides.map((k) => (typeof values[k] === "number" ? (values[k] as number) : 0));
+      if (value !== nums.map(px).join(" ")) return [prop, value];
+      return [prop, sides.map((k, i) => { const name = bindings[k] ? variableName?.(bindings[k]!) : undefined; return name ? `var(${name}, ${px(nums[i]!)})` : px(nums[i]!); }).join(" ")];
+    }
     const key = Object.keys(NUMBER_CSS).find((k) => NUMBER_CSS[k] === prop && bindings[k]);
     const name = key ? variableName?.(bindings[key]!) : undefined;
     // only when the declaration really is that one property (a border-radius from four separate corners is not)
