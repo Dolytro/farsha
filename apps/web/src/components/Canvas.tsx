@@ -20,6 +20,7 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
+import { cornerDot, draggedRadius, withCornerRadius, type Corner } from "../corner-radius";
 import { spacingBands, spacingDrag, type SpacingSide } from "../spacing-overlay";
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, gradientCenterPoint, centerFromPoint, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
@@ -45,6 +46,7 @@ type Drag =
   | { kind: "multirotate"; wx: number; wy: number; items: TurnItem[]; cx: number; cy: number; start: number }
   | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
   | { kind: "spacing"; id: string; side: SpacingSide; horizontal: boolean; start: { top: number; right: number; bottom: number; left: number; gap: number }; wx: number; wy: number }
+  | { kind: "radius"; id: string; corner: Corner; box: Box; radii: [number, number, number, number]; wx: number; wy: number }
   | { kind: "gradientcenter"; id: string; fill: number; wx: number; wy: number }
   | { kind: "gradientstop"; id: string; fill: number; stop: number; line: GradientLine; wx: number; wy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
@@ -233,6 +235,16 @@ export function Canvas() {
       if (abs) {
         doc.stopCapturing();
         drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
+      }
+      return;
+    }
+    if (el.dataset.cornerRadius && selection[0]) {
+      // Dragging a dot inside a corner changes the corner radius (Alt: only that corner)
+      const n = doc.getNode(selection[0]);
+      const box = doc.absoluteBox(selection[0]);
+      if (n && box && (n.type === "RECTANGLE" || n.type === "FRAME")) {
+        doc.stopCapturing();
+        drag.current = { kind: "radius", id: n.id, corner: Number(el.dataset.cornerRadius) as Corner, box, radii: cornerRadiiOf(n) ?? [0, 0, 0, 0], wx: w.x, wy: w.y };
       }
       return;
     }
@@ -499,6 +511,9 @@ export function Canvas() {
         const angle = ((snapped % 360) + 360) % 360;
         doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
       }
+    } else if (d.kind === "radius") {
+      const r = draggedRadius(d.box, d.corner, d.radii[d.corner], { x: d.wx, y: d.wy }, w);
+      doc.setStyle(d.id, (e.altKey ? { cornerRadii: withCornerRadius(d.radii, d.corner, r) } : { cornerRadius: r, cornerRadii: null }) as never);
     } else if (d.kind === "spacing") {
       // along the band's axis; padding grows away from the frame edge
       const delta = d.side === "gap" ? (d.horizontal ? dx : dy) : d.side === "top" ? dy : d.side === "bottom" ? -dy : d.side === "left" ? dx : -dx;
@@ -1117,6 +1132,20 @@ export function Canvas() {
               </text>
               );
             })}
+
+          {!devMode && !viewer && !changing && selection.length === 1 && (selNode?.type === "RECTANGLE" || selNode?.type === "FRAME") && !rotated && !selNode.flipX && !selNode.flipY && !selNode.locked && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb || Math.min(fb.width, fb.height) * z < 60) return null;
+            const radii = cornerRadiiOf(selNode) ?? [0, 0, 0, 0];
+            return (
+              <g data-corner-radius-handles="">
+                {([0, 1, 2, 3] as Corner[]).map((c) => {
+                  const dot = cornerDot(fb, c, radii[c], 16 / z);
+                  return <circle key={c} className="radius-dot" data-corner-radius={c} cx={dot.x} cy={dot.y} r={3.5 / z} style={{ cursor: "pointer" }} />;
+                })}
+              </g>
+            );
+          })()}
 
           {!devMode && !viewer && selection.length === 1 && selNode?.type === "FRAME" && selNode.layoutMode && !rotated && !selNode.locked && (() => {
             const fb = doc.absoluteBox(selNode.id);
