@@ -1207,7 +1207,7 @@ export function Canvas() {
               );
             })}
 
-          {!devMode && !viewer && !changing && selection.length === 1 && (selNode?.type === "RECTANGLE" || selNode?.type === "FRAME") && !rotated && !selNode.flipX && !selNode.flipY && !selNode.locked && (() => {
+          {!devMode && !viewer && !changing && selection.length === 1 && (selNode?.type === "RECTANGLE" || (selNode?.type === "FRAME" && !selNode.isSection)) && !rotated && !selNode.flipX && !selNode.flipY && !selNode.locked && (() => {
             const fb = doc.absoluteBox(selNode.id);
             if (!fb || Math.min(fb.width, fb.height) * z < 60) return null;
             const radii = cornerRadiiOf(selNode) ?? [0, 0, 0, 0];
