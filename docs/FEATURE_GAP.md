@@ -113,7 +113,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Minimize UI / hide UI (Ctrl+\\) (menu) | ✅ | Hides both panels and the toolbar; also in Actions |
 | Resize the side panels (drag the inner edge of the left or right panel, 200 to 480 px and at most 40% of the window; double-click the edge to reset; remembered in this browser) | ✅ | P2 |
 | Multiplayer cursors (menu) | ❌ | P3 |
-| Comments (Shift+C) and annotations (Shift+Y) visibility (menu) | ❌ | P2 |
+| Comments (Shift+C) and annotations (Shift+Y) visibility (menu) | ✅ | P2 |
 | Dev Mode toggle (Shift+D) | ✅ | |
 
 ## 8. File and project
