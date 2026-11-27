@@ -101,6 +101,11 @@ async function run(action: MenuAction, wx: number, wy: number, pageId?: string, 
       case "detach-instance": return select(detachSelection(doc, selection));
       case "reset-overrides": return resetSelection(doc, selection);
       case "push-to-main": return buildCommands().find((c) => c.id === "push-to-main")?.run();
+      case "flatten":
+      case "outline-stroke":
+      case "flip-x":
+      case "flip-y":
+      case "copy-link": return buildCommands().find((c) => c.id === action)?.run();
       case "select-layer": return layerId ? select([layerId]) : undefined;
       case "select-all": return buildCommands().find((c) => c.id === "select-all")?.run();
       case "toggle-ui": return buildCommands().find((c) => c.id === "hide-ui")?.run();

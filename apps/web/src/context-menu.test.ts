@@ -41,3 +41,11 @@ describe("buildMenu", () => {
     expect(items.some((i) => i.action === "select-layer")).toBe(false);
   });
 });
+
+describe("flatten, flip and link items", () => {
+  it("are in the menu of a selection but not in Dev Mode or without one", () => {
+    expect(actions({})).toEqual(expect.arrayContaining(["flatten", "outline-stroke", "flip-x", "flip-y", "copy-link"]));
+    expect(actions({ selectionCount: 0 })).not.toContain("flatten");
+    expect(actions({ devMode: true })).not.toContain("flip-x");
+  });
+});

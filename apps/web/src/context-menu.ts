@@ -3,6 +3,7 @@ export type MenuAction =
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
   | "group" | "frame-selection" | "use-as-mask" | "bool-union" | "bool-subtract" | "bool-intersect" | "bool-exclude" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides" | "push-to-main"
+  | "flatten" | "outline-stroke" | "flip-x" | "flip-y" | "copy-link"
   | "select-layer" | "select-all" | "toggle-ui" | "move-to-page" | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
@@ -92,6 +93,13 @@ export function buildMenu(c: MenuContext): MenuItem[] {
         { action: "detach-instance", label: "Detach instance", shortcut: `${MOD}${ALT}B` },
       );
     }
+    items.push(
+      { action: "flatten", label: "Flatten", shortcut: `${MOD}E`, divider: true },
+      { action: "outline-stroke", label: "Outline stroke", shortcut: `${MOD}${SHIFT}O` },
+      { action: "flip-x", label: "Flip horizontal", shortcut: `${SHIFT}H` },
+      { action: "flip-y", label: "Flip vertical", shortcut: `${SHIFT}V` },
+      { action: "copy-link", label: "Copy link to selection", shortcut: `${MOD}L` },
+    );
     if (c.pages) {
       c.pages.filter((p) => !p.current).forEach((p, i) => items.push({ action: "move-to-page", label: p.name, pageId: p.id, divider: i === 0 }));
       items.push({ action: "move-to-page", label: "New page", pageId: "new", divider: c.pages.length < 2 });
