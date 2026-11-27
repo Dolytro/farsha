@@ -252,9 +252,12 @@ export function Canvas() {
     if (el.dataset.gradient && selection[0]) {
       // Dragging the gradient handle turns the gradient: the angle is where the pointer is, seen from the middle of the layer
       const abs = doc.absoluteBox(selection[0]);
+      const node = doc.getNode(selection[0]);
+      const paint = node && "fills" in node && Array.isArray(node.fills) ? node.fills[Number(el.dataset.gradient)] : undefined;
       if (abs) {
+        const o = paint?.type === "GRADIENT_ANGULAR" ? gradientCenterPoint(paint, abs) : { x: abs.x + abs.width / 2, y: abs.y + abs.height / 2 };
         doc.stopCapturing();
-        drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
+        drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: o.x, cy: o.y };
       }
       return;
     }
@@ -587,7 +590,7 @@ export function Canvas() {
       const abs = doc.absoluteBox(d.id);
       if (abs && node && "fills" in node && Array.isArray(node.fills)) {
         const c = centerFromPoint(abs, w, e.shiftKey ? 0 : 6 / viewport.zoom);
-        doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.fill && f.type === "GRADIENT_RADIAL" ? { ...f, ...c } : f)) } as never);
+        doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.fill && (f.type === "GRADIENT_RADIAL" || f.type === "GRADIENT_ANGULAR" || f.type === "GRADIENT_DIAMOND") ? { ...f, ...c } : f)) } as never);
       }
     } else if (d.kind === "gradientstop") {
       const node = doc.getNode(d.id);
@@ -1064,7 +1067,8 @@ export function Canvas() {
       const f = selNode.fills[i]!;
       if (f.type === "SOLID" || f.type === "IMAGE") continue;
       const a = (f.angle * Math.PI) / 180;
-      return { index: i, type: f.type, x: sel.x + sel.width / 2 + (Math.cos(a) * sel.width) / 2, y: sel.y + sel.height / 2 + (Math.sin(a) * sel.height) / 2 };
+      const o = f.type === "GRADIENT_ANGULAR" ? gradientCenterPoint(f, sel) : { x: sel.x + sel.width / 2, y: sel.y + sel.height / 2 };
+      return { index: i, type: f.type, ox: o.x, oy: o.y, x: o.x + (Math.cos(a) * sel.width) / 2, y: o.y + (Math.sin(a) * sel.height) / 2 };
     }
     return null;
   })();
@@ -1357,8 +1361,8 @@ export function Canvas() {
                 <g>
                   {gradientHandle.type !== "GRADIENT_RADIAL" && gradientHandle.type !== "GRADIENT_DIAMOND" && (
                     <>
-                      <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
-                      <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
+                      <line x1={gradientHandle.ox} y1={gradientHandle.oy} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
+                      <line x1={gradientHandle.ox} y1={gradientHandle.oy} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
                       <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
                     </>
                   )}
@@ -1384,7 +1388,7 @@ export function Canvas() {
                   })()}
                   {(() => {
                     const f = selNode && "fills" in selNode && Array.isArray(selNode.fills) ? selNode.fills[gradientHandle.index] : undefined;
-                    if (f?.type !== "GRADIENT_RADIAL") return null;
+                    if (f?.type !== "GRADIENT_RADIAL" && f?.type !== "GRADIENT_ANGULAR" && f?.type !== "GRADIENT_DIAMOND") return null;
                     const c = gradientCenterPoint(f, sel);
                     return <circle data-gradient-center={gradientHandle.index} cx={c.x} cy={c.y} r={6 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "move" }} />;
                   })()}

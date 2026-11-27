@@ -100,3 +100,17 @@ describe("radial gradient centre", () => {
     expect(centerFromPoint(box, { x: 203, y: 98 }, 5)).toEqual({ centerX: 0.5, centerY: 0.5 });
   });
 });
+
+import { steppedGradient } from "./appearance";
+
+describe("angular and diamond centre", () => {
+  const stops = [{ position: 0, color: "#ff0000", opacity: 1 }, { position: 1, color: "#0000ff", opacity: 1 }];
+  it("draws the wedges round the moved centre", () => {
+    const svg = steppedGradient("a", { type: "GRADIENT_ANGULAR", stops, angle: 0, opacity: 1, centerX: 0.25, centerY: 0.5 }, 200, 100, "<rect/>");
+    expect(svg).toContain("M50 50L");
+  });
+  it("draws the diamonds round the moved centre", () => {
+    const svg = steppedGradient("d", { type: "GRADIENT_DIAMOND", stops, angle: 0, opacity: 1, centerX: 0, centerY: 0 }, 200, 100, "<rect/>");
+    expect(svg).toContain("L0 -50L100 0L0 50Z");
+  });
+});

@@ -63,10 +63,10 @@ export function paintCss(p: Paint): string {
     .sort((a, b) => a.position - b.position)
     .map((s) => `${toRgba(s.color, s.opacity * p.opacity)} ${Math.round(s.position * 100)}%`)
     .join(", ");
-  if (p.type === "GRADIENT_ANGULAR") return `conic-gradient(from ${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
-  if (p.type === "GRADIENT_DIAMOND") return `radial-gradient(closest-side, ${stops})`; // CSS has no diamond gradient
+  const at = p.centerX !== undefined || p.centerY !== undefined ? ` at ${Math.round((p.centerX ?? 0.5) * 100)}% ${Math.round((p.centerY ?? 0.5) * 100)}%` : "";
+  if (p.type === "GRADIENT_ANGULAR") return `conic-gradient(from ${Math.round((p.angle + 90) * 100) / 100}deg${at}, ${stops})`;
+  if (p.type === "GRADIENT_DIAMOND") return `radial-gradient(closest-side${at}, ${stops})`; // CSS has no diamond gradient
   if (p.type === "GRADIENT_RADIAL") {
-    const at = p.centerX !== undefined || p.centerY !== undefined ? ` at ${Math.round((p.centerX ?? 0.5) * 100)}% ${Math.round((p.centerY ?? 0.5) * 100)}%` : "";
     return `radial-gradient(circle${at}, ${stops})`;
   }
   return `linear-gradient(${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;

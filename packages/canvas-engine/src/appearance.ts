@@ -319,8 +319,9 @@ export function gradientAt(stops: { position: number; color: string; opacity: nu
  * clipped to the shape. `geometryMarkup` is the outline of the layer; the result is a self-contained group.
  */
 export function steppedGradient(id: string, p: GradientPaint, w: number, h: number, geometryMarkup: string): string {
-  const cx = w / 2;
-  const cy = h / 2;
+  const gc = gradientCenter(p);
+  const cx = w * gc.x;
+  const cy = h * gc.y;
   const parts: string[] = [];
   if (p.type === "GRADIENT_ANGULAR") {
     const steps = 144;
@@ -337,7 +338,7 @@ export function steppedGradient(id: string, p: GradientPaint, w: number, h: numb
     for (let i = steps; i >= 1; i--) {
       const s = i / steps;
       const c = gradientAt(p.stops, s);
-      parts.push(`<path d="M${num(cx - cx * s)} ${num(cy)}L${num(cx)} ${num(cy - cy * s)}L${num(cx + cx * s)} ${num(cy)}L${num(cx)} ${num(cy + cy * s)}Z" fill="${c.color}" fill-opacity="${num(c.opacity)}"/>`);
+      parts.push(`<path d="M${num(cx - (w / 2) * s)} ${num(cy)}L${num(cx)} ${num(cy - (h / 2) * s)}L${num(cx + (w / 2) * s)} ${num(cy)}L${num(cx)} ${num(cy + (h / 2) * s)}Z" fill="${c.color}" fill-opacity="${num(c.opacity)}"/>`);
     }
     // outside the diamond, the colour of the last stop fills the corners
     const edge = gradientAt(p.stops, 1);
