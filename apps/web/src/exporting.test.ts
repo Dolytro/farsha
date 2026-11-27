@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exportFileName } from "./exporting";
+import { bitmapMime, exportFileName } from "./exporting";
 
 describe("exportFileName", () => {
   it("adds the scale to bitmaps only", () => {
@@ -11,5 +11,14 @@ describe("exportFileName", () => {
   it("cleans characters that are not allowed in file names", () => {
     expect(exportFileName('a/b:c*"d', "PNG", 1)).toBe("a_b_c_d.png");
     expect(exportFileName("  ", "SVG", 1)).toBe("Layer.svg");
+  });
+});
+
+describe("WEBP export", () => {
+  it("names the file .webp and encodes as image/webp", () => {
+    expect(exportFileName("Hero", "WEBP", 2)).toBe("Hero@2x.webp");
+    expect(bitmapMime("WEBP")).toBe("image/webp");
+    expect(bitmapMime("JPG")).toBe("image/jpeg");
+    expect(bitmapMime("PNG")).toBe("image/png");
   });
 });

@@ -8,7 +8,7 @@ import type { ExportSetting, ExportSettingFormat } from "@farsha/types";
 import { useEditor } from "../store";
 import { Select } from "./Select";
 
-const FORMATS: ExportChoice[] = ["PNG", "JPG", "SVG", "PDF"];
+const FORMATS: ExportChoice[] = ["PNG", "JPG", "WEBP", "SVG", "PDF"];
 
 /** Figma's Export section for one layer: several settings (format, scale, suffix) saved with the layer, exported together. */
 function LayerExport({ doc, id }: { doc: DesignDoc; id: string }) {
