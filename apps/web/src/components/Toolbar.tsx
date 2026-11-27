@@ -22,6 +22,8 @@ const TOOLS: { id: Tool; label: string; key: string; icon: ReactElement; design?
   { id: "star", label: "Star", key: "", design: true, icon: icon(<path d="M8 2l1.8 4 4.2.4-3.2 2.8 1 4.2L8 11.2 4.2 13.4l1-4.2L2 6.4 6.2 6z" />) },
   { id: "pen", label: "Pen", key: "P", design: true, icon: icon(<path d="M3 13l1.2-3.6L10.8 2.8a1.3 1.3 0 011.8 0l.6.6a1.3 1.3 0 010 1.8L6.6 11.8zM9.6 4l2.4 2.4" />) },
   { id: "pencil", label: "Pencil", key: "Shift+P", design: true, icon: icon(<path d="M10.5 2.5l3 3-7.5 7.5H3v-3zM9 4l3 3M2 14.5h12" />) },
+  { id: "marker", label: "Marker", key: "", design: true, icon: icon(<path d="M10 2.5l3.5 3.5-5.5 5.5-3.5-3.5zM4.5 8l-1.5 4.5L7.5 11M2 14.5h12" />) },
+  { id: "highlighter", label: "Highlighter", key: "", design: true, icon: icon(<path d="M9.5 2.5l4 4-5 5-4-4zM4.5 7.5l-1 3 2 2 3-1M2 14.5h12" />) },
   { id: "slice", label: "Slice", key: "S", design: true, icon: icon(<path d="M3 3h10v10H3zM3 13L13 3" />) },
   { id: "comment", label: "Comment", key: "C", icon: icon(<path d="M3 3.5h10v7H8l-3 2.5v-2.5H3z" />) },
   { id: "text", label: "Text", key: "T", design: true, icon: icon(<path d="M3 4V3h10v1M8 3v10M6 13h4" />) },
@@ -41,7 +43,7 @@ export const TOOL_GROUPS: { id: string; label: string; tools: Tool[] }[] = [
   { id: "move", label: "Move", tools: ["select", "hand", "scale"] },
   { id: "region", label: "Region", tools: ["frame", "section", "slice"] },
   { id: "shape", label: "Shapes", tools: ["rect", "line", "arrow", "ellipse", "polygon", "star"] },
-  { id: "draw", label: "Draw", tools: ["pen", "pencil"] },
+  { id: "draw", label: "Draw", tools: ["pen", "pencil", "marker", "highlighter"] },
   { id: "text", label: "Text", tools: ["text"] },
   { id: "comment", label: "Comments", tools: ["comment"] },
 ];

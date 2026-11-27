@@ -13,6 +13,12 @@ export function placeImagePicker(): void {
   input.multiple = true;
   input.onchange = () => {
     const s = useEditor.getState();
+    const files = [...(input.files ?? [])];
+    const target = s.selection.length === 1 ? s.doc.getNode(s.selection[0]!) : undefined;
+    if (files.length === 1 && files[0]!.type.startsWith("image/") && target && !target.locked && canTakeImageFill(target.type)) {
+      void fillShapeWithImage(files[0]!, target.id);
+      return;
+    }
     const c = viewportCenter(s.viewport);
     const parent = pasteTarget(s.doc, s.selection, s.pageId);
     const origin = parent === s.pageId ? { x: 0, y: 0 } : (s.doc.absoluteBox(parent) ?? { x: 0, y: 0 });
@@ -56,6 +62,25 @@ export async function placeImageFile(file: Blob, parentId: string, cx: number, c
     const target = s.doc.hasNode(parentId) ? parentId : s.pageId;
     const ids = pasteImage(s.doc, image, target, cx, cy);
     s.select(ids);
+  } catch (err) {
+    showToast(err instanceof Error ? `Couldn't add the image: ${err.message}` : "Couldn't add the image");
+  }
+}
+
+/** Figma: an image dropped on a shape (not a frame) becomes the fill of that shape instead of a new layer. */
+export const canTakeImageFill = (type: string): boolean => type === "RECTANGLE" || type === "ELLIPSE" || type === "VECTOR";
+
+export async function fillShapeWithImage(file: Blob, nodeId: string): Promise<void> {
+  const { showToast } = useEditor.getState();
+  try {
+    const image = await readImage(file);
+    const s = useEditor.getState();
+    if (!s.doc.hasNode(nodeId)) return;
+    const assetId = s.doc.addAsset(image.mime, image.bytes);
+    s.doc.stopCapturing();
+    s.doc.setStyle(nodeId, { fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1, imageWidth: image.width, imageHeight: image.height }] } as never);
+    s.doc.stopCapturing();
+    s.select([nodeId]);
   } catch (err) {
     showToast(err instanceof Error ? `Couldn't add the image: ${err.message}` : "Couldn't add the image");
   }

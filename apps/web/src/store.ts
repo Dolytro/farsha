@@ -22,7 +22,7 @@ function readTheme(): ThemePreference {
   }
 }
 
-export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star" | "pen" | "pencil" | "section" | "slice" | "scale" | "comment";
+export type Tool = "select" | "hand" | "frame" | "rect" | "ellipse" | "text" | "line" | "arrow" | "polygon" | "star" | "pen" | "pencil" | "marker" | "highlighter" | "section" | "slice" | "scale" | "comment";
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "needs-auth";
 export type LoadState = "ready" | "loading" | "error";
 
@@ -63,6 +63,9 @@ interface EditorState {
   /** Rulers (and the guides dragged out of them) are shown. Toggled with Shift+R, remembered in this browser. */
   rulers: boolean;
   setRulers: (on: boolean) => void;
+  /** View > Guides (Ctrl+;): hide the guide lines (and their snapping) but keep the rulers. Remembered in this browser. */
+  guidesHidden: boolean;
+  setGuidesHidden: (hidden: boolean) => void;
   drive: DriveState;
   shareOpen: boolean;
   paletteOpen: boolean;
@@ -120,7 +123,7 @@ interface EditorState {
   renaming: string | null;
   setRenaming: (id: string | null) => void;
   /** Right-click menu: screen position and the canvas point it was opened on. */
-  menu: { x: number; y: number; wx: number; wy: number } | null;
+  menu: { x: number; y: number; wx: number; wy: number; fromList?: boolean } | null;
   setMenu: (m: EditorState["menu"]) => void;
   /** Short message shown at the bottom of the canvas, like Figma's "Copied" toasts. */
   toast: string | null;
@@ -160,6 +163,14 @@ interface EditorState {
 function readRulers(): boolean {
   try {
     return localStorage.getItem("farsha.rulers") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function readGuidesHidden(): boolean {
+  try {
+    return localStorage.getItem("farsha.guidesHidden") === "1";
   } catch {
     return false;
   }
@@ -245,6 +256,15 @@ export const useEditor = create<EditorState>((set) => ({
       /* private window: the setting just won't be remembered */
     }
     set({ rulers });
+  },
+  guidesHidden: readGuidesHidden(),
+  setGuidesHidden: (guidesHidden) => {
+    try {
+      localStorage.setItem("farsha.guidesHidden", guidesHidden ? "1" : "0");
+    } catch {
+      /* private window: the setting just won't be remembered */
+    }
+    set({ guidesHidden });
   },
   setShareOpen: (shareOpen) => set({ shareOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),

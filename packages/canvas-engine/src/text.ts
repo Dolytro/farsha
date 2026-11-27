@@ -133,16 +133,36 @@ export function layoutText(n: TextLike, measure: Measure = approxMeasure): TextL
   const wrap = (n.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT";
   const lines: string[] = [];
   const starts: number[] = [];
+  const hang: number[] = []; // list items: continuation lines line up under the text, not under the marker
+  const counts: number[] = []; // lines per paragraph
   let offset = 0; // index in characters of the current paragraph's first character
   paragraphs.forEach((p, pi) => {
     const prefix = p.length - (original[pi] ?? "").length;
-    const pieces = wrap ? wrapParagraph(p, Math.max(1, n.width), w) : [p];
-    let pos = 0; // position inside the displayed paragraph
-    for (const piece of pieces) {
-      lines.push(piece);
-      starts.push(offset - prefix + pos);
-      pos += piece.length;
-      if (p[pos] === " ") pos += 1; // a space at a soft break is dropped
+    const markerW = wrap && prefix > 0 ? w(p.slice(0, prefix)) : 0;
+    if (wrap && prefix > 0 && markerW < n.width - 1) {
+      // wrap the text after the marker in the narrower column; the first line gets the marker back
+      const body = p.slice(prefix);
+      const pieces = wrapParagraph(body, Math.max(1, n.width - markerW), w);
+      let pos = 0;
+      pieces.forEach((piece, k) => {
+        lines.push(k === 0 ? p.slice(0, prefix) + piece : piece);
+        starts.push(k === 0 ? offset - prefix : offset + pos);
+        hang.push(k === 0 ? 0 : markerW);
+        pos += piece.length;
+        if (body[pos] === " ") pos += 1;
+      });
+      counts.push(pieces.length);
+    } else {
+      const pieces = wrap ? wrapParagraph(p, Math.max(1, n.width), w) : [p];
+      let pos = 0; // position inside the displayed paragraph
+      for (const piece of pieces) {
+        lines.push(piece);
+        starts.push(offset - prefix + pos);
+        hang.push(0);
+        pos += piece.length;
+        if (p[pos] === " ") pos += 1; // a space at a soft break is dropped
+      }
+      counts.push(pieces.length);
     }
     offset += (original[pi] ?? "").length + 1;
   });
@@ -151,8 +171,7 @@ export function layoutText(n: TextLike, measure: Measure = approxMeasure): TextL
   const lastOfParagraph = new Set<number>();
   {
     let at = 0;
-    paragraphs.forEach((p) => {
-      const count = wrap ? wrapParagraph(p, Math.max(1, n.width), w).length : 1;
+    counts.forEach((count) => {
       at += count;
       lastOfParagraph.add(at - 1);
     });
@@ -164,11 +183,10 @@ export function layoutText(n: TextLike, measure: Measure = approxMeasure): TextL
   const indent: number[] = [];
   {
     let at = 0;
-    paragraphs.forEach((p, pi) => {
-      const count = wrap ? wrapParagraph(p, Math.max(1, n.width), w).length : 1;
+    counts.forEach((count, pi) => {
       for (let k = 0; k < count; k++) {
         lineGap.push(k === 0 && pi > 0 ? spacing : 0);
-        indent.push(k === 0 ? indentPx : 0);
+        indent.push(k === 0 ? indentPx : hang[at + k] ?? 0);
       }
       at += count;
     });

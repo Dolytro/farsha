@@ -3,7 +3,8 @@ export type MenuAction =
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
   | "group" | "frame-selection" | "use-as-mask" | "bool-union" | "bool-subtract" | "bool-intersect" | "bool-exclude" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides" | "push-to-main"
-  | "visibility" | "lock" | "delete";
+  | "rename-layer" | "duplicate" | "flatten" | "outline-stroke" | "flip-x" | "flip-y" | "copy-link"
+  | "select-layer" | "select-all" | "toggle-ui" | "move-to-page" | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
   action: MenuAction;
@@ -13,6 +14,12 @@ export interface MenuItem {
   submenu?: boolean;
   /** Draw a separator above this item. */
   divider?: boolean;
+  /** "Move to page" items: the page to move to, or "new" for a new page. */
+  pageId?: string;
+  /** "Select layer" items: the layer to select. */
+  layerId?: string;
+  /** A small title drawn above this item (the first item of a group). */
+  heading?: string;
 }
 
 export interface MenuContext {
@@ -25,6 +32,10 @@ export interface MenuContext {
   hasInstance: boolean;
   allHidden: boolean;
   allLocked: boolean;
+  /** The pages of the file, for "Move to page". */
+  pages?: { id: string; name: string; current: boolean }[];
+  /** Layers under the pointer, topmost first, for "Select layer". */
+  under?: { id: string; label: string }[];
 }
 
 const MOD = /Mac|iPhone|iPad/.test(typeof navigator === "undefined" ? "" : navigator.platform) ? "⌘" : "Ctrl+";
@@ -41,8 +52,14 @@ export function buildMenu(c: MenuContext): MenuItem[] {
     items.push({ action: "copy", label: "Copy", shortcut: `${MOD}C` }, { action: "cut", label: "Cut", shortcut: `${MOD}X` });
   }
   items.push({ action: "paste-here", label: "Paste here", shortcut: `${MOD}V` });
+  if (!has) {
+    items.push({ action: "select-all", label: "Select all", shortcut: `${MOD}A`, divider: true }, { action: "toggle-ui", label: "Show / hide UI", shortcut: `${MOD}\\` });
+  }
   if (has) {
     items.push({ action: "paste-over", label: "Paste over selection", shortcut: `${MOD}${SHIFT}V` });
+    if (c.under && c.under.length > 1) {
+      c.under.slice(0, 12).forEach((l, i) => items.push({ action: "select-layer", label: l.label, layerId: l.id, divider: i === 0, heading: i === 0 ? "Select layer" : undefined }));
+    }
     items.push(
       { action: "copy-css", label: "Copy as CSS", submenu: true, divider: true },
       { action: "copy-svg", label: "Copy as SVG", submenu: true },
@@ -77,7 +94,20 @@ export function buildMenu(c: MenuContext): MenuItem[] {
       );
     }
     items.push(
-      { action: "visibility", label: c.allHidden ? "Show" : "Hide", shortcut: `${MOD}${SHIFT}H`, divider: true },
+      { action: "flatten", label: "Flatten", shortcut: `${MOD}E`, divider: true },
+      { action: "outline-stroke", label: "Outline stroke", shortcut: `${MOD}${SHIFT}O` },
+      { action: "flip-x", label: "Flip horizontal", shortcut: `${SHIFT}H` },
+      { action: "flip-y", label: "Flip vertical", shortcut: `${SHIFT}V` },
+      { action: "copy-link", label: "Copy link to selection", shortcut: `${MOD}L` },
+    );
+    if (c.pages) {
+      c.pages.filter((p) => !p.current).forEach((p, i) => items.push({ action: "move-to-page", label: p.name, pageId: p.id, divider: i === 0 }));
+      items.push({ action: "move-to-page", label: "New page", pageId: "new", divider: c.pages.length < 2 });
+    }
+    items.push(
+      { action: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, divider: true },
+      { action: "rename-layer", label: "Rename…", shortcut: `${MOD}R` },
+      { action: "visibility", label: c.allHidden ? "Show" : "Hide", shortcut: `${MOD}${SHIFT}H` },
       { action: "lock", label: c.allLocked ? "Unlock" : "Lock", shortcut: `${MOD}${SHIFT}L` },
       { action: "delete", label: "Delete", shortcut: "Del", divider: true },
     );

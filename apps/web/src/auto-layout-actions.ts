@@ -1,5 +1,6 @@
 import type { DesignDoc } from "@farsha/design-core";
 import { unionBox } from "@farsha/canvas-engine";
+import { nextLayerName } from "./layer-names";
 import type { Box, DesignNode, LayoutMode } from "@farsha/types";
 
 const round = (v: number) => Math.round(v * 100) / 100;
@@ -82,7 +83,7 @@ export function addAutoLayout(doc: DesignDoc, ids: string[]): string[] {
     const box = unionBox(nodes.map((n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })))!;
     const frameId = doc.createNode("FRAME", {
       parentId,
-      props: { name: "Frame", x: box.x, y: box.y, width: box.width, height: box.height, fills: [], clipsContent: false },
+      props: { name: nextLayerName(doc, "Frame"), x: box.x, y: box.y, width: box.width, height: box.height, fills: [], clipsContent: false },
     });
     for (const n of nodes) {
       doc.reparentNode(n.id, frameId);

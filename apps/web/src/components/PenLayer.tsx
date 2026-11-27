@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { hitTest, penGeometry, penPathData, screenToWorld, translatePoints, type PenPoint, type Viewport } from "@farsha/canvas-engine";
 import { useEditor } from "../store";
+import { snapAngle } from "../angle-snap";
 
 const ACCENT = "#0d99ff";
 const CLOSE_RADIUS_PX = 8;
@@ -20,6 +21,14 @@ export function PenLayer({ svgRef, viewport, spaceDown }: { svgRef: RefObject<SV
   const world = (e: { clientX: number; clientY: number }) => {
     const r = svgRef.current!.getBoundingClientRect();
     return screenToWorld(viewport, e.clientX - r.left, e.clientY - r.top);
+  };
+
+  /** With Shift the next point sits on a multiple of 45 degrees from the previous one. */
+  const shifted = (w: { x: number; y: number }, shift: boolean) => {
+    const prev = live.current[live.current.length - 1];
+    if (!shift || !prev) return w;
+    const d = snapAngle(w.x - prev.x, w.y - prev.y);
+    return { x: prev.x + d.dx, y: prev.y + d.dy };
   };
 
   /** Turn the placed points into a vector layer and go back to the Move tool. */
@@ -95,7 +104,7 @@ export function PenLayer({ svgRef, viewport, spaceDown }: { svgRef: RefObject<SV
     if (e.button !== 0 || spaceDown) return;
     e.stopPropagation();
     (e.target as Element).setPointerCapture?.(e.pointerId);
-    const w = world(e);
+    const w = shifted(world(e), e.shiftKey);
     const first = points[0];
     if (first && points.length >= 2 && Math.hypot(w.x - first.x, w.y - first.y) <= CLOSE_RADIUS_PX / z) {
       finish(true);
@@ -105,10 +114,19 @@ export function PenLayer({ svgRef, viewport, spaceDown }: { svgRef: RefObject<SV
     setPoints((p) => [...p, { x: w.x, y: w.y, hx: 0, hy: 0 }]);
   };
   const onMove = (e: React.PointerEvent) => {
-    const w = world(e);
-    setCursor(w);
-    if (!dragging.current) return;
-    setPoints((p) => (p.length ? [...p.slice(0, -1), { ...p[p.length - 1]!, hx: w.x - p[p.length - 1]!.x, hy: w.y - p[p.length - 1]!.y }] : p));
+    const raw = world(e);
+    if (!dragging.current) {
+      setCursor(shifted(raw, e.shiftKey));
+      return;
+    }
+    setCursor(raw);
+    // Shift while pulling out a handle keeps it on a multiple of 45 degrees
+    setPoints((p) => {
+      if (!p.length) return p;
+      const last = p[p.length - 1]!;
+      const d = e.shiftKey ? snapAngle(raw.x - last.x, raw.y - last.y) : { dx: raw.x - last.x, dy: raw.y - last.y };
+      return [...p.slice(0, -1), { ...last, hx: d.dx, hy: d.dy }];
+    });
   };
   const onUp = () => {
     dragging.current = false;

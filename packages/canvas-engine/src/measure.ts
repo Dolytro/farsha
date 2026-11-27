@@ -72,3 +72,32 @@ export function unionBox(boxes: Box[]): Box | undefined {
   const y2 = Math.max(...boxes.map((b) => b.y + b.height));
   return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
 }
+
+/**
+ * Distances shown while dragging (Figma's smart-guide spacing): for each side of `moving`, the gap to the nearest
+ * box on that side that overlaps it across the other axis. Boxes that contain or overlap `moving` are ignored.
+ */
+export function neighbourGaps(moving: Box, others: Box[]): Measurement[] {
+  const M = edges(moving);
+  const best: Partial<Record<"L" | "R" | "T" | "B", Measurement>> = {};
+  const take = (side: "L" | "R" | "T" | "B", m: Measurement) => {
+    const cur = best[side];
+    if (!cur || m.value < cur.value) best[side] = m;
+  };
+  for (const o of others) {
+    const O = edges(o);
+    const yOverlap = Math.min(M.B, O.B) - Math.max(M.T, O.T);
+    const xOverlap = Math.min(M.R, O.R) - Math.max(M.L, O.L);
+    if (yOverlap > 0) {
+      const y = (Math.max(M.T, O.T) + Math.min(M.B, O.B)) / 2;
+      if (O.R <= M.L) take("L", { x1: O.R, y1: y, x2: M.L, y2: y, value: round(M.L - O.R) });
+      else if (O.L >= M.R) take("R", { x1: M.R, y1: y, x2: O.L, y2: y, value: round(O.L - M.R) });
+    }
+    if (xOverlap > 0) {
+      const x = (Math.max(M.L, O.L) + Math.min(M.R, O.R)) / 2;
+      if (O.B <= M.T) take("T", { x1: x, y1: O.B, x2: x, y2: M.T, value: round(M.T - O.B) });
+      else if (O.T >= M.B) take("B", { x1: x, y1: M.B, x2: x, y2: O.T, value: round(O.T - M.B) });
+    }
+  }
+  return Object.values(best).filter((m): m is Measurement => !!m && m.value > 0);
+}

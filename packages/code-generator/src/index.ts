@@ -1,4 +1,4 @@
-import { cssBlendMode, paintColor, type DesignNode, type Paint } from "@farsha/types";
+import { cssBlendMode, paintColor, shownPaints, type DesignNode, type Paint } from "@farsha/types";
 import { generateAndroidXml } from "./androidxml";
 import { generateCompose } from "./compose";
 import { generateFlutter } from "./flutter";
@@ -24,9 +24,25 @@ export function toRgba(hex: string, opacity = 1): string {
   return opacity >= 1 ? `#${m[1]!.toLowerCase()}` : `rgba(${r}, ${g}, ${b}, ${Math.round(opacity * 100) / 100})`;
 }
 
+/** Gives the CSS custom property name of a colour variable, or undefined when it is unknown. */
+export type VariableName = (variableId: string) => string | undefined;
+
+/** Set by generateCode while it runs, so the CSS helpers can write var(--name, #fallback) for paints that follow a variable. */
+let variableName: VariableName | undefined;
+
+/** A paint as a CSS colour: var(--name, #hex) for an opaque solid paint bound to a known variable, else the plain colour. */
+function colorCss(p: Paint): string {
+  const plain = toRgba(paintColor(p), p.opacity);
+  if (p.type === "SOLID" && p.variableId && p.opacity >= 1) {
+    const name = variableName?.(p.variableId);
+    if (name) return `var(${name}, ${plain})`;
+  }
+  return plain;
+}
+
 /** CSS background value of a paint (solid colour or a linear/radial gradient). */
 export function paintCss(p: Paint): string {
-  if (p.type === "SOLID") return toRgba(p.color, p.opacity);
+  if (p.type === "SOLID") return colorCss(p);
   if (p.type === "IMAGE") {
     if (p.scaleMode === "TILE") {
       const k = typeof p.tileScale === "number" && Number.isFinite(p.tileScale) && p.tileScale > 0 ? Math.min(10, Math.max(0.01, p.tileScale)) : 1;
@@ -47,14 +63,18 @@ export function paintCss(p: Paint): string {
     .sort((a, b) => a.position - b.position)
     .map((s) => `${toRgba(s.color, s.opacity * p.opacity)} ${Math.round(s.position * 100)}%`)
     .join(", ");
-  if (p.type === "GRADIENT_ANGULAR") return `conic-gradient(from ${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
-  if (p.type === "GRADIENT_DIAMOND") return `radial-gradient(closest-side, ${stops})`; // CSS has no diamond gradient
-  return p.type === "GRADIENT_RADIAL" ? `radial-gradient(circle, ${stops})` : `linear-gradient(${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
+  const at = p.centerX !== undefined || p.centerY !== undefined ? ` at ${Math.round((p.centerX ?? 0.5) * 100)}% ${Math.round((p.centerY ?? 0.5) * 100)}%` : "";
+  if (p.type === "GRADIENT_ANGULAR") return `conic-gradient(from ${Math.round((p.angle + 90) * 100) / 100}deg${at}, ${stops})`;
+  if (p.type === "GRADIENT_DIAMOND") return `radial-gradient(closest-side${at}, ${stops})`; // CSS has no diamond gradient
+  if (p.type === "GRADIENT_RADIAL") {
+    return `radial-gradient(circle${at}, ${stops})`;
+  }
+  return `linear-gradient(${Math.round((p.angle + 90) * 100) / 100}deg, ${stops})`;
 }
 
 /** CSS `background` for fills stored bottom to top: CSS lists the top layer first, and a solid colour can only be the bottom layer. */
 export function backgroundCss(fills: Paint[]): string {
-  const top = [...fills].reverse();
+  const top = shownPaints(fills).reverse();
   return top
     .map((p, i) => {
       const css = paintCss(p);
@@ -63,8 +83,34 @@ export function backgroundCss(fills: Paint[]): string {
     .join(", ");
 }
 
+/** Number variables become var(--name, 8px) for the properties that map to one CSS declaration. */
+const NUMBER_CSS: Record<string, string> = { width: "width", height: "height", cornerRadius: "border-radius", itemSpacing: "gap", fontSize: "font-size" };
+
+function withNumberVariables(node: DesignNode, decls: Decl[]): Decl[] {
+  const bindings = node.varBindings;
+  if (!bindings || !variableName) return decls;
+  const values = node as unknown as Record<string, unknown>;
+  const sides = ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] as const;
+  return decls.map(([prop, value]) => {
+    if (prop === "padding" && sides.some((k) => bindings[k])) {
+      // padding is one declaration of four sides; each side bound to a number variable becomes var(--name, 8px)
+      const nums = sides.map((k) => (typeof values[k] === "number" ? (values[k] as number) : 0));
+      if (value !== nums.map(px).join(" ")) return [prop, value];
+      return [prop, sides.map((k, i) => { const name = bindings[k] ? variableName?.(bindings[k]!) : undefined; return name ? `var(${name}, ${px(nums[i]!)})` : px(nums[i]!); }).join(" ")];
+    }
+    const key = Object.keys(NUMBER_CSS).find((k) => NUMBER_CSS[k] === prop && bindings[k]);
+    const name = key ? variableName?.(bindings[key]!) : undefined;
+    // only when the declaration really is that one property (a border-radius from four separate corners is not)
+    return key && name && typeof values[key] === "number" && value === px(values[key] as number) ? [prop, `var(${name}, ${value})`] : [prop, value];
+  });
+}
+
 /** Computed style of one node as ordered CSS declarations. Children of a parent are placed absolutely. */
 export function declarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean; parentLayout?: "HORIZONTAL" | "VERTICAL" } = {}): Decl[] {
+  return withNumberVariables(node, plainDeclarations(node, opts));
+}
+
+function plainDeclarations(node: DesignNode, opts: { absolute?: boolean; hasChildren?: boolean; parentLayout?: "HORIZONTAL" | "VERTICAL" }): Decl[] {
   const d: Decl[] = [];
   if (opts.absolute) d.push(["position", "absolute"], ["left", px(node.x)], ["top", px(node.y)]);
   else if (opts.hasChildren) d.push(["position", "relative"]);
@@ -97,8 +143,8 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
   };
 
   if (node.type === "TEXT") {
-    const fill = node.fills[0];
-    if (fill) d.push(["color", toRgba(paintColor(fill), fill.opacity)]);
+    const fill = shownPaints(node.fills)[0];
+    if (fill) d.push(["color", colorCss(fill)]);
     // gradient text: the gradient is the background, clipped to the letters
     if (fill && fill.type !== "SOLID" && fill.type !== "IMAGE") d.push(["background", paintCss(fill)], ["-webkit-background-clip", "text"], ["background-clip", "text"], ["-webkit-text-fill-color", "transparent"]);
     d.push(["font-family", node.fontFamily], ["font-size", px(node.fontSize)], ["font-weight", String(node.fontWeight)]);
@@ -106,7 +152,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     if (node.letterSpacing) d.push(["letter-spacing", px(node.letterSpacing)]);
     if (node.italic) d.push(["font-style", "italic"]);
     // an outline on the letters: centred is a plain text stroke, outside is a double-width one painted behind the fill
-    const outline = node.strokes?.[0];
+    const outline = shownPaints(node.strokes)[0];
     if (outline && outline.type !== "IMAGE" && (node.strokeWidth ?? 1) > 0) {
       const w = node.strokeWidth ?? 1;
       const outside = node.strokeAlign === "OUTSIDE";
@@ -127,17 +173,19 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     if (node.textDirection === "RTL") d.push(["direction", "rtl"]);
     if (node.paragraphIndent) d.push(["text-indent", px(node.paragraphIndent)]);
     if (node.maxLines && node.maxLines > 0) d.push(["display", "-webkit-box"], ["-webkit-line-clamp", String(node.maxLines)], ["-webkit-box-orient", "vertical"], ["overflow", "hidden"]);
-    if (node.characters.includes("\n") || (node.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT") d.push(["white-space", "pre-wrap"]);
+    if (node.textList === "BULLET" || node.textList === "NUMBER") d.push(["margin", "0"], ["padding-left", "1.25em"]);
+    if ((node.characters.includes("\n") && !(node.textList === "BULLET" || node.textList === "NUMBER")) || (node.textAutoResize ?? "WIDTH_AND_HEIGHT") !== "WIDTH_AND_HEIGHT") d.push(["white-space", "pre-wrap"]);
     effectDecls();
     return d;
   }
 
-  if ("fills" in node && node.fills?.length) d.push(["background", backgroundCss(node.fills)]);
+  if ("fills" in node && shownPaints(node.fills).length) d.push(["background", backgroundCss(node.fills ?? [])]);
   if (node.type === "ELLIPSE") d.push(["border-radius", "50%"]);
   else if ("cornerRadii" in node && node.cornerRadii?.length === 4 && node.cornerRadii.some((r) => r > 0)) d.push(["border-radius", node.cornerRadii.map(px).join(" ")]);
   else if ("cornerRadius" in node && node.cornerRadius > 0) d.push(["border-radius", px(node.cornerRadius)]);
-  if ("strokes" in node && node.strokes?.[0] && node.strokeWidth !== undefined) {
-    const color = toRgba(paintColor(node.strokes[0]), node.strokes[0].opacity);
+  const stroke0 = "strokes" in node ? shownPaints(node.strokes)[0] : undefined;
+  if ("strokes" in node && stroke0 && node.strokeWidth !== undefined) {
+    const color = colorCss(stroke0);
     const align = "strokeAlign" in node ? node.strokeAlign : undefined;
     if (align === "OUTSIDE") {
       // an outside stroke sits beyond the box: an outline (it follows the corner radius in current browsers)
@@ -148,7 +196,7 @@ export function declarations(node: DesignNode, opts: { absolute?: boolean; hasCh
     } else {
       d.push(["box-sizing", "border-box"], ["border", `${px(node.strokeWidth)} solid ${color}`]);
       // a gradient stroke: transparent border, the fill clipped to the padding box and the gradient to the border box
-      const st = node.strokes[0];
+      const st = stroke0;
       if (st.type === "GRADIENT_LINEAR" || st.type === "GRADIENT_RADIAL") {
         const own = d.findIndex(([k]) => k === "background");
         const fillCss = own >= 0 ? d[own]![1] : "linear-gradient(transparent, transparent)";
@@ -286,10 +334,16 @@ function css(w: Walked): string {
   return [rule, ...w.kids.map(css)].join("\n\n");
 }
 
+/** The tag of a text layer: a paragraph, or a list when it has bullets or numbers. */
+const textTag = (n: DesignNode): "p" | "ul" | "ol" => (n.type === "TEXT" && n.textList === "BULLET" ? "ul" : n.type === "TEXT" && n.textList === "NUMBER" ? "ol" : "p");
+const listItems = (n: DesignNode, esc: (s: string) => string, pad: string): string =>
+  n.type === "TEXT" ? n.characters.split("\n").map((line) => `${pad}<li>${esc(line)}</li>`).join("\n") : "";
+
 function html(w: Walked, depth: number, classOf: (w: Walked) => string): string {
   const pad = "  ".repeat(depth);
-  const tag = w.node.type === "TEXT" ? "p" : "div";
+  const tag = w.node.type === "TEXT" ? textTag(w.node) : "div";
   const open = `${pad}<${tag} class="${classOf(w)}">`;
+  if (w.node.type === "TEXT" && tag !== "p") return `${open}\n${listItems(w.node, escHtml, pad + "  ")}\n${pad}</${tag}>`;
   if (w.node.type === "TEXT") return `${open}${escHtml(w.node.characters)}</${tag}>`;
   if (!w.kids.length) return `${open}</${tag}>`;
   return `${open}\n${w.kids.map((k) => html(k, depth + 1, classOf)).join("\n")}\n${pad}</${tag}>`;
@@ -297,16 +351,27 @@ function html(w: Walked, depth: number, classOf: (w: Walked) => string): string 
 
 function jsx(w: Walked, depth: number): string {
   const pad = "  ".repeat(depth);
-  const tag = w.node.type === "TEXT" ? "p" : "div";
+  const tag = w.node.type === "TEXT" ? textTag(w.node) : "div";
   const style = w.decls.map(([p, v]) => `${camel(p)}: ${JSON.stringify(v)}`).join(", ");
   const open = `${pad}<${tag} style={{ ${style} }}>`;
+  if (w.node.type === "TEXT" && tag !== "p") return `${open}\n${listItems(w.node, escJsx, pad + "  ")}\n${pad}</${tag}>`;
   if (w.node.type === "TEXT") return `${open}${escJsx(w.node.characters)}</${tag}>`;
   if (!w.kids.length) return `${pad}<${tag} style={{ ${style} }} />`;
   return `${open}\n${w.kids.map((k) => jsx(k, depth + 1)).join("\n")}\n${pad}</${tag}>`;
 }
 
 /** Generate code for a node and its visible descendants in the requested language. */
-export function generateCode(node: DesignNode, children: ChildrenOf, language: Language): string {
+export function generateCode(node: DesignNode, children: ChildrenOf, language: Language, opts: { variableName?: VariableName } = {}): string {
+  // CSS, HTML, Vue and React name the variables a fill, stroke or text colour follows; the Tailwind classes keep plain colours
+  variableName = language === "tailwind" ? undefined : opts.variableName;
+  try {
+    return generate(node, children, language);
+  } finally {
+    variableName = undefined;
+  }
+}
+
+function generate(node: DesignNode, children: ChildrenOf, language: Language): string {
   if (language === "swiftui") return generateSwiftUI(node, children);
   if (language === "compose") return generateCompose(node, children);
   if (language === "uikit") return generateUIKit(node, children);

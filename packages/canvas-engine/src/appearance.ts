@@ -1,5 +1,6 @@
 import { arcParams, ellipsePath } from "./ellipse-arc";
-import { cssBlendMode, paintColor, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
+import { gradientCenter } from "./gradient-line";
+import { cssBlendMode, paintColor, shownPaints, type DesignNode, type Effect, type GradientPaint, type LineEnd, type Paint } from "@farsha/types";
 
 /**
  * SVG markup for strokes and effects, shared by the canvas and by SVG/PNG export.
@@ -200,8 +201,8 @@ export function imageAdjustFilter(id: string, adj: unknown): string {
 
 /** Fill and stroke of a rectangle, frame or ellipse. Inside/outside strokes are clipped/masked double-width strokes. */
 export function shapeMarkup(n: DesignNode, imageHref?: (assetId: string) => string | undefined): string {
-  const fills = "fills" in n ? (n.fills ?? []) : [];
-  const strokes = "strokes" in n ? (n.strokes ?? []) : [];
+  const fills = "fills" in n ? shownPaints(n.fills) : [];
+  const strokes = "strokes" in n ? shownPaints(n.strokes) : [];
   // Fills are stored bottom to top, so each one is drawn over the previous.
   let out = fills.length ? "" : geometry(n, ' fill="none"');
   fills.forEach((fill, i) => {
@@ -318,8 +319,9 @@ export function gradientAt(stops: { position: number; color: string; opacity: nu
  * clipped to the shape. `geometryMarkup` is the outline of the layer; the result is a self-contained group.
  */
 export function steppedGradient(id: string, p: GradientPaint, w: number, h: number, geometryMarkup: string): string {
-  const cx = w / 2;
-  const cy = h / 2;
+  const gc = gradientCenter(p);
+  const cx = w * gc.x;
+  const cy = h * gc.y;
   const parts: string[] = [];
   if (p.type === "GRADIENT_ANGULAR") {
     const steps = 144;
@@ -336,7 +338,7 @@ export function steppedGradient(id: string, p: GradientPaint, w: number, h: numb
     for (let i = steps; i >= 1; i--) {
       const s = i / steps;
       const c = gradientAt(p.stops, s);
-      parts.push(`<path d="M${num(cx - cx * s)} ${num(cy)}L${num(cx)} ${num(cy - cy * s)}L${num(cx + cx * s)} ${num(cy)}L${num(cx)} ${num(cy + cy * s)}Z" fill="${c.color}" fill-opacity="${num(c.opacity)}"/>`);
+      parts.push(`<path d="M${num(cx - (w / 2) * s)} ${num(cy)}L${num(cx)} ${num(cy - (h / 2) * s)}L${num(cx + (w / 2) * s)} ${num(cy)}L${num(cx)} ${num(cy + (h / 2) * s)}Z" fill="${c.color}" fill-opacity="${num(c.opacity)}"/>`);
     }
     // outside the diamond, the colour of the last stop fills the corners
     const edge = gradientAt(p.stops, 1);
@@ -352,7 +354,10 @@ export function gradientDef(id: string, p: GradientPaint): string {
     .sort((a, b) => a.position - b.position)
     .map((s) => `<stop offset="${unit(s.position, 0)}" stop-color="${hex(s.color)}" stop-opacity="${unit(s.opacity)}"/>`)
     .join("");
-  if (p.type === "GRADIENT_RADIAL") return `<radialGradient id="${id}" cx="0.5" cy="0.5" r="0.5">${stops}</radialGradient>`;
+  if (p.type === "GRADIENT_RADIAL") {
+    const c = gradientCenter(p);
+    return `<radialGradient id="${id}" cx="${unit(c.x)}" cy="${unit(c.y)}" r="0.5">${stops}</radialGradient>`;
+  }
   const a = ((Number.isFinite(p.angle) ? p.angle : 0) * Math.PI) / 180;
   const dx = Math.cos(a) / 2;
   const dy = Math.sin(a) / 2;
@@ -364,7 +369,7 @@ const isGradient = (p: Paint | undefined): p is GradientPaint => p?.type === "GR
 
 /** A text layer's first fill: the gradient definition it needs (empty for a plain colour) and the `fill` value to use. */
 export function textFill(n: DesignNode): { defs: string; fill: string } {
-  const p = "fills" in n ? n.fills?.[0] : undefined;
+  const p = "fills" in n ? shownPaints(n.fills)[0] : undefined;
   if (isGradient(p)) {
     const id = `tg-${safeId(n.id)}`;
     return { defs: gradientDef(id, p), fill: `url(#${id})` };
@@ -375,7 +380,7 @@ export function textFill(n: DesignNode): { defs: string; fill: string } {
 /** Every fill of a text layer, bottom first, as a `fill` value (with its gradient definition) and opacity: the text is drawn once per fill. */
 export function textFills(n: DesignNode): { defs: string; fill: string; opacity: number }[] {
   const list = "fills" in n && Array.isArray(n.fills) ? n.fills : [];
-  return list.map((p, i) => {
+  return list.map((p, i) => (p.visible === false ? null : { p, i })).filter((x): x is { p: Paint; i: number } => !!x).map(({ p, i }) => {
     if (isGradient(p)) {
       const id = `tg-${safeId(n.id)}-${i}`;
       return { defs: gradientDef(id, p), fill: `url(#${id})`, opacity: Number(unit(p.opacity)) };
@@ -390,7 +395,7 @@ export function textFills(n: DesignNode): { defs: string; fill: string; opacity:
  */
 export function textStroke(n: DesignNode): { defs: string; stroke: string; width: number; opacity: number; behind: boolean } | null {
   if (n.type !== "TEXT") return null;
-  const p = n.strokes?.[0];
+  const p = shownPaints(n.strokes)[0];
   const w = Math.max(0, n.strokeWidth ?? 1);
   if (!p || w <= 0 || p.type === "IMAGE") return null;
   let defs = "";
@@ -415,8 +420,8 @@ export function isDrawnVector(n: DesignNode): boolean {
 /** Presentation attributes for the group around a drawn vector's markup (fill and stroke come from the layer). */
 export function vectorPaintAttrs(n: DesignNode): string {
   if (n.type !== "VECTOR") return "";
-  const fill = n.fills?.[0];
-  const stroke = n.strokes?.[0];
+  const fill = shownPaints(n.fills)[0];
+  const stroke = shownPaints(n.strokes)[0];
   const parts = [fill ? `fill="${isGradient(fill) ? `url(#${vectorGradientId(n)})` : hex(paintColor(fill))}" fill-opacity="${unit(fill.opacity)}"` : 'fill="none"'];
   if (stroke) {
     parts.push(`stroke="${isGradient(stroke) ? `url(#${vectorStrokeGradientId(n)})` : hex(paintColor(stroke))}" stroke-opacity="${unit(stroke.opacity)}" stroke-width="${num(Math.max(0, n.strokeWidth ?? 1))}"${strokeExtras(n, "ROUND", "ROUND")}`);
@@ -456,11 +461,11 @@ const MARKER_SHAPES: Record<Exclude<LineEnd, "NONE">, (c: string) => string> = {
 /** The `<marker>` definitions for the arrowheads of a drawn vector ("" when it has none). */
 export function vectorMarkerDefs(n: DesignNode): string {
   if (n.type !== "VECTOR") return "";
-  const fill = n.fills?.[0];
-  const strokePaint = n.strokes?.[0];
+  const fill = shownPaints(n.fills)[0];
+  const strokePaint = shownPaints(n.strokes)[0];
   const gradient = (isGradient(fill) ? gradientDef(vectorGradientId(n), fill) : "") + (isGradient(strokePaint) ? gradientDef(vectorStrokeGradientId(n), strokePaint) : "");
-  if (!n.strokes?.[0]) return gradient;
-  const color = hex(paintColor(n.strokes[0]));
+  if (!strokePaint) return gradient;
+  const color = hex(paintColor(strokePaint));
   // arrowheads grow with the stroke but are never smaller than 8 px
   const size = num(Math.max(8, 4 * Math.max(0, n.strokeWidth ?? 1)));
   const one = (side: "s" | "e", end: LineEnd | undefined) =>

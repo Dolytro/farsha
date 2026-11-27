@@ -15,7 +15,7 @@ type Drag = { index: number | null; guide: RulerGuide; outside: boolean };
  * move it, drop it back on a ruler to delete it. Guides live on the page, so they are saved and undoable.
  */
 export function Rulers() {
-  const { doc, pageId, selection, viewport, viewer } = useEditor();
+  const { doc, pageId, selection, viewport, viewer, guidesHidden } = useEditor();
   useEditor((s) => s.version);
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -42,6 +42,7 @@ export function Rulers() {
   // Drag a new guide out of a ruler, or pick up an existing one.
   const begin = (e: React.PointerEvent, axis: "x" | "y", index: number | null) => {
     if (viewer || e.button !== 0) return;
+    if (guidesHidden) useEditor.getState().setGuidesHidden(false);
     e.preventDefault();
     e.stopPropagation();
     const rect = ref.current!.getBoundingClientRect();
@@ -73,11 +74,23 @@ export function Rulers() {
     move(e.nativeEvent);
   };
 
+  // Figma: with a layer selected, the numbers count from the top left of the top-level frame it sits in (guides stay on the page)
+  const origin = (() => {
+    let node = selection[0] ? doc.getNode(selection[0]) : undefined;
+    let top: typeof node;
+    while (node && node.type !== "PAGE" && node.type !== "DOCUMENT") {
+      if (node.type === "FRAME") top = node;
+      node = node.parentId ? doc.getNode(node.parentId) : undefined;
+    }
+    const b = top ? doc.absoluteBox(top.id) : undefined;
+    return { x: b?.x ?? 0, y: b?.y ?? 0 };
+  })();
   const sel: Box | undefined = unionBox(selection.map((id) => doc.absoluteBox(id)).filter((b): b is Box => !!b));
   const bar = (axis: "x" | "y") => {
     const length = axis === "x" ? size.width : size.height;
-    const from = toWorld(axis, 0);
-    const to = toWorld(axis, length);
+    const o = origin[axis];
+    const from = toWorld(axis, 0) - o;
+    const to = toWorld(axis, length) - o;
     return (
       <>
         {sel && (
@@ -91,7 +104,7 @@ export function Rulers() {
           />
         )}
         {rulerTicks(from, to, zoom).map((t) => {
-          const p = toScreen(axis, t.value);
+          const p = toScreen(axis, t.value + o);
           const len = t.major ? 8 : 4;
           return (
             <g key={t.value}>
@@ -114,7 +127,7 @@ export function Rulers() {
   return (
     <div ref={ref} className="rulers">
       <svg className="rulers__guides" width={size.width} height={size.height}>
-        {guides.map((g, i) => {
+        {(guidesHidden ? [] : guides).map((g, i) => {
           const p = toScreen(g.axis, g.position);
           const line = g.axis === "x" ? { x1: p, x2: p, y1: SIZE, y2: size.height } : { y1: p, y2: p, x1: SIZE, x2: size.width };
           const active = drag?.index === i || (drag?.index === null && i === guides.length - 1);

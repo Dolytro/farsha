@@ -110,6 +110,18 @@ export function FillRow({ doc, nodeId, paint, setPaint, remove, bind, kinds }: {
           {!kinds && doc.getNode(nodeId)?.type === "RECTANGLE" && <option value="VIDEO">Video</option>}
         </Select>
         {bind && paint.type === "SOLID" && !paint.variableId && <VariableButton doc={doc} use={doc.getNode(nodeId)?.type === "TEXT" ? "TEXT_FILL" : "FILL"} onPick={bind} />}
+        <button
+          className="props__add"
+          title={paint.visible === false ? (kinds ? "Show stroke" : "Show fill") : kinds ? "Hide stroke" : "Hide fill"}
+          aria-label={paint.visible === false ? (kinds ? "Show stroke" : "Show fill") : kinds ? "Hide stroke" : "Hide fill"}
+          aria-pressed={paint.visible === false}
+          onClick={() => {
+            const { visible: _shown, ...rest } = paint;
+            setPaint((paint.visible === false ? rest : { ...rest, visible: false }) as Paint);
+          }}
+        >
+          {paint.visible === false ? "○" : "◉"}
+        </button>
         <button className="props__add" title="Remove fill" onClick={remove}>
           −
         </button>
@@ -128,7 +140,7 @@ export function FillRow({ doc, nodeId, paint, setPaint, remove, bind, kinds }: {
       ) : paint.type === "SOLID" && paint.variableId && bind ? null : paint.type === "SOLID" ? (
         <div className="fill-row fill-row--gap">
           <ColorSwatch value={paint.color} onChange={(color) => setPaint({ ...paint, color })} />
-          <HexInput value={paint.color} onChange={(color) => setPaint({ ...paint, color })} />
+          <HexInput value={paint.color} onChange={(color) => setPaint({ ...paint, color })} onAlpha={(alpha, color) => setPaint({ ...paint, color, opacity: alpha })} />
           <input
             className="fill-row__pct"
             type="number"

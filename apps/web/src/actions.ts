@@ -3,6 +3,7 @@ import type { DesignDoc } from "@farsha/design-core";
 import { booleanShapes, flattenShapes, offsetShape, outlineStrokeShape, fitBox, unionBox, zoomTo, type BooleanOp, type Viewport } from "@farsha/canvas-engine";
 import type { Box, DesignNode } from "@farsha/types";
 import { isSection, topLevelFrames } from "./section-actions";
+import { nextLayerName } from "./layer-names";
 
 /** Group selected siblings under a new GROUP (Ctrl+G). Returns the new selection. */
 export function groupSelection(doc: DesignDoc, ids: string[]): string[] {
@@ -14,7 +15,7 @@ export function groupSelection(doc: DesignDoc, ids: string[]): string[] {
   const nodes = [...picked].sort((x, y) => order.indexOf(x.id) - order.indexOf(y.id));
   const box = unionBox(nodes.map((n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })))!;
   doc.stopCapturing();
-  const group = doc.createNode("GROUP", { parentId, props: { x: box.x, y: box.y, width: box.width, height: box.height } });
+  const group = doc.createNode("GROUP", { parentId, props: { name: nextLayerName(doc, "Group"), x: box.x, y: box.y, width: box.width, height: box.height } });
   for (const n of nodes) {
     doc.reparentNode(n.id, group);
     doc.setPosition(n.id, n.x - box.x, n.y - box.y);
@@ -153,7 +154,7 @@ export function frameSelection(doc: DesignDoc, ids: string[]): string[] {
   const order = doc.children(parentId).map((n) => n.id);
   const sorted = [...nodes].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   doc.stopCapturing();
-  const frame = doc.createNode("FRAME", { parentId, index: order.indexOf(sorted[0]!.id), props: { x: box.x, y: box.y, width: box.width, height: box.height } });
+  const frame = doc.createNode("FRAME", { parentId, index: order.indexOf(sorted[0]!.id), props: { name: nextLayerName(doc, "Frame"), x: box.x, y: box.y, width: box.width, height: box.height } });
   for (const n of sorted) {
     doc.reparentNode(n.id, frame);
     doc.setPosition(n.id, n.x - box.x, n.y - box.y);

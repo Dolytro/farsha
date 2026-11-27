@@ -20,10 +20,13 @@ import { insertionIndex, reorderTarget } from "../auto-layout-reorder";
 import { dropInto } from "../reparent-drop";
 import { lockAxis } from "../axis-lock";
 import { drawBox } from "../draw-box";
-import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt } from "@farsha/canvas-engine";
+import { DEFAULT_STAR_RATIO, polygonPatch } from "../shape-params";
+import { cornerDot, draggedRadius, withCornerRadius, type Corner } from "../corner-radius";
+import { spacingBands, spacingDrag, type SpacingSide } from "../spacing-overlay";
+import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, starInnerDot, starRatioAt, arcParams, arcPoint, arcAt, dragArcStart, dragArcEnd, dragArcRatio, gradientCenterPoint, centerFromPoint, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
-import { placeMediaFile } from "../place-image";
+import { canTakeImageFill, fillShapeWithImage, placeMediaFile } from "../place-image";
 import { isVideoFile, videoUrl } from "../video";
 import { useEditor, type Tool } from "../store";
 import { canvasMeasure, fitText } from "../text-layout";
@@ -33,6 +36,7 @@ import { openLocalFile } from "../local-file";
 import { nearestFrame } from "../actions";
 import { connectorPath, connectorsIn } from "../prototype";
 import { loadDefaults, withDefaults } from "../defaults";
+import { nextLayerName, renamedWithText } from "../layer-names";
 
 
 type Drag =
@@ -42,6 +46,12 @@ type Drag =
   | { kind: "multiresize"; corner: Handle; wx: number; wy: number; box: Box; items: GroupItem[] }
   | { kind: "multirotate"; wx: number; wy: number; items: TurnItem[]; cx: number; cy: number; start: number }
   | { kind: "gradient"; id: string; index: number; wx: number; wy: number; cx: number; cy: number }
+  | { kind: "spacing"; id: string; side: SpacingSide; horizontal: boolean; start: { top: number; right: number; bottom: number; left: number; gap: number }; wx: number; wy: number }
+  | { kind: "radius"; id: string; corner: Corner; box: Box; radii: [number, number, number, number]; wx: number; wy: number }
+  | { kind: "arc"; id: string; part: "start" | "end" | "ratio"; box: Box; params: { start: number; sweep: number; ratio: number }; wx: number; wy: number }
+  | { kind: "starratio"; id: string; box: Box; points: number; wx: number; wy: number }
+  | { kind: "gradientcenter"; id: string; fill: number; wx: number; wy: number }
+  | { kind: "gradientstop"; id: string; fill: number; stop: number; line: GradientLine; wx: number; wy: number }
   | { kind: "draw"; id: string; wx: number; wy: number; px: number; py: number }
   | { kind: "scale"; id: string; corner: Handle; wx: number; wy: number; box: Box; snapshot: DesignNode[] }
   | { kind: "rotate"; id: string; wx: number; wy: number; cx: number; cy: number; start: number; base: number }
@@ -110,11 +120,29 @@ export function Canvas() {
   useEditor((s) => s.version);
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
+  const [dragGaps, setDragGaps] = useState<ReturnType<typeof neighbourGaps>>([]);
   const svgRef = useRef<SVGSVGElement>(null);
+  const pendingEdit = useRef<string | null>(null);
   const [spaceDown, setSpaceDown] = useState(false);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Box | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  // Figma: leaving the editor with no words in the text removes the layer
+  const wasEditing = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = wasEditing.current;
+    wasEditing.current = editing;
+    if (prev && prev !== editing) {
+      const st = useEditor.getState();
+      const n = st.doc.getNode(prev);
+      if (n?.type === "TEXT" && n.characters.trim() === "") {
+        st.doc.stopCapturing();
+        st.doc.deleteNode(prev);
+        st.doc.stopCapturing();
+        if (st.selection.includes(prev)) st.select(st.selection.filter((id) => id !== prev));
+      }
+    }
+  }, [editing]);
   // Enter on a selected text layer (handled in App) asks the canvas to open the text editor
   useEffect(() => {
     const onEdit = (e: Event) => {
@@ -224,9 +252,101 @@ export function Canvas() {
     if (el.dataset.gradient && selection[0]) {
       // Dragging the gradient handle turns the gradient: the angle is where the pointer is, seen from the middle of the layer
       const abs = doc.absoluteBox(selection[0]);
+      const node = doc.getNode(selection[0]);
+      const paint = node && "fills" in node && Array.isArray(node.fills) ? node.fills[Number(el.dataset.gradient)] : undefined;
       if (abs) {
+        const o = paint?.type === "GRADIENT_ANGULAR" ? gradientCenterPoint(paint, abs) : { x: abs.x + abs.width / 2, y: abs.y + abs.height / 2 };
         doc.stopCapturing();
-        drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: abs.x + abs.width / 2, cy: abs.y + abs.height / 2 };
+        drag.current = { kind: "gradient", id: selection[0], index: Number(el.dataset.gradient), wx: w.x, wy: w.y, cx: o.x, cy: o.y };
+      }
+      return;
+    }
+    if (el.dataset.starHandle && selection[0]) {
+      // Dragging the dot of a star changes how deep its points are
+      const n = doc.getNode(selection[0]);
+      const box = doc.absoluteBox(selection[0]);
+      if (n?.type === "VECTOR" && n.shapeKind === "STAR" && box) {
+        doc.stopCapturing();
+        drag.current = { kind: "starratio", id: n.id, box, points: n.shapeSides ?? 5, wx: w.x, wy: w.y };
+      }
+      return;
+    }
+    if (el.dataset.arcHandle && selection[0]) {
+      // Dragging a dot of an ellipse changes its arc: the start, the end or the inner ratio
+      const n = doc.getNode(selection[0]);
+      const box = doc.absoluteBox(selection[0]);
+      if (n?.type === "ELLIPSE" && box) {
+        doc.stopCapturing();
+        drag.current = { kind: "arc", id: n.id, part: el.dataset.arcHandle as "start" | "end" | "ratio", box, params: arcParams(n), wx: w.x, wy: w.y };
+      }
+      return;
+    }
+    if (el.dataset.cornerRadius && selection[0]) {
+      // Dragging a dot inside a corner changes the corner radius (Alt: only that corner)
+      const n = doc.getNode(selection[0]);
+      const box = doc.absoluteBox(selection[0]);
+      if (n && box && (n.type === "RECTANGLE" || n.type === "FRAME")) {
+        doc.stopCapturing();
+        drag.current = { kind: "radius", id: n.id, corner: Number(el.dataset.cornerRadius) as Corner, box, radii: cornerRadiiOf(n) ?? [0, 0, 0, 0], wx: w.x, wy: w.y };
+      }
+      return;
+    }
+    if (el.dataset.spacingHandle && selection[0]) {
+      // Dragging a handle of an auto layout frame changes its padding or gap
+      const n = doc.getNode(selection[0]);
+      if (n?.type === "FRAME" && n.layoutMode) {
+        doc.stopCapturing();
+        drag.current = { kind: "spacing", id: n.id, side: el.dataset.spacingHandle as SpacingSide, horizontal: n.layoutMode === "HORIZONTAL", start: { top: n.paddingTop ?? 0, right: n.paddingRight ?? 0, bottom: n.paddingBottom ?? 0, left: n.paddingLeft ?? 0, gap: n.itemSpacing ?? 0 }, wx: w.x, wy: w.y };
+      }
+      return;
+    }
+    if (el.dataset.gradientCenter && selection[0]) {
+      // Dragging the dot in the middle of a radial gradient moves its centre
+      doc.stopCapturing();
+      drag.current = { kind: "gradientcenter", id: selection[0], fill: Number(el.dataset.gradientCenter), wx: w.x, wy: w.y };
+      return;
+    }
+    if (el.dataset.gradientStop && selection[0]) {
+      // Dragging a colour stop of a linear gradient slides it along the gradient line
+      const [fill, stop] = el.dataset.gradientStop.split(":").map(Number) as [number, number];
+      const node = doc.getNode(selection[0]);
+      const abs = doc.absoluteBox(selection[0]);
+      const fills = node && "fills" in node && Array.isArray(node.fills) ? node.fills : [];
+      const paint = fills[fill];
+      const line = abs && paint && paint.type !== "SOLID" && paint.type !== "IMAGE" ? gradientAxis(paint, abs) : null;
+      if (line && e.altKey && paint && (paint.type === "GRADIENT_LINEAR" || paint.type === "GRADIENT_RADIAL")) {
+        // Alt+click on a stop removes it (a gradient keeps two)
+        const stops = withoutStop(paint.stops, stop);
+        if (stops !== paint.stops) {
+          doc.stopCapturing();
+          doc.setStyle(selection[0], { fills: fills.map((f, i) => (i === fill ? { ...paint, stops } : f)) } as never);
+          doc.stopCapturing();
+        }
+        return;
+      }
+      if (line) {
+        doc.stopCapturing();
+        drag.current = { kind: "gradientstop", id: selection[0], fill, stop, line, wx: w.x, wy: w.y };
+      }
+      return;
+    }
+    if (el.dataset.gradientLine && selection[0]) {
+      // Clicking the gradient line adds a colour stop there (mixed from the stops around it) and starts dragging it
+      const fill = Number(el.dataset.gradientLine);
+      const node = doc.getNode(selection[0]);
+      const abs = doc.absoluteBox(selection[0]);
+      const fills = node && "fills" in node && Array.isArray(node.fills) ? node.fills : [];
+      const paint = fills[fill];
+      const line = abs && paint && paint.type !== "SOLID" && paint.type !== "IMAGE" ? gradientAxis(paint, abs) : null;
+      if (abs && line && paint && (paint.type === "GRADIENT_LINEAR" || paint.type === "GRADIENT_RADIAL") && paint.stops.length < 16) {
+        const position = stopPositionAt(line, w);
+        const mixed = stopAt(paint.stops, position);
+        if (mixed) {
+          doc.stopCapturing();
+          const stops = [...paint.stops, { position, color: mixed.color, opacity: mixed.opacity }];
+          doc.setStyle(selection[0], { fills: fills.map((f, i) => (i === fill ? { ...paint, stops } : f)) } as never);
+          drag.current = { kind: "gradientstop", id: selection[0], fill, stop: stops.length - 1, line, wx: w.x, wy: w.y };
+        }
       }
       return;
     }
@@ -330,6 +450,16 @@ export function Canvas() {
     }
     const type = CREATE[tool];
     if (!type) return;
+    // Figma: clicking an existing text with the Text tool edits that text instead of starting another one
+    if (tool === "text") {
+      const existing = hitTest(doc, pageId, w.x, w.y, true);
+      if (existing?.type === "TEXT" && !existing.locked) {
+        select([existing.id]);
+        setTool("select");
+        pendingEdit.current = existing.id; // the editor opens on pointer up, after the click has moved the focus
+        return;
+      }
+    }
     // Draw a new shape, positioned relative to the frame under the cursor (if any).
     const under = hitTest(doc, pageId, w.x, w.y);
     // sections always sit on the page itself
@@ -339,12 +469,12 @@ export function Canvas() {
     const id = doc.createNode(type, {
       parentId: parentFrame?.id ?? pageId,
       props: withDefaults(type, {
-        name: NAMES[tool],
+        name: NAMES[tool] && tool !== "text" && tool !== "section" && tool !== "slice" ? nextLayerName(doc, NAMES[tool]!) : NAMES[tool],
         x: w.x - pb.x,
         y: w.y - pb.y,
         width: 1,
         height: 1,
-        ...(tool === "text" ? { fills: solid("#111111") } : {}),
+        ...(tool === "text" ? { fills: solid("#111111"), characters: "" } : {}),
         ...(tool === "slice" ? { isSlice: true, fills: [], strokes: [], strokeWidth: 0 } : {}),
         ...(tool === "section" ? { isSection: true, clipsContent: false, fills: solid("#eceef2") } : {}),
         ...(type === "VECTOR" ? vectorStart(tool) : {}),
@@ -381,7 +511,7 @@ export function Canvas() {
       let aligned = false;
       if (d.startBox && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping) {
         const page = doc.getNode(pageId);
-        const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const guideList = useEditor.getState().rulers && !useEditor.getState().guidesHidden && page?.type === "PAGE" ? (page.guides ?? []) : [];
         const grid = parentGridLines(Object.keys(d.origins)[0]);
         const snap = snapMove({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets, 5 / viewport.zoom, {
           xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],
@@ -392,6 +522,7 @@ export function Canvas() {
         setGuides(snap.guides);
         aligned = snap.guides.length > 0;
       } else setGuides([]);
+      if (d.startBox && d.targets.length > 0) setDragGaps(neighbourGaps({ ...d.startBox, x: d.startBox.x + dx, y: d.startBox.y + dy }, d.targets));
       // Snap to pixel grid: the first layer lands on a whole pixel (the others keep their distance to it), unless a smart guide already holds it
       const first = Object.values(d.origins)[0];
       if (first && !aligned && !e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap) ({ dx, dy } = snapMoveToPixels(first, { dx, dy }));
@@ -433,6 +564,43 @@ export function Canvas() {
         const angle = ((snapped % 360) + 360) % 360;
         doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.index && f.type !== "SOLID" && f.type !== "IMAGE" ? { ...f, angle } : f)) } as never);
       }
+    } else if (d.kind === "starratio") {
+      const node = doc.getNode(d.id);
+      if (node?.type === "VECTOR" && node.shapeKind === "STAR") {
+        const ratio = starRatioAt(d.points, [((w.x - d.box.x) / (d.box.width || 1)) * 100, ((w.y - d.box.y) / (d.box.height || 1)) * 100]);
+        doc.patchNodes({ [d.id]: polygonPatch("STAR", d.points, ratio, node.shapeRadius ?? 0) });
+      }
+    } else if (d.kind === "arc") {
+      const at = arcAt(d.box, w);
+      const snap = (v: number) => (e.shiftKey ? Math.round(v / 15) * 15 : v);
+      if (d.part === "start") {
+        const r = dragArcStart(d.params, snap(at.angle));
+        doc.setStyle(d.id, { arcStart: r.start, arcSweep: r.sweep } as never);
+      } else if (d.part === "end") doc.setStyle(d.id, { arcSweep: dragArcEnd(d.params, snap(at.angle)) } as never);
+      else doc.setStyle(d.id, { arcRatio: dragArcRatio(at.fraction) } as never);
+    } else if (d.kind === "radius") {
+      const r = draggedRadius(d.box, d.corner, d.radii[d.corner], { x: d.wx, y: d.wy }, w);
+      doc.setStyle(d.id, (e.altKey ? { cornerRadii: withCornerRadius(d.radii, d.corner, r) } : { cornerRadius: r, cornerRadii: null }) as never);
+    } else if (d.kind === "spacing") {
+      // along the band's axis; padding grows away from the frame edge
+      const delta = d.side === "gap" ? (d.horizontal ? dx : dy) : d.side === "top" ? dy : d.side === "bottom" ? -dy : d.side === "left" ? dx : -dx;
+      doc.setStyle(d.id, spacingDrag(d.side, d.start, delta, { alt: e.altKey, shift: e.shiftKey }) as never);
+    } else if (d.kind === "gradientcenter") {
+      const node = doc.getNode(d.id);
+      const abs = doc.absoluteBox(d.id);
+      if (abs && node && "fills" in node && Array.isArray(node.fills)) {
+        const c = centerFromPoint(abs, w, e.shiftKey ? 0 : 6 / viewport.zoom);
+        doc.setStyle(d.id, { fills: node.fills.map((f, i) => (i === d.fill && (f.type === "GRADIENT_RADIAL" || f.type === "GRADIENT_ANGULAR" || f.type === "GRADIENT_DIAMOND") ? { ...f, ...c } : f)) } as never);
+      }
+    } else if (d.kind === "gradientstop") {
+      const node = doc.getNode(d.id);
+      if (node && "fills" in node && Array.isArray(node.fills)) {
+        let position = stopPositionAt(d.line, w);
+        if (e.shiftKey) position = Math.round(position * 20) / 20;
+        doc.setStyle(d.id, {
+          fills: node.fills.map((f, i) => (i === d.fill && (f.type === "GRADIENT_LINEAR" || f.type === "GRADIENT_RADIAL") ? { ...f, stops: f.stops.map((s, j) => (j === d.stop ? { ...s, position } : s)) } : f)),
+        } as never);
+      }
     } else if (d.kind === "multiresize") {
       const to = resizeBox(d.box, d.corner, dx, dy, { keepRatio: e.shiftKey, fromCenter: e.altKey });
       const next = resizeGroup(d.items, d.box, to);
@@ -461,7 +629,7 @@ export function Canvas() {
       // Edges snap to other layers and ruler guides unless Ctrl is held; not while the ratio is kept, resizing from the centre, or flipping
       if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.snapping && !opts.keepRatio && !opts.fromCenter && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation) {
         const page = doc.getNode(pageId);
-        const guideList = useEditor.getState().rulers && page?.type === "PAGE" ? (page.guides ?? []) : [];
+        const guideList = useEditor.getState().rulers && !useEditor.getState().guidesHidden && page?.type === "PAGE" ? (page.guides ?? []) : [];
         const grid = parentGridLines(d.id);
         const snapped = snapResize({ x: next.x + d.offset.x, y: next.y + d.offset.y, width: next.width, height: next.height }, d.corner, d.targets, 5 / viewport.zoom, {
           xs: [...guideList.filter((g) => g.axis === "x").map((g) => g.position), ...grid.xs],
@@ -472,6 +640,7 @@ export function Canvas() {
       } else setGuides([]);
       if (!e.ctrlKey && !e.metaKey && useEditor.getState().prefs.pixelSnap && !turned.flipX && !turned.flipY && !doc.getNode(d.id)?.rotation && !(opts.keepRatio && !locked)) next = snapBoxToPixels(next);
       doc.resizeNode(d.id, next);
+      setDragGaps(doc.getNode(d.id)?.rotation ? [] : neighbourGaps({ x: next.x + d.offset.x, y: next.y + d.offset.y, width: next.width, height: next.height }, d.targets));
       if (flipping) {
         const now = doc.getNode(d.id);
         const wantX = d.flipX !== turned.flipX;
@@ -511,11 +680,17 @@ export function Canvas() {
   };
 
   const onPointerUp = () => {
+    if (pendingEdit.current) {
+      const id = pendingEdit.current;
+      pendingEdit.current = null;
+      if (doc.hasNode(id)) setEditing(id);
+    }
     const d = drag.current;
     drag.current = null;
     setChanging(false);
     setMarquee(null);
     setGuides([]);
+    setDragGaps([]);
     if (!d || d.kind === "pan" || d.kind === "marquee") return;
     if (d.kind === "move") {
       // Let go over another frame (or over empty canvas): the layers move into that frame (or out to the page), keeping their place on the canvas
@@ -610,6 +785,11 @@ export function Canvas() {
     e.preventDefault();
     const w = world(e);
     const under = hitTest(doc, pageId, w.x, w.y);
+    // one picture dropped on a shape fills it
+    if (files.length === 1 && files[0]!.type.startsWith("image/") && under && !under.locked && canTakeImageFill(under.type) && !("videoAssetId" in under && under.videoAssetId)) {
+      void fillShapeWithImage(files[0]!, under.id);
+      return;
+    }
     const frame = under?.type === "FRAME" ? under : undefined;
     const origin = frame ? (doc.absoluteBox(frame.id) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
     files.forEach((file, i) => void placeMediaFile(file, frame?.id ?? pageId, w.x - origin.x + i * 24, w.y - origin.y + i * 24));
@@ -617,6 +797,15 @@ export function Canvas() {
 
   const onDoubleClick = (e: React.MouseEvent) => {
     if (devMode) return;
+    // Double-clicking a frame's name above it renames it (the name box opens in the Layers list)
+    const labelId = (e.target as SVGElement).dataset?.labelId;
+    if (labelId && !viewer && doc.hasNode(labelId)) {
+      const st = useEditor.getState();
+      select([labelId]);
+      st.setLeftTab("layers");
+      st.setRenaming(labelId);
+      return;
+    }
     const w = world(e);
     const deep = hitTest(doc, pageId, w.x, w.y, true);
     if (!deep) return;
@@ -856,7 +1045,7 @@ export function Canvas() {
   const hoverBox = hoverHighlight && hoverId && !selection.includes(hoverId) ? doc.absoluteBox(hoverId) : undefined;
   // Measurements are an inspect feature: public view-only links don't get them.
   const canInspect = !viewer || (viewer === "inspect" && signedIn);
-  const measurements = canInspect && altDown && sel && hoverBox ? measure(sel, hoverBox) : [];
+  const measurements = canInspect && altDown && sel && hoverBox ? measure(sel, hoverBox) : dragGaps;
   const RED = "#f24822";
   const hs = 8 / z;
   const sw = 1 / z;
@@ -878,7 +1067,8 @@ export function Canvas() {
       const f = selNode.fills[i]!;
       if (f.type === "SOLID" || f.type === "IMAGE") continue;
       const a = (f.angle * Math.PI) / 180;
-      return { index: i, x: sel.x + sel.width / 2 + (Math.cos(a) * sel.width) / 2, y: sel.y + sel.height / 2 + (Math.sin(a) * sel.height) / 2 };
+      const o = f.type === "GRADIENT_ANGULAR" ? gradientCenterPoint(f, sel) : { x: sel.x + sel.width / 2, y: sel.y + sel.height / 2 };
+      return { index: i, type: f.type, ox: o.x, oy: o.y, x: o.x + (Math.cos(a) * sel.width) / 2, y: o.y + (Math.sin(a) * sel.height) / 2 };
     }
     return null;
   })();
@@ -1021,6 +1211,73 @@ export function Canvas() {
               );
             })}
 
+          {!devMode && !viewer && !changing && selection.length === 1 && (selNode?.type === "RECTANGLE" || (selNode?.type === "FRAME" && !selNode.isSection)) && !rotated && !selNode.flipX && !selNode.flipY && !selNode.locked && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb || Math.min(fb.width, fb.height) * z < 60) return null;
+            const radii = cornerRadiiOf(selNode) ?? [0, 0, 0, 0];
+            return (
+              <g data-corner-radius-handles="">
+                {([0, 1, 2, 3] as Corner[]).map((c) => {
+                  const dot = cornerDot(fb, c, radii[c], 16 / z);
+                  return <circle key={c} className="radius-dot" data-corner-radius={c} cx={dot.x} cy={dot.y} r={3.5 / z} style={{ cursor: "pointer" }} />;
+                })}
+              </g>
+            );
+          })()}
+
+          {!devMode && !viewer && selection.length === 1 && selNode?.type === "FRAME" && selNode.layoutMode && !rotated && !selNode.locked && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb) return null;
+            const kids = doc.children(selNode.id).filter((c) => c.visible && c.layoutPositioning !== "ABSOLUTE").map((c) => doc.absoluteBox(c.id)).filter((b): b is Box => !!b);
+            return (
+              <g data-spacing-handles="">
+                {spacingBands(selNode, fb, kids, { includeZero: true }).filter((b) => b.side !== "gap" || selNode.primaryAxisAlign !== "SPACE_BETWEEN").map((b, i) => {
+                  const vertical = b.side === "left" || b.side === "right" || (b.side === "gap" && selNode.layoutMode === "HORIZONTAL");
+                  const pw = (vertical ? 5 : 20) / z;
+                  const ph = (vertical ? 20 : 5) / z;
+                  // a thin or empty padding band: keep the pill a little inside the frame so it does not sit on the resize edge
+                  const inset = 8 / z;
+                  const cx = b.side === "left" ? b.x + Math.max(b.width / 2, inset) : b.side === "right" ? b.x + b.width - Math.max(b.width / 2, inset) : b.x + b.width / 2;
+                  const cy = b.side === "top" ? b.y + Math.max(b.height / 2, inset) : b.side === "bottom" ? b.y + b.height - Math.max(b.height / 2, inset) : b.y + b.height / 2;
+                  return (
+                    <g key={i} className="spacing-handle" data-spacing-band={b.side}>
+                      <rect className="spacing-handle__band" x={b.x} y={b.y} width={b.width} height={b.height} pointerEvents="none" />
+                      <rect className="spacing-handle__pill" data-spacing-handle={b.side} x={cx - pw / 2} y={cy - ph / 2} width={pw} height={ph} rx={2 / z} style={{ cursor: vertical ? "ew-resize" : "ns-resize" }} />
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })()}
+
+          {devMode && selNode?.type === "FRAME" && selNode.layoutMode && !rotated && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb) return null;
+            const kids = doc.children(selNode.id).filter((c) => c.visible && c.layoutPositioning !== "ABSOLUTE").map((c) => doc.absoluteBox(c.id)).filter((b): b is Box => !!b);
+            return (
+              <g pointerEvents="none" data-spacing-overlay="">
+                {spacingBands(selNode, fb, kids).map((b, i) => {
+                  const label = String(b.value);
+                  const w = (label.length * 6 + 8) / z;
+                  const cx = b.x + b.width / 2;
+                  const cy = b.y + b.height / 2;
+                  const showLabel = b.kind === "gap" || (b.width >= w && b.height >= 12 / z);
+                  return (
+                    <g key={i} data-spacing={b.kind} data-value={b.value}>
+                      <rect x={b.x} y={b.y} width={b.width} height={b.height} fill={b.kind === "padding" ? "#7ed321" : "#f24822"} fillOpacity={0.25} />
+                      {showLabel && (
+                        <>
+                          <rect x={cx - w / 2} y={cy - 8 / z} width={w} height={16 / z} rx={3 / z} fill="#0d99ff" />
+                          <text x={cx} y={cy + 3.5 / z} textAnchor="middle" fontSize={10 / z} fill="#fff">{label}</text>
+                        </>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })()}
+
           {hoverBox && <rect x={hoverBox.x} y={hoverBox.y} width={hoverBox.width} height={hoverBox.height} fill="none" stroke={altDown ? RED : ACCENT} strokeWidth={sw * 1.5} pointerEvents="none" />}
 
           {measurements.length > 0 && (
@@ -1102,9 +1359,39 @@ export function Canvas() {
               </g>
               {gradientHandle && sel && (
                 <g>
-                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
-                  <line x1={sel.x + sel.width / 2} y1={sel.y + sel.height / 2} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
-                  <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
+                  {gradientHandle.type !== "GRADIENT_RADIAL" && gradientHandle.type !== "GRADIENT_DIAMOND" && (
+                    <>
+                      <line x1={gradientHandle.ox} y1={gradientHandle.oy} x2={gradientHandle.x} y2={gradientHandle.y} stroke="#fff" strokeWidth={2.5 / z} pointerEvents="none" />
+                      <line x1={gradientHandle.ox} y1={gradientHandle.oy} x2={gradientHandle.x} y2={gradientHandle.y} stroke={ACCENT} strokeWidth={1 / z} pointerEvents="none" />
+                      <circle data-gradient={gradientHandle.index} cx={gradientHandle.x} cy={gradientHandle.y} r={5 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "grab" }} />
+                    </>
+                  )}
+                  {(() => {
+                    // The colour stops of a linear gradient sit on the gradient line; drag one to move it
+                    const f = selNode && "fills" in selNode && Array.isArray(selNode.fills) ? selNode.fills[gradientHandle.index] : undefined;
+                    const line = f && f.type !== "SOLID" && f.type !== "IMAGE" ? gradientAxis(f, sel) : null;
+                    if (!line || (f?.type !== "GRADIENT_LINEAR" && f?.type !== "GRADIENT_RADIAL")) return null;
+                    const underCentre = (pos: number) => f.type === "GRADIENT_RADIAL" && pos <= 0.001;
+                    return [<line key="hit" data-gradient-line={gradientHandle.index} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={10 / z} style={{ cursor: "copy" }} />, ...f.stops.map((s, j) => underCentre(s.position) ? null : (
+                      <circle
+                        key={j}
+                        data-gradient-stop={`${gradientHandle.index}:${j}`}
+                        cx={line.x1 + (line.x2 - line.x1) * s.position}
+                        cy={line.y1 + (line.y2 - line.y1) * s.position}
+                        r={4 / z}
+                        fill={/^#[0-9a-fA-F]{3,8}$/.test(s.color) ? s.color : "#888"}
+                        stroke="#fff"
+                        strokeWidth={1.5 / z}
+                        style={{ cursor: "ew-resize" }}
+                      />
+                    ))];
+                  })()}
+                  {(() => {
+                    const f = selNode && "fills" in selNode && Array.isArray(selNode.fills) ? selNode.fills[gradientHandle.index] : undefined;
+                    if (f?.type !== "GRADIENT_RADIAL" && f?.type !== "GRADIENT_ANGULAR" && f?.type !== "GRADIENT_DIAMOND") return null;
+                    const c = gradientCenterPoint(f, sel);
+                    return <circle data-gradient-center={gradientHandle.index} cx={c.x} cy={c.y} r={6 / z} fill="#fff" stroke={ACCENT} strokeWidth={sw} style={{ cursor: "move" }} />;
+                  })()}
                 </g>
               )}
               {showDimensions && (
@@ -1118,12 +1405,35 @@ export function Canvas() {
             </g>
           )}
 
+          {!devMode && !viewer && !changing && selection.length === 1 && selNode?.type === "VECTOR" && selNode.shapeKind === "STAR" && !rotated && !selNode.locked && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb || Math.min(fb.width, fb.height) * z < 40) return null;
+            const d = starInnerDot(selNode.shapeSides ?? 5, selNode.starRatio ?? DEFAULT_STAR_RATIO);
+            return <circle className="radius-dot" data-star-handle="1" cx={fb.x + (d[0] / 100) * fb.width} cy={fb.y + (d[1] / 100) * fb.height} r={4 / z} style={{ cursor: "pointer" }} />;
+          })()}
+
+          {!devMode && !viewer && !changing && selection.length === 1 && selNode?.type === "ELLIPSE" && !rotated && !selNode.locked && (() => {
+            const fb = doc.absoluteBox(selNode.id);
+            if (!fb || Math.min(fb.width, fb.height) * z < 40) return null;
+            const p = arcParams(selNode);
+            const dots: { part: "start" | "end" | "ratio"; at: { x: number; y: number } }[] = [
+              { part: "start", at: arcPoint(fb, p.start) },
+              { part: "end", at: arcPoint(fb, p.start + p.sweep) },
+              { part: "ratio", at: arcPoint(fb, p.start, Math.max(p.ratio, 0.06)) },
+            ];
+            return (
+              <g data-arc-handles="">
+                {dots.map((d) => <circle key={d.part} className="radius-dot" data-arc-handle={d.part} cx={d.at.x} cy={d.at.y} r={4 / z} style={{ cursor: "pointer" }} />)}
+              </g>
+            );
+          })()}
+
           {guides.map((g, i) => (
             <line key={i} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke={RED} strokeWidth={sw} pointerEvents="none" />
           ))}
           {editingPath && !viewer && !devMode && tool === "select" && <VectorEditLayer nodeId={editingPath} svgRef={svgRef} viewport={viewport} />}
           <CommentsLayer zoom={z} />
-          {tool === "pencil" && !viewer && !devMode && <PencilLayer svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
+          {(tool === "pencil" || tool === "marker" || tool === "highlighter") && !viewer && !devMode && <PencilLayer kind={tool} svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
           {tool === "pen" && !viewer && !devMode && <PenLayer svgRef={svgRef} viewport={viewport} spaceDown={spaceDown} />}
           {marquee && <rect x={marquee.x} y={marquee.y} width={marquee.width} height={marquee.height} fill={ACCENT} fillOpacity={0.08} stroke={ACCENT} strokeWidth={sw} pointerEvents="none" />}
 
@@ -1143,7 +1453,9 @@ export function Canvas() {
                 onChange={(e) => {
                   const el = e.currentTarget;
                   const value = smartQuotes ? smartQuote(editNode.characters, el.value, el.selectionStart) : el.value;
+                  const renamed = renamedWithText(editNode.name, editNode.characters, value);
                   doc.setText(editNode.id, { characters: value, runs: adjustRuns(editNode.runs, editNode.characters, value) });
+                  if (renamed) doc.rename(editNode.id, renamed);
                   fitText(doc, editNode.id);
                   const caret = el.selectionStart;
                   requestAnimationFrame(() => el.setSelectionRange(caret, caret));

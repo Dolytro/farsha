@@ -67,6 +67,7 @@ export function ExportDialog() {
           <Select className="field__select" aria-label="Export format" value={format} onChange={(e) => setFormat(e.target.value as ExportChoice)}>
             <option value="PNG">PNG</option>
             <option value="JPG">JPG</option>
+            <option value="WEBP">WEBP</option>
             <option value="SVG">SVG</option>
             <option value="PDF">PDF</option>
           </Select>

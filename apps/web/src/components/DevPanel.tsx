@@ -6,7 +6,7 @@ import { Select } from "./Select";
 import { boxModelOf } from "../box-model";
 import { zoomFit } from "../actions";
 import { layersWithDevStatus } from "../dev-status";
-import { cssVariableBlock, variablesUsed } from "../variable-code";
+import { cssVariableBlock, cssVariableName, variablesUsed } from "../variable-code";
 import type { DesignDoc } from "@farsha/design-core";
 import type { DesignNode, DevResource, DevStatus } from "@farsha/types";
 import { addResource, cleanResources } from "../dev-resources";
@@ -36,7 +36,12 @@ export function DevPanel() {
 
   if (!node) return <ReadyForDev />;
 
-  const code = generateCode(node, (id) => doc.children(id), lang);
+  const code = generateCode(node, (id) => doc.children(id), lang, {
+    variableName: (id) => {
+      const v = doc.getColorVariable(id);
+      return v ? cssVariableName(v.name) : undefined;
+    },
+  });
   const abs = doc.absoluteBox(node.id);
   const copy = async () => {
     try {

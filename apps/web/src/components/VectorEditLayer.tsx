@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { insertPointAt, nearestOnPath, penGeometry, removePointAt, scalePoints, screenToWorld, translatePoints, type PenPoint, type Viewport } from "@farsha/canvas-engine";
 import { useEditor } from "../store";
+import { snapAngle } from "../angle-snap";
 
 const ACCENT = "#0d99ff";
 
@@ -94,8 +95,18 @@ export function VectorEditLayer({ nodeId, svgRef, viewport }: { nodeId: string; 
     if (!d) return;
     const n = doc.getNode(nodeId);
     if (n?.type !== "VECTOR" || !n.penPoints) return;
-    const p = local(e);
-    const next = n.penPoints.map((pt, i) => {
+    let p = local(e);
+    const pts = n.penPoints;
+    // Shift keeps an anchor on a multiple of 45 degrees from its neighbour, and a handle on 45 degree steps from its anchor
+    if (e.shiftKey) {
+      const anchor = pts[d.index];
+      const ref = d.kind === "anchor" ? (pts[d.index - 1] ?? pts[d.index + 1]) : anchor;
+      if (ref) {
+        const v = snapAngle(p.x - ref.x, p.y - ref.y);
+        p = { x: ref.x + v.dx, y: ref.y + v.dy };
+      }
+    }
+    const next = pts.map((pt, i) => {
       if (i !== d.index) return pt;
       return d.kind === "anchor" ? { ...pt, x: p.x, y: p.y } : { ...pt, hx: (p.x - pt.x) * d.sign, hy: (p.y - pt.y) * d.sign };
     });
