@@ -11,3 +11,17 @@ describe("parseHex", () => {
     for (const bad of ["", "ff", "gg0000", "ff00000", "#12"]) expect(parseHex(bad)).toBeNull();
   });
 });
+
+import { parseHexAlpha } from "./hex";
+
+describe("parseHexAlpha", () => {
+  it("reads 8 and 4 digit colours as colour plus opacity", () => {
+    expect(parseHexAlpha("#FF000080")).toEqual({ hex: "#ff0000", alpha: 0.5 });
+    expect(parseHexAlpha("f008")).toEqual({ hex: "#ff0000", alpha: 0.53 });
+    expect(parseHexAlpha("00ff00ff")).toEqual({ hex: "#00ff00", alpha: 1 });
+  });
+  it("keeps plain 3 and 6 digit colours without an alpha and refuses the rest", () => {
+    expect(parseHexAlpha("abc")).toEqual({ hex: "#aabbcc" });
+    expect(parseHexAlpha("12345")).toBeNull();
+  });
+});

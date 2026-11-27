@@ -140,7 +140,7 @@ export function FillRow({ doc, nodeId, paint, setPaint, remove, bind, kinds }: {
       ) : paint.type === "SOLID" && paint.variableId && bind ? null : paint.type === "SOLID" ? (
         <div className="fill-row fill-row--gap">
           <ColorSwatch value={paint.color} onChange={(color) => setPaint({ ...paint, color })} />
-          <HexInput value={paint.color} onChange={(color) => setPaint({ ...paint, color })} />
+          <HexInput value={paint.color} onChange={(color) => setPaint({ ...paint, color })} onAlpha={(alpha, color) => setPaint({ ...paint, color, opacity: alpha })} />
           <input
             className="fill-row__pct"
             type="number"
