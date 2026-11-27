@@ -101,6 +101,8 @@ async function run(action: MenuAction, wx: number, wy: number, pageId?: string, 
       case "detach-instance": return select(detachSelection(doc, selection));
       case "reset-overrides": return resetSelection(doc, selection);
       case "push-to-main": return buildCommands().find((c) => c.id === "push-to-main")?.run();
+      case "rename-layer":
+      case "duplicate":
       case "flatten":
       case "outline-stroke":
       case "flip-x":

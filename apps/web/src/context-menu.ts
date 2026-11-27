@@ -3,7 +3,7 @@ export type MenuAction =
   | "copy-css" | "copy-svg" | "copy-png" | "copy-props" | "paste-props"
   | "front" | "forward" | "backward" | "back"
   | "group" | "frame-selection" | "use-as-mask" | "bool-union" | "bool-subtract" | "bool-intersect" | "bool-exclude" | "ungroup" | "auto-layout" | "create-component" | "detach-instance" | "go-to-main" | "reset-overrides" | "push-to-main"
-  | "flatten" | "outline-stroke" | "flip-x" | "flip-y" | "copy-link"
+  | "rename-layer" | "duplicate" | "flatten" | "outline-stroke" | "flip-x" | "flip-y" | "copy-link"
   | "select-layer" | "select-all" | "toggle-ui" | "move-to-page" | "visibility" | "lock" | "delete";
 
 export interface MenuItem {
@@ -105,7 +105,9 @@ export function buildMenu(c: MenuContext): MenuItem[] {
       items.push({ action: "move-to-page", label: "New page", pageId: "new", divider: c.pages.length < 2 });
     }
     items.push(
-      { action: "visibility", label: c.allHidden ? "Show" : "Hide", shortcut: `${MOD}${SHIFT}H`, divider: true },
+      { action: "duplicate", label: "Duplicate", shortcut: `${MOD}D`, divider: true },
+      { action: "rename-layer", label: "Rename…", shortcut: `${MOD}R` },
+      { action: "visibility", label: c.allHidden ? "Show" : "Hide", shortcut: `${MOD}${SHIFT}H` },
       { action: "lock", label: c.allLocked ? "Unlock" : "Lock", shortcut: `${MOD}${SHIFT}L` },
       { action: "delete", label: "Delete", shortcut: "Del", divider: true },
     );
