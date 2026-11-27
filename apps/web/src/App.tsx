@@ -16,7 +16,7 @@ import { booleanGroupSelection, flattenSelection, outlineStrokeSelection, toggle
 import { copyAsPng, cssFor } from "./exporting";
 import { figmaToClips, looksLikeFigma } from "./figma/paste";
 import { isImageFile } from "./images";
-import { placeImageFile } from "./place-image";
+import { canTakeImageFill, fillShapeWithImage, placeImageFile } from "./place-image";
 import { looksLikeSvg } from "./svg-import";
 import { afterDuplicate, duplicateOffset } from "./duplicate-offset";
 import { armPasteMode, copyNodes, duplicateNodes, copyProperties, parseClip, pasteNodes, pasteProperties, pasteOver, pasteClips, pasteReplace, pasteSvg, pasteTarget, pasteText, pasteColor, pastedColor, selectAllIn, takePasteMode, topLevelOf } from "./clipboard";
@@ -202,7 +202,10 @@ export function App() {
         if (!ids.length) s.showToast("Nothing to paste from that SVG");
       } else if (imageFile) {
         e.preventDefault();
-        void placeImageFile(imageFile, parentId, cx, cy);
+        // a picture pasted with one shape selected fills that shape (Figma)
+        const target = s.selection.length === 1 && !s.viewer ? s.doc.getNode(s.selection[0]!) : undefined;
+        if (target && !target.locked && canTakeImageFill(target.type)) void fillShapeWithImage(imageFile, target.id);
+        else void placeImageFile(imageFile, parentId, cx, cy);
         return;
       } else if (!text) {
         return; // other html: not supported, leave the default behaviour alone
