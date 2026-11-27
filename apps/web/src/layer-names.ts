@@ -14,3 +14,16 @@ export function nextLayerName(doc: DesignDoc, base: string): string {
   }
   return `${base} ${highest + 1}`;
 }
+
+/** The layer name Figma gives a text layer: its first line (cut to 40 characters), or "Text" while it is empty. */
+export function textLayerName(characters: string): string {
+  const first = characters.split("\n")[0]!.trim();
+  return first ? first.slice(0, 40) : "Text";
+}
+
+/** The new name for a text layer whose words changed: only a layer still carrying its automatic name follows the words (a name you typed stays). Null when it stays. */
+export function renamedWithText(currentName: string, oldCharacters: string, newCharacters: string): string | null {
+  if (currentName !== textLayerName(oldCharacters)) return null;
+  const next = textLayerName(newCharacters);
+  return next === currentName ? null : next;
+}

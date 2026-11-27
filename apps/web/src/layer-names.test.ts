@@ -30,3 +30,19 @@ describe("nextLayerName", () => {
     expect(nextLayerName(doc, "A+B")).toBe("A+B 3");
   });
 });
+
+import { renamedWithText, textLayerName } from "./layer-names";
+
+describe("text layer names", () => {
+  it("uses the first line, or Text when empty", () => {
+    expect(textLayerName("Hello\nworld")).toBe("Hello");
+    expect(textLayerName("  ")).toBe("Text");
+    expect(textLayerName("x".repeat(60))).toHaveLength(40);
+  });
+  it("follows the words only while the name is automatic", () => {
+    expect(renamedWithText("Text", "", "Hi")).toBe("Hi");
+    expect(renamedWithText("Hi", "Hi", "Hi there")).toBe("Hi there");
+    expect(renamedWithText("Title", "Hi", "Hi there")).toBeNull();
+    expect(renamedWithText("Hi", "Hi", "Hi")).toBeNull();
+  });
+});

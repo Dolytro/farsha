@@ -36,7 +36,7 @@ import { openLocalFile } from "../local-file";
 import { nearestFrame } from "../actions";
 import { connectorPath, connectorsIn } from "../prototype";
 import { loadDefaults, withDefaults } from "../defaults";
-import { nextLayerName } from "../layer-names";
+import { nextLayerName, renamedWithText } from "../layer-names";
 
 
 type Drag =
@@ -122,6 +122,7 @@ export function Canvas() {
   const [guides, setGuides] = useState<Guide[]>([]);
   const [dragGaps, setDragGaps] = useState<ReturnType<typeof neighbourGaps>>([]);
   const svgRef = useRef<SVGSVGElement>(null);
+  const pendingEdit = useRef<string | null>(null);
   const [spaceDown, setSpaceDown] = useState(false);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Box | null>(null);
@@ -430,6 +431,16 @@ export function Canvas() {
     }
     const type = CREATE[tool];
     if (!type) return;
+    // Figma: clicking an existing text with the Text tool edits that text instead of starting another one
+    if (tool === "text") {
+      const existing = hitTest(doc, pageId, w.x, w.y, true);
+      if (existing?.type === "TEXT" && !existing.locked) {
+        select([existing.id]);
+        setTool("select");
+        pendingEdit.current = existing.id; // the editor opens on pointer up, after the click has moved the focus
+        return;
+      }
+    }
     // Draw a new shape, positioned relative to the frame under the cursor (if any).
     const under = hitTest(doc, pageId, w.x, w.y);
     // sections always sit on the page itself
@@ -650,6 +661,11 @@ export function Canvas() {
   };
 
   const onPointerUp = () => {
+    if (pendingEdit.current) {
+      const id = pendingEdit.current;
+      pendingEdit.current = null;
+      if (doc.hasNode(id)) setEditing(id);
+    }
     const d = drag.current;
     drag.current = null;
     setChanging(false);
@@ -1417,7 +1433,9 @@ export function Canvas() {
                 onChange={(e) => {
                   const el = e.currentTarget;
                   const value = smartQuotes ? smartQuote(editNode.characters, el.value, el.selectionStart) : el.value;
+                  const renamed = renamedWithText(editNode.name, editNode.characters, value);
                   doc.setText(editNode.id, { characters: value, runs: adjustRuns(editNode.runs, editNode.characters, value) });
+                  if (renamed) doc.rename(editNode.id, renamed);
                   fitText(doc, editNode.id);
                   const caret = el.selectionStart;
                   requestAnimationFrame(() => el.setSelectionRange(caret, caret));
