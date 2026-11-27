@@ -98,7 +98,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Alt-hover distances | ✅ |
 | Asset export (SVG / PNG / JPG) from inspect | ✅ | Export section at the bottom of the Dev panel (same scales and formats as Design) |
 | Ready-for-dev status, annotations, compare changes | ❌ |
-| iOS / Android snippets, Code Connect, variables in code | ❌ |
+| iOS / Android snippets, variables in code | ✅ (SwiftUI, UIKit, Compose, Android XML, Flutter tabs; `var(--name)` for colour and number variables). Code Connect ❌ |
 | Spacing and padding visualization (box model) | ✅ | Box model in the Dev panel; ✅ on the canvas in Dev Mode, an auto layout frame you select shows its padding as green bands and the gaps between children as red bands, each with its value (not shown for turned frames; gaps are measured between neighbours, so space-between and wrap show real distances) |
 
 ## 7. View menu and canvas helpers
@@ -109,7 +109,7 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Zoom to next / previous frame (N / Shift+N) | ✅ | Home / End missing |
 | Pixel grid (Shift+') and pixel preview (menu) | 🟡 | Pixel grid from 800% zoom (Shift+' or Actions). Missing: pixel preview |
 | Rulers (Shift+R) and guides, layout guides (Shift+G) (menu) | 🟡 | Rulers with selection range, drag out guides, move them, drop on a ruler to delete, layers snap to guides, guides are saved per page and undoable. Layout grids done: a Layout grid section on frames (columns, rows or a square grid with count, gutter, margin, size, colour, opacity, show / hide) and Shift+G shows or hides them; grids are not exported; ✅ layers snap to the column and row edges of the frame they sit in while moving and resizing (square grids too, unless the cells are tiny). ✅ typing an exact guide position (double-click a guide). ✅ View > Show / hide guides (Ctrl+;): hides the guide lines and their snapping but keeps the rulers; dragging a new guide out of a ruler shows them again; remembered in this browser. ✅ frame-level rulers (with a layer selected, the numbers count from the top left of the top-level frame it sits in; guides and their typed positions stay in page coordinates). Missing: a guide readout while dragging layers |
-| Outlines, mask outlines, frame outlines (menu) | ❌ | P3 |
+| Outlines, mask outlines, frame outlines (menu) | ✅ | P3 (Ctrl+Shift+Y, View menu) |
 | Minimize UI / hide UI (Ctrl+\\) (menu) | ✅ | Hides both panels and the toolbar; also in Actions |
 | Resize the side panels (drag the inner edge of the left or right panel, 200 to 480 px and at most 40% of the window; double-click the edge to reset; remembered in this browser) | ✅ | P2 |
 | Multiplayer cursors (menu) | ❌ | P3 |
@@ -148,12 +148,12 @@ Prototype v1 done: Prototype tab with On click → Navigate to a frame or Back, 
 | Use alternate zoom handling | ❌ |
 | Highlight layers on hover | ✅ always on |
 | Show dimensions on objects | ✅ always on |
-| Hide canvas UI during changes | ❌ |
+| Hide canvas UI during changes | ✅ (Preferences switch, off by default) |
 | Keyboard zooms into selection | ✅ (+ and - centre the selection) |
 | Invert zoom direction | ✅ |
 | Ctrl+click opens right-click menus | ✅ (Preferences switch, off by default) |
 | Use scroll wheel zoom (instead of pan) | ✅ |
-| Right-click and drag to pan | ❌ |
+| Right-click and drag to pan | ✅ (Preferences switch) |
 | Theme (light / dark / system) | ✅ (cloud menu or Actions; the canvas and panels follow, design layers are never recoloured) |
 | Snapping, nudge amount, color profile | 🟡 snapping on / off and nudge amounts done (Preferences in the cloud menu or Actions); no colour profile |
 | Keyboard layout, accessibility settings | ❌ |
