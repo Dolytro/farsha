@@ -13,6 +13,12 @@ export function placeImagePicker(): void {
   input.multiple = true;
   input.onchange = () => {
     const s = useEditor.getState();
+    const files = [...(input.files ?? [])];
+    const target = s.selection.length === 1 ? s.doc.getNode(s.selection[0]!) : undefined;
+    if (files.length === 1 && files[0]!.type.startsWith("image/") && target && !target.locked && canTakeImageFill(target.type)) {
+      void fillShapeWithImage(files[0]!, target.id);
+      return;
+    }
     const c = viewportCenter(s.viewport);
     const parent = pasteTarget(s.doc, s.selection, s.pageId);
     const origin = parent === s.pageId ? { x: 0, y: 0 } : (s.doc.absoluteBox(parent) ?? { x: 0, y: 0 });
