@@ -26,7 +26,7 @@ import { spacingBands, spacingDrag, type SpacingSide } from "../spacing-overlay"
 import { layoutText, lineHeightPx, resizeBox, resizeBoxFlip, resizeRotatedBox, snapMove, snapResize, type Guide, type Handle, effectsFilter, backgroundBlurOf, glassLightOf, cornerRadiiOf, nodeTransform, arrowShape, hitTest, lineBetween, lineShape, polygonShape, starShape, isDrawnVector, vectorMarkerDefs, vectorPaintAttrs, textFill, textFills, textStroke, textBaseline, textPlacement, textPathData, booleanGroupVector, lineSegments, adjustRuns, rangeColor, rangeHas, setRangeColor, setRangeStyle, measure, neighbourGaps, screenToWorld, shapeGeometry, shapeMarkup, unionBox, zoomAt, gradientAxis, starInnerDot, starRatioAt, arcParams, arcPoint, arcAt, dragArcStart, dragArcEnd, dragArcRatio, gradientCenterPoint, centerFromPoint, stopAt, stopPositionAt, withoutStop, type GradientLine } from "@farsha/canvas-engine";
 import { smartQuote } from "../smart-quotes";
 import { assetUrl, isImageFile } from "../images";
-import { placeMediaFile } from "../place-image";
+import { canTakeImageFill, fillShapeWithImage, placeMediaFile } from "../place-image";
 import { isVideoFile, videoUrl } from "../video";
 import { useEditor, type Tool } from "../store";
 import { canvasMeasure, fitText } from "../text-layout";
@@ -750,6 +750,11 @@ export function Canvas() {
     e.preventDefault();
     const w = world(e);
     const under = hitTest(doc, pageId, w.x, w.y);
+    // one picture dropped on a shape fills it
+    if (files.length === 1 && files[0]!.type.startsWith("image/") && under && !under.locked && canTakeImageFill(under.type) && !("videoAssetId" in under && under.videoAssetId)) {
+      void fillShapeWithImage(files[0]!, under.id);
+      return;
+    }
     const frame = under?.type === "FRAME" ? under : undefined;
     const origin = frame ? (doc.absoluteBox(frame.id) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
     files.forEach((file, i) => void placeMediaFile(file, frame?.id ?? pageId, w.x - origin.x + i * 24, w.y - origin.y + i * 24));

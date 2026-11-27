@@ -61,6 +61,25 @@ export async function placeImageFile(file: Blob, parentId: string, cx: number, c
   }
 }
 
+/** Figma: an image dropped on a shape (not a frame) becomes the fill of that shape instead of a new layer. */
+export const canTakeImageFill = (type: string): boolean => type === "RECTANGLE" || type === "ELLIPSE" || type === "VECTOR";
+
+export async function fillShapeWithImage(file: Blob, nodeId: string): Promise<void> {
+  const { showToast } = useEditor.getState();
+  try {
+    const image = await readImage(file);
+    const s = useEditor.getState();
+    if (!s.doc.hasNode(nodeId)) return;
+    const assetId = s.doc.addAsset(image.mime, image.bytes);
+    s.doc.stopCapturing();
+    s.doc.setStyle(nodeId, { fills: [{ type: "IMAGE", assetId, scaleMode: "FILL", opacity: 1, imageWidth: image.width, imageHeight: image.height }] } as never);
+    s.doc.stopCapturing();
+    s.select([nodeId]);
+  } catch (err) {
+    showToast(err instanceof Error ? `Couldn't add the image: ${err.message}` : "Couldn't add the image");
+  }
+}
+
 /** Fill type "Video": choose a video file and make the rectangle play it. */
 export function pickVideoForLayer(nodeId: string): void {
   const input = document.createElement("input");
