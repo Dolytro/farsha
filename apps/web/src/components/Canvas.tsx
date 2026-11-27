@@ -127,6 +127,22 @@ export function Canvas() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Box | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  // Figma: leaving the editor with no words in the text removes the layer
+  const wasEditing = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = wasEditing.current;
+    wasEditing.current = editing;
+    if (prev && prev !== editing) {
+      const st = useEditor.getState();
+      const n = st.doc.getNode(prev);
+      if (n?.type === "TEXT" && n.characters.trim() === "") {
+        st.doc.stopCapturing();
+        st.doc.deleteNode(prev);
+        st.doc.stopCapturing();
+        if (st.selection.includes(prev)) st.select(st.selection.filter((id) => id !== prev));
+      }
+    }
+  }, [editing]);
   // Enter on a selected text layer (handled in App) asks the canvas to open the text editor
   useEffect(() => {
     const onEdit = (e: Event) => {
@@ -455,7 +471,7 @@ export function Canvas() {
         y: w.y - pb.y,
         width: 1,
         height: 1,
-        ...(tool === "text" ? { fills: solid("#111111") } : {}),
+        ...(tool === "text" ? { fills: solid("#111111"), characters: "" } : {}),
         ...(tool === "slice" ? { isSlice: true, fills: [], strokes: [], strokeWidth: 0 } : {}),
         ...(tool === "section" ? { isSection: true, clipsContent: false, fills: solid("#eceef2") } : {}),
         ...(type === "VECTOR" ? vectorStart(tool) : {}),
